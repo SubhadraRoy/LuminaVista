@@ -3,91 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina</title>
+    <title>Dr. Subhadra Roy - Professional Website</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
+            color: #333;
             margin: 0;
             padding: 0;
-            background: linear-gradient(to right, #ff6e7f, #bfe9ff);
-            color: #333;
+            background-color: #f4f4f4;
         }
         header {
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: #0056b3;
             color: white;
             padding: 20px 0;
             text-align: center;
+        }
+        header h1 {
+            margin: 0;
             font-size: 2.5em;
-            font-weight: bold;
         }
-        nav {
-            display: flex;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 10px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        header p {
+            margin: 0;
+            font-size: 1.2em;
+            font-style: italic;
         }
-        nav a {
-            color: #333;
-            text-decoration: none;
-            padding: 10px 20px;
-            transition: background 0.3s, color 0.3s;
+        main {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        nav a:hover {
-            background: #333;
-            color: white;
+        h2 {
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
         }
-        .container {
-            text-align: center;
-            padding: 50px 20px;
-        }
-        .container h1 {
-            font-size: 3em;
+        section {
             margin-bottom: 20px;
         }
-        .container p {
-            font-size: 1.2em;
-            line-height: 1.5em;
+        .contact-info, .publications, .records, .achievements, .about-me {
+            margin-bottom: 20px;
         }
-        .btn {
-            background-color: #ff6e7f;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
-            font-size: 1.1em;
-        }
-        .btn:hover {
-            background-color: #bfe9ff;
+        .contact-info p, .about-me p {
+            line-height: 1.6;
         }
         footer {
-            background: rgba(0, 0, 0, 0.7);
+            background-color: #0056b3;
             color: white;
             text-align: center;
             padding: 10px 0;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
         }
     </style>
 </head>
 <body>
     <header>
-        Welcome to Lumina
+        <h1>Dr. Subhadra Roy</h1>
+        <p>A Student Of Nature, By Nature</p>
     </header>
-    <nav>
-        <a href="#about">About</a>
-        <a href="#services">Services</a>
-        <a href="#contact">Contact</a>
-    </nav>
-    <div class="container">
-        <h1>Discover the Light Within</h1>
-        <p>At Lumina, we believe in illuminating paths and brightening futures. Our mission is to provide insightful content and innovative solutions that inspire and empower individuals to shine in their personal and professional lives.</p>
-        <a href="#get-started" class="btn">Get Started</a>
-    </div>
+    <main>
+        <section class="contact-info">
+            <h2>Contact Information</h2>
+            <p><strong>Position:</strong> Associate Professor, Surendranath College</p>
+            <p><strong>Department:</strong> Zoology</p>
+            <p><strong>Phone:</strong> +91 9831638024</p>
+            <p><strong>Email:</strong> roysubhadra40@gmail.com</p>
+        </section>
+
+        <section class="publications">
+            <h2>Publications</h2>
+            <ul>
+                <li>S Ghosh, S Roy, M Banerjee & P Maity: Modulation of tumor induced angiogenesis in Ehrlich ascites tumor: Exp. Clin. Cancer Res. 23, 4, 2004.</li>
+                <li>S Roy, P Maity: Effect of glutamine analogue-acivicin on tumor induced angiogenesis in Ehrlich ascites carcinoma. Indian J Exp Biol. 2005 May; 43, 5:407-13.</li>
+                <li>S Roy, P Maity: Modulation of metastatic potential of B16F10 melanoma cells by acivicin: synergistic action of glutaminase and potentiation of cisplatin cytotoxicity. Asian Pacific J Cancer Prev. 2007, 8(2): 301-306.</li>
+                <li>S Roy, S Ghosh, Mallick P & P Maity: Acivicin with glutaminase regulates proliferation and invasion of human MCF-7 and OAW-42 cells-An in vitro Indian J Exp Biol. 2008, 46: 22-26.</li>
+            </ul>
+        </section>
+
+        <section class="records">
+            <h2>Academic Records</h2>
+            <p>PhD degree in Life Sciences on 16th September 2008 from Jadavpur University (Topic of thesis: Studies on therapeutic potentials of macromolecules related to glutamine metabolism on experimental malignancy and in vitro human cell culture with special emphasis on tumor induced angiogenesis).</p>
+            <p>Masters degree in Zoology from University of Kalyani in 2002 achieving First class First position.</p>
+            <p>Bachelors degreee in Zoology from University of Kalyani in 2000 achieving First class First position.</p>
+        </section>
+
+        <section class="professional-records">
+            <h2>Professional Records</h2>
+            <ul>
+                <li>Associate Professor in Zoology at Surendranath College, Kolkata, 2006 till date.</li>
+                <li>Senior Research Fellow at Chittaranjan National Cancer Institute, 2005-2006.</li>
+                <li>Junior Research Fellow at Chittaranjan National Cancer Institute, 2003-2005.</li>
+            </ul>
+        </section>
+
+        <section class="achievements">
+            <h2>Educational Achievements</h2>
+            <ul>
+                <li>Qualified NET (National Eligibility Test) for lectureship in Indian Universities/Colleges conducted by CSIR-UGC, Govt. of India in June 2002.</li>
+                <li>Qualified SLET (State Level Eligibility Test) for lectureship in Universities and Colleges of West Bengal and Tripura (Accredited by University Grants Commission) in the year 2002.</li>
+            </ul>
+        </section>
+
+        <section class="about-me">
+            <h2>About Me</h2>
+            <p>Dr. Subhadra Roy is currently working as Associate Professor in Zoology at Surendranath College Kolkata, affiliated to the University of Calcutta. She was awarded the prestigious Satish and Tulsi Manna Memorial Endowment Bronze Medal” for achieving First Class First position in M. Sc. Zoology under the University of Kalyani. She did her research work in cancer biology and completed her PhD degree from Chittaranjan National Cancer Institute. Dr. Roy is also member of the Indian Science Congress Association and the Zoological Society, Kolkata. She has to her credit research papers in Indian and foreign journals and has also authored a textbook on Non-Chordate Zoology.</p>
+        </section>
+    </main>
     <footer>
-        &copy; 2024 Lumina. All rights reserved.
+        <p>&copy; 2024 Dr. Subhadra Roy. All rights reserved.</p>
     </footer>
 </body>
 </html>
