@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full-Page Image</title>
+  <style>
+    /* Reset margin and padding for body */
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000; /* Optional: Black background for contrast */
+      overflow-x: hidden; /* Disable horizontal scrolling */
+    }
+
+    img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100vh;
+      object-fit: contain; /* Preserve the original aspect ratio */
+    }
+
+    /* Ensure page works well for mobile viewports */
+    html, body {
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!-- Embed the image -->
+  <img src="https://raw.githubusercontent.com/SubhadraRoy/LuminaVista/refs/heads/main/WhatsApp%20Image%202025-02-08%20at%2021.26.11_18676562.jpg" alt="Phone-Sized Image">
+</body>
+</html>
