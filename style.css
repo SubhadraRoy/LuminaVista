@@ -1,20 +1,67 @@
-body,
-html {
-	position: absolute;
-	margin: 0;
-	padding: 0;
-	width: 100%;
-	height: 100%;
-	overflow: hidden;
-	background: black;
-	touch-action: none;
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0px;
 }
 
-svg {
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	background: #c9c9c9;
-	cursor: pointer;
-	filter: sepia(20%);
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+  background-repeat: no-repeat;
+  color: #FFF;
+}
+
+.vline
+{
+    position:fixed;
+    top: 0;
+    left: 50%;
+    height: 50vh;
+    width: 2px;
+    background-color: #FFF;
+    z-index: -1;
+    opacity: 0.5;
+    visibility: hidden;
+}
+.gsapWrapper {
+
+  visibility: hidden;
+
+  #wBody {
+
+    position: relative;
+    aspect-ratio: 1/1;
+
+    @media (orientation: landscape) {
+      width: 65vh;
+    }
+    @media (orientation: portrait) {
+      height: 65vw;
+    }
+
+
+    #watch {
+      
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1/1;
+      overflow: visible;
+
+      svg {
+        overflow: visible;
+        width: 100%;
+        height: 100%;
+      }
+      
+    }
+
+  }
+
 }
