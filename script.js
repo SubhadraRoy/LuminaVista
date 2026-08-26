@@ -1,198 +1,264 @@
-let select = e => document.querySelector(e);
-let selectAll = e => document.querySelectorAll(e);
+const {
+  gsap: {
+    registerPlugin,
+    set,
+    to,
+    timeline,
+    delayedCall,
+    utils: { random } },
 
-const face01 = select("#face01").getAttribute("d"),
-	face02 = select("#face01").getAttribute("d"),
+  MorphSVGPlugin,
+  Draggable } =
+window;
+registerPlugin(MorphSVGPlugin);
 
-	handSec01 = select("#handSec01").getAttribute("d"),
-	handSec02 = select("#handSec02").getAttribute("d"),
-	sec = select("#sec"),
+// Used to calculate distance of "tug"
+let startX;
+let startY;
 
-	handMin01 = select("#handMin01").getAttribute("d"),
-	handMin02 = select("#handMin02").getAttribute("d"),
-	min = select("#min"),
+const CORD_DURATION = 0.1;
+const INPUT = document.querySelector('#light-mode');
+const ARMS = document.querySelectorAll('.bear__arm');
+const PAW = document.querySelector('.bear__paw');
+const CORDS = document.querySelectorAll('.toggle-scene__cord');
+const HIT = document.querySelector('.toggle-scene__hit-spot');
+const DUMMY = document.querySelector('.toggle-scene__dummy-cord');
+const DUMMY_CORD = document.querySelector('.toggle-scene__dummy-cord line');
+const PROXY = document.createElement('div');
+const endY = DUMMY_CORD.getAttribute('y2');
+const endX = DUMMY_CORD.getAttribute('x2');
+// set init position
+const RESET = () => {
+  set(PROXY, {
+    x: endX,
+    y: endY });
 
-	handHr01 = select("#handHr01").getAttribute("d"),
-	handHr02 = select("#handHr02").getAttribute("d"),
-	hr = select("#hr");
+};
 
-gsap.set("#face", { attr: { d: face01 } });
-gsap.set("#hand-sec", { attr: { d: handSec01 } });
-gsap.set("#hand-min", { attr: { d: handMin01 } });
-gsap.set("#hand-hr", { attr: { d: handHr01 } });
+const AUDIO = {
+  BEAR_LONG: new Audio('https://assets.codepen.io/605876/bear-groan-long.mp3'),
+  BEAR_SHORT: new Audio(
+  'https://assets.codepen.io/605876/bear-groan-short.mp3'),
 
-window.onload = function () { startAnimation(); };
+  DOOR_OPEN: new Audio('https://assets.codepen.io/605876/door-open.mp3'),
+  DOOR_CLOSE: new Audio('https://assets.codepen.io/605876/door-close.mp3'),
+  CLICK: new Audio('https://assets.codepen.io/605876/click.mp3') };
 
-function startAnimation() {
+const STATE = {
+  ON: false,
+  ANGER: 0 };
 
-	setTimeSec();
-	setTimeMinHr();
-	gsap.set([".gsapWrapper", ".vline"], { autoAlpha: 1, });
+set(PAW, {
+  transformOrigin: '50% 50%',
+  xPercent: -30 });
 
-	gsap.to(".cw.t24", 1, { rotation: "-=15", transformOrigin: "50% 50%", ease: "bounce", onComplete: function () { this.invalidate().delay(1).restart(true); } });
-	gsap.to(".cw.t20", 1, { rotation: "-=18", transformOrigin: "50% 50%", ease: "bounce", onComplete: function () { this.invalidate().delay(1).restart(true); } });
-	gsap.to(".ccw.t12", 1, { rotation: "+=30", transformOrigin: "50% 50%", ease: "bounce", onComplete: function () { this.invalidate().delay(1).restart(true); } });
-	gsap.to(min, 0.5, {
-		rotation: getMinRotation, transformOrigin: "50% 50%", ease: "none", onComplete: function () {
+set('.bulb', { z: 10 });
+set(ARMS, {
+  xPercent: 10,
+  rotation: -90,
+  transformOrigin: '100% 50%',
+  yPercent: -2,
+  display: 'block' });
 
-			if (gsap.getProperty(min, "rotation") >= 360)
-				gsap.set(min, { rotation: 0, transformOrigin: "50% 50%" });
-			this.invalidate().delay(5).restart(true);
+const CONFIG = {
+  ARM_DUR: 0.4,
+  CLENCH_DUR: 0.1,
+  BEAR_START: 40,
+  BEAR_FINISH: -55,
+  BEAR_ROTATE: -50,
+  DOOR_OPEN: 25,
+  INTRO_DELAY: 1,
+  BEAR_APPEARANCE: 2,
+  SLAM: 3,
+  BROWS: 4 };
 
-		}
-	});
-
-	gsap.to(hr, 0.5, {
-		rotation: getHrRotation, transformOrigin: "50% 50%", ease: "none", onComplete: function () {
-
-			if (gsap.getProperty(hr, "rotation") >= 360)
-				gsap.set(hr, { rotation: 0, transformOrigin: "50% 50%" });
-			this.invalidate().delay(5).restart(true);
-
-		}
-	});
-
-	gsap.to(sec, 0.5, {
-		rotation: geSecRotation, transformOrigin: "50% 50%", ease: "bounce", onComplete: function () {
-
-			setTimeSec();
-			if (gsap.getProperty(sec, "rotation") >= 360)
-				gsap.set(sec, { rotation: 0, transformOrigin: "50% 50%" });
-			this.invalidate().delay(0.).restart(true);
-
-		}
-	});
-
-
-	let tg0 = gsap.timeline({ repeat: -1, repeatDelay: 5, defaults: { duration: 0.5, ease: "power1.out" } })
-		.to("#face", {
-			morphSVG: "#face02",
-			repeat: 4,
-			yoyo: true,
-			onComplete() {
-				tg0.repeatDelay(gsap.utils.random(4, 8, 0.25));
-			}
-		});
-
-	let tg1 = gsap.timeline({ repeat: -1, repeatDelay: 5, defaults: { duration: 1.5, ease: "bounce" } })
-		.delay(1)
-		.call(() => {
-			let rotation = parseFloat(gsap.getProperty(sec, "rotation").toFixed(1));
-			if ((rotation > 30 && rotation < 150) || (rotation > 210 && rotation < 330)) {
-				gsap.timeline({ repeat: 0, defaults: { duration: 0.25, ease: "bounce.in" } })
-					.to("#hand-sec", { morphSVG: "#handSec02" })
-					.to("#hand-sec", { morphSVG: "#handSec01" });
-			}
-		})
-		.set(sec, {
-			onComplete() {
-				tg1.repeatDelay(gsap.utils.random(6, 10, 0.25));
-				tg1.delay(0);
-			}
-		});
+set('.bear__brows', { display: 'none' });
+set('.bear', {
+  rotate: CONFIG.BEAR_ROTATE,
+  xPercent: CONFIG.BEAR_START,
+  transformOrigin: '50% 50%',
+  scale: 0,
+  display: 'block' });
 
 
-	let tg2 = gsap.timeline({ repeat: -1, repeatDelay: 5, defaults: { duration: 1.5, ease: "bounce" } })
-		.delay(5)
-		.call(() => {
-			let rotation = parseFloat(gsap.getProperty(min, "rotation").toFixed(1));
-			if ((rotation > 5 && rotation < 175) || (rotation > 185 && rotation < 355)) {
-				gsap.timeline({ repeat: 0, defaults: { duration: 0.25, ease: "bounce.in" } })
-					.to("#hand-min", { morphSVG: "#handMin02" })
-					.to("#hand-min", { morphSVG: "#handMin01" });
-			}
-		})
-		.set(min, {
-			onComplete() {
-				tg2.repeatDelay(gsap.utils.random(6, 10, 0.25));
-				tg2.delay(0);
-			}
-		});
+RESET();
 
-	let tg3 = gsap.timeline({ repeat: -1, repeatDelay: 5, defaults: { duration: 1.5, ease: "bounce" } })
-		.delay(7)
-		.call(() => {
-			let rotation = parseFloat(gsap.getProperty(hr, "rotation").toFixed(1));
-			if ((rotation > 2 && rotation < 178) || (rotation > 182 && rotation < 358)) {
-				changingHr = true;
-				gsap.timeline({ repeat: 0, defaults: { duration: 0.25, ease: "bounce.in" } })
-					.to("#hand-hr", { morphSVG: "#handHr02" })
-					.to("#hand-hr", { morphSVG: "#handHr01" });
-			}
-		})
-		.set(hr, {
-			onComplete() {
-				tg3.repeatDelay(gsap.utils.random(6, 10, 0.25));
-				tg3.delay(0);
-			}
-		});
+const CORD_TL = () => {
+  const TL = timeline({
+    paused: false,
+    onStart: () => {
+      // Hook this up to localStorage for jhey.dev
+      STATE.ON = !STATE.ON;
+      INPUT.checked = !STATE.ON;
+      set(document.documentElement, { '--on': STATE.ON ? 1 : 0 });
+      set([DUMMY], { display: 'none' });
+      set(CORDS[0], { display: 'block' });
+      AUDIO.CLICK.play();
+    },
+    onComplete: () => {
+      // BEAR_TL.restart()
+      set([DUMMY], { display: 'block' });
+      set(CORDS[0], { display: 'none' });
+      RESET();
+    } });
 
-	function setTimeSec() {
+  for (let i = 1; i < CORDS.length; i++) {
+    TL.add(
+    to(CORDS[0], {
+      morphSVG: CORDS[i],
+      duration: CORD_DURATION,
+      repeat: 1,
+      yoyo: true }));
 
-		gsap.set(sec, { rotation: geSecRotation, transformOrigin: "50% 50%" });
 
-	};
-	function setTimeMinHr() {
+  }
+  return TL;
+};
 
-		gsap.set(min, { rotation: getMinRotation, transformOrigin: "50% 50%" });
-		gsap.set(hr, { rotation: getHrRotation, transformOrigin: "50% 50%" });
+/**
+ * Mess around with the actial input toggling here.
+ */
+const BEAR_TL = () => {
+  const ARM_SWING = STATE.ANGER > 4 ? 0.2 : CONFIG.ARM_DUR;
+  const SLIDE = STATE.ANGER > CONFIG.BROWS + 3 ? 0.2 : random(0.2, 0.6);
+  const CLOSE_DELAY = STATE.ANGER >= CONFIG.INTRO_DELAY ? random(0.2, 2) : 0;
+  const TL = timeline({
+    paused: false }).
 
-	};
+  to('.door', {
+    onStart: () => AUDIO.DOOR_OPEN.play(),
+    rotateY: 25,
+    duration: 0.2 }).
 
-	function geSecRotation() {
+  add(
+  STATE.ANGER >= CONFIG.BEAR_APPEARANCE && Math.random() > 0.25 ?
+  to('.bear', {
+    onStart: () => {
+      if (Math.random() > 0.5) {
+        // delayedCall(random(0, 1.5), () => {
+        //   AUDIO[
+        //     STATE.ANGER >= CONFIG.BROWS && Math.random() > 0.5
+        //       ? 'BEAR_LONG'
+        //       : 'BEAR_SHORT'
+        //   ].play()
+        // })
+      }
+      set('.bear', { scale: 1 });
+    },
+    xPercent: CONFIG.BEAR_FINISH,
+    repeat: 1,
+    repeatDelay: 1,
+    yoyo: true,
+    duration: SLIDE }) :
 
-		let seconds = new Date().getSeconds();
-		let rotation = seconds * 6;
-		let scaleXSec = gsap.getProperty(sec, "scaleX");
+  () => {}).
 
-		let difference = Math.abs(gsap.getProperty(sec, "rotation") - rotation);
-		if (difference >= 12)
-			gsap.set(sec, { rotation: rotation, transformOrigin: "50% 50%" });
+  to(ARMS, {
+    delay: CLOSE_DELAY,
+    duration: ARM_SWING,
+    rotation: 0,
+    xPercent: 0,
+    yPercent: 0 }).
 
-		if ((rotation >= 180 && rotation < 360) && (scaleXSec == 1))
-			gsap.to(sec, { scaleX: -1, duration: 0.25 });
-		else if ((rotation < 180 || rotation >= 360) && (scaleXSec == -1))
-			gsap.to(sec, { scaleX: 1, duration: 0.25 });
+  to(
+  [PAW, '#knuckles'],
+  {
+    duration: CONFIG.CLENCH_DUR,
+    xPercent: (_, target) => target.id === 'knuckles' ? 10 : 0 },
 
-		return rotation;
+  `>-${ARM_SWING * 0.5}`).
 
-	};
-	function getMinRotation() {
+  to(ARMS, {
+    duration: ARM_SWING * 0.5,
+    rotation: 5 }).
 
-		let newDateTime = new Date();
-		let rotation = newDateTime.getMinutes() * 6 + newDateTime.getSeconds() * 6 / 59;
-		let scaleXMin = gsap.getProperty(min, "scaleX");
+  to(ARMS, {
+    rotation: -90,
+    xPercent: 10,
+    duration: ARM_SWING,
+    onComplete: () => {
+      to('.door', {
+        onComplete: () => AUDIO.DOOR_CLOSE.play(),
+        duration: 0.2,
+        rotateY: 0 });
 
-		let difference = Math.abs(gsap.getProperty(min, "rotation") - rotation);
-		if (difference >= 5)
-			gsap.set(min, { rotation: rotation, transformOrigin: "50% 50%" });
+    } }).
 
-		if ((rotation >= 180 && rotation < 360) && (scaleXMin == 1))
-			gsap.to(min, { scaleX: -1, duration: 0.25 });
-		else if ((rotation < 180 || rotation >= 360) && (scaleXMin == -1))
-			gsap.to(min, { scaleX: 1, duration: 0.25 });
+  to(
+  DUMMY_CORD,
+  {
+    duration: CONFIG.CLENCH_DUR,
+    attr: {
+      x2: parseInt(endX, 10) + 20,
+      y2: parseInt(endY, 10) + 60 } },
 
-		return rotation;
 
-	};
+  '<').
 
-	function getHrRotation() {
+  to(
+  DUMMY_CORD,
+  {
+    duration: CONFIG.CLENCH_DUR,
+    attr: {
+      x2: endX,
+      y2: endY } },
 
-		let newDateTime = new Date();
-		let rotation = (newDateTime.getHours() % 12) * 30 + newDateTime.getMinutes() * 0.5;
-		let scaleHr = gsap.getProperty(hr, "scaleX");
 
-		let difference = Math.abs(gsap.getProperty(hr, "rotation") - rotation);
-		if (difference >= 5)
-			gsap.set(hr, { rotation: rotation, transformOrigin: "50% 50%" });
+  '>').
 
-		if ((rotation >= 180 && rotation < 360) && (scaleHr == 1))
-			gsap.to(hr, { scaleX: -1, duration: 0.25 });
-		else if ((rotation < 180 || rotation >= 360) && (scaleHr == -1))
-			gsap.to(hr, { scaleX: 1, duration: 0.25 });
+  to(
+  [PAW, '#knuckles'],
+  {
+    duration: CONFIG.CLENCH_DUR,
+    xPercent: (_, target) => target.id === 'knuckles' ? 0 : -28 },
 
-		return rotation;
+  '<').
 
-	};
+  add(() => CORD_TL(), '<');
+  return TL;
+};
 
-}
+const IMPOSSIBLE_TL = () =>
+timeline({
+  onStart: () => set(HIT, { display: 'none' }),
+  onComplete: () => {
+    set(HIT, { display: 'block' });
+    if (Math.random() > 0) STATE.ANGER = STATE.ANGER + 1;
+    if (STATE.ANGER >= CONFIG.BROWS) set('.bear__brows', { display: 'block' });
+  } }).
+
+add(CORD_TL()).
+add(BEAR_TL());
+
+Draggable.create(PROXY, {
+  trigger: HIT,
+  type: 'x,y',
+  onPress: e => {
+    startX = e.x;
+    startY = e.y;
+    RESET();
+  },
+  onDrag: function () {
+    set(DUMMY_CORD, {
+      attr: {
+        x2: this.x,
+        y2: this.y } });
+
+
+  },
+  onRelease: function (e) {
+    const DISTX = Math.abs(e.x - startX);
+    const DISTY = Math.abs(e.y - startY);
+    const TRAVELLED = Math.sqrt(DISTX * DISTX + DISTY * DISTY);
+    to(DUMMY_CORD, {
+      attr: { x2: endX, y2: endY },
+      duration: CORD_DURATION,
+      onComplete: () => {
+        if (TRAVELLED > 50) {
+          IMPOSSIBLE_TL();
+        } else {
+          RESET();
+        }
+      } });
+
+  } });
