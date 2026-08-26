@@ -21,3 +21,7 @@ def pattern():
         print() 
 
 pattern()
+
+#helloo Saha Sir,any help can i do for you    :)
+ #                                             Yours Faithfully
+  #                                                       GOD
