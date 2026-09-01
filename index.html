@@ -1,1305 +1,1031 @@
 <!DOCTYPE html>
-<html lang="en">
-
-  <head>
-    <meta charset="UTF-8">
-    <title>3D Quantum Neural Network</title>
-    
-
-  </head>
-    
-  <body>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neural Network</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
-<style>
-:root {
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-highlight: rgba(255, 255, 255, 0.2);
-    --neon-accent: #667eea;
-    --text-main: rgba(255, 255, 255, 0.9);
-    --text-muted: rgba(255, 255, 255, 0.6);
-}
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-user-select: none;
-}
-body {
-    overflow: hidden;
-    background: #050508;
-    font-family: 'Outfit', sans-serif;
-    color: var(--text-main);
-}
-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    cursor: crosshair;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-}
-.glass-panel {
-    backdrop-filter: blur(24px) saturate(120%);
-    -webkit-backdrop-filter: blur(24px) saturate(120%);
-    background: linear-gradient(
-        145deg,
-        rgba(255, 255, 255, 0.05) 0%,
-        rgba(255, 255, 255, 0.01) 100%
-    );
-    border: 1px solid var(--glass-border);
-    border-top: 1px solid var(--glass-highlight);
-    border-left: 1px solid var(--glass-highlight);
-    box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.4),
-        inset 0 0 20px rgba(255, 255, 255, 0.02);
-    border-radius: 24px;
-    color: var(--text-main);
-    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    position: absolute;
-    z-index: 10;
-    overflow: hidden;
-}
-.glass-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.05),
-        transparent
-    );
-    transform: skewX(-15deg);
-    transition: 0.5s;
-    pointer-events: none;
-}
-.glass-panel:hover {
-    background: linear-gradient(
-        145deg,
-        rgba(255, 255, 255, 0.08) 0%,
-        rgba(255, 255, 255, 0.02) 100%
-    );
-    box-shadow:
-        0 30px 60px rgba(0, 0, 0, 0.5),
-        inset 0 0 20px rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-.glass-panel:hover::before {
-    left: 150%;
-    transition: 0.7s ease-in-out;
-}
-#instructions-container {
-    top: 32px;
-    left: 32px;
-    width: 280px;
-    padding: 24px;
-}
-#instruction-title {
-    font-weight: 500;
-    font-size: 18px;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 10px 20px rgba(0,0,0,0.2);
-}
-.instruction-text {
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--text-muted);
-    font-weight: 300;
-}
-#theme-selector {
-    top: 32px;
-    right: 32px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    width: 220px;
-}
-#theme-selector-title {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--text-muted);
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-.theme-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    justify-items: center;
-}
-.theme-button {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow:
-        0 4px 10px rgba(0,0,0,0.3),
-        inset 0 2px 4px rgba(255,255,255,0.4),
-        inset 0 -2px 4px rgba(0,0,0,0.2);
-}
-#theme-1 { background: radial-gradient(circle at 30% 30%, #a78bfa, #4c1d95); }
-#theme-2 { background: radial-gradient(circle at 30% 30%, #fb7185, #9f1239); }
-#theme-3 { background: radial-gradient(circle at 30% 30%, #38bdf8, #0c4a6e); }
-.theme-button::after {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.8);
-    opacity: 0;
-    transform: scale(1.1);
-    transition: all 0.3s ease;
-}
-.theme-button:hover {
-    transform: scale(1.15) translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 2px 6px rgba(255,255,255,0.6);
-}
-.theme-button.active::after {
-    opacity: 1;
-    transform: scale(1);
-    border-color: rgba(255,255,255,0.9);
-    box-shadow: 0 0 15px rgba(255,255,255,0.3);
-}
-#density-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 8px;
-}
-.density-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: var(--text-muted);
-    font-weight: 300;
-}
-#density-value {
-    color: white;
-    font-weight: 500;
-    text-shadow: 0 0 10px rgba(255,255,255,0.3);
-}
-.density-slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 6px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    outline: none;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
-}
-.density-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #fff;
-    cursor: pointer;
-    box-shadow:
-        0 0 15px rgba(255,255,255,0.8),
-        0 2px 5px rgba(0,0,0,0.3);
-    transition: all 0.2s ease;
-    margin-top: -6px;
-    position: relative;
-    z-index: 2;
-}
-.density-slider::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 6px;
-    cursor: pointer;
-    background: linear-gradient(90deg, rgba(255,255,255,0.3) var(--val, 100%), rgba(255,255,255,0.05) var(--val, 100%));
-    border-radius: 3px;
-}
-.density-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 20px rgba(255,255,255,1);
-}
-#control-buttons {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 16px;
-    z-index: 20;
-    padding: 8px;
-    background: rgba(0,0,0,0.1);
-}
-.control-button {
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-top: 1px solid rgba(255, 255, 255, 0.25);
-    color: var(--text-main);
-    padding: 12px 24px;
-    border-radius: 50px;
-    cursor: pointer;
-    font-family: 'Outfit', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    transition: all 0.3s ease;
-    box-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.3),
-        inset 0 0 10px rgba(255,255,255,0.02);
-    overflow: hidden;
-    position: relative;
-    min-width: 100px;
-    text-align: center;
-}
-.control-button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.4);
-    transform: translateY(-4px);
-    box-shadow:
-        0 15px 30px rgba(0, 0, 0, 0.4),
-        0 0 20px rgba(255, 255, 255, 0.1);
-    text-shadow: 0 0 8px rgba(255,255,255,0.6);
-}
-.control-button:active {
-    transform: translateY(-1px);
-}
-.control-button span {
-    position: relative;
-    z-index: 2;
-}
-@media (max-width: 640px) {
-    #instructions-container {
-        top: 16px;
-        left: 16px;
-        right: 16px;
-        width: auto;
-        padding: 16px;
-        background: rgba(10, 10, 15, 0.6);
-    }
-    #theme-selector {
-        top: auto;
-        bottom: 100px;
-        left: 16px;
-        right: 16px;
-        width: auto;
-        padding: 16px;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .theme-grid {
-        margin-top: 0;
-    }
-    #control-buttons {
-        bottom: 24px;
-        width: 100%;
-        justify-content: center;
-        gap: 8px;
-        padding: 0 16px;
-    }
-    .control-button {
-        padding: 10px 16px;
-        min-width: auto;
-        font-size: 11px;
-        flex: 1;
-    }
-}
-</style>
-<div id="instructions-container" class="glass-panel">
-    <div id="instruction-title">Quantum Neural Network</div>
-    <div class="instruction-text">Click to send energy pulses. <br>Drag to explore the structure.</div>
-</div>
-<div id="theme-selector" class="glass-panel">
-    <div style="flex: 1;">
-        <div id="theme-selector-title">Crystal Theme</div>
-        <div class="theme-grid">
-            <button class="theme-button active" id="theme-1" data-theme="0" aria-label="Purple Nebula"></button>
-            <button class="theme-button" id="theme-2" data-theme="1" aria-label="Sunset Fire"></button>
-            <button class="theme-button" id="theme-3" data-theme="2" aria-label="Ocean Aurora"></button>
-        </div>
-    </div>
-    <div id="density-controls" style="flex: 1;">
-        <div class="density-label"><span>Density</span><span id="density-value">100%</span></div>
-        <input type="range" min="30" max="100" value="100" class="density-slider" id="density-slider"
-            aria-label="Network Density" oninput="this.style.setProperty('--val', this.value + '%')">
-    </div>
-</div>
-<div id="control-buttons">
-    <button id="change-formation-btn" class="control-button"><span>Morph</span></button>
-    <button id="pause-play-btn" class="control-button"><span>Freeze</span></button>
-    <button id="reset-camera-btn" class="control-button"><span>Reset</span></button>
-</div>
-<canvas id="neural-network-canvas"></canvas>
-<script type="importmap">
-{
-    "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
-    }
-}
-</script>
-<script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-    const config = {
-        paused: false,
-        activePaletteIndex: 0,
-        currentFormation: 0,
-        numFormations: 3,
-        densityFactor: 1
-    };
-    const colorPalettes = [
-        [
-            new THREE.Color(0x667eea),
-            new THREE.Color(0x764ba2),
-            new THREE.Color(0xf093fb),
-            new THREE.Color(0x9d50bb),
-            new THREE.Color(0x6e48aa)
-        ],
-        [
-            new THREE.Color(0xf857a6),
-            new THREE.Color(0xff5858),
-            new THREE.Color(0xfeca57),
-            new THREE.Color(0xff6348),
-            new THREE.Color(0xff9068)
-        ],
-        [
-            new THREE.Color(0x4facfe),
-            new THREE.Color(0x00f2fe),
-            new THREE.Color(0x43e97b),
-            new THREE.Color(0x38f9d7),
-            new THREE.Color(0x4484ce)
-        ]
-    ];
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.002);
-    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 8, 28);
-    const canvasElement = document.getElementById('neural-network-canvas');
-    const renderer = new THREE.WebGLRenderer({
-        canvas: canvasElement,
-        antialias: true,
-        powerPreference: "high-performance"
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    function createStarfield() {
-        const count = 8000;
-        const positions = [];
-        const colors = [];
-        const sizes = [];
-        for (let i = 0; i < count; i++) {
-            const r = THREE.MathUtils.randFloat(50, 150);
-            const phi = Math.acos(THREE.MathUtils.randFloatSpread(2));
-            const theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
-            positions.push(
-                r * Math.sin(phi) * Math.cos(theta),
-                r * Math.sin(phi) * Math.sin(theta),
-                r * Math.cos(phi)
-            );
-            const colorChoice = Math.random();
-            if (colorChoice < 0.7) {
-                colors.push(1, 1, 1);
-            } else if (colorChoice < 0.85) {
-                colors.push(0.7, 0.8, 1);
-            } else {
-                colors.push(1, 0.9, 0.8);
-            }
-            sizes.push(THREE.MathUtils.randFloat(0.1, 0.3));
-        }
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        geo.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-        const mat = new THREE.ShaderMaterial({
-            uniforms: {
-                uTime: { value: 0 }
-            },
-            vertexShader: `
-                attribute float size;
-                attribute vec3 color;
-                varying vec3 vColor;
-                uniform float uTime;
-                void main() {
-                    vColor = color;
-                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    float twinkle = sin(uTime * 2.0 + position.x * 100.0) * 0.3 + 0.7;
-                    gl_PointSize = size * twinkle * (300.0 / -mvPosition.z);
-                    gl_Position = projectionMatrix * mvPosition;
-                }
-            `,
-            fragmentShader: `
-                varying vec3 vColor;
-                void main() {
-                    vec2 center = gl_PointCoord - 0.5;
-                    float dist = length(center);
-                    if (dist > 0.5) discard;
-                    float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
-                    gl_FragColor = vec4(vColor, alpha * 0.8);
-                }
-            `,
-            transparent: true,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending
-        });
-        return new THREE.Points(geo, mat);
-    }
-    const starField = createStarfield();
-    scene.add(starField);
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.rotateSpeed = 0.6;
-    controls.minDistance = 8;
-    controls.maxDistance = 80;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.2;
-    controls.enablePan = false;
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        1.8,
-        0.6,
-        0.7
-    );
-    composer.addPass(bloomPass);
-    composer.addPass(new OutputPass());
-    const pulseUniforms = {
-        uTime: { value: 0.0 },
-        uPulsePositions: { value: [
-            new THREE.Vector3(1e3, 1e3, 1e3),
-            new THREE.Vector3(1e3, 1e3, 1e3),
-            new THREE.Vector3(1e3, 1e3, 1e3)
-        ]},
-        uPulseTimes: { value: [-1e3, -1e3, -1e3] },
-        uPulseColors: { value: [
-            new THREE.Color(1, 1, 1),
-            new THREE.Color(1, 1, 1),
-            new THREE.Color(1, 1, 1)
-        ]},
-        uPulseSpeed: { value: 18.0 },
-        uBaseNodeSize: { value: 0.6 }
-    };
-    const noiseFunctions = `
-    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-    vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-    vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
-    vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-    
-    float snoise(vec3 v) {
-        const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-        const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-        
-        vec3 i = floor(v + dot(v, C.yyy));
-        vec3 x0 = v - i + dot(i, C.xxx);
-        
-        vec3 g = step(x0.yzx, x0.xyz);
-        vec3 l = 1.0 - g;
-        vec3 i1 = min(g.xyz, l.zxy);
-        vec3 i2 = max(g.xyz, l.zxy);
-        
-        vec3 x1 = x0 - i1 + C.xxx;
-        vec3 x2 = x0 - i2 + C.yyy;
-        vec3 x3 = x0 - D.yyy;
-        
-        i = mod289(i);
-        vec4 p = permute(permute(permute(
-            i.z + vec4(0.0, i1.z, i2.z, 1.0))
-            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-            
-        float n_ = 0.142857142857;
-        vec3 ns = n_ * D.wyz - D.xzx;
-        
-        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-        vec4 x_ = floor(j * ns.z);
-        vec4 y_ = floor(j - 7.0 * x_);
-        
-        vec4 x = x_ * ns.x + ns.yyyy;
-        vec4 y = y_ * ns.x + ns.yyyy;
-        vec4 h = 1.0 - abs(x) - abs(y);
-        
-        vec4 b0 = vec4(x.xy, y.xy);
-        vec4 b1 = vec4(x.zw, y.zw);
-        
-        vec4 s0 = floor(b0) * 2.0 + 1.0;
-        vec4 s1 = floor(b1) * 2.0 + 1.0;
-        vec4 sh = -step(h, vec4(0.0));
-        
-        vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
-        vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
-        
-        vec3 p0 = vec3(a0.xy, h.x);
-        vec3 p1 = vec3(a0.zw, h.y);
-        vec3 p2 = vec3(a1.xy, h.z);
-        vec3 p3 = vec3(a1.zw, h.w);
-        
-        vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-        p0 *= norm.x;
-        p1 *= norm.y;
-        p2 *= norm.z;
-        p3 *= norm.w;
-        
-        vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-        m = m * m;
-        return 42.0 * dot(m * m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-    }`;
-    const nodeShader = {
-        vertexShader: `${noiseFunctions}
-        attribute float nodeSize;
-        attribute float nodeType;
-        attribute vec3 nodeColor;
-        attribute float distanceFromRoot;
-        
-        uniform float uTime;
-        uniform vec3 uPulsePositions[3];
-        uniform float uPulseTimes[3];
-        uniform float uPulseSpeed;
-        uniform float uBaseNodeSize;
-        
-        varying vec3 vColor;
-        varying float vNodeType;
-        varying vec3 vPosition;
-        varying float vPulseIntensity;
-        varying float vDistanceFromRoot;
-        varying float vGlow;
-        float getPulseIntensity(vec3 worldPos, vec3 pulsePos, float pulseTime) {
-            if (pulseTime < 0.0) return 0.0;
-            float timeSinceClick = uTime - pulseTime;
-            if (timeSinceClick < 0.0 || timeSinceClick > 4.0) return 0.0;
-            float pulseRadius = timeSinceClick * uPulseSpeed;
-            float distToClick = distance(worldPos, pulsePos);
-            float pulseThickness = 3.0;
-            float waveProximity = abs(distToClick - pulseRadius);
-            return smoothstep(pulseThickness, 0.0, waveProximity) * smoothstep(4.0, 0.0, timeSinceClick);
-        }
-        void main() {
-            vNodeType = nodeType;
-            vColor = nodeColor;
-            vDistanceFromRoot = distanceFromRoot;
-            vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
-            vPosition = worldPos;
-            float totalPulseIntensity = 0.0;
-            for (int i = 0; i < 3; i++) {
-                totalPulseIntensity += getPulseIntensity(worldPos, uPulsePositions[i], uPulseTimes[i]);
-            }
-            vPulseIntensity = min(totalPulseIntensity, 1.0);
-            float breathe = sin(uTime * 0.7 + distanceFromRoot * 0.15) * 0.15 + 0.85;
-            float baseSize = nodeSize * breathe;
-            float pulseSize = baseSize * (1.0 + vPulseIntensity * 2.5);
-            vGlow = 0.5 + 0.5 * sin(uTime * 0.5 + distanceFromRoot * 0.2);
-            vec3 modifiedPosition = position;
-            if (nodeType > 0.5) {
-                float noise = snoise(position * 0.08 + uTime * 0.08);
-                modifiedPosition += normal * noise * 0.15;
-            }
-            vec4 mvPosition = modelViewMatrix * vec4(modifiedPosition, 1.0);
-            gl_PointSize = pulseSize * uBaseNodeSize * (1000.0 / -mvPosition.z);
-            gl_Position = projectionMatrix * mvPosition;
-        }`,
-        fragmentShader: `
-        uniform float uTime;
-        uniform vec3 uPulseColors[3];
-        
-        varying vec3 vColor;
-        varying float vNodeType;
-        varying vec3 vPosition;
-        varying float vPulseIntensity;
-        varying float vDistanceFromRoot;
-        varying float vGlow;
-        void main() {
-            vec2 center = 2.0 * gl_PointCoord - 1.0;
-            float dist = length(center);
-            if (dist > 1.0) discard;
-            float glow1 = 1.0 - smoothstep(0.0, 0.5, dist);
-            float glow2 = 1.0 - smoothstep(0.0, 1.0, dist);
-            float glowStrength = pow(glow1, 1.2) + glow2 * 0.3;
-            float breatheColor = 0.9 + 0.1 * sin(uTime * 0.6 + vDistanceFromRoot * 0.25);
-            vec3 baseColor = vColor * breatheColor;
-            vec3 finalColor = baseColor;
-            if (vPulseIntensity > 0.0) {
-                vec3 pulseColor = mix(vec3(1.0), uPulseColors[0], 0.4);
-                finalColor = mix(baseColor, pulseColor, vPulseIntensity * 0.8);
-                finalColor *= (1.0 + vPulseIntensity * 1.2);
-                glowStrength *= (1.0 + vPulseIntensity);
-            }
-            float coreBrightness = smoothstep(0.4, 0.0, dist);
-            finalColor += vec3(1.0) * coreBrightness * 0.3;
-            float alpha = glowStrength * (0.95 - 0.3 * dist);
-            float camDistance = length(vPosition - cameraPosition);
-            float distanceFade = smoothstep(100.0, 15.0, camDistance);
-            if (vNodeType > 0.5) {
-                finalColor *= 1.1;
-                alpha *= 0.9;
-            }
-            finalColor *= (1.0 + vGlow * 0.1);
-            gl_FragColor = vec4(finalColor, alpha * distanceFade);
-        }`
-    };
-    const connectionShader = {
-        vertexShader: `${noiseFunctions}
-        attribute vec3 startPoint;
-        attribute vec3 endPoint;
-        attribute float connectionStrength;
-        attribute float pathIndex;
-        attribute vec3 connectionColor;
-        
-        uniform float uTime;
-        uniform vec3 uPulsePositions[3];
-        uniform float uPulseTimes[3];
-        uniform float uPulseSpeed;
-        
-        varying vec3 vColor;
-        varying float vConnectionStrength;
-        varying float vPulseIntensity;
-        varying float vPathPosition;
-        varying float vDistanceFromCamera;
-        float getPulseIntensity(vec3 worldPos, vec3 pulsePos, float pulseTime) {
-            if (pulseTime < 0.0) return 0.0;
-            float timeSinceClick = uTime - pulseTime;
-            if (timeSinceClick < 0.0 || timeSinceClick > 4.0) return 0.0;
-            
-            float pulseRadius = timeSinceClick * uPulseSpeed;
-            float distToClick = distance(worldPos, pulsePos);
-            float pulseThickness = 3.0;
-            float waveProximity = abs(distToClick - pulseRadius);
-            
-            return smoothstep(pulseThickness, 0.0, waveProximity) * smoothstep(4.0, 0.0, timeSinceClick);
-        }
-        void main() {
-            float t = position.x;
-            vPathPosition = t;
-            vec3 midPoint = mix(startPoint, endPoint, 0.5);
-            float pathOffset = sin(t * 3.14159) * 0.15;
-            vec3 perpendicular = normalize(cross(normalize(endPoint - startPoint), vec3(0.0, 1.0, 0.0)));
-            if (length(perpendicular) < 0.1) perpendicular = vec3(1.0, 0.0, 0.0);
-            midPoint += perpendicular * pathOffset;
-            vec3 p0 = mix(startPoint, midPoint, t);
-            vec3 p1 = mix(midPoint, endPoint, t);
-            vec3 finalPos = mix(p0, p1, t);
-            float noiseTime = uTime * 0.15;
-            float noise = snoise(vec3(pathIndex * 0.08, t * 0.6, noiseTime));
-            finalPos += perpendicular * noise * 0.12;
-            vec3 worldPos = (modelMatrix * vec4(finalPos, 1.0)).xyz;
-            float totalPulseIntensity = 0.0;
-            for (int i = 0; i < 3; i++) {
-                totalPulseIntensity += getPulseIntensity(worldPos, uPulsePositions[i], uPulseTimes[i]);
-            }
-            vPulseIntensity = min(totalPulseIntensity, 1.0);
-            vColor = connectionColor;
-            vConnectionStrength = connectionStrength;
-            
-            vDistanceFromCamera = length(worldPos - cameraPosition);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(finalPos, 1.0);
-        }`,
-        fragmentShader: `
-        uniform float uTime;
-        uniform vec3 uPulseColors[3];
-        
-        varying vec3 vColor;
-        varying float vConnectionStrength;
-        varying float vPulseIntensity;
-        varying float vPathPosition;
-        varying float vDistanceFromCamera;
-        void main() {
-            float flowPattern1 = sin(vPathPosition * 25.0 - uTime * 4.0) * 0.5 + 0.5;
-            float flowPattern2 = sin(vPathPosition * 15.0 - uTime * 2.5 + 1.57) * 0.5 + 0.5;
-            float combinedFlow = (flowPattern1 + flowPattern2 * 0.5) / 1.5;
-            
-            vec3 baseColor = vColor * (0.8 + 0.2 * sin(uTime * 0.6 + vPathPosition * 12.0));
-            float flowIntensity = 0.4 * combinedFlow * vConnectionStrength;
-            vec3 finalColor = baseColor;
-            if (vPulseIntensity > 0.0) {
-                vec3 pulseColor = mix(vec3(1.0), uPulseColors[0], 0.3);
-                finalColor = mix(baseColor, pulseColor * 1.2, vPulseIntensity * 0.7);
-                flowIntensity += vPulseIntensity * 0.8;
-            }
-            finalColor *= (0.7 + flowIntensity + vConnectionStrength * 0.5);
-            float baseAlpha = 0.7 * vConnectionStrength;
-            float flowAlpha = combinedFlow * 0.3;
-            float alpha = baseAlpha + flowAlpha;
-            alpha = mix(alpha, min(1.0, alpha * 2.5), vPulseIntensity);
-            float distanceFade = smoothstep(100.0, 15.0, vDistanceFromCamera);
-            gl_FragColor = vec4(finalColor, alpha * distanceFade);
-        }`
-    };
-    class Node {
-        constructor(position, level = 0, type = 0) {
-            this.position = position;
-            this.connections = [];
-            this.level = level;
-            this.type = type;
-            this.size = type === 0 ? THREE.MathUtils.randFloat(0.8, 1.4) : THREE.MathUtils.randFloat(0.5, 1.0);
-            this.distanceFromRoot = 0;
-        }
-        addConnection(node, strength = 1.0) {
-            if (!this.isConnectedTo(node)) {
-                this.connections.push({ node, strength });
-                node.connections.push({ node: this, strength });
-            }
-        }
-        isConnectedTo(node) {
-            return this.connections.some(conn => conn.node === node);
-        }
-    }
-    function generateNeuralNetwork(formationIndex, densityFactor = 1.0) {
-        let nodes = [];
-        let rootNode;
-        function generateCrystallineSphere() {
-            rootNode = new Node(new THREE.Vector3(0, 0, 0), 0, 0);
-            rootNode.size = 2.0;
-            nodes.push(rootNode);
-            const layers = 5;
-            const goldenRatio = (1 + Math.sqrt(5)) / 2;
-            for (let layer = 1; layer <= layers; layer++) {
-                const radius = layer * 4;
-                const numPoints = Math.floor(layer * 12 * densityFactor);
-                for (let i = 0; i < numPoints; i++) {
-                    const phi = Math.acos(1 - 2 * (i + 0.5) / numPoints);
-                    const theta = 2 * Math.PI * i / goldenRatio;
-                    const pos = new THREE.Vector3(
-                        radius * Math.sin(phi) * Math.cos(theta),
-                        radius * Math.sin(phi) * Math.sin(theta),
-                        radius * Math.cos(phi)
-                    );
-                    const isLeaf = layer === layers || Math.random() < 0.3;
-                    const node = new Node(pos, layer, isLeaf ? 1 : 0);
-                    node.distanceFromRoot = radius;
-                    nodes.push(node);
-                    if (layer > 1) {
-                        const prevLayerNodes = nodes.filter(n => n.level === layer - 1 && n !== rootNode);
-                        prevLayerNodes.sort((a, b) =>
-                            pos.distanceTo(a.position) - pos.distanceTo(b.position)
-                        );
-                        for (let j = 0; j < Math.min(3, prevLayerNodes.length); j++) {
-                            const dist = pos.distanceTo(prevLayerNodes[j].position);
-                            const strength = 1.0 - (dist / (radius * 2));
-                            node.addConnection(prevLayerNodes[j], Math.max(0.3, strength));
-                        }
-                    } else {
-                        rootNode.addConnection(node, 0.9);
-                    }
-                }
-                const layerNodes = nodes.filter(n => n.level === layer && n !== rootNode);
-                for (let i = 0; i < layerNodes.length; i++) {
-                    const node = layerNodes[i];
-                    const nearby = layerNodes.filter(n => n !== node)
-                        .sort((a, b) =>
-                            node.position.distanceTo(a.position) - node.position.distanceTo(b.position)
-                        ).slice(0, 5);
-                    for (const nearNode of nearby) {
-                        const dist = node.position.distanceTo(nearNode.position);
-                        if (dist < radius * 0.8 && !node.isConnectedTo(nearNode)) {
-                            node.addConnection(nearNode, 0.6);
-                        }
-                    }
-                }
-            }
-            const outerNodes = nodes.filter(n => n.level >= 3);
-            for (let i = 0; i < Math.min(20, outerNodes.length); i++) {
-                const n1 = outerNodes[Math.floor(Math.random() * outerNodes.length)];
-                const n2 = outerNodes[Math.floor(Math.random() * outerNodes.length)];
-                if (n1 !== n2 && !n1.isConnectedTo(n2) &&
-                    Math.abs(n1.level - n2.level) > 1) {
-                    n1.addConnection(n2, 0.4);
-                }
-            }
-        }
-        function generateHelixLattice() {
-            rootNode = new Node(new THREE.Vector3(0, 0, 0), 0, 0);
-            rootNode.size = 1.8;
-            nodes.push(rootNode);
-            const numHelices = 4;
-            const height = 30;
-            const maxRadius = 12;
-            const nodesPerHelix = Math.floor(50 * densityFactor);
-            const helixArrays = [];
-            for (let h = 0; h < numHelices; h++) {
-                const helixPhase = (h / numHelices) * Math.PI * 2;
-                const helixNodes = [];
-                for (let i = 0; i < nodesPerHelix; i++) {
-                    const t = i / (nodesPerHelix - 1);
-                    const y = (t - 0.5) * height;
-                    const radiusScale = Math.sin(t * Math.PI) * 0.7 + 0.3;
-                    const radius = maxRadius * radiusScale;
-                    const angle = helixPhase + t * Math.PI * 6;
-                    const pos = new THREE.Vector3(
-                        radius * Math.cos(angle),
-                        y,
-                        radius * Math.sin(angle)
-                    );
-                    const level = Math.ceil(t * 5);
-                    const isLeaf = i > nodesPerHelix - 5 || Math.random() < 0.25;
-                    const node = new Node(pos, level, isLeaf ? 1 : 0);
-                    node.distanceFromRoot = Math.sqrt(radius * radius + y * y);
-                    node.helixIndex = h;
-                    node.helixT = t;
-                    nodes.push(node);
-                    helixNodes.push(node);
-                }
-                helixArrays.push(helixNodes);
-                rootNode.addConnection(helixNodes[0], 1.0);
-                for (let i = 0; i < helixNodes.length - 1; i++) {
-                    helixNodes[i].addConnection(helixNodes[i + 1], 0.85);
-                }
-            }
-            for (let h = 0; h < numHelices; h++) {
-                const currentHelix = helixArrays[h];
-                const nextHelix = helixArrays[(h + 1) % numHelices];
-                for (let i = 0; i < currentHelix.length; i += 5) {
-                    const t = currentHelix[i].helixT;
-                    const targetIdx = Math.round(t * (nextHelix.length - 1));
-                    if (targetIdx < nextHelix.length) {
-                        currentHelix[i].addConnection(nextHelix[targetIdx], 0.7);
-                    }
-                }
-            }
-            for (const helix of helixArrays) {
-                for (let i = 0; i < helix.length; i += 8) {
-                    const node = helix[i];
-                    const innerNodes = nodes.filter(n =>
-                        n !== node &&
-                        n !== rootNode &&
-                        n.distanceFromRoot < node.distanceFromRoot * 0.5
-                    );
-                    if (innerNodes.length > 0) {
-                        const nearest = innerNodes.sort((a, b) =>
-                            node.position.distanceTo(a.position) - node.position.distanceTo(b.position)
-                        )[0];
-                        node.addConnection(nearest, 0.5);
-                    }
-                }
-            }
-            const allHelixNodes = nodes.filter(n => n !== rootNode);
-            for (let i = 0; i < Math.floor(30 * densityFactor); i++) {
-                const n1 = allHelixNodes[Math.floor(Math.random() * allHelixNodes.length)];
-                const nearby = allHelixNodes.filter(n => {
-                    const dist = n.position.distanceTo(n1.position);
-                    return n !== n1 && dist < 8 && dist > 3 && !n1.isConnectedTo(n);
-                });
-                if (nearby.length > 0) {
-                    const n2 = nearby[Math.floor(Math.random() * nearby.length)];
-                    n1.addConnection(n2, 0.45);
-                }
-            }
-        }
-        function generateFractalWeb() {
-            rootNode = new Node(new THREE.Vector3(0, 0, 0), 0, 0);
-            rootNode.size = 1.6;
-            nodes.push(rootNode);
-            const branches = 6;
-            const maxDepth = 4;
-            function createBranch(startNode, direction, depth, strength, scale) {
-                if (depth > maxDepth) return;
-                const branchLength = 5 * scale;
-                const endPos = new THREE.Vector3()
-                    .copy(startNode.position)
-                    .add(direction.clone().multiplyScalar(branchLength));
-                const isLeaf = depth === maxDepth || Math.random() < 0.3;
-                const newNode = new Node(endPos, depth, isLeaf ? 1 : 0);
-                newNode.distanceFromRoot = rootNode.position.distanceTo(endPos);
-                nodes.push(newNode);
-                startNode.addConnection(newNode, strength);
-                if (depth < maxDepth) {
-                    const subBranches = 3;
-                    for (let i = 0; i < subBranches; i++) {
-                        const angle = (i / subBranches) * Math.PI * 2;
-                        const perpDir1 = new THREE.Vector3(-direction.y, direction.x, 0).normalize();
-                        const perpDir2 = direction.clone().cross(perpDir1).normalize();
-                        const newDir = new THREE.Vector3()
-                            .copy(direction)
-                            .add(perpDir1.clone().multiplyScalar(Math.cos(angle) * 0.7))
-                            .add(perpDir2.clone().multiplyScalar(Math.sin(angle) * 0.7))
-                            .normalize();
-                        createBranch(newNode, newDir, depth + 1, strength * 0.7, scale * 0.75);
-                    }
-                }
-            }
-            for (let i = 0; i < branches; i++) {
-                const phi = Math.acos(1 - 2 * (i + 0.5) / branches);
-                const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-                const direction = new THREE.Vector3(
-                    Math.sin(phi) * Math.cos(theta),
-                    Math.sin(phi) * Math.sin(theta),
-                    Math.cos(phi)
-                ).normalize();
-                createBranch(rootNode, direction, 1, 0.9, 1.0);
-            }
-            const leafNodes = nodes.filter(n => n.level >= 2);
-            for (let i = 0; i < leafNodes.length; i++) {
-                const node = leafNodes[i];
-                const nearby = leafNodes.filter(n => {
-                    const dist = n.position.distanceTo(node.position);
-                    return n !== node && dist < 10 && !node.isConnectedTo(n);
-                }).sort((a, b) =>
-                    node.position.distanceTo(a.position) - node.position.distanceTo(b.position)
-                ).slice(0, 3);
-                for (const nearNode of nearby) {
-                    if (Math.random() < 0.5 * densityFactor) {
-                        node.addConnection(nearNode, 0.5);
-                    }
-                }
-            }
-            const midLevelNodes = nodes.filter(n => n.level >= 2 && n.level <= 3);
-            for (const node of midLevelNodes) {
-                if (Math.random() < 0.3) {
-                    const innerNodes = nodes.filter(n =>
-                        n !== node &&
-                        n.distanceFromRoot < node.distanceFromRoot * 0.6
-                    );
-                    if (innerNodes.length > 0) {
-                        const target = innerNodes[Math.floor(Math.random() * innerNodes.length)];
-                        if (!node.isConnectedTo(target)) {
-                            node.addConnection(target, 0.4);
-                        }
-                    }
-                }
-            }
-        }
-        switch (formationIndex % 3) {
-            case 0: generateCrystallineSphere(); break;
-            case 1: generateHelixLattice(); break;
-            case 2: generateFractalWeb(); break;
-        }
-        if (densityFactor < 1.0) {
-            const targetCount = Math.ceil(nodes.length * Math.max(0.3, densityFactor));
-            const toKeep = new Set([rootNode]);
-            const sortedNodes = nodes.filter(n => n !== rootNode)
-                .sort((a, b) => {
-                    const scoreA = a.connections.length * (1 / (a.distanceFromRoot + 1));
-                    const scoreB = b.connections.length * (1 / (b.distanceFromRoot + 1));
-                    return scoreB - scoreA;
-                });
-            for (let i = 0; i < Math.min(targetCount - 1, sortedNodes.length); i++) {
-                toKeep.add(sortedNodes[i]);
-            }
-            nodes = nodes.filter(n => toKeep.has(n));
-            nodes.forEach(node => {
-                node.connections = node.connections.filter(conn => toKeep.has(conn.node));
-            });
-            console.log(`Density: ${nodes.length} nodes`);
-        }
-        return { nodes, rootNode };
-    }
-    let neuralNetwork = null;
-    let nodesMesh = null;
-    let connectionsMesh = null;
-    function createNetworkVisualization(formationIndex, densityFactor = 1.0) {
-        console.log(`Creating formation ${formationIndex}, density ${densityFactor}`);
-        if (nodesMesh) {
-            scene.remove(nodesMesh);
-            nodesMesh.geometry.dispose();
-            nodesMesh.material.dispose();
-        }
-        if (connectionsMesh) {
-            scene.remove(connectionsMesh);
-            connectionsMesh.geometry.dispose();
-            connectionsMesh.material.dispose();
-        }
-        neuralNetwork = generateNeuralNetwork(formationIndex, densityFactor);
-        if (!neuralNetwork || neuralNetwork.nodes.length === 0) {
-            console.error("Network generation failed");
-            return;
-        }
-        const nodesGeometry = new THREE.BufferGeometry();
-        const nodePositions = [];
-        const nodeTypes = [];
-        const nodeSizes = [];
-        const nodeColors = [];
-        const distancesFromRoot = [];
-        const palette = colorPalettes[config.activePaletteIndex];
-        neuralNetwork.nodes.forEach((node) => {
-            nodePositions.push(node.position.x, node.position.y, node.position.z);
-            nodeTypes.push(node.type);
-            nodeSizes.push(node.size);
-            distancesFromRoot.push(node.distanceFromRoot);
-            const colorIndex = Math.min(node.level, palette.length - 1);
-            const baseColor = palette[colorIndex % palette.length].clone();
-            baseColor.offsetHSL(
-                THREE.MathUtils.randFloatSpread(0.03),
-                THREE.MathUtils.randFloatSpread(0.08),
-                THREE.MathUtils.randFloatSpread(0.08)
-            );
-            nodeColors.push(baseColor.r, baseColor.g, baseColor.b);
-        });
-        nodesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(nodePositions, 3));
-        nodesGeometry.setAttribute('nodeType', new THREE.Float32BufferAttribute(nodeTypes, 1));
-        nodesGeometry.setAttribute('nodeSize', new THREE.Float32BufferAttribute(nodeSizes, 1));
-        nodesGeometry.setAttribute('nodeColor', new THREE.Float32BufferAttribute(nodeColors, 3));
-        nodesGeometry.setAttribute('distanceFromRoot', new THREE.Float32BufferAttribute(distancesFromRoot, 1));
-        const nodesMaterial = new THREE.ShaderMaterial({
-            uniforms: THREE.UniformsUtils.clone(pulseUniforms),
-            vertexShader: nodeShader.vertexShader,
-            fragmentShader: nodeShader.fragmentShader,
-            transparent: true,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending
-        });
-        nodesMesh = new THREE.Points(nodesGeometry, nodesMaterial);
-        scene.add(nodesMesh);
-        const connectionsGeometry = new THREE.BufferGeometry();
-        const connectionColors = [];
-        const connectionStrengths = [];
-        const connectionPositions = [];
-        const startPoints = [];
-        const endPoints = [];
-        const pathIndices = [];
-        const processedConnections = new Set();
-        let pathIndex = 0;
-        neuralNetwork.nodes.forEach((node, nodeIndex) => {
-            node.connections.forEach(connection => {
-                const connectedNode = connection.node;
-                const connectedIndex = neuralNetwork.nodes.indexOf(connectedNode);
-                if (connectedIndex === -1) return;
-                const key = [Math.min(nodeIndex, connectedIndex), Math.max(nodeIndex, connectedIndex)].join('-');
-                if (!processedConnections.has(key)) {
-                    processedConnections.add(key);
-                    const startPoint = node.position;
-                    const endPoint = connectedNode.position;
-                    const numSegments = 20;
-                    for (let i = 0; i < numSegments; i++) {
-                        const t = i / (numSegments - 1);
-                        connectionPositions.push(t, 0, 0);
-                        startPoints.push(startPoint.x, startPoint.y, startPoint.z);
-                        endPoints.push(endPoint.x, endPoint.y, endPoint.z);
-                        pathIndices.push(pathIndex);
-                        connectionStrengths.push(connection.strength);
-                        const avgLevel = Math.min(Math.floor((node.level + connectedNode.level) / 2), palette.length - 1);
-                        const baseColor = palette[avgLevel % palette.length].clone();
-                        baseColor.offsetHSL(
-                            THREE.MathUtils.randFloatSpread(0.03),
-                            THREE.MathUtils.randFloatSpread(0.08),
-                            THREE.MathUtils.randFloatSpread(0.08)
-                        );
-                        connectionColors.push(baseColor.r, baseColor.g, baseColor.b);
-                    }
-                    pathIndex++;
-                }
-            });
-        });
-        connectionsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(connectionPositions, 3));
-        connectionsGeometry.setAttribute('startPoint', new THREE.Float32BufferAttribute(startPoints, 3));
-        connectionsGeometry.setAttribute('endPoint', new THREE.Float32BufferAttribute(endPoints, 3));
-        connectionsGeometry.setAttribute('connectionStrength', new THREE.Float32BufferAttribute(connectionStrengths, 1));
-        connectionsGeometry.setAttribute('connectionColor', new THREE.Float32BufferAttribute(connectionColors, 3));
-        connectionsGeometry.setAttribute('pathIndex', new THREE.Float32BufferAttribute(pathIndices, 1));
-        const connectionsMaterial = new THREE.ShaderMaterial({
-            uniforms: THREE.UniformsUtils.clone(pulseUniforms),
-            vertexShader: connectionShader.vertexShader,
-            fragmentShader: connectionShader.fragmentShader,
-            transparent: true,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending
-        });
-        connectionsMesh = new THREE.LineSegments(connectionsGeometry, connectionsMaterial);
-        scene.add(connectionsMesh);
-        palette.forEach((color, i) => {
-            if (i < 3) {
-                connectionsMaterial.uniforms.uPulseColors.value[i].copy(color);
-                nodesMaterial.uniforms.uPulseColors.value[i].copy(color);
-            }
-        });
-    }
-    function updateTheme(paletteIndex) {
-        config.activePaletteIndex = paletteIndex;
-        if (!nodesMesh || !connectionsMesh || !neuralNetwork) return;
-        const palette = colorPalettes[paletteIndex];
-        const nodeColorsAttr = nodesMesh.geometry.attributes.nodeColor;
-        for (let i = 0; i < nodeColorsAttr.count; i++) {
-            const node = neuralNetwork.nodes[i];
-            if (!node) continue;
-            const colorIndex = Math.min(node.level, palette.length - 1);
-            const baseColor = palette[colorIndex % palette.length].clone();
-            baseColor.offsetHSL(
-                THREE.MathUtils.randFloatSpread(0.03),
-                THREE.MathUtils.randFloatSpread(0.08),
-                THREE.MathUtils.randFloatSpread(0.08)
-            );
-            nodeColorsAttr.setXYZ(i, baseColor.r, baseColor.g, baseColor.b);
-        }
-        nodeColorsAttr.needsUpdate = true;
-        const connectionColors = [];
-        const processedConnections = new Set();
-        neuralNetwork.nodes.forEach((node, nodeIndex) => {
-            node.connections.forEach(connection => {
-                const connectedNode = connection.node;
-                const connectedIndex = neuralNetwork.nodes.indexOf(connectedNode);
-                if (connectedIndex === -1) return;
-                const key = [Math.min(nodeIndex, connectedIndex), Math.max(nodeIndex, connectedIndex)].join('-');
-                if (!processedConnections.has(key)) {
-                    processedConnections.add(key);
-                    const numSegments = 20;
-                    for (let i = 0; i < numSegments; i++) {
-                        const avgLevel = Math.min(Math.floor((node.level + connectedNode.level) / 2), palette.length - 1);
-                        const baseColor = palette[avgLevel % palette.length].clone();
-                        baseColor.offsetHSL(
-                            THREE.MathUtils.randFloatSpread(0.03),
-                            THREE.MathUtils.randFloatSpread(0.08),
-                            THREE.MathUtils.randFloatSpread(0.08)
-                        );
-                        connectionColors.push(baseColor.r, baseColor.g, baseColor.b);
-                    }
-                }
-            });
-        });
-        
-        connectionsMesh.geometry.setAttribute('connectionColor', new THREE.Float32BufferAttribute(connectionColors, 3));
-        connectionsMesh.geometry.attributes.connectionColor.needsUpdate = true;
-        palette.forEach((color, i) => {
-            if (i < 3) {
-                nodesMesh.material.uniforms.uPulseColors.value[i].copy(color);
-                connectionsMesh.material.uniforms.uPulseColors.value[i].copy(color);
-            }
-        });
-    }
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    const interactionPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-    const interactionPoint = new THREE.Vector3();
-    let lastPulseIndex = 0;
-    function triggerPulse(clientX, clientY) {
-        pointer.x = (clientX / window.innerWidth) * 2 - 1;
-        pointer.y = -(clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(pointer, camera);
-        interactionPlane.normal.copy(camera.position).normalize();
-        interactionPlane.constant = -interactionPlane.normal.dot(camera.position) + camera.position.length() * 0.5;
-        if (raycaster.ray.intersectPlane(interactionPlane, interactionPoint)) {
-            const time = clock.getElapsedTime();
-            if (nodesMesh && connectionsMesh) {
-                lastPulseIndex = (lastPulseIndex + 1) % 3;
-                nodesMesh.material.uniforms.uPulsePositions.value[lastPulseIndex].copy(interactionPoint);
-                nodesMesh.material.uniforms.uPulseTimes.value[lastPulseIndex] = time;
-                connectionsMesh.material.uniforms.uPulsePositions.value[lastPulseIndex].copy(interactionPoint);
-                connectionsMesh.material.uniforms.uPulseTimes.value[lastPulseIndex] = time;
-                const palette = colorPalettes[config.activePaletteIndex];
-                const randomColor = palette[Math.floor(Math.random() * palette.length)];
-                nodesMesh.material.uniforms.uPulseColors.value[lastPulseIndex].copy(randomColor);
-                connectionsMesh.material.uniforms.uPulseColors.value[lastPulseIndex].copy(randomColor);
-            }
-        }
-    }
-    renderer.domElement.addEventListener('click', (e) => {
-        if (e.target.closest('.glass-panel, #control-buttons')) return;
-        if (!config.paused) triggerPulse(e.clientX, e.clientY);
-    });
-    renderer.domElement.addEventListener('touchstart', (e) => {
-        if (e.target.closest('.glass-panel, #control-buttons')) return;
-        e.preventDefault();
-        if (e.touches.length > 0 && !config.paused) {
-            triggerPulse(e.touches[0].clientX, e.touches[0].clientY);
-        }
-    }, { passive: false });
-    const themeButtons = document.querySelectorAll('.theme-button');
-    themeButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const idx = parseInt(btn.dataset.theme, 10);
-            updateTheme(idx);
-            themeButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        });
-    });
-    const densitySlider = document.getElementById('density-slider');
-    const densityValue = document.getElementById('density-value');
-    let densityTimeout;
-    densitySlider.addEventListener('input', (e) => {
-        e.stopPropagation();
-        const val = parseInt(densitySlider.value, 10);
-        config.densityFactor = val / 100;
-        densityValue.textContent = `${val}%`;
-        clearTimeout(densityTimeout);
-        densityTimeout = setTimeout(() => {
-            createNetworkVisualization(config.currentFormation, config.densityFactor);
-        }, 400);
-    });
-    const changeFormationBtn = document.getElementById('change-formation-btn');
-    const pausePlayBtn = document.getElementById('pause-play-btn');
-    const resetCameraBtn = document.getElementById('reset-camera-btn');
-    changeFormationBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        config.currentFormation = (config.currentFormation + 1) % config.numFormations;
-        createNetworkVisualization(config.currentFormation, config.densityFactor);
-        controls.autoRotate = false;
-        setTimeout(() => { controls.autoRotate = true; }, 2500);
-    });
-    pausePlayBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        config.paused = !config.paused;
-        pausePlayBtn.querySelector('span').textContent = config.paused ? 'Play' : 'Freeze';
-        controls.autoRotate = !config.paused;
-    });
-    resetCameraBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        controls.reset();
-        controls.autoRotate = false;
-        setTimeout(() => { controls.autoRotate = true; }, 2000);
-    });
-    const clock = new THREE.Clock();
-    function animate() {
-        requestAnimationFrame(animate);
-        const t = clock.getElapsedTime();
-        if (!config.paused) {
-            if (nodesMesh) {
-                nodesMesh.material.uniforms.uTime.value = t;
-                nodesMesh.rotation.y = Math.sin(t * 0.04) * 0.05;
-            }
-            if (connectionsMesh) {
-                connectionsMesh.material.uniforms.uTime.value = t;
-                connectionsMesh.rotation.y = Math.sin(t * 0.04) * 0.05;
-            }
-        }
-        starField.rotation.y += 0.0002;
-        starField.material.uniforms.uTime.value = t;
-        controls.update();
-        composer.render();
-    }
-    function init() {
-        createNetworkVisualization(config.currentFormation, config.densityFactor);
-        document.querySelectorAll('.theme-button').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.theme-button[data-theme="${config.activePaletteIndex}"]`).classList.add('active');
-        animate();
-    }
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        composer.setSize(window.innerWidth, window.innerHeight);
-        bloomPass.resolution.set(window.innerWidth, window.innerHeight);
-    }
-    
-    window.addEventListener('resize', onWindowResize);
-    init();
-</script>
-    
-  </body>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LuminaVista — GODx Admin Console</title>
   
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+            },
+            surface: {
+              950: '#060911',
+              900: '#0c1220',
+              850: '#131b2e',
+              800: '#1c263d',
+              750: '#25324e',
+              700: '#2f3f61',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons & GSAP Animation -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    body {
+      background-color: #060911;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+    
+    .glass-panel {
+      background: rgba(12, 18, 32, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 35px -10px rgba(99, 102, 241, 0.18);
+    }
+    
+    .glass-input {
+      background: rgba(19, 27, 46, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .glass-input:focus {
+      background: rgba(19, 27, 46, 0.95);
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    .glow-border {
+      position: relative;
+    }
+    .glow-border::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.2), transparent 60%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .card-3d-wrapper {
+      perspective: 1200px;
+      transform-style: preserve-3d;
+    }
+
+    .btn-gradient {
+      background-size: 200% auto;
+      background-image: linear-gradient(to right, #4f46e5 0%, #818cf8 50%, #4f46e5 100%);
+      transition: 0.4s ease;
+    }
+    .btn-gradient:hover {
+      background-position: right center;
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.45);
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #060911;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    .active-project-pill {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #e0e7ff;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between font-sans selection:bg-brand-500 selection:text-white relative bg-surface-950">
+
+  <!-- Interactive Canvas & Glowing Orbs -->
+  <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+  <div class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-brand-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow"></div>
+  <div class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow" style="animation-delay: 3s;"></div>
+
+  <!-- ========================================================================= -->
+  <!-- 1. LOGIN / PASS GATEWAY VIEW                                              -->
+  <!-- ========================================================================= -->
+  <div id="loginView" class="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-screen">
+    
+    <div class="card-3d-wrapper w-full max-w-md">
+      
+      <div class="flex justify-center mb-6">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-900/90 border border-white/10 text-xs text-zinc-300 backdrop-blur-md">
+          <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
+          <span class="font-mono text-zinc-400">LuminaVista Cloud</span>
+          <span class="text-zinc-600">•</span>
+          <span class="text-brand-400 font-mono font-medium">GODx Gateway</span>
+        </div>
+      </div>
+
+      <!-- Login Card -->
+      <div id="loginCard" class="glass-panel glow-border rounded-3xl p-6 sm:p-8 w-full shadow-2xl transition-transform duration-150 ease-out">
+        
+        <!-- Header -->
+        <div class="flex items-center gap-3.5 pb-6 border-b border-white/5">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-500 flex items-center justify-center font-heading font-extrabold text-white text-base shadow-lg shadow-brand-500/25 tracking-wider">
+            GODx
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+              Anish x
+              <span class="px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] border border-brand-500/30 uppercase font-mono">Root Admin</span>
+            </h3>
+            <p class="text-xs text-zinc-400">LuminaVista Portal Authentication</p>
+          </div>
+        </div>
+
+        <div class="mt-6 text-left">
+          <h2 class="font-heading font-bold text-2xl text-white tracking-tight">Admin Sign In</h2>
+          <p class="text-xs text-zinc-400 mt-1">Enter your username and password to unlock controls.</p>
+        </div>
+
+        <!-- Form -->
+        <form id="loginForm" class="mt-6 space-y-4" onsubmit="handleLogin(event)">
+          
+          <!-- Username Input -->
+          <div class="space-y-1.5 text-left">
+            <label for="usernameInput" class="block text-xs font-medium text-zinc-300">Username</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </div>
+              <input
+                type="text"
+                id="usernameInput"
+                required
+                placeholder="Anish x or GODx"
+                value="Anish x"
+                autocomplete="username"
+                class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="space-y-1.5 text-left">
+            <div class="flex items-center justify-between">
+              <label for="passInput" class="block text-xs font-medium text-zinc-300">Password</label>
+              <button
+                type="button"
+                onclick="autofillPass()"
+                class="text-xs text-brand-400 hover:text-brand-300 transition-colors font-medium"
+              >
+                Autofill (<code class="text-brand-300 font-mono">admin</code>)
+              </button>
+            </div>
+            
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+              </div>
+              <input
+                type="password"
+                id="passInput"
+                required
+                placeholder="Enter password (admin)"
+                autocomplete="current-password"
+                class="glass-input w-full pl-10 pr-10 py-2.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none"
+              />
+              <button
+                type="button"
+                id="toggleLoginPass"
+                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-zinc-300 focus:outline-none"
+                aria-label="Toggle password visibility"
+              >
+                <i data-lucide="eye" id="loginPassIcon" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Error Banner -->
+            <p id="loginError" class="hidden text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+              <span>Access Denied: Invalid password. Try <code>admin</code>.</span>
+            </p>
+          </div>
+
+          <!-- Remember Session -->
+          <div class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked
+                class="w-4 h-4 rounded bg-surface-900 border border-white/20 text-brand-600 focus:ring-1 focus:ring-brand-500 focus:outline-none"
+              />
+              <span class="text-xs text-zinc-400">Keep session active</span>
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            id="loginSubmitBtn"
+            class="btn-gradient w-full py-3 px-4 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-brand-500 transition-all duration-200 mt-4 cursor-pointer"
+          >
+            <span id="loginBtnText">Unlock Dashboard</span>
+            <i data-lucide="arrow-right" id="loginBtnIcon" class="w-4 h-4"></i>
+            <svg id="loginSpinner" class="hidden animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-5 border-t border-white/5 flex items-center justify-between text-xs text-zinc-500">
+          <a
+            href="https://github.com/SubhadraRoy/LuminaVista"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-1.5 hover:text-zinc-300 transition-colors"
+          >
+            <i data-lucide="github" class="w-3.5 h-3.5"></i>
+            <span>SubhadraRoy/LuminaVista</span>
+          </a>
+          <span class="text-[11px] text-emerald-400 flex items-center gap-1">
+            <i data-lucide="shield" class="w-3 h-3"></i>
+            <span>TLS Encrypted</span>
+          </span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN DASHBOARD VIEW                                                    -->
+  <!-- ========================================================================= -->
+  <div id="dashboardView" class="relative z-10 flex-1 flex flex-col hidden min-h-screen">
+    
+    <!-- Top Nav Header -->
+    <header class="sticky top-0 z-40 w-full border-b border-white/5 bg-surface-950/85 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+      
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-600 flex items-center justify-center font-heading font-extrabold text-white text-base shadow-md shadow-brand-500/25">
+          GODx
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight">LuminaVista</h1>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium">Online</span>
+          </div>
+          <p class="text-[11px] text-zinc-400">Admin: <span class="text-zinc-200 font-medium" id="headerAdminName">Anish x</span> (GODx)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a
+          href="https://github.com/SubhadraRoy/LuminaVista"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900/80 hover:bg-surface-850 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+        >
+          <i data-lucide="github" class="w-3.5 h-3.5"></i>
+          <span>Repository</span>
+          <i data-lucide="external-link" class="w-3 h-3 text-zinc-500"></i>
+        </a>
+
+        <button
+          type="button"
+          onclick="fetchRepoProjects()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900/80 hover:bg-surface-850 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+          title="Scan repository for folders & HTML files"
+        >
+          <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Scan Repo</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="handleLogout()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium text-rose-300 hover:text-rose-200 transition-colors"
+          title="Lock Console"
+        >
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span>Exit</span>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      
+      <!-- Welcome Hero & Info Banner -->
+      <div class="glass-panel glow-border rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-1.5 text-xs text-brand-300 font-mono">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i>
+            <span>MULTI-PROJECT WORKSPACE CONSOLE</span>
+          </div>
+          <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-white">
+            LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400">Anish x</span>
+          </h2>
+          <p class="text-xs text-zinc-400">
+            Each folder runs its own isolated <code class="text-zinc-300">index.html</code>, CSS, and JS with zero conflicts.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <div class="bg-surface-900/90 px-3.5 py-2 rounded-xl border border-white/5 flex flex-col">
+            <span class="text-[10px] uppercase font-mono text-zinc-500">Repository</span>
+            <span class="text-xs font-bold text-indigo-300 font-mono">LuminaVista</span>
+          </div>
+          <div class="bg-surface-900/90 px-3.5 py-2 rounded-xl border border-white/5 flex flex-col">
+            <span class="text-[10px] uppercase font-mono text-zinc-500">Active Items</span>
+            <span id="projectCountBadge" class="text-xs font-bold text-emerald-400 font-mono">3 Projects</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN ROW: PROJECT SELECTOR & LIVE VIEWPORT -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Panel: Project & File Selector (5 Cols) -->
+        <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-5 flex flex-col justify-between">
+          
+          <div class="space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-white/5">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <i data-lucide="folder-code" class="w-4 h-4"></i>
+                </div>
+                <h3 class="font-heading font-bold text-sm text-white">Repository Projects & Pages</h3>
+              </div>
+              <span class="text-[10px] font-mono text-zinc-500 bg-surface-900 px-2 py-0.5 rounded border border-white/5">
+                Isolated Assets
+              </span>
+            </div>
+
+            <!-- Dynamic Project Chips -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <label class="font-medium text-zinc-300">Select Project to Run:</label>
+                <span class="text-[11px] text-zinc-500">Folder / Page</span>
+              </div>
+              <div id="projectChipsContainer" class="flex flex-wrap gap-2 pt-1"></div>
+            </div>
+
+            <!-- Dropdown Selector -->
+            <div class="space-y-1.5 pt-2">
+              <label for="projectSelect" class="block text-xs font-medium text-zinc-400">Or Select from List:</label>
+              <div class="relative">
+                <select
+                  id="projectSelect"
+                  onchange="onDropdownSelect()"
+                  class="glass-input w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none cursor-pointer"
+                ></select>
+              </div>
+            </div>
+
+            <!-- Custom Project / Folder Manual Entry -->
+            <div class="space-y-1.5 pt-1">
+              <label for="customProjectInput" class="block text-xs font-medium text-zinc-400">Add Custom Folder or File:</label>
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  id="customProjectInput"
+                  placeholder="e.g. project1 or xxx or sub/index.html"
+                  class="glass-input flex-1 px-3.5 py-2 rounded-xl text-xs font-mono text-white placeholder-zinc-500 outline-none"
+                />
+                <button
+                  type="button"
+                  onclick="addCustomProject()"
+                  class="px-3 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="space-y-3 pt-4 border-t border-white/5">
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onclick="loadActiveIntoPreview()"
+                class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/20 active:scale-[0.98] transition-all"
+              >
+                <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                <span>Embed Preview</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="openActiveInNewTab()"
+                class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all"
+              >
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                <span>Open in Tab</span>
+              </button>
+            </div>
+
+            <div class="p-3 rounded-xl bg-brand-500/5 border border-brand-500/10 text-[11px] text-zinc-400 leading-relaxed flex items-start gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+              <span>Running inside an isolated iframe allows each project to load its own local CSS and JS files seamlessly without interference.</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Panel: Live Viewport & Device Resizer (7 Cols) -->
+        <div class="lg:col-span-7 glass-panel rounded-2xl p-5 flex flex-col space-y-3 min-h-[480px]">
+          
+          <!-- Viewport Header & Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5">
+            
+            <div class="flex items-center gap-2">
+              <div class="flex gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+                <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+                <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+              </div>
+              <span id="activePreviewBadge" class="ml-2 text-xs font-mono text-indigo-300 bg-surface-900 px-2.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1.5">
+                <i data-lucide="globe" class="w-3 h-3"></i>
+                <span id="activeProjectTitle">xxx/</span>
+              </span>
+            </div>
+
+            <!-- Viewport Actions (Desktop/Tablet/Mobile + Reload + Fullscreen) -->
+            <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/5">
+              <button
+                type="button"
+                onclick="setViewportDevice('100%')"
+                class="device-btn p-1.5 rounded-lg bg-brand-600 text-white text-xs"
+                title="Desktop (100%)"
+                id="btnDeviceDesktop"
+              >
+                <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
+              </button>
+              <button
+                type="button"
+                onclick="setViewportDevice('768px')"
+                class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
+                title="Tablet (768px)"
+                id="btnDeviceTablet"
+              >
+                <i data-lucide="tablet" class="w-3.5 h-3.5"></i>
+              </button>
+              <button
+                type="button"
+                onclick="setViewportDevice('375px')"
+                class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
+                title="Mobile (375px)"
+                id="btnDeviceMobile"
+              >
+                <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+              </button>
+              
+              <div class="w-[1px] h-4 bg-white/10 mx-1"></div>
+
+              <button
+                type="button"
+                onclick="reloadIframe()"
+                class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                title="Reload Preview Frame"
+              >
+                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+              </button>
+              <button
+                type="button"
+                onclick="toggleFullscreen()"
+                class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                title="Fullscreen Mode"
+              >
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Embedded Iframe Frame Container -->
+          <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300">
+            
+            <iframe
+              id="previewIframe"
+              src="xxx/"
+              class="w-full h-full min-h-[400px] border-0 transition-all duration-300"
+              onload="onIframeLoaded()"
+              onerror="onIframeFailed()"
+            ></iframe>
+
+            <!-- Fallback Overlay -->
+            <div id="iframeOverlay" class="hidden absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-surface-900 border border-white/10 flex items-center justify-center text-zinc-400">
+                <i data-lucide="file-warning" class="w-6 h-6 text-amber-400"></i>
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-sm text-white" id="overlayTitle">Project Path Preview</h4>
+                <p class="text-xs text-zinc-400 max-w-xs mt-1" id="overlayDesc">
+                  Loading target project. Verify the folder exists in your repository.
+                </p>
+              </div>
+              <button
+                type="button"
+                onclick="openActiveInNewTab()"
+                class="px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200"
+              >
+                Open in New Window ↗
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- SECTION 2: MODULAR CONTROLS WORKSPACE -->
+      <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4">
+        
+        <div class="flex items-center justify-between border-b border-white/5 pb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-heading font-bold text-sm sm:text-base text-white">Dashboard Controls & Modular Modules</h3>
+              <p class="text-xs text-zinc-400">Custom tools, action toggles, and extensible feature slots for Anish x.</p>
+            </div>
+          </div>
+
+          <span class="text-xs font-mono text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20">
+            GODx Control Center
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          
+          <!-- Module 1: Action Runner -->
+          <div class="bg-surface-900/80 p-4 rounded-xl border border-white/5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                <i data-lucide="terminal" class="w-3.5 h-3.5 text-indigo-400"></i>
+                Action Runner
+              </span>
+              <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Ready</span>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Trigger instant actions, clear cache, or reload all repository links with a single click.
+            </p>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onclick="showToast('Cache Cleared', 'Session storage and frame cache refreshed.')"
+                class="py-1.5 px-2.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-[11px] text-zinc-300 hover:text-white transition-colors"
+              >
+                Clear Cache
+              </button>
+              <button
+                type="button"
+                onclick="reloadIframe()"
+                class="py-1.5 px-2.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-[11px] text-zinc-300 hover:text-white transition-colors"
+              >
+                Reload Frame
+              </button>
+            </div>
+          </div>
+
+          <!-- Module 2: Security Status -->
+          <div class="bg-surface-900/80 p-4 rounded-xl border border-white/5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-400"></i>
+                Session Status
+              </span>
+              <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded">Pass Verified</span>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Authenticated user: <code class="text-zinc-300 font-mono">Anish x (GODx)</code>. Master password protected.
+            </p>
+            <button
+              type="button"
+              onclick="showToast('Security Status', 'Active Session ID: GODX-AUTH-2026. All controls unlocked.')"
+              class="w-full py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+            >
+              Verify Security Signature
+            </button>
+          </div>
+
+          <!-- Module 3: Custom Controls Placeholder -->
+          <div class="bg-surface-900/80 p-4 rounded-xl border border-dashed border-white/15 space-y-3 flex flex-col justify-between">
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-brand-300">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                Custom Controls Ready
+              </div>
+              <p class="text-xs text-zinc-400">
+                Tell me what specific controls, parameters, or switches you want, and we will wire them right here.
+              </p>
+            </div>
+            <div class="text-[11px] text-zinc-500 italic">
+              Configured for Anish x (GODx)
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full border-t border-white/5 bg-surface-950/80 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+      <div>
+        LuminaVista • Created for <span class="text-zinc-300 font-medium">Anish x (GODx)</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/SubhadraRoy/LuminaVista" target="_blank" class="hover:text-zinc-300 transition-colors">GitHub Repository</a>
+        <span>•</span>
+        <span>Hosted on GitHub Pages</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-brand-500/30 text-white shadow-2xl">
+    <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center shrink-0">
+      <i data-lucide="check" class="w-5 h-5"></i>
+    </div>
+    <div>
+      <h4 id="toastTitle" class="text-sm font-semibold text-white">Notification</h4>
+      <p id="toastMsg" class="text-xs text-zinc-300">Action executed successfully.</p>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    lucide.createIcons();
+
+    const MASTER_PASS = "admin";
+    const SESSION_KEY = "lumina_godx_session";
+    const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/";
+
+    let repoProjects = [
+      { name: "xxx/", path: "xxx/", type: "dir" },
+      { name: "yyy/", path: "yyy/", type: "dir" },
+      { name: "zzz/", path: "zzz/", type: "dir" },
+    ];
+    let currentSelectedProject = repoProjects[0];
+
+    const loginView = document.getElementById("loginView");
+    const dashboardView = document.getElementById("dashboardView");
+    const usernameInput = document.getElementById("usernameInput");
+    const passInput = document.getElementById("passInput");
+    const loginError = document.getElementById("loginError");
+    const toggleLoginPass = document.getElementById("toggleLoginPass");
+    const loginPassIcon = document.getElementById("loginPassIcon");
+    const projectChipsContainer = document.getElementById("projectChipsContainer");
+    const projectSelect = document.getElementById("projectSelect");
+    const customProjectInput = document.getElementById("customProjectInput");
+    const previewIframe = document.getElementById("previewIframe");
+    const activeProjectTitle = document.getElementById("activeProjectTitle");
+    const projectCountBadge = document.getElementById("projectCountBadge");
+    const headerAdminName = document.getElementById("headerAdminName");
+    const iframeOverlay = document.getElementById("iframeOverlay");
+    const toast = document.getElementById("toast");
+
+    let isPassVisible = false;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const isAuth = sessionStorage.getItem(SESSION_KEY) === "true";
+      const savedUser = sessionStorage.getItem("lumina_godx_user") || "Anish x";
+      
+      if (isAuth) {
+        headerAdminName.textContent = savedUser;
+        showDashboard();
+      } else {
+        showLogin();
+      }
+
+      renderProjectList();
+      fetchRepoProjects();
+    });
+
+    function showDashboard() {
+      loginView.classList.add("hidden");
+      dashboardView.classList.remove("hidden");
+      gsap.from("#dashboardView", { opacity: 0, y: 15, duration: 0.5, ease: "power2.out" });
+      lucide.createIcons();
+    }
+
+    function showLogin() {
+      dashboardView.classList.add("hidden");
+      loginView.classList.remove("hidden");
+      passInput.value = "";
+      loginError.classList.add("hidden");
+      gsap.from("#loginCard", { opacity: 0, scale: 0.96, duration: 0.5, ease: "power2.out" });
+      lucide.createIcons();
+    }
+
+    toggleLoginPass.addEventListener("click", () => {
+      isPassVisible = !isPassVisible;
+      passInput.type = isPassVisible ? "text" : "password";
+      loginPassIcon.setAttribute("data-lucide", isPassVisible ? "eye-off" : "eye");
+      lucide.createIcons();
+    });
+
+    function autofillPass() {
+      passInput.value = MASTER_PASS;
+      loginError.classList.add("hidden");
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const enteredUser = usernameInput.value.trim() || "Anish x";
+      const enteredPass = passInput.value.trim();
+
+      const submitBtn = document.getElementById("loginSubmitBtn");
+      const btnText = document.getElementById("loginBtnText");
+      const btnIcon = document.getElementById("loginBtnIcon");
+      const spinner = document.getElementById("loginSpinner");
+
+      btnText.textContent = "Authenticating...";
+      btnIcon.classList.add("hidden");
+      spinner.classList.remove("hidden");
+      submitBtn.disabled = true;
+
+      setTimeout(() => {
+        spinner.classList.add("hidden");
+        submitBtn.disabled = false;
+        btnIcon.classList.remove("hidden");
+        btnText.textContent = "Unlock Dashboard";
+
+        if (enteredPass === MASTER_PASS) {
+          loginError.classList.add("hidden");
+          sessionStorage.setItem(SESSION_KEY, "true");
+          sessionStorage.setItem("lumina_godx_user", enteredUser);
+          headerAdminName.textContent = enteredUser;
+
+          showToast("Access Granted", `Welcome back, ${enteredUser} (GODx).`);
+          showDashboard();
+        } else {
+          loginError.classList.remove("hidden");
+          gsap.fromTo(
+            "#loginCard",
+            { x: -10 },
+            { x: 10, duration: 0.08, repeat: 4, yoyo: true, ease: "power1.inOut" }
+          );
+        }
+      }, 500);
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem(SESSION_KEY);
+      showToast("Session Locked", "Console logged out.");
+      showLogin();
+    }
+
+    async function fetchRepoProjects() {
+      const refreshIcon = document.getElementById("refreshIcon");
+      if (refreshIcon) refreshIcon.classList.add("animate-spin");
+
+      try {
+        const response = await fetch(REPO_API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          const detectedDirs = data
+            .filter(item => item.type === "dir" && !item.name.startsWith("."))
+            .map(item => ({ name: item.name + "/", path: item.name + "/", type: "dir" }));
+
+          const detectedFiles = data
+            .filter(item => item.type === "file" && item.name.endsWith(".html") && !["index.html", "404.html"].includes(item.name.toLowerCase()))
+            .map(item => ({ name: item.name, path: item.name, type: "file" }));
+
+          const combined = [...detectedDirs, ...detectedFiles];
+
+          if (combined.length > 0) {
+            combined.forEach(p => {
+              if (!repoProjects.some(existing => existing.path === p.path)) {
+                repoProjects.push(p);
+              }
+            });
+            showToast("Repo Scanned", `Discovered ${repoProjects.length} projects.`);
+          }
+        }
+      } catch (err) {
+        console.log("GitHub API scan note: Using preset project list.", err);
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove("animate-spin");
+        renderProjectList();
+      }
+    }
+
+    function renderProjectList() {
+      projectChipsContainer.innerHTML = "";
+      projectSelect.innerHTML = "";
+
+      projectCountBadge.textContent = `${repoProjects.length} Projects`;
+
+      repoProjects.forEach((proj) => {
+        const isSelected = proj.path === currentSelectedProject.path;
+
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `px-3 py-1.5 rounded-xl text-xs font-mono border transition-all flex items-center gap-1.5 ${
+          isSelected
+            ? "active-project-pill font-bold"
+            : "bg-surface-900 hover:bg-surface-850 border-white/5 text-zinc-300 hover:text-white"
+        }`;
+        
+        chip.innerHTML = `
+          <i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-indigo-300' : 'text-zinc-500'}"></i>
+          <span>${proj.name}</span>
+        `;
+        chip.onclick = () => selectProject(proj);
+        projectChipsContainer.appendChild(chip);
+
+        const opt = document.createElement("option");
+        opt.value = proj.path;
+        opt.textContent = `${proj.type === 'dir' ? '📁 ' : '📄 '} ${proj.name}`;
+        opt.className = "bg-surface-900 text-white";
+        if (isSelected) opt.selected = true;
+        projectSelect.appendChild(opt);
+      });
+
+      lucide.createIcons();
+    }
+
+    function selectProject(proj) {
+      currentSelectedProject = proj;
+      activeProjectTitle.textContent = proj.name;
+      renderProjectList();
+      loadActiveIntoPreview();
+    }
+
+    function onDropdownSelect() {
+      const selectedPath = projectSelect.value;
+      const target = repoProjects.find(p => p.path === selectedPath);
+      if (target) selectProject(target);
+    }
+
+    function addCustomProject() {
+      const val = customProjectInput.value.trim();
+      if (!val) return;
+      
+      const isHtml = val.endsWith(".html");
+      const formattedPath = isHtml ? val : (val.endsWith("/") ? val : `${val}/`);
+      const formattedName = formattedPath;
+
+      const newProj = {
+        name: formattedName,
+        path: formattedPath,
+        type: isHtml ? "file" : "dir"
+      };
+
+      if (!repoProjects.some(p => p.path === newProj.path)) {
+        repoProjects.push(newProj);
+      }
+      customProjectInput.value = "";
+      selectProject(newProj);
+      showToast("Project Added", `Added ${formattedName} to project list.`);
+    }
+
+    function loadActiveIntoPreview() {
+      activeProjectTitle.textContent = currentSelectedProject.name;
+      previewIframe.src = currentSelectedProject.path;
+      iframeOverlay.classList.add("hidden");
+      showToast("Loading Preview", `Embedding ${currentSelectedProject.name}`);
+    }
+
+    function openActiveInNewTab() {
+      window.open(currentSelectedProject.path, "_blank");
+    }
+
+    function reloadIframe() {
+      previewIframe.src = previewIframe.src;
+      showToast("Reloading Viewport", "Frame refreshed.");
+    }
+
+    function setViewportDevice(width) {
+      const wrapper = document.getElementById("iframeWrapper");
+      wrapper.style.maxWidth = width;
+      
+      document.querySelectorAll(".device-btn").forEach(b => {
+        b.classList.remove("bg-brand-600", "text-white");
+        b.classList.add("text-zinc-400");
+      });
+
+      if (width === "100%") document.getElementById("btnDeviceDesktop").classList.add("bg-brand-600", "text-white");
+      if (width === "768px") document.getElementById("btnDeviceTablet").classList.add("bg-brand-600", "text-white");
+      if (width === "375px") document.getElementById("btnDeviceMobile").classList.add("bg-brand-600", "text-white");
+    }
+
+    function toggleFullscreen() {
+      const wrapper = document.getElementById("iframeWrapper");
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen().catch(() => openActiveInNewTab());
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function onIframeLoaded() {
+      iframeOverlay.classList.add("hidden");
+    }
+
+    function onIframeFailed() {
+      iframeOverlay.classList.remove("hidden");
+    }
+
+    function showToast(title, msg) {
+      document.getElementById("toastTitle").textContent = title;
+      document.getElementById("toastMsg").textContent = msg;
+      toast.classList.remove("translate-y-24", "opacity-0");
+      setTimeout(() => {
+        toast.classList.add("translate-y-24", "opacity-0");
+      }, 3500);
+    }
+
+    const canvas = document.getElementById("ambientCanvas");
+    const ctx = canvas.getContext("2d");
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    const particles = Array.from({ length: 40 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      radius: Math.random() * 1.5 + 0.5,
+      alpha: Math.random() * 0.4 + 0.1
+    }));
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => {
+        p.x = (p.x + p.vx + width) % width;
+        p.y = (p.y + p.vy + height) % height;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(129, 140, 248, ${p.alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+    window.addEventListener("resize", () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const cardWrapper = document.querySelector(".card-3d-wrapper");
+    const loginCard = document.getElementById("loginCard");
+    if (window.innerWidth > 768 && cardWrapper && loginCard) {
+      cardWrapper.addEventListener("mousemove", (e) => {
+        const rect = loginCard.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        loginCard.style.transform = `rotateX(${-(y / rect.height) * 8}deg) rotateY(${(x / rect.width) * 8}deg) scale3d(1.01, 1.01, 1.01)`;
+      });
+      cardWrapper.addEventListener("mouseleave", () => {
+        loginCard.style.transform = "rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
+      });
+    }
+  </script>
+</body>
 </html>
