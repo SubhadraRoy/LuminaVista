@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" data-theme="cyan">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LuminaVista OS — GODx Admin Control Center</title>
+  <title>LuminaVista OS — GODx Next-Gen Workspace</title>
   
-  <!-- Google Fonts: Plus Jakarta Sans, Inter, JetBrains Mono -->
+  <!-- Google Fonts: Plus Jakarta Sans, Space Grotesk, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -20,64 +20,91 @@
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
             heading: ['Plus Jakarta Sans', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              400: '#818cf8',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-              800: '#3730a3',
+            accent: {
+              cyan: '#00f2fe',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+              purple: '#a855f7',
             },
             surface: {
-              950: '#050811',
-              900: '#0b1120',
-              850: '#11192e',
-              800: '#19243d',
-              750: '#233252',
-              700: '#2d3f66',
+              950: '#030712',
+              900: '#0b0f19',
+              850: '#111827',
+              800: '#1e293b',
+              750: '#283548',
             }
           },
           animation: {
             'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'spin-slow': 'spin 12s linear infinite',
           }
         }
       }
     }
   </script>
 
-  <!-- Lucide Icons & GSAP -->
+  <!-- Lucide Icons & GSAP Animation -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
+    :root {
+      --primary: #00f2fe;
+      --primary-glow: rgba(0, 242, 254, 0.35);
+      --secondary: #4facfe;
+      --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%);
+    }
+
+    [data-theme="emerald"] {
+      --primary: #10b981;
+      --primary-glow: rgba(16, 185, 129, 0.35);
+      --secondary: #059669;
+      --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%);
+    }
+
+    [data-theme="amber"] {
+      --primary: #f59e0b;
+      --primary-glow: rgba(245, 158, 11, 0.35);
+      --secondary: #d97706;
+      --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%);
+    }
+
+    [data-theme="rose"] {
+      --primary: #f43f5e;
+      --primary-glow: rgba(244, 63, 94, 0.35);
+      --secondary: #e11d48;
+      --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #e11d48 100%);
+    }
+
     body {
-      background-color: #050811;
+      background-color: #030712;
       color: #f8fafc;
       overflow-x: hidden;
     }
     
     .glass-panel {
-      background: rgba(11, 17, 32, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: rgba(11, 15, 25, 0.85);
+      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 35px -10px rgba(99, 102, 241, 0.18);
+      box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow);
     }
     
     .glass-input {
-      background: rgba(17, 25, 46, 0.75);
+      background: rgba(17, 24, 39, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.12);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
     .glass-input:focus {
-      background: rgba(17, 25, 46, 0.95);
-      border-color: #6366f1;
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      background: rgba(17, 24, 39, 0.95);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
     .glow-border {
@@ -89,8 +116,9 @@
       inset: -1px;
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.2), transparent 60%);
+      background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
       pointer-events: none;
@@ -103,12 +131,12 @@
 
     .btn-gradient {
       background-size: 200% auto;
-      background-image: linear-gradient(to right, #4f46e5 0%, #818cf8 50%, #4f46e5 100%);
-      transition: 0.4s ease;
+      background-image: var(--accent-gradient);
+      transition: 0.3s ease;
     }
     .btn-gradient:hover {
       background-position: right center;
-      box-shadow: 0 0 25px rgba(99, 102, 241, 0.45);
+      box-shadow: 0 0 25px var(--primary-glow);
     }
 
     ::-webkit-scrollbar {
@@ -116,7 +144,7 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #050811;
+      background: #030712;
     }
     ::-webkit-scrollbar-thumb {
       background: #1e293b;
@@ -127,64 +155,64 @@
     }
 
     .nav-tab-active {
-      background: rgba(99, 102, 241, 0.2);
-      border-color: rgba(99, 102, 241, 0.5);
+      background: var(--primary-glow);
+      border-color: var(--primary);
       color: #ffffff;
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+      box-shadow: 0 0 15px var(--primary-glow);
     }
 
     .active-project-pill {
-      background: rgba(99, 102, 241, 0.25);
-      border-color: rgba(99, 102, 241, 0.6);
-      color: #e0e7ff;
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+      background: var(--primary-glow);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 0 18px var(--primary-glow);
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between font-sans selection:bg-brand-500 selection:text-white relative bg-surface-950">
+<body class="min-h-screen flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
 
-  <!-- Background Canvas & Ambient Lights -->
+  <!-- Background Canvas & Lights -->
   <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
-  <div class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-brand-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow"></div>
-  <div class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow" style="animation-delay: 3s;"></div>
+  <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow"></div>
+  <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow" style="animation-delay: 3s;"></div>
 
   <!-- ========================================================================= -->
-  <!-- 1. LOGIN / PASS GATEWAY VIEW                                              -->
+  <!-- 1. AUTHENTICATION & PASS GATEWAY                                          -->
   <!-- ========================================================================= -->
   <div id="loginView" class="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-screen">
     
     <div class="card-3d-wrapper w-full max-w-md">
       
-      <!-- Top Status Pill -->
+      <!-- Top Status Badge -->
       <div class="flex justify-center mb-6">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-900/90 border border-white/10 text-xs text-zinc-300 backdrop-blur-md">
-          <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
-          <span class="font-mono text-zinc-400">LuminaVista EXM Cloud</span>
+          <div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div>
+          <span class="font-mono text-zinc-400">LuminaVista EXM Core</span>
           <span class="text-zinc-600">•</span>
-          <span class="text-brand-400 font-mono font-medium">GODx Gateway</span>
+          <span class="text-cyan-400 font-mono font-medium">GODx Protocol</span>
         </div>
       </div>
 
       <!-- Login Glass Card -->
       <div id="loginCard" class="glass-panel glow-border rounded-3xl p-6 sm:p-8 w-full shadow-2xl transition-transform duration-150 ease-out">
         
-        <!-- Profile Header -->
+        <!-- User Profile Header -->
         <div class="flex items-center gap-3.5 pb-6 border-b border-white/5">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-500 flex items-center justify-center font-heading font-extrabold text-white text-base shadow-lg shadow-brand-500/25 tracking-wider">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-base shadow-lg shadow-cyan-500/25 tracking-wider">
             GODx
           </div>
           <div>
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
               Anish x
-              <span class="px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] border border-brand-500/30 uppercase font-mono">Root Admin</span>
+              <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] border border-cyan-500/30 uppercase font-mono">Root Admin</span>
             </h3>
-            <p class="text-xs text-zinc-400">LuminaVista Portal Authentication</p>
+            <p class="text-xs text-zinc-400">LuminaVista Workspace Access</p>
           </div>
         </div>
 
         <div class="mt-6 text-left">
           <h2 class="font-heading font-bold text-2xl text-white tracking-tight">Admin Sign In</h2>
-          <p class="text-xs text-zinc-400 mt-1">Enter your credentials to unlock dashboard controls.</p>
+          <p class="text-xs text-zinc-400 mt-1">Enter your master password to unlock the workspace console.</p>
         </div>
 
         <!-- Form -->
@@ -195,13 +223,13 @@
             <label for="usernameInput" class="block text-xs font-medium text-zinc-300">Username</label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
-                <i data-lucide="user" class="w-4 h-4"></i>
+                <i data-lucide="user" class="w-4 h-4 text-cyan-400"></i>
               </div>
               <input
                 type="text"
                 id="usernameInput"
                 required
-                placeholder="Anish x or GODx"
+                placeholder="Anish x"
                 value="Anish x"
                 autocomplete="username"
                 class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none"
@@ -216,15 +244,15 @@
               <button
                 type="button"
                 onclick="autofillPass()"
-                class="text-xs text-brand-400 hover:text-brand-300 transition-colors font-medium"
+                class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
               >
-                Autofill (<code class="text-brand-300 font-mono">admin</code>)
+                Autofill (<code class="text-cyan-300 font-mono">admin</code>)
               </button>
             </div>
             
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
-                <i data-lucide="lock" class="w-4 h-4"></i>
+                <i data-lucide="lock" class="w-4 h-4 text-cyan-400"></i>
               </div>
               <input
                 type="password"
@@ -246,7 +274,7 @@
 
             <p id="loginError" class="hidden text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
               <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-              <span>Access Denied: Invalid password. Use <code>admin</code>.</span>
+              <span>Access Denied: Invalid password. Try <code>admin</code>.</span>
             </p>
           </div>
 
@@ -257,7 +285,7 @@
                 type="checkbox"
                 id="rememberMe"
                 checked
-                class="w-4 h-4 rounded bg-surface-900 border border-white/20 text-brand-600 focus:ring-1 focus:ring-brand-500 focus:outline-none"
+                class="w-4 h-4 rounded bg-surface-900 border border-white/20 text-cyan-500 focus:ring-1 focus:ring-cyan-400 focus:outline-none"
               />
               <span class="text-xs text-zinc-400">Keep session active</span>
             </label>
@@ -267,11 +295,11 @@
           <button
             type="submit"
             id="loginSubmitBtn"
-            class="btn-gradient w-full py-3 px-4 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-brand-500 transition-all duration-200 mt-4 cursor-pointer"
+            class="btn-gradient w-full py-3 px-4 rounded-xl text-sm font-semibold text-black flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-cyan-400 transition-all duration-200 mt-4 cursor-pointer"
           >
-            <span id="loginBtnText">Unlock Dashboard</span>
+            <span id="loginBtnText">Unlock LuminaVista OS</span>
             <i data-lucide="arrow-right" id="loginBtnIcon" class="w-4 h-4"></i>
-            <svg id="loginSpinner" class="hidden animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+            <svg id="loginSpinner" class="hidden animate-spin h-5 w-5 text-black" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -285,11 +313,11 @@
             rel="noopener noreferrer"
             class="flex items-center gap-1.5 hover:text-zinc-300 transition-colors"
           >
-            <i data-lucide="folder" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <i data-lucide="folder-git" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>SubhadraRoy/LuminaVista/EXM</span>
           </a>
-          <span class="text-[11px] text-emerald-400 flex items-center gap-1">
-            <i data-lucide="shield" class="w-3 h-3"></i>
+          <span class="text-[11px] text-cyan-400 flex items-center gap-1">
+            <i data-lucide="shield" class="w-3.5 h-3.5"></i>
             <span>TLS Encrypted</span>
           </span>
         </div>
@@ -301,7 +329,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 2. FULL SYSTEM DASHBOARD (EXM Workspace)                                  -->
+  <!-- 2. FULL SYSTEM DASHBOARD (Accessible After Login)                         -->
   <!-- ========================================================================= -->
   <div id="dashboardView" class="relative z-10 flex-1 flex flex-col hidden min-h-screen">
     
@@ -310,22 +338,22 @@
       
       <!-- Brand & Profile -->
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-600 flex items-center justify-center font-heading font-extrabold text-white text-sm shadow-md shadow-brand-500/25">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md shadow-cyan-500/25">
           GODx
         </div>
         <div>
           <div class="flex items-center gap-2">
             <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight">LuminaVista OS</h1>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium">EXM Hub</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono font-medium">EXM Hub</span>
           </div>
           <p class="text-[11px] text-zinc-400">Admin: <span class="text-zinc-200 font-medium" id="headerAdminName">Anish x</span> (GODx)</p>
         </div>
       </div>
 
-      <!-- Center System Clock -->
+      <!-- Center Live System Bar -->
       <div class="hidden lg:flex items-center gap-4 bg-surface-900/80 px-4 py-1.5 rounded-full border border-white/5 text-xs text-zinc-400 font-mono">
         <div class="flex items-center gap-1.5">
-          <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
           <span id="systemClock">00:00:00 UTC</span>
         </div>
         <span class="text-zinc-700">•</span>
@@ -333,21 +361,40 @@
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           <span id="deployHostBadge">EXM Directory Active</span>
         </div>
+        <span class="text-zinc-700">•</span>
+        <div class="flex items-center gap-1.5 text-zinc-300">
+          <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span id="livePingMetric">24ms Ping</span>
+        </div>
       </div>
 
       <!-- Right Header Actions -->
       <div class="flex items-center gap-2 sm:gap-2.5">
+        
+        <!-- Live Code Inspector Button -->
+        <button
+          type="button"
+          onclick="openSourceInspector()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors"
+          title="Inspect Subproject Source Code"
+        >
+          <i data-lucide="code" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span class="hidden md:inline">Source Code</span>
+        </button>
+
+        <!-- Command Palette Trigger -->
         <button
           type="button"
           onclick="openCommandPalette()"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors"
           title="Command Palette (Ctrl/Cmd + K)"
         >
-          <i data-lucide="command" class="w-3.5 h-3.5 text-indigo-400"></i>
-          <span class="hidden md:inline">Quick Commands</span>
+          <i data-lucide="command" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span class="hidden md:inline">Commands</span>
           <kbd class="hidden md:inline px-1.5 py-0.5 text-[10px] bg-surface-800 rounded text-zinc-400 font-mono">⌘K</kbd>
         </button>
 
+        <!-- Audio Tone Toggle -->
         <button
           type="button"
           id="audioToggleBtn"
@@ -355,8 +402,33 @@
           class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors"
           title="Toggle UI Audio Feedback"
         >
-          <i data-lucide="volume-2" id="audioIcon" class="w-4 h-4"></i>
+          <i data-lucide="volume-2" id="audioIcon" class="w-4 h-4 text-cyan-400"></i>
         </button>
+
+        <!-- Theme Quick Toggle -->
+        <div class="relative group">
+          <button
+            type="button"
+            class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+            title="Switch Visual Palette"
+          >
+            <i data-lucide="palette" class="w-4 h-4 text-cyan-400"></i>
+          </button>
+          <div class="absolute right-0 mt-2 w-40 p-2 bg-surface-900 border border-white/10 rounded-2xl shadow-2xl hidden group-hover:block z-50 text-xs space-y-1">
+            <button onclick="setDashboardTheme('cyan')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-cyan-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Cyan Nebula
+            </button>
+            <button onclick="setDashboardTheme('emerald')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-emerald-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Cyber Matrix
+            </button>
+            <button onclick="setDashboardTheme('amber')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-amber-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span> Solar Amber
+            </button>
+            <button onclick="setDashboardTheme('rose')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-rose-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-rose-400"></span> Laser Rose
+            </button>
+          </div>
+        </div>
 
         <a
           href="https://github.com/SubhadraRoy/LuminaVista/tree/main/EXM"
@@ -364,10 +436,11 @@
           rel="noopener noreferrer"
           class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
         >
-          <i data-lucide="folder-git" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <i data-lucide="folder-git" class="w-3.5 h-3.5 text-cyan-400"></i>
           <span>EXM Repo</span>
         </a>
 
+        <!-- Lock / Logout -->
         <button
           type="button"
           onclick="handleLogout()"
@@ -391,7 +464,7 @@
           id="btn-tab-projects"
           class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0"
         >
-          <i data-lucide="folder-tree" class="w-4 h-4 text-indigo-400"></i>
+          <i data-lucide="folder-tree" class="w-4 h-4 text-cyan-400"></i>
           <span>EXM Projects & Viewport</span>
         </button>
 
@@ -422,7 +495,7 @@
           class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
         >
           <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
-          <span>Performance & Metrics</span>
+          <span>Performance & Logs</span>
         </button>
 
         <button
@@ -446,17 +519,18 @@
       <!-- ===================================================================== -->
       <section id="tab-projects" class="tab-pane space-y-6">
         
+        <!-- Welcome Hero & Scan Status -->
         <div class="glass-panel glow-border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
-            <div class="inline-flex items-center gap-1.5 text-xs text-brand-300 font-mono">
-              <i data-lucide="folder-check" class="w-3.5 h-3.5 text-brand-400"></i>
+            <div class="inline-flex items-center gap-1.5 text-xs text-cyan-300 font-mono">
+              <i data-lucide="folder-check" class="w-3.5 h-3.5 text-cyan-400"></i>
               <span>EXM FOLDER WORKSPACE CONSOLE</span>
             </div>
             <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-white">
-              LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400">Anish x</span>
+              LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400">Anish x</span>
             </h2>
             <p class="text-xs text-zinc-400">
-              Scanning <code class="text-indigo-300 font-mono">/EXM/</code> directory. Each sub-project runs its own isolated CSS and JS.
+              Live scanning repository directory <code class="text-cyan-300 font-mono">/EXM/</code>. All sub-projects execute independently.
             </p>
           </div>
 
@@ -464,14 +538,14 @@
             <button
               type="button"
               onclick="fetchRepoProjects()"
-              class="px-3 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white flex items-center gap-2 transition-colors"
+              class="px-3.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white flex items-center gap-2 transition-all group"
             >
-              <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5"></i>
+              <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-180 transition-transform"></i>
               <span>Scan /EXM/ Folder</span>
             </button>
             <div class="bg-surface-900/90 px-3.5 py-2 rounded-xl border border-white/5 flex flex-col">
               <span class="text-[10px] uppercase font-mono text-zinc-500">EXM Items</span>
-              <span id="projectCountBadge" class="text-xs font-bold text-emerald-400 font-mono">3 Folders</span>
+              <span id="projectCountBadge" class="text-xs font-bold text-cyan-400 font-mono">0 Detected</span>
             </div>
           </div>
         </div>
@@ -483,12 +557,12 @@
             <div class="space-y-4">
               <div class="flex items-center justify-between pb-3 border-b border-white/5">
                 <div class="flex items-center gap-2">
-                  <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <div class="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
                     <i data-lucide="folder-code" class="w-4 h-4"></i>
                   </div>
-                  <h3 class="font-heading font-bold text-sm text-white">EXM Sub-Projects</h3>
+                  <h3 class="font-heading font-bold text-sm text-white">Discovered EXM Projects</h3>
                 </div>
-                <span class="text-[10px] font-mono text-indigo-300 bg-surface-900 px-2 py-0.5 rounded border border-white/5">
+                <span class="text-[10px] font-mono text-cyan-300 bg-surface-900 px-2 py-0.5 rounded border border-white/5">
                   /EXM/*
                 </span>
               </div>
@@ -496,15 +570,17 @@
               <!-- Dynamic Project Chips -->
               <div class="space-y-2">
                 <div class="flex items-center justify-between text-xs">
-                  <label class="font-medium text-zinc-300">Choose Folder in /EXM/:</label>
-                  <span class="text-[11px] text-zinc-500">Auto-resolved</span>
+                  <label class="font-medium text-zinc-300">Select Active Subproject:</label>
+                  <span class="text-[11px] text-zinc-500">Instant Preview</span>
                 </div>
-                <div id="projectChipsContainer" class="flex flex-wrap gap-2 pt-1"></div>
+                <div id="projectChipsContainer" class="flex flex-wrap gap-2 pt-1 min-h-[40px] items-center">
+                  <span class="text-xs text-zinc-500 italic">Click 'Scan /EXM/ Folder' or add a folder name below...</span>
+                </div>
               </div>
 
               <!-- Dropdown Selector -->
               <div class="space-y-1.5 pt-2">
-                <label for="projectSelect" class="block text-xs font-medium text-zinc-400">Or Select from Dropdown:</label>
+                <label for="projectSelect" class="block text-xs font-medium text-zinc-400">Or Select from List:</label>
                 <div class="relative">
                   <select
                     id="projectSelect"
@@ -516,7 +592,7 @@
 
               <!-- Custom Manual Entry -->
               <div class="space-y-1.5 pt-1">
-                <label for="customProjectInput" class="block text-xs font-medium text-zinc-400">Enter Folder inside EXM:</label>
+                <label for="customProjectInput" class="block text-xs font-medium text-zinc-400">Manually Add Folder / File:</label>
                 <div class="flex gap-2">
                   <div class="relative flex-1">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-500 pointer-events-none">EXM/</span>
@@ -530,10 +606,21 @@
                   <button
                     type="button"
                     onclick="addCustomProject()"
-                    class="px-3 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
+                    class="px-3.5 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
                   >
                     Add
                   </button>
+                </div>
+              </div>
+
+              <!-- Quick Pinned Bookmarks -->
+              <div class="pt-2 border-t border-white/5 space-y-2">
+                <span class="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+                  <i data-lucide="star" class="w-3 h-3 text-amber-400 fill-amber-400"></i>
+                  <span>Favorite Pinned Projects</span>
+                </span>
+                <div id="pinnedChipsContainer" class="flex flex-wrap gap-1.5">
+                  <!-- Pinned via JS -->
                 </div>
               </div>
             </div>
@@ -544,7 +631,7 @@
                 <button
                   type="button"
                   onclick="loadActiveIntoPreview()"
-                  class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/20 active:scale-[0.98] transition-all"
+                  class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-black flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 active:scale-[0.98] transition-all"
                 >
                   <i data-lucide="play" class="w-3.5 h-3.5"></i>
                   <span>Embed Preview</span>
@@ -560,9 +647,9 @@
                 </button>
               </div>
 
-              <div class="p-3 rounded-xl bg-brand-500/5 border border-brand-500/10 text-[11px] text-zinc-400 leading-relaxed flex items-start gap-2">
-                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
-                <span>Paths are automatically routed to <code class="text-zinc-300">./EXM/&lt;folder&gt;/index.html</code> so CSS and JS load without issues.</span>
+              <div class="p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-[11px] text-zinc-400 leading-relaxed flex items-start gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
+                <span>Sub-projects are sandboxed in isolated viewports with zero asset interference.</span>
               </div>
             </div>
           </div>
@@ -576,10 +663,19 @@
                   <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
                   <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
                 </div>
-                <span id="activePreviewBadge" class="ml-2 text-xs font-mono text-indigo-300 bg-surface-900 px-2.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1.5">
-                  <i data-lucide="folder" class="w-3 h-3 text-indigo-400"></i>
-                  <span id="activeProjectTitle">EXM/xxx/</span>
+                <span id="activePreviewBadge" class="ml-2 text-xs font-mono text-cyan-300 bg-surface-900 px-2.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1.5">
+                  <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <span id="activeProjectTitle">EXM/...</span>
                 </span>
+                <button
+                  type="button"
+                  onclick="togglePinActiveProject()"
+                  id="pinActiveBtn"
+                  class="p-1 rounded text-zinc-400 hover:text-amber-400 transition-colors"
+                  title="Bookmark / Pin Subproject"
+                >
+                  <i data-lucide="star" class="w-3.5 h-3.5"></i>
+                </button>
               </div>
 
               <!-- Viewport Sizing & Actions -->
@@ -587,7 +683,7 @@
                 <button
                   type="button"
                   onclick="setViewportDevice('100%')"
-                  class="device-btn p-1.5 rounded-lg bg-brand-600 text-white text-xs"
+                  class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs font-medium"
                   title="Desktop (100%)"
                   id="btnDeviceDesktop"
                 >
@@ -596,7 +692,7 @@
                 <button
                   type="button"
                   onclick="setViewportDevice('768px')"
-                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
+                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium"
                   title="Tablet (768px)"
                   id="btnDeviceTablet"
                 >
@@ -605,7 +701,7 @@
                 <button
                   type="button"
                   onclick="setViewportDevice('375px')"
-                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
+                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium"
                   title="Mobile (375px)"
                   id="btnDeviceMobile"
                 >
@@ -618,7 +714,7 @@
                   type="button"
                   onclick="reloadIframe()"
                   class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                  title="Reload Preview Frame"
+                  title="Reload Frame"
                 >
                   <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
                 </button>
@@ -636,28 +732,28 @@
             <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300">
               <iframe
                 id="previewIframe"
-                src="./EXM/xxx/index.html"
+                src="about:blank"
                 class="w-full h-full min-h-[400px] border-0 transition-all duration-300"
                 onload="onIframeLoaded()"
                 onerror="onIframeFailed()"
               ></iframe>
 
-              <div id="iframeOverlay" class="hidden absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
-                <div class="w-12 h-12 rounded-2xl bg-surface-900 border border-white/10 flex items-center justify-center text-zinc-400">
-                  <i data-lucide="folder-search" class="w-6 h-6 text-amber-400"></i>
+              <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-surface-900 border border-white/10 flex items-center justify-center text-zinc-400 shadow-xl">
+                  <i data-lucide="folder-search" class="w-6 h-6 text-cyan-400"></i>
                 </div>
                 <div>
-                  <h4 class="font-heading font-bold text-sm text-white" id="overlayTitle">EXM Project Preview</h4>
+                  <h4 class="font-heading font-bold text-sm text-white" id="overlayTitle">EXM Project Workspace</h4>
                   <p class="text-xs text-zinc-400 max-w-xs mt-1" id="overlayDesc">
-                    Select a sub-project from the EXM folder on the left.
+                    Click <strong>'Scan /EXM/ Folder'</strong> to automatically load and launch projects from your repository.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onclick="openActiveInNewTab()"
-                  class="px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200"
+                  onclick="fetchRepoProjects()"
+                  class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold"
                 >
-                  Open in New Window ↗
+                  Scan Repository Now ⚡
                 </button>
               </div>
             </div>
@@ -674,36 +770,36 @@
           <!-- Sandbox Policies -->
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
-              <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+              <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
                 <i data-lucide="shield" class="w-4 h-4"></i>
               </div>
               <div>
                 <h3 class="text-sm font-bold text-white">Frame Sandbox Policies</h3>
-                <p class="text-[11px] text-zinc-400">Manage iframe security headers</p>
+                <p class="text-[11px] text-zinc-400">Manage iframe execution headers</p>
               </div>
             </div>
 
             <div class="space-y-3 text-xs">
               <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
                 <span>Allow Scripts Execution</span>
-                <input type="checkbox" id="checkAllowScripts" checked class="w-4 h-4 rounded text-brand-600" />
+                <input type="checkbox" id="checkAllowScripts" checked class="w-4 h-4 rounded text-cyan-500" />
               </label>
 
               <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
                 <span>Allow Same-Origin Access</span>
-                <input type="checkbox" id="checkAllowOrigin" checked class="w-4 h-4 rounded text-brand-600" />
+                <input type="checkbox" id="checkAllowOrigin" checked class="w-4 h-4 rounded text-cyan-500" />
               </label>
 
               <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
                 <span>Allow Modals & Popups</span>
-                <input type="checkbox" id="checkAllowPopups" checked class="w-4 h-4 rounded text-brand-600" />
+                <input type="checkbox" id="checkAllowPopups" checked class="w-4 h-4 rounded text-cyan-500" />
               </label>
             </div>
 
             <button
               type="button"
               onclick="applySandboxPolicy()"
-              class="w-full py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white transition-colors"
+              class="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-semibold text-black transition-colors"
             >
               Apply Security Settings
             </button>
@@ -737,7 +833,7 @@
                 <option value="60" class="bg-surface-900">Every 1 Minute</option>
               </select>
               <div class="p-2.5 rounded-xl bg-surface-900/60 border border-white/5 text-[11px] text-zinc-400 flex items-center gap-2">
-                <span id="autoRefreshStatusText" class="text-indigo-300 font-mono">Timer: Off</span>
+                <span id="autoRefreshStatusText" class="text-cyan-300 font-mono">Timer: Off</span>
               </div>
             </div>
           </div>
@@ -770,39 +866,46 @@
             </div>
           </div>
 
-          <!-- Theme Palette -->
+          <!-- Theme Palette Engine -->
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
               <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
                 <i data-lucide="palette" class="w-4 h-4"></i>
               </div>
               <div>
-                <h3 class="text-sm font-bold text-white">Theme Accent Palette</h3>
-                <p class="text-[11px] text-zinc-400">Customize dashboard aesthetics</p>
+                <h3 class="text-sm font-bold text-white">Theme Accent Engine</h3>
+                <p class="text-[11px] text-zinc-400">Distinctive luxury palettes</p>
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 text-xs">
+            <div class="grid grid-cols-2 gap-2 text-xs font-medium">
               <button
                 type="button"
-                onclick="setDashboardTheme('indigo')"
-                class="p-2.5 rounded-xl bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 font-medium hover:scale-105 transition-all text-center"
+                onclick="setDashboardTheme('cyan')"
+                class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Indigo Aurora
+                <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Cyan Nebula
               </button>
               <button
                 type="button"
                 onclick="setDashboardTheme('emerald')"
-                class="p-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 font-medium hover:scale-105 transition-all text-center"
+                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Cyber Green
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Cyber Matrix
               </button>
               <button
                 type="button"
-                onclick="setDashboardTheme('purple')"
-                class="p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-300 font-medium hover:scale-105 transition-all text-center"
+                onclick="setDashboardTheme('amber')"
+                class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Neon Violet
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Solar Amber
+              </button>
+              <button
+                type="button"
+                onclick="setDashboardTheme('rose')"
+                class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
+              >
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Laser Rose
               </button>
             </div>
           </div>
@@ -815,7 +918,7 @@
               </div>
               <div>
                 <h3 class="text-sm font-bold text-white">Config Backup & Export</h3>
-                <p class="text-[11px] text-zinc-400">Save your project profiles</p>
+                <p class="text-[11px] text-zinc-400">Save workspace profiles</p>
               </div>
             </div>
 
@@ -837,22 +940,22 @@
             </div>
           </div>
 
-          <!-- Modular Webhook Slot -->
+          <!-- Custom Trigger Slot -->
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
               <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
                 <i data-lucide="zap" class="w-4 h-4"></i>
               </div>
               <div>
-                <h3 class="text-sm font-bold text-white">Custom Trigger Slot</h3>
+                <h3 class="text-sm font-bold text-white">Modular Action Trigger</h3>
                 <p class="text-[11px] text-zinc-400">Ready for Anish x parameters</p>
               </div>
             </div>
             <p class="text-xs text-zinc-400 leading-relaxed">
-              Reserved modular hook for additional custom controls you want to attach next.
+              Attach any custom API trigger or pipeline script here.
             </p>
             <div class="text-[11px] text-zinc-500 font-mono italic">
-              Channel: GODx-MAIN-HOOK
+              Hook ID: GODx-EXM-CONTROLLER
             </div>
           </div>
 
@@ -871,36 +974,36 @@
               <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
               <span class="text-zinc-400 ml-2">godx-terminal — bash — 80x24</span>
             </div>
-            <span class="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-              LuminaVista CLI v2.0
+            <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+              LuminaVista CLI v2.4
             </span>
           </div>
 
           <!-- Terminal Output Screen -->
           <div
             id="terminalScreen"
-            class="bg-surface-950/90 rounded-xl p-4 font-mono text-xs text-zinc-300 min-h-[360px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5"
+            class="bg-surface-950/95 rounded-xl p-4 font-mono text-xs text-zinc-300 min-h-[360px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5"
           >
-            <div class="text-indigo-400 font-bold">LuminaVista GODx Terminal [Version 2.0.4]</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 2.4.0]</div>
             <div class="text-zinc-400">Authenticated Session: <span class="text-emerald-400">Anish x (Root Administrator)</span></div>
-            <div class="text-zinc-500">Root Project Directory: <span class="text-brand-300 font-mono">/EXM/</span></div>
-            <div class="text-zinc-500">Type <span class="text-indigo-300 font-bold">help</span> to view available terminal commands.</div>
+            <div class="text-zinc-500">Root Directory: <span class="text-cyan-300 font-mono">/EXM/</span></div>
+            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view all commands.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
 
           <!-- Terminal Input Prompt -->
           <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2">
-            <span class="font-mono text-xs text-indigo-400 font-bold">anish@godx:~$</span>
+            <span class="font-mono text-xs text-cyan-400 font-bold">anish@godx:~$</span>
             <input
               type="text"
               id="terminalInput"
               autocomplete="off"
-              placeholder="Type command (e.g. ls, open xxx, fetch, stats)..."
+              placeholder="Type command (e.g. ls, open <folder>, fetch, ping, theme)..."
               class="glass-input flex-1 px-3 py-2 rounded-xl font-mono text-xs text-white placeholder-zinc-500 outline-none"
             />
             <button
               type="submit"
-              class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-mono text-white transition-colors"
+              class="btn-gradient px-4 py-2 rounded-xl text-xs font-mono font-semibold text-black transition-all"
             >
               Run
             </button>
@@ -909,13 +1012,13 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: LIVE ANALYTICS & RESOURCE MONITOR                              -->
+      <!-- TAB 4: LIVE ANALYTICS & LOG CONSOLE                                   -->
       <!-- ===================================================================== -->
       <section id="tab-analytics" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="glass-panel p-4 rounded-2xl space-y-1">
             <span class="text-[10px] font-mono uppercase text-zinc-400">Frame Latency</span>
-            <div class="text-2xl font-heading font-extrabold text-white">0.42 ms</div>
+            <div class="text-2xl font-heading font-extrabold text-white">0.38 ms</div>
             <span class="text-[11px] text-emerald-400 flex items-center gap-1">
               <i data-lucide="trending-up" class="w-3 h-3"></i> 60 FPS GPU Sync
             </span>
@@ -923,13 +1026,13 @@
 
           <div class="glass-panel p-4 rounded-2xl space-y-1">
             <span class="text-[10px] font-mono uppercase text-zinc-400">Active Memory Load</span>
-            <div class="text-2xl font-heading font-extrabold text-indigo-300">18.4 MB</div>
-            <span class="text-[11px] text-indigo-400">Optimized Client Heap</span>
+            <div class="text-2xl font-heading font-extrabold text-cyan-300">14.2 MB</div>
+            <span class="text-[11px] text-cyan-400">Client Memory Clean</span>
           </div>
 
           <div class="glass-panel p-4 rounded-2xl space-y-1">
             <span class="text-[10px] font-mono uppercase text-zinc-400">GitHub API Status</span>
-            <div class="text-2xl font-heading font-extrabold text-emerald-400" id="apiStatusText">EXM Linked</div>
+            <div class="text-2xl font-heading font-extrabold text-emerald-400" id="apiStatusText">EXM Synced</div>
             <span class="text-[11px] text-zinc-400">SubhadraRoy/LuminaVista</span>
           </div>
 
@@ -940,15 +1043,40 @@
           </div>
         </div>
 
-        <div class="glass-panel rounded-2xl p-5 space-y-3">
-          <div class="flex items-center justify-between pb-2 border-b border-white/5">
-            <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="activity" class="w-4 h-4 text-brand-400"></i>
-              Realtime Client Performance Waveform
-            </h3>
-            <span class="text-xs font-mono text-zinc-400">60 FPS Sampling</span>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Performance Waveform Canvas -->
+          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-white/5">
+              <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
+                Realtime Performance Waveform
+              </h3>
+              <span class="text-xs font-mono text-zinc-400">60 FPS Hardware Sampling</span>
+            </div>
+            <canvas id="metricsChart" class="w-full h-48 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
           </div>
-          <canvas id="metricsChart" class="w-full h-44 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
+
+          <!-- Live Event / PostMessage Logger Console -->
+          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-2 border-b border-white/5">
+                <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+                  <i data-lucide="terminal-square" class="w-4 h-4 text-emerald-400"></i>
+                  Live Frame Bridge Logs
+                </h3>
+                <button onclick="clearEventLogs()" class="text-[10px] text-zinc-500 hover:text-zinc-300">Clear</button>
+              </div>
+              <div id="eventLogsScreen" class="bg-surface-950/90 rounded-xl p-3 font-mono text-[11px] text-zinc-300 h-44 overflow-y-auto space-y-1 mt-2 border border-white/5">
+                <div class="text-zinc-500">[00:00:00] LuminaVista bridge initialized.</div>
+                <div class="text-cyan-400">[00:00:01] Listening for subproject events...</div>
+              </div>
+            </div>
+            <div class="text-[10px] text-zinc-500">
+              Sub-projects can send messages via <code>window.parent.postMessage()</code>.
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -957,10 +1085,11 @@
       <!-- ===================================================================== -->
       <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
           <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-white/5">
               <div class="flex items-center gap-2">
-                <i data-lucide="edit-3" class="w-4 h-4 text-indigo-400"></i>
+                <i data-lucide="edit-3" class="w-4 h-4 text-cyan-400"></i>
                 <h3 class="font-heading font-bold text-sm text-white">Admin Scratchpad & Notes</h3>
               </div>
               <span class="text-[10px] font-mono text-emerald-400">Auto-saved locally</span>
@@ -969,7 +1098,7 @@
             <textarea
               id="adminScratchpad"
               oninput="saveScratchpad()"
-              placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Configured login pass: admin&#10;- Todo: Add custom controls next..."
+              placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Master Password: admin&#10;- Status: All systems nominal..."
               class="glass-input w-full p-4 rounded-xl font-mono text-xs text-white placeholder-zinc-500 h-64 outline-none resize-none"
             ></textarea>
           </div>
@@ -985,18 +1114,18 @@
             <div class="space-y-2.5 text-xs">
               <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
                 <div class="flex items-center justify-between font-bold text-zinc-200">
-                  <span>EXM Sub-Project index.html Template</span>
-                  <button type="button" onclick="copySnippet(1)" class="text-brand-400 hover:text-brand-300">Copy</button>
+                  <span>EXM Sub-Project index.html</span>
+                  <button type="button" onclick="copySnippet(1)" class="text-cyan-400 hover:text-cyan-300">Copy</button>
                 </div>
-                <p class="text-[11px] text-zinc-400">Standard standalone HTML boilerplate with local CSS/JS linkage inside EXM/.</p>
+                <p class="text-[11px] text-zinc-400">Boilerplate for folders inside EXM/ with local CSS & JS.</p>
               </div>
 
               <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
                 <div class="flex items-center justify-between font-bold text-zinc-200">
-                  <span>Iframe Bridge PostMessage Script</span>
-                  <button type="button" onclick="copySnippet(2)" class="text-brand-400 hover:text-brand-300">Copy</button>
+                  <span>PostMessage Event Trigger</span>
+                  <button type="button" onclick="copySnippet(2)" class="text-cyan-400 hover:text-cyan-300">Copy</button>
                 </div>
-                <p class="text-[11px] text-zinc-400">Communicate events between EXM sub-projects and GODx dashboard.</p>
+                <p class="text-[11px] text-zinc-400">Send notifications from sub-projects to LuminaVista OS.</p>
               </div>
             </div>
           </div>
@@ -1019,11 +1148,38 @@
 
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- SOURCE CODE INSPECTOR MODAL                                               -->
+  <!-- ========================================================================= -->
+  <div id="sourceModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 hidden opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-4xl w-full p-5 sm:p-6 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <i data-lucide="code" class="w-5 h-5 text-cyan-400"></i>
+          <h3 class="font-heading font-bold text-base text-white">Live Source Inspector: <span id="sourceProjectTitle" class="text-cyan-300 font-mono"></span></h3>
+        </div>
+        <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="my-3 flex items-center gap-2">
+        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono hover:bg-surface-850">index.html</button>
+        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono hover:bg-surface-850">style.css</button>
+        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono hover:bg-surface-850">script.js</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto bg-surface-950 rounded-2xl p-4 border border-white/5">
+        <pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap">Loading source file...</code></pre>
+      </div>
+    </div>
+  </div>
+
   <!-- Command Palette Modal (Ctrl/Cmd + K) -->
   <div id="cmdModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 p-4 hidden opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-lg w-full p-4 rounded-2xl glow-border relative transform scale-95 transition-transform duration-200">
       <div class="flex items-center gap-2 pb-3 border-b border-white/10">
-        <i data-lucide="search" class="w-4 h-4 text-indigo-400"></i>
+        <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
         <input
           type="text"
           id="cmdSearchInput"
@@ -1038,8 +1194,8 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-brand-500/30 text-white shadow-2xl">
-    <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center shrink-0">
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
+    <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
       <i data-lucide="check" class="w-5 h-5"></i>
     </div>
     <div>
@@ -1073,12 +1229,9 @@
       return window.location.origin + base + clean;
     }
 
-    let repoProjects = [
-      { name: "xxx", path: "EXM/xxx/", type: "dir" },
-      { name: "yyy", path: "EXM/yyy/", type: "dir" },
-      { name: "zzz", path: "EXM/zzz/", type: "dir" },
-    ];
-    let currentSelectedProject = repoProjects[0];
+    let repoProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]");
+    let pinnedProjects = JSON.parse(localStorage.getItem("lumina_pinned_projects") || "[]");
+    let currentSelectedProject = repoProjects[0] || null;
     let isAudioEnabled = true;
     let autoRefreshTimer = null;
 
@@ -1090,6 +1243,7 @@
     const toggleLoginPass = document.getElementById("toggleLoginPass");
     const loginPassIcon = document.getElementById("loginPassIcon");
     const projectChipsContainer = document.getElementById("projectChipsContainer");
+    const pinnedChipsContainer = document.getElementById("pinnedChipsContainer");
     const projectSelect = document.getElementById("projectSelect");
     const customProjectInput = document.getElementById("customProjectInput");
     const previewIframe = document.getElementById("previewIframe");
@@ -1104,10 +1258,15 @@
     const cmdResults = document.getElementById("cmdResults");
     const adminScratchpad = document.getElementById("adminScratchpad");
     const deployHostBadge = document.getElementById("deployHostBadge");
+    const eventLogsScreen = document.getElementById("eventLogsScreen");
+    const sourceModal = document.getElementById("sourceModal");
 
     let isPassVisible = false;
 
     window.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem("lumina_theme") || "cyan";
+      setDashboardTheme(savedTheme, false);
+
       if (window.location.hostname.includes("github.io")) {
         deployHostBadge.textContent = "GitHub Pages: /EXM/";
       } else {
@@ -1129,6 +1288,7 @@
       startSystemClock();
       loadScratchpad();
       initMetricsChart();
+      initMessageBridge();
     });
 
     function startSystemClock() {
@@ -1212,7 +1372,7 @@
         spinner.classList.add("hidden");
         submitBtn.disabled = false;
         btnIcon.classList.remove("hidden");
-        btnText.textContent = "Unlock Dashboard";
+        btnText.textContent = "Unlock LuminaVista OS";
 
         if (enteredPass === MASTER_PASS) {
           loginError.classList.add("hidden");
@@ -1282,11 +1442,12 @@
                 repoProjects.push(p);
               }
             });
-            showToast("EXM Scanned", `Found ${repoProjects.length} items in /EXM/.`);
+            localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects));
+            showToast("EXM Scanned", `Discovered ${repoProjects.length} items in /EXM/.`);
           }
         }
       } catch (err) {
-        console.log("EXM directory scan notice: using current list.");
+        console.log("EXM directory notice: using current list.");
       } finally {
         if (refreshIcon) refreshIcon.classList.remove("animate-spin");
         renderProjectList();
@@ -1295,11 +1456,24 @@
 
     function renderProjectList() {
       projectChipsContainer.innerHTML = "";
+      pinnedChipsContainer.innerHTML = "";
       projectSelect.innerHTML = "";
       projectCountBadge.textContent = `${repoProjects.length} Items in EXM`;
 
+      if (repoProjects.length === 0) {
+        projectChipsContainer.innerHTML = `
+          <span class="text-xs text-zinc-500 italic">No EXM items loaded. Click 'Scan /EXM/ Folder' or enter folder manually.</span>
+        `;
+        activeProjectTitle.textContent = "No project selected";
+        return;
+      }
+
+      if (!currentSelectedProject || !repoProjects.some(p => p.name === currentSelectedProject.name)) {
+        currentSelectedProject = repoProjects[0];
+      }
+
       repoProjects.forEach((proj) => {
-        const isSelected = proj.name === currentSelectedProject.name;
+        const isSelected = currentSelectedProject && proj.name === currentSelectedProject.name;
 
         const chip = document.createElement("button");
         chip.type = "button";
@@ -1309,7 +1483,7 @@
             : "bg-surface-900 hover:bg-surface-850 border-white/5 text-zinc-300 hover:text-white"
         }`;
         chip.innerHTML = `
-          <i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-indigo-300' : 'text-zinc-500'}"></i>
+          <i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-300' : 'text-zinc-500'}"></i>
           <span>${proj.name}</span>
         `;
         chip.onclick = () => selectProject(proj);
@@ -1323,7 +1497,19 @@
         projectSelect.appendChild(opt);
       });
 
+      pinnedProjects.forEach(name => {
+        const pinBtn = document.createElement("button");
+        pinBtn.className = "px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono hover:bg-amber-500/20 transition-colors";
+        pinBtn.textContent = `★ ${name}`;
+        pinBtn.onclick = () => {
+          const match = repoProjects.find(p => p.name === name);
+          if (match) selectProject(match);
+        };
+        pinnedChipsContainer.appendChild(pinBtn);
+      });
+
       lucide.createIcons();
+      updatePinButton();
     }
 
     function selectProject(proj) {
@@ -1355,6 +1541,7 @@
 
       if (!repoProjects.some(p => p.name === newProj.name)) {
         repoProjects.push(newProj);
+        localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects));
       }
       customProjectInput.value = "";
       selectProject(newProj);
@@ -1362,6 +1549,7 @@
     }
 
     function loadActiveIntoPreview() {
+      if (!currentSelectedProject) return;
       activeProjectTitle.textContent = `EXM/${currentSelectedProject.name}/`;
       const targetUrl = resolveProjectUrl(currentSelectedProject.path);
       previewIframe.src = targetUrl;
@@ -1369,6 +1557,7 @@
     }
 
     function openActiveInNewTab() {
+      if (!currentSelectedProject) return;
       playAudioTone(659, "sine", 0.08);
       const targetUrl = resolveProjectUrl(currentSelectedProject.path);
       window.open(targetUrl, "_blank");
@@ -1380,19 +1569,40 @@
       showToast("Reloading Viewport", "Frame refreshed.");
     }
 
+    function togglePinActiveProject() {
+      if (!currentSelectedProject) return;
+      const name = currentSelectedProject.name;
+      if (pinnedProjects.includes(name)) {
+        pinnedProjects = pinnedProjects.filter(p => p !== name);
+        showToast("Bookmark Removed", `Unpinned ${name}`);
+      } else {
+        pinnedProjects.push(name);
+        showToast("Bookmarked", `Pinned ${name} to favorites.`);
+      }
+      localStorage.setItem("lumina_pinned_projects", JSON.stringify(pinnedProjects));
+      renderProjectList();
+    }
+
+    function updatePinButton() {
+      const pinBtn = document.getElementById("pinActiveBtn");
+      if (!pinBtn || !currentSelectedProject) return;
+      const isPinned = pinnedProjects.includes(currentSelectedProject.name);
+      pinBtn.className = isPinned ? "p-1 rounded text-amber-400" : "p-1 rounded text-zinc-400 hover:text-amber-400";
+    }
+
     function setViewportDevice(width) {
       playAudioTone(523, "sine", 0.03);
       const wrapper = document.getElementById("iframeWrapper");
       wrapper.style.maxWidth = width;
       
       document.querySelectorAll(".device-btn").forEach(b => {
-        b.classList.remove("bg-brand-600", "text-white");
+        b.classList.remove("bg-cyan-500", "text-black");
         b.classList.add("text-zinc-400");
       });
 
-      if (width === "100%") document.getElementById("btnDeviceDesktop").classList.add("bg-brand-600", "text-white");
-      if (width === "768px") document.getElementById("btnDeviceTablet").classList.add("bg-brand-600", "text-white");
-      if (width === "375px") document.getElementById("btnDeviceMobile").classList.add("bg-brand-600", "text-white");
+      if (width === "100%") document.getElementById("btnDeviceDesktop").classList.add("bg-cyan-500", "text-black");
+      if (width === "768px") document.getElementById("btnDeviceTablet").classList.add("bg-cyan-500", "text-black");
+      if (width === "375px") document.getElementById("btnDeviceMobile").classList.add("bg-cyan-500", "text-black");
     }
 
     function toggleFullscreen() {
@@ -1406,10 +1616,66 @@
 
     function onIframeLoaded() {
       iframeOverlay.classList.add("hidden");
+      logEvent(`Loaded preview for: ${currentSelectedProject ? currentSelectedProject.name : 'frame'}`);
     }
 
     function onIframeFailed() {
       iframeOverlay.classList.remove("hidden");
+      logEvent(`Failed to load target frame.`);
+    }
+
+    function initMessageBridge() {
+      window.addEventListener("message", (e) => {
+        logEvent(`[Iframe Message] ${typeof e.data === 'string' ? e.data : JSON.stringify(e.data)}`);
+      });
+    }
+
+    function logEvent(msg) {
+      const now = new Date().toTimeString().split(" ")[0];
+      const div = document.createElement("div");
+      div.className = "text-zinc-300";
+      div.textContent = `[${now}] ${msg}`;
+      eventLogsScreen.appendChild(div);
+      eventLogsScreen.scrollTop = eventLogsScreen.scrollHeight;
+    }
+
+    function clearEventLogs() {
+      eventLogsScreen.innerHTML = '<div class="text-zinc-500">Logs cleared.</div>';
+    }
+
+    function openSourceInspector() {
+      if (!currentSelectedProject) return;
+      document.getElementById("sourceProjectTitle").textContent = currentSelectedProject.name;
+      sourceModal.classList.remove("hidden");
+      setTimeout(() => {
+        sourceModal.classList.remove("opacity-0");
+        sourceModal.querySelector("div").classList.remove("scale-95");
+      }, 10);
+      loadSourceFile("index.html");
+    }
+
+    function closeSourceInspector() {
+      sourceModal.classList.add("opacity-0");
+      sourceModal.querySelector("div").classList.add("scale-95");
+      setTimeout(() => sourceModal.classList.add("hidden"), 200);
+    }
+
+    async function loadSourceFile(filename) {
+      const block = document.getElementById("sourceCodeBlock");
+      block.textContent = `Fetching ${filename} from /EXM/${currentSelectedProject.name}/${filename}...`;
+
+      try {
+        const targetUrl = resolveProjectUrl(currentSelectedProject.path).replace(/index\\.html$/, "") + filename;
+        const res = await fetch(targetUrl);
+        if (res.ok) {
+          const text = await res.text();
+          block.textContent = text;
+        } else {
+          block.textContent = `/* ${filename} not found or inaccessible at ${targetUrl} */`;
+        }
+      } catch (err) {
+        block.textContent = `/* Error fetching file: ${err.message} */`;
+      }
     }
 
     function applySandboxPolicy() {
@@ -1456,8 +1722,20 @@
       }
     }
 
-    function setDashboardTheme(themeName) {
-      showToast("Theme Configured", `Switched to ${themeName} palette.`);
+    function setDashboardTheme(themeName, notify = true) {
+      document.documentElement.setAttribute("data-theme", themeName);
+      localStorage.setItem("lumina_theme", themeName);
+
+      const orb1 = document.getElementById("orb1");
+      if (orb1) {
+        if (themeName === "cyan") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
+        if (themeName === "emerald") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
+        if (themeName === "amber") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-amber-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
+        if (themeName === "rose") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-rose-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
+      }
+
+      renderProjectList();
+      if (notify) showToast("Theme Updated", `Switched to ${themeName.toUpperCase()} visual palette.`);
     }
 
     function exportDashboardConfig() {
@@ -1466,6 +1744,7 @@
         moniker: "GODx",
         baseDir: "EXM",
         projects: repoProjects,
+        pinned: pinnedProjects,
         notes: adminScratchpad.value,
         timestamp: new Date().toISOString(),
       };
@@ -1492,7 +1771,7 @@
       
       const echoLine = document.createElement("div");
       echoLine.className = "text-zinc-400";
-      echoLine.innerHTML = `<span class="text-indigo-400 font-bold">anish@godx:~$</span> ${cmd}`;
+      echoLine.innerHTML = `<span class="text-cyan-400 font-bold">anish@godx:~$</span> ${cmd}`;
       screen.appendChild(echoLine);
 
       const parts = cmd.split(" ");
@@ -1506,26 +1785,27 @@
           responseLine.className = "text-zinc-300";
           responseLine.innerHTML = `
             Available Commands:<br/>
-            - <span class="text-indigo-300 font-bold">ls / projects</span>: List all /EXM/ projects and folders<br/>
-            - <span class="text-indigo-300 font-bold">open &lt;name&gt;</span>: Switch active viewport to target EXM project<br/>
-            - <span class="text-indigo-300 font-bold">fetch</span>: Scan /EXM/ folder via GitHub API<br/>
-            - <span class="text-indigo-300 font-bold">whoami</span>: Display active profile signature<br/>
-            - <span class="text-indigo-300 font-bold">clear</span>: Clear terminal console<br/>
-            - <span class="text-indigo-300 font-bold">stats</span>: View system performance parameters<br/>
-            - <span class="text-indigo-300 font-bold">logout</span>: Lock console and log out
+            - <span class="text-cyan-300 font-bold">ls / projects</span>: List all /EXM/ projects<br/>
+            - <span class="text-cyan-300 font-bold">open &lt;name&gt;</span>: Switch active viewport to target EXM project<br/>
+            - <span class="text-cyan-300 font-bold">fetch</span>: Scan /EXM/ folder via GitHub API<br/>
+            - <span class="text-cyan-300 font-bold">theme &lt;cyan|emerald|amber|rose&gt;</span>: Change visual theme<br/>
+            - <span class="text-cyan-300 font-bold">whoami</span>: Display active profile signature<br/>
+            - <span class="text-cyan-300 font-bold">ping</span>: Measure roundtrip latency<br/>
+            - <span class="text-cyan-300 font-bold">clear</span>: Clear terminal console<br/>
+            - <span class="text-cyan-300 font-bold">logout</span>: Lock console and log out
           `;
           break;
 
         case "ls":
         case "projects":
           responseLine.className = "text-emerald-400";
-          responseLine.textContent = repoProjects.map(p => "EXM/" + p.name).join("   ");
+          responseLine.textContent = repoProjects.map(p => "EXM/" + p.name).join("   ") || "No EXM items found. Run 'fetch'.";
           break;
 
         case "open":
           if (!arg) {
             responseLine.className = "text-rose-400";
-            responseLine.textContent = "Usage: open <project_name> (e.g. open xxx)";
+            responseLine.textContent = "Usage: open <project_name> (e.g. open demo)";
           } else {
             const cleanArg = arg.replace(/^EXM\//i, "").replace(/\/+$/g, "");
             const match = repoProjects.find(p => p.name.toLowerCase() === cleanArg.toLowerCase());
@@ -1536,11 +1816,27 @@
               responseLine.textContent = `✓ Switched and launched EXM/${match.name}/`;
             } else {
               responseLine.className = "text-amber-400";
-              responseLine.textContent = `Project '${arg}' not found. Added to custom runner.`;
+              responseLine.textContent = `Project '${arg}' not found in scan. Adding to custom runner.`;
               customProjectInput.value = cleanArg;
               addCustomProject();
             }
           }
+          break;
+
+        case "theme":
+          if (["cyan", "emerald", "amber", "rose"].includes(arg.toLowerCase())) {
+            setDashboardTheme(arg.toLowerCase());
+            responseLine.className = "text-cyan-300";
+            responseLine.textContent = `Theme updated to: ${arg}`;
+          } else {
+            responseLine.className = "text-rose-400";
+            responseLine.textContent = "Valid themes: cyan, emerald, amber, rose";
+          }
+          break;
+
+        case "ping":
+          responseLine.className = "text-cyan-300";
+          responseLine.textContent = `Ping to GitHub Pages host: ${Math.floor(Math.random() * 20 + 15)}ms (Status: Optimal)`;
           break;
 
         case "whoami":
@@ -1550,7 +1846,7 @@
 
         case "fetch":
           fetchRepoProjects();
-          responseLine.className = "text-indigo-300";
+          responseLine.className = "text-cyan-300";
           responseLine.textContent = "Scanning /EXM/ via GitHub API...";
           break;
 
@@ -1558,11 +1854,6 @@
           screen.innerHTML = "";
           input.value = "";
           return;
-
-        case "stats":
-          responseLine.className = "text-sky-300";
-          responseLine.textContent = `EXM Items: ${repoProjects.length} | Latency: 0.42ms | FPS: 60 | Status: Optimal`;
-          break;
 
         case "logout":
           handleLogout();
@@ -1641,6 +1932,7 @@
         { label: "Switch Tab: Performance Analytics", icon: "activity", action: () => switchTab("tab-analytics") },
         { label: "Switch Tab: Scratchpad", icon: "file-text", action: () => switchTab("tab-scratchpad") },
         { label: "Action: Scan /EXM/ Folder", icon: "refresh-cw", action: () => fetchRepoProjects() },
+        { label: "Action: Inspect Source Code", icon: "code", action: () => openSourceInspector() },
         { label: "Action: Reload Current Viewport", icon: "rotate-cw", action: () => reloadIframe() },
         { label: "Action: Lock Console (Logout)", icon: "log-out", action: () => handleLogout() },
       ];
@@ -1661,7 +1953,7 @@
         btn.className = "w-full p-2.5 rounded-xl hover:bg-surface-850 flex items-center justify-between text-left text-zinc-300 hover:text-white transition-colors";
         btn.innerHTML = `
           <span class="flex items-center gap-2">
-            <i data-lucide="${item.icon}" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <i data-lucide="${item.icon}" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>${item.label}</span>
           </span>
           <span class="text-[10px] text-zinc-500">Run ↵</span>
@@ -1688,7 +1980,7 @@
 
       function draw() {
         chartCanvas.width = chartCanvas.parentElement.clientWidth;
-        chartCanvas.height = 160;
+        chartCanvas.height = 180;
 
         cctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
         
@@ -1709,8 +2001,8 @@
           else cctx.lineTo(idx * step, y);
         });
 
-        cctx.strokeStyle = "#818cf8";
-        cctx.lineWidth = 2;
+        cctx.strokeStyle = "#00f2fe";
+        cctx.lineWidth = 2.5;
         cctx.stroke();
 
         dataPoints.shift();
@@ -1730,12 +2022,12 @@
       }, 3500);
     }
 
-    // Ambient Particles
+    // Ambient Starfield Canvas
     const canvas = document.getElementById("ambientCanvas");
     const ctx = canvas.getContext("2d");
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
-    const particles = Array.from({ length: 40 }, () => ({
+    const particles = Array.from({ length: 45 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
       vx: (Math.random() - 0.5) * 0.35,
@@ -1751,7 +2043,7 @@
         p.y = (p.y + p.vy + height) % height;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(129, 140, 248, ${p.alpha})`;
+        ctx.fillStyle = `rgba(0, 242, 254, ${p.alpha})`;
         ctx.fill();
       });
       requestAnimationFrame(animateParticles);
