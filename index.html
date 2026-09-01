@@ -1,11 +1,11 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LuminaVista — GODx Admin Console</title>
+  <title>LuminaVista OS — GODx Admin Control Center</title>
   
-  <!-- Fonts -->
+  <!-- Google Fonts: Plus Jakarta Sans, Inter, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -33,12 +33,12 @@ DOCTYPE html>
               800: '#3730a3',
             },
             surface: {
-              950: '#060911',
-              900: '#0c1220',
-              850: '#131b2e',
-              800: '#1c263d',
-              750: '#25324e',
-              700: '#2f3f61',
+              950: '#050811',
+              900: '#0b1120',
+              850: '#11192e',
+              800: '#19243d',
+              750: '#233252',
+              700: '#2d3f66',
             }
           },
           animation: {
@@ -49,19 +49,19 @@ DOCTYPE html>
     }
   </script>
 
-  <!-- Lucide Icons & GSAP Animation -->
+  <!-- Lucide Icons & GSAP -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
     body {
-      background-color: #060911;
+      background-color: #050811;
       color: #f8fafc;
       overflow-x: hidden;
     }
     
     .glass-panel {
-      background: rgba(12, 18, 32, 0.75);
+      background: rgba(11, 17, 32, 0.85);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -69,13 +69,13 @@ DOCTYPE html>
     }
     
     .glass-input {
-      background: rgba(19, 27, 46, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(17, 25, 46, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
     .glass-input:focus {
-      background: rgba(19, 27, 46, 0.95);
+      background: rgba(17, 25, 46, 0.95);
       border-color: #6366f1;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
     }
@@ -116,7 +116,7 @@ DOCTYPE html>
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #060911;
+      background: #050811;
     }
     ::-webkit-scrollbar-thumb {
       background: #1e293b;
@@ -126,17 +126,24 @@ DOCTYPE html>
       background: #334155;
     }
 
-    .active-project-pill {
+    .nav-tab-active {
       background: rgba(99, 102, 241, 0.2);
       border-color: rgba(99, 102, 241, 0.5);
-      color: #e0e7ff;
+      color: #ffffff;
       box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+    }
+
+    .active-project-pill {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(99, 102, 241, 0.6);
+      color: #e0e7ff;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between font-sans selection:bg-brand-500 selection:text-white relative bg-surface-950">
 
-  <!-- Interactive Canvas & Glowing Orbs -->
+  <!-- Background Canvas & Ambient Lights -->
   <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
   <div class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-brand-600/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow"></div>
   <div class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow" style="animation-delay: 3s;"></div>
@@ -148,19 +155,20 @@ DOCTYPE html>
     
     <div class="card-3d-wrapper w-full max-w-md">
       
+      <!-- Top Status Pill -->
       <div class="flex justify-center mb-6">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-900/90 border border-white/10 text-xs text-zinc-300 backdrop-blur-md">
           <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
-          <span class="font-mono text-zinc-400">LuminaVista Cloud</span>
+          <span class="font-mono text-zinc-400">LuminaVista EXM Cloud</span>
           <span class="text-zinc-600">•</span>
           <span class="text-brand-400 font-mono font-medium">GODx Gateway</span>
         </div>
       </div>
 
-      <!-- Login Card -->
+      <!-- Login Glass Card -->
       <div id="loginCard" class="glass-panel glow-border rounded-3xl p-6 sm:p-8 w-full shadow-2xl transition-transform duration-150 ease-out">
         
-        <!-- Header -->
+        <!-- Profile Header -->
         <div class="flex items-center gap-3.5 pb-6 border-b border-white/5">
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-500 flex items-center justify-center font-heading font-extrabold text-white text-base shadow-lg shadow-brand-500/25 tracking-wider">
             GODx
@@ -176,7 +184,7 @@ DOCTYPE html>
 
         <div class="mt-6 text-left">
           <h2 class="font-heading font-bold text-2xl text-white tracking-tight">Admin Sign In</h2>
-          <p class="text-xs text-zinc-400 mt-1">Enter your username and password to unlock controls.</p>
+          <p class="text-xs text-zinc-400 mt-1">Enter your credentials to unlock dashboard controls.</p>
         </div>
 
         <!-- Form -->
@@ -236,10 +244,9 @@ DOCTYPE html>
               </button>
             </div>
 
-            <!-- Error Banner -->
             <p id="loginError" class="hidden text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
               <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-              <span>Access Denied: Invalid password. Try <code>admin</code>.</span>
+              <span>Access Denied: Invalid password. Use <code>admin</code>.</span>
             </p>
           </div>
 
@@ -273,13 +280,13 @@ DOCTYPE html>
 
         <div class="mt-6 pt-5 border-t border-white/5 flex items-center justify-between text-xs text-zinc-500">
           <a
-            href="https://github.com/SubhadraRoy/LuminaVista"
+            href="https://github.com/SubhadraRoy/LuminaVista/tree/main/EXM"
             target="_blank"
             rel="noopener noreferrer"
             class="flex items-center gap-1.5 hover:text-zinc-300 transition-colors"
           >
-            <i data-lucide="github" class="w-3.5 h-3.5"></i>
-            <span>SubhadraRoy/LuminaVista</span>
+            <i data-lucide="folder" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>SubhadraRoy/LuminaVista/EXM</span>
           </a>
           <span class="text-[11px] text-emerald-400 flex items-center gap-1">
             <i data-lucide="shield" class="w-3 h-3"></i>
@@ -294,47 +301,72 @@ DOCTYPE html>
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 2. MAIN DASHBOARD VIEW                                                    -->
+  <!-- 2. FULL SYSTEM DASHBOARD (EXM Workspace)                                  -->
   <!-- ========================================================================= -->
   <div id="dashboardView" class="relative z-10 flex-1 flex flex-col hidden min-h-screen">
     
-    <!-- Top Nav Header -->
-    <header class="sticky top-0 z-40 w-full border-b border-white/5 bg-surface-950/85 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+    <!-- Top System Header Bar -->
+    <header class="sticky top-0 z-40 w-full border-b border-white/5 bg-surface-950/90 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
       
+      <!-- Brand & Profile -->
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-600 flex items-center justify-center font-heading font-extrabold text-white text-base shadow-md shadow-brand-500/25">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-600 flex items-center justify-center font-heading font-extrabold text-white text-sm shadow-md shadow-brand-500/25">
           GODx
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight">LuminaVista</h1>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium">Online</span>
+            <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight">LuminaVista OS</h1>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium">EXM Hub</span>
           </div>
           <p class="text-[11px] text-zinc-400">Admin: <span class="text-zinc-200 font-medium" id="headerAdminName">Anish x</span> (GODx)</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-3">
-        <a
-          href="https://github.com/SubhadraRoy/LuminaVista"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900/80 hover:bg-surface-850 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+      <!-- Center System Clock -->
+      <div class="hidden lg:flex items-center gap-4 bg-surface-900/80 px-4 py-1.5 rounded-full border border-white/5 text-xs text-zinc-400 font-mono">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span id="systemClock">00:00:00 UTC</span>
+        </div>
+        <span class="text-zinc-700">•</span>
+        <div class="flex items-center gap-1.5 text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span id="deployHostBadge">EXM Directory Active</span>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2 sm:gap-2.5">
+        <button
+          type="button"
+          onclick="openCommandPalette()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors"
+          title="Command Palette (Ctrl/Cmd + K)"
         >
-          <i data-lucide="github" class="w-3.5 h-3.5"></i>
-          <span>Repository</span>
-          <i data-lucide="external-link" class="w-3 h-3 text-zinc-500"></i>
-        </a>
+          <i data-lucide="command" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span class="hidden md:inline">Quick Commands</span>
+          <kbd class="hidden md:inline px-1.5 py-0.5 text-[10px] bg-surface-800 rounded text-zinc-400 font-mono">⌘K</kbd>
+        </button>
 
         <button
           type="button"
-          onclick="fetchRepoProjects()"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900/80 hover:bg-surface-850 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
-          title="Scan repository for folders & HTML files"
+          id="audioToggleBtn"
+          onclick="toggleAudioFeedback()"
+          class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+          title="Toggle UI Audio Feedback"
         >
-          <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">Scan Repo</span>
+          <i data-lucide="volume-2" id="audioIcon" class="w-4 h-4"></i>
         </button>
+
+        <a
+          href="https://github.com/SubhadraRoy/LuminaVista/tree/main/EXM"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+        >
+          <i data-lucide="folder-git" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>EXM Repo</span>
+        </a>
 
         <button
           type="button"
@@ -343,348 +375,666 @@ DOCTYPE html>
           title="Lock Console"
         >
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-          <span>Exit</span>
+          <span class="hidden sm:inline">Exit</span>
         </button>
       </div>
 
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      
-      <!-- Welcome Hero & Info Banner -->
-      <div class="glass-panel glow-border rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="inline-flex items-center gap-1.5 text-xs text-brand-300 font-mono">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i>
-            <span>MULTI-PROJECT WORKSPACE CONSOLE</span>
-          </div>
-          <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-white">
-            LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400">Anish x</span>
-          </h2>
-          <p class="text-xs text-zinc-400">
-            Each folder runs its own isolated <code class="text-zinc-300">index.html</code>, CSS, and JS with zero conflicts.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-3 w-full md:w-auto">
-          <div class="bg-surface-900/90 px-3.5 py-2 rounded-xl border border-white/5 flex flex-col">
-            <span class="text-[10px] uppercase font-mono text-zinc-500">Repository</span>
-            <span class="text-xs font-bold text-indigo-300 font-mono">LuminaVista</span>
-          </div>
-          <div class="bg-surface-900/90 px-3.5 py-2 rounded-xl border border-white/5 flex flex-col">
-            <span class="text-[10px] uppercase font-mono text-zinc-500">Active Items</span>
-            <span id="projectCountBadge" class="text-xs font-bold text-emerald-400 font-mono">3 Projects</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- MAIN ROW: PROJECT SELECTOR & LIVE VIEWPORT -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Navigation Tabs Bar -->
+    <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/5 no-scrollbar">
         
-        <!-- Left Panel: Project & File Selector (5 Cols) -->
-        <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-5 flex flex-col justify-between">
+        <button
+          type="button"
+          onclick="switchTab('tab-projects')"
+          id="btn-tab-projects"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0"
+        >
+          <i data-lucide="folder-tree" class="w-4 h-4 text-indigo-400"></i>
+          <span>EXM Projects & Viewport</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="switchTab('tab-controls')"
+          id="btn-tab-controls"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+        >
+          <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
+          <span>System Controls & Tweaks</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="switchTab('tab-terminal')"
+          id="btn-tab-terminal"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+        >
+          <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
+          <span>GODx Terminal CLI</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="switchTab('tab-analytics')"
+          id="btn-tab-analytics"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+        >
+          <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
+          <span>Performance & Metrics</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="switchTab('tab-scratchpad')"
+          id="btn-tab-scratchpad"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+        >
+          <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
+          <span>Scratchpad & Code Vault</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      
+      <!-- ===================================================================== -->
+      <!-- TAB 1: PROJECTS HUB & LIVE VIEWPORT (EXM Sub-Folders)                 -->
+      <!-- ===================================================================== -->
+      <section id="tab-projects" class="tab-pane space-y-6">
+        
+        <div class="glass-panel glow-border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-1.5 text-xs text-brand-300 font-mono">
+              <i data-lucide="folder-check" class="w-3.5 h-3.5 text-brand-400"></i>
+              <span>EXM FOLDER WORKSPACE CONSOLE</span>
+            </div>
+            <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-white">
+              LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400">Anish x</span>
+            </h2>
+            <p class="text-xs text-zinc-400">
+              Scanning <code class="text-indigo-300 font-mono">/EXM/</code> directory. Each sub-project runs its own isolated CSS and JS.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              onclick="fetchRepoProjects()"
+              class="px-3 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white flex items-center gap-2 transition-colors"
+            >
+              <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5"></i>
+              <span>Scan /EXM/ Folder</span>
+            </button>
+            <div class="bg-surface-900/90 px-3.5 py-2 rounded-xl border border-white/5 flex flex-col">
+              <span class="text-[10px] uppercase font-mono text-zinc-500">EXM Items</span>
+              <span id="projectCountBadge" class="text-xs font-bold text-emerald-400 font-mono">3 Folders</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          <div class="space-y-4">
-            
-            <div class="flex items-center justify-between pb-3 border-b border-white/5">
-              <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                  <i data-lucide="folder-code" class="w-4 h-4"></i>
+          <!-- Left Panel: EXM Sub-Folder Chooser -->
+          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-5 flex flex-col justify-between">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b border-white/5">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <i data-lucide="folder-code" class="w-4 h-4"></i>
+                  </div>
+                  <h3 class="font-heading font-bold text-sm text-white">EXM Sub-Projects</h3>
                 </div>
-                <h3 class="font-heading font-bold text-sm text-white">Repository Projects & Pages</h3>
+                <span class="text-[10px] font-mono text-indigo-300 bg-surface-900 px-2 py-0.5 rounded border border-white/5">
+                  /EXM/*
+                </span>
               </div>
-              <span class="text-[10px] font-mono text-zinc-500 bg-surface-900 px-2 py-0.5 rounded border border-white/5">
-                Isolated Assets
-              </span>
+
+              <!-- Dynamic Project Chips -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <label class="font-medium text-zinc-300">Choose Folder in /EXM/:</label>
+                  <span class="text-[11px] text-zinc-500">Auto-resolved</span>
+                </div>
+                <div id="projectChipsContainer" class="flex flex-wrap gap-2 pt-1"></div>
+              </div>
+
+              <!-- Dropdown Selector -->
+              <div class="space-y-1.5 pt-2">
+                <label for="projectSelect" class="block text-xs font-medium text-zinc-400">Or Select from Dropdown:</label>
+                <div class="relative">
+                  <select
+                    id="projectSelect"
+                    onchange="onDropdownSelect()"
+                    class="glass-input w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none cursor-pointer"
+                  ></select>
+                </div>
+              </div>
+
+              <!-- Custom Manual Entry -->
+              <div class="space-y-1.5 pt-1">
+                <label for="customProjectInput" class="block text-xs font-medium text-zinc-400">Enter Folder inside EXM:</label>
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-500 pointer-events-none">EXM/</span>
+                    <input
+                      type="text"
+                      id="customProjectInput"
+                      placeholder="folder_name"
+                      class="glass-input w-full pl-14 pr-3 py-2 rounded-xl text-xs font-mono text-white placeholder-zinc-500 outline-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onclick="addCustomProject()"
+                    class="px-3 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <!-- Dynamic Project Chips -->
-            <div class="space-y-2">
-              <div class="flex items-center justify-between text-xs">
-                <label class="font-medium text-zinc-300">Select Project to Run:</label>
-                <span class="text-[11px] text-zinc-500">Folder / Page</span>
-              </div>
-              <div id="projectChipsContainer" class="flex flex-wrap gap-2 pt-1"></div>
-            </div>
-
-            <!-- Dropdown Selector -->
-            <div class="space-y-1.5 pt-2">
-              <label for="projectSelect" class="block text-xs font-medium text-zinc-400">Or Select from List:</label>
-              <div class="relative">
-                <select
-                  id="projectSelect"
-                  onchange="onDropdownSelect()"
-                  class="glass-input w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none cursor-pointer"
-                ></select>
-              </div>
-            </div>
-
-            <!-- Custom Project / Folder Manual Entry -->
-            <div class="space-y-1.5 pt-1">
-              <label for="customProjectInput" class="block text-xs font-medium text-zinc-400">Add Custom Folder or File:</label>
-              <div class="flex gap-2">
-                <input
-                  type="text"
-                  id="customProjectInput"
-                  placeholder="e.g. project1 or xxx or sub/index.html"
-                  class="glass-input flex-1 px-3.5 py-2 rounded-xl text-xs font-mono text-white placeholder-zinc-500 outline-none"
-                />
+            <!-- Bottom Actions -->
+            <div class="space-y-3 pt-4 border-t border-white/5">
+              <div class="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onclick="addCustomProject()"
-                  class="px-3 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
+                  onclick="loadActiveIntoPreview()"
+                  class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/20 active:scale-[0.98] transition-all"
                 >
-                  Add
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                  <span>Embed Preview</span>
+                </button>
+
+                <button
+                  type="button"
+                  onclick="openActiveInNewTab()"
+                  class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                  <span>Open in Tab</span>
+                </button>
+              </div>
+
+              <div class="p-3 rounded-xl bg-brand-500/5 border border-brand-500/10 text-[11px] text-zinc-400 leading-relaxed flex items-start gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                <span>Paths are automatically routed to <code class="text-zinc-300">./EXM/&lt;folder&gt;/index.html</code> so CSS and JS load without issues.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Viewport -->
+          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 flex flex-col space-y-3 min-h-[480px]">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5">
+              <div class="flex items-center gap-2">
+                <div class="flex gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+                </div>
+                <span id="activePreviewBadge" class="ml-2 text-xs font-mono text-indigo-300 bg-surface-900 px-2.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1.5">
+                  <i data-lucide="folder" class="w-3 h-3 text-indigo-400"></i>
+                  <span id="activeProjectTitle">EXM/xxx/</span>
+                </span>
+              </div>
+
+              <!-- Viewport Sizing & Actions -->
+              <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/5">
+                <button
+                  type="button"
+                  onclick="setViewportDevice('100%')"
+                  class="device-btn p-1.5 rounded-lg bg-brand-600 text-white text-xs"
+                  title="Desktop (100%)"
+                  id="btnDeviceDesktop"
+                >
+                  <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
+                </button>
+                <button
+                  type="button"
+                  onclick="setViewportDevice('768px')"
+                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
+                  title="Tablet (768px)"
+                  id="btnDeviceTablet"
+                >
+                  <i data-lucide="tablet" class="w-3.5 h-3.5"></i>
+                </button>
+                <button
+                  type="button"
+                  onclick="setViewportDevice('375px')"
+                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
+                  title="Mobile (375px)"
+                  id="btnDeviceMobile"
+                >
+                  <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                </button>
+                
+                <div class="w-[1px] h-4 bg-white/10 mx-1"></div>
+
+                <button
+                  type="button"
+                  onclick="reloadIframe()"
+                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  title="Reload Preview Frame"
+                >
+                  <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                </button>
+                <button
+                  type="button"
+                  onclick="toggleFullscreen()"
+                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  title="Fullscreen Mode"
+                >
+                  <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
             </div>
 
-          </div>
+            <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300">
+              <iframe
+                id="previewIframe"
+                src="./EXM/xxx/index.html"
+                class="w-full h-full min-h-[400px] border-0 transition-all duration-300"
+                onload="onIframeLoaded()"
+                onerror="onIframeFailed()"
+              ></iframe>
 
-          <!-- Bottom Actions -->
-          <div class="space-y-3 pt-4 border-t border-white/5">
-            <div class="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onclick="loadActiveIntoPreview()"
-                class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/20 active:scale-[0.98] transition-all"
-              >
-                <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                <span>Embed Preview</span>
-              </button>
-
-              <button
-                type="button"
-                onclick="openActiveInNewTab()"
-                class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all"
-              >
-                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                <span>Open in Tab</span>
-              </button>
-            </div>
-
-            <div class="p-3 rounded-xl bg-brand-500/5 border border-brand-500/10 text-[11px] text-zinc-400 leading-relaxed flex items-start gap-2">
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
-              <span>Running inside an isolated iframe allows each project to load its own local CSS and JS files seamlessly without interference.</span>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right Panel: Live Viewport & Device Resizer (7 Cols) -->
-        <div class="lg:col-span-7 glass-panel rounded-2xl p-5 flex flex-col space-y-3 min-h-[480px]">
-          
-          <!-- Viewport Header & Controls -->
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5">
-            
-            <div class="flex items-center gap-2">
-              <div class="flex gap-1.5">
-                <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
-                <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
-                <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+              <div id="iframeOverlay" class="hidden absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-surface-900 border border-white/10 flex items-center justify-center text-zinc-400">
+                  <i data-lucide="folder-search" class="w-6 h-6 text-amber-400"></i>
+                </div>
+                <div>
+                  <h4 class="font-heading font-bold text-sm text-white" id="overlayTitle">EXM Project Preview</h4>
+                  <p class="text-xs text-zinc-400 max-w-xs mt-1" id="overlayDesc">
+                    Select a sub-project from the EXM folder on the left.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onclick="openActiveInNewTab()"
+                  class="px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200"
+                >
+                  Open in New Window ↗
+                </button>
               </div>
-              <span id="activePreviewBadge" class="ml-2 text-xs font-mono text-indigo-300 bg-surface-900 px-2.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1.5">
-                <i data-lucide="globe" class="w-3 h-3"></i>
-                <span id="activeProjectTitle">xxx/</span>
-              </span>
             </div>
-
-            <!-- Viewport Actions (Desktop/Tablet/Mobile + Reload + Fullscreen) -->
-            <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/5">
-              <button
-                type="button"
-                onclick="setViewportDevice('100%')"
-                class="device-btn p-1.5 rounded-lg bg-brand-600 text-white text-xs"
-                title="Desktop (100%)"
-                id="btnDeviceDesktop"
-              >
-                <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
-              </button>
-              <button
-                type="button"
-                onclick="setViewportDevice('768px')"
-                class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
-                title="Tablet (768px)"
-                id="btnDeviceTablet"
-              >
-                <i data-lucide="tablet" class="w-3.5 h-3.5"></i>
-              </button>
-              <button
-                type="button"
-                onclick="setViewportDevice('375px')"
-                class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs"
-                title="Mobile (375px)"
-                id="btnDeviceMobile"
-              >
-                <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-              </button>
-              
-              <div class="w-[1px] h-4 bg-white/10 mx-1"></div>
-
-              <button
-                type="button"
-                onclick="reloadIframe()"
-                class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                title="Reload Preview Frame"
-              >
-                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
-              </button>
-              <button
-                type="button"
-                onclick="toggleFullscreen()"
-                class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                title="Fullscreen Mode"
-              >
-                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-
           </div>
+        </div>
+      </section>
 
-          <!-- Embedded Iframe Frame Container -->
-          <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300">
-            
-            <iframe
-              id="previewIframe"
-              src="xxx/"
-              class="w-full h-full min-h-[400px] border-0 transition-all duration-300"
-              onload="onIframeLoaded()"
-              onerror="onIframeFailed()"
-            ></iframe>
-
-            <!-- Fallback Overlay -->
-            <div id="iframeOverlay" class="hidden absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
-              <div class="w-12 h-12 rounded-2xl bg-surface-900 border border-white/10 flex items-center justify-center text-zinc-400">
-                <i data-lucide="file-warning" class="w-6 h-6 text-amber-400"></i>
+      <!-- ===================================================================== -->
+      <!-- TAB 2: SYSTEM CONTROLS & ENVIRONMENT TWEAKS                           -->
+      <!-- ===================================================================== -->
+      <section id="tab-controls" class="tab-pane space-y-6 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <!-- Sandbox Policies -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
+              <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                <i data-lucide="shield" class="w-4 h-4"></i>
               </div>
               <div>
-                <h4 class="font-heading font-bold text-sm text-white" id="overlayTitle">Project Path Preview</h4>
-                <p class="text-xs text-zinc-400 max-w-xs mt-1" id="overlayDesc">
-                  Loading target project. Verify the folder exists in your repository.
-                </p>
+                <h3 class="text-sm font-bold text-white">Frame Sandbox Policies</h3>
+                <p class="text-[11px] text-zinc-400">Manage iframe security headers</p>
               </div>
-              <button
-                type="button"
-                onclick="openActiveInNewTab()"
-                class="px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200"
-              >
-                Open in New Window ↗
-              </button>
             </div>
 
-          </div>
+            <div class="space-y-3 text-xs">
+              <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
+                <span>Allow Scripts Execution</span>
+                <input type="checkbox" id="checkAllowScripts" checked class="w-4 h-4 rounded text-brand-600" />
+              </label>
 
-        </div>
+              <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
+                <span>Allow Same-Origin Access</span>
+                <input type="checkbox" id="checkAllowOrigin" checked class="w-4 h-4 rounded text-brand-600" />
+              </label>
 
-      </div>
-
-      <!-- SECTION 2: MODULAR CONTROLS WORKSPACE -->
-      <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4">
-        
-        <div class="flex items-center justify-between border-b border-white/5 pb-4">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-              <i data-lucide="sliders" class="w-4 h-4"></i>
+              <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
+                <span>Allow Modals & Popups</span>
+                <input type="checkbox" id="checkAllowPopups" checked class="w-4 h-4 rounded text-brand-600" />
+              </label>
             </div>
-            <div>
-              <h3 class="font-heading font-bold text-sm sm:text-base text-white">Dashboard Controls & Modular Modules</h3>
-              <p class="text-xs text-zinc-400">Custom tools, action toggles, and extensible feature slots for Anish x.</p>
-            </div>
-          </div>
 
-          <span class="text-xs font-mono text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20">
-            GODx Control Center
-          </span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-          
-          <!-- Module 1: Action Runner -->
-          <div class="bg-surface-900/80 p-4 rounded-xl border border-white/5 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                <i data-lucide="terminal" class="w-3.5 h-3.5 text-indigo-400"></i>
-                Action Runner
-              </span>
-              <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Ready</span>
-            </div>
-            <p class="text-xs text-zinc-400 leading-relaxed">
-              Trigger instant actions, clear cache, or reload all repository links with a single click.
-            </p>
-            <div class="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onclick="showToast('Cache Cleared', 'Session storage and frame cache refreshed.')"
-                class="py-1.5 px-2.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-[11px] text-zinc-300 hover:text-white transition-colors"
-              >
-                Clear Cache
-              </button>
-              <button
-                type="button"
-                onclick="reloadIframe()"
-                class="py-1.5 px-2.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-[11px] text-zinc-300 hover:text-white transition-colors"
-              >
-                Reload Frame
-              </button>
-            </div>
-          </div>
-
-          <!-- Module 2: Security Status -->
-          <div class="bg-surface-900/80 p-4 rounded-xl border border-white/5 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-400"></i>
-                Session Status
-              </span>
-              <span class="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded">Pass Verified</span>
-            </div>
-            <p class="text-xs text-zinc-400 leading-relaxed">
-              Authenticated user: <code class="text-zinc-300 font-mono">Anish x (GODx)</code>. Master password protected.
-            </p>
             <button
               type="button"
-              onclick="showToast('Security Status', 'Active Session ID: GODX-AUTH-2026. All controls unlocked.')"
-              class="w-full py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+              onclick="applySandboxPolicy()"
+              class="w-full py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white transition-colors"
             >
-              Verify Security Signature
+              Apply Security Settings
             </button>
           </div>
 
-          <!-- Module 3: Custom Controls Placeholder -->
-          <div class="bg-surface-900/80 p-4 rounded-xl border border-dashed border-white/15 space-y-3 flex flex-col justify-between">
-            <div class="space-y-1.5">
-              <div class="flex items-center gap-1.5 text-xs font-bold text-brand-300">
-                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                Custom Controls Ready
+          <!-- Auto Refresh -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
+              <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                <i data-lucide="timer" class="w-4 h-4"></i>
               </div>
-              <p class="text-xs text-zinc-400">
-                Tell me what specific controls, parameters, or switches you want, and we will wire them right here.
-              </p>
+              <div>
+                <h3 class="text-sm font-bold text-white">Auto-Refresh Cadence</h3>
+                <p class="text-[11px] text-zinc-400">Live development auto-polling</p>
+              </div>
             </div>
-            <div class="text-[11px] text-zinc-500 italic">
-              Configured for Anish x (GODx)
+
+            <div class="space-y-3 text-xs">
+              <p class="text-zinc-400 leading-relaxed">
+                Automatically reload the embedded frame to preview live repo changes.
+              </p>
+              <select
+                id="autoRefreshSelect"
+                onchange="setupAutoRefresh()"
+                class="glass-input w-full p-2.5 rounded-xl text-xs text-white outline-none cursor-pointer"
+              >
+                <option value="0" class="bg-surface-900">Disabled (Manual Only)</option>
+                <option value="5" class="bg-surface-900">Every 5 Seconds</option>
+                <option value="15" class="bg-surface-900">Every 15 Seconds</option>
+                <option value="30" class="bg-surface-900">Every 30 Seconds</option>
+                <option value="60" class="bg-surface-900">Every 1 Minute</option>
+              </select>
+              <div class="p-2.5 rounded-xl bg-surface-900/60 border border-white/5 text-[11px] text-zinc-400 flex items-center gap-2">
+                <span id="autoRefreshStatusText" class="text-indigo-300 font-mono">Timer: Off</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Script Injector -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="code" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Live Script Injector</h3>
+                <p class="text-[11px] text-zinc-400">Inject custom CSS / JS directly</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <textarea
+                id="customInjectCode"
+                placeholder="/* Custom script to inject into session */&#10;console.log('GODx injected script!');"
+                class="glass-input w-full p-2.5 rounded-xl text-xs font-mono text-white placeholder-zinc-500 h-24 outline-none resize-none"
+              ></textarea>
+              <button
+                type="button"
+                onclick="injectCustomCode()"
+                class="w-full py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
+              >
+                Execute Injection ⚡
+              </button>
+            </div>
+          </div>
+
+          <!-- Theme Palette -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                <i data-lucide="palette" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Theme Accent Palette</h3>
+                <p class="text-[11px] text-zinc-400">Customize dashboard aesthetics</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-xs">
+              <button
+                type="button"
+                onclick="setDashboardTheme('indigo')"
+                class="p-2.5 rounded-xl bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 font-medium hover:scale-105 transition-all text-center"
+              >
+                Indigo Aurora
+              </button>
+              <button
+                type="button"
+                onclick="setDashboardTheme('emerald')"
+                class="p-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 font-medium hover:scale-105 transition-all text-center"
+              >
+                Cyber Green
+              </button>
+              <button
+                type="button"
+                onclick="setDashboardTheme('purple')"
+                class="p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-300 font-medium hover:scale-105 transition-all text-center"
+              >
+                Neon Violet
+              </button>
+            </div>
+          </div>
+
+          <!-- Backup JSON -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
+              <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center">
+                <i data-lucide="download" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Config Backup & Export</h3>
+                <p class="text-[11px] text-zinc-400">Save your project profiles</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onclick="exportDashboardConfig()"
+                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors"
+              >
+                Export JSON
+              </button>
+              <button
+                type="button"
+                onclick="importDashboardConfig()"
+                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors"
+              >
+                Import JSON
+              </button>
+            </div>
+          </div>
+
+          <!-- Modular Webhook Slot -->
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
+              <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Custom Trigger Slot</h3>
+                <p class="text-[11px] text-zinc-400">Ready for Anish x parameters</p>
+              </div>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Reserved modular hook for additional custom controls you want to attach next.
+            </p>
+            <div class="text-[11px] text-zinc-500 font-mono italic">
+              Channel: GODx-MAIN-HOOK
             </div>
           </div>
 
         </div>
+      </section>
 
-      </div>
+      <!-- ===================================================================== -->
+      <!-- TAB 3: INTERACTIVE GODX TERMINAL CLI                                  -->
+      <!-- ===================================================================== -->
+      <section id="tab-terminal" class="tab-pane space-y-4 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5">
+            <div class="flex items-center gap-2 font-mono text-xs">
+              <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+              <span class="text-zinc-400 ml-2">godx-terminal — bash — 80x24</span>
+            </div>
+            <span class="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+              LuminaVista CLI v2.0
+            </span>
+          </div>
+
+          <!-- Terminal Output Screen -->
+          <div
+            id="terminalScreen"
+            class="bg-surface-950/90 rounded-xl p-4 font-mono text-xs text-zinc-300 min-h-[360px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5"
+          >
+            <div class="text-indigo-400 font-bold">LuminaVista GODx Terminal [Version 2.0.4]</div>
+            <div class="text-zinc-400">Authenticated Session: <span class="text-emerald-400">Anish x (Root Administrator)</span></div>
+            <div class="text-zinc-500">Root Project Directory: <span class="text-brand-300 font-mono">/EXM/</span></div>
+            <div class="text-zinc-500">Type <span class="text-indigo-300 font-bold">help</span> to view available terminal commands.</div>
+            <div class="border-b border-white/5 my-2"></div>
+          </div>
+
+          <!-- Terminal Input Prompt -->
+          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2">
+            <span class="font-mono text-xs text-indigo-400 font-bold">anish@godx:~$</span>
+            <input
+              type="text"
+              id="terminalInput"
+              autocomplete="off"
+              placeholder="Type command (e.g. ls, open xxx, fetch, stats)..."
+              class="glass-input flex-1 px-3 py-2 rounded-xl font-mono text-xs text-white placeholder-zinc-500 outline-none"
+            />
+            <button
+              type="submit"
+              class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-mono text-white transition-colors"
+            >
+              Run
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 4: LIVE ANALYTICS & RESOURCE MONITOR                              -->
+      <!-- ===================================================================== -->
+      <section id="tab-analytics" class="tab-pane space-y-6 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Frame Latency</span>
+            <div class="text-2xl font-heading font-extrabold text-white">0.42 ms</div>
+            <span class="text-[11px] text-emerald-400 flex items-center gap-1">
+              <i data-lucide="trending-up" class="w-3 h-3"></i> 60 FPS GPU Sync
+            </span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Active Memory Load</span>
+            <div class="text-2xl font-heading font-extrabold text-indigo-300">18.4 MB</div>
+            <span class="text-[11px] text-indigo-400">Optimized Client Heap</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">GitHub API Status</span>
+            <div class="text-2xl font-heading font-extrabold text-emerald-400" id="apiStatusText">EXM Linked</div>
+            <span class="text-[11px] text-zinc-400">SubhadraRoy/LuminaVista</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Security Gate</span>
+            <div class="text-2xl font-heading font-extrabold text-purple-300">GODx Master</div>
+            <span class="text-[11px] text-purple-400">Session Verified</span>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-white/5">
+            <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4 text-brand-400"></i>
+              Realtime Client Performance Waveform
+            </h3>
+            <span class="text-xs font-mono text-zinc-400">60 FPS Sampling</span>
+          </div>
+          <canvas id="metricsChart" class="w-full h-44 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 5: SCRATCHPAD & CODE VAULT                                        -->
+      <!-- ===================================================================== -->
+      <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-white/5">
+              <div class="flex items-center gap-2">
+                <i data-lucide="edit-3" class="w-4 h-4 text-indigo-400"></i>
+                <h3 class="font-heading font-bold text-sm text-white">Admin Scratchpad & Notes</h3>
+              </div>
+              <span class="text-[10px] font-mono text-emerald-400">Auto-saved locally</span>
+            </div>
+
+            <textarea
+              id="adminScratchpad"
+              oninput="saveScratchpad()"
+              placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Configured login pass: admin&#10;- Todo: Add custom controls next..."
+              class="glass-input w-full p-4 rounded-xl font-mono text-xs text-white placeholder-zinc-500 h-64 outline-none resize-none"
+            ></textarea>
+          </div>
+
+          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-white/5">
+              <div class="flex items-center gap-2">
+                <i data-lucide="file-code-2" class="w-4 h-4 text-purple-400"></i>
+                <h3 class="font-heading font-bold text-sm text-white">Starter Code Snippets</h3>
+              </div>
+            </div>
+
+            <div class="space-y-2.5 text-xs">
+              <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
+                <div class="flex items-center justify-between font-bold text-zinc-200">
+                  <span>EXM Sub-Project index.html Template</span>
+                  <button type="button" onclick="copySnippet(1)" class="text-brand-400 hover:text-brand-300">Copy</button>
+                </div>
+                <p class="text-[11px] text-zinc-400">Standard standalone HTML boilerplate with local CSS/JS linkage inside EXM/.</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
+                <div class="flex items-center justify-between font-bold text-zinc-200">
+                  <span>Iframe Bridge PostMessage Script</span>
+                  <button type="button" onclick="copySnippet(2)" class="text-brand-400 hover:text-brand-300">Copy</button>
+                </div>
+                <p class="text-[11px] text-zinc-400">Communicate events between EXM sub-projects and GODx dashboard.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
     </main>
 
     <!-- Footer -->
     <footer class="w-full border-t border-white/5 bg-surface-950/80 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
       <div>
-        LuminaVista • Created for <span class="text-zinc-300 font-medium">Anish x (GODx)</span>
+        LuminaVista OS • Created for <span class="text-zinc-300 font-medium">Anish x (GODx)</span>
       </div>
       <div class="flex items-center gap-4">
-        <a href="https://github.com/SubhadraRoy/LuminaVista" target="_blank" class="hover:text-zinc-300 transition-colors">GitHub Repository</a>
+        <a href="https://github.com/SubhadraRoy/LuminaVista/tree/main/EXM" target="_blank" class="hover:text-zinc-300 transition-colors">EXM Directory</a>
         <span>•</span>
         <span>Hosted on GitHub Pages</span>
       </div>
     </footer>
 
+  </div>
+
+  <!-- Command Palette Modal (Ctrl/Cmd + K) -->
+  <div id="cmdModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 p-4 hidden opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-lg w-full p-4 rounded-2xl glow-border relative transform scale-95 transition-transform duration-200">
+      <div class="flex items-center gap-2 pb-3 border-b border-white/10">
+        <i data-lucide="search" class="w-4 h-4 text-indigo-400"></i>
+        <input
+          type="text"
+          id="cmdSearchInput"
+          oninput="handleCmdSearch(event)"
+          placeholder="Type a command or jump to EXM project..."
+          class="bg-transparent flex-1 text-sm text-white placeholder-zinc-500 outline-none font-sans"
+        />
+        <kbd class="px-2 py-0.5 text-[10px] bg-surface-800 rounded text-zinc-400 font-mono">ESC</kbd>
+      </div>
+      <div id="cmdResults" class="py-2 space-y-1 max-h-60 overflow-y-auto text-xs font-mono"></div>
+    </div>
   </div>
 
   <!-- Toast Notification -->
@@ -698,20 +1048,39 @@ DOCTYPE html>
     </div>
   </div>
 
-  <!-- JavaScript -->
+  <!-- JavaScript Engine -->
   <script>
     lucide.createIcons();
 
     const MASTER_PASS = "admin";
     const SESSION_KEY = "lumina_godx_session";
-    const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/";
+    const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
+
+    function resolveProjectUrl(rawPath) {
+      let clean = rawPath.replace(/^\.\//, "").replace(/^\//, "");
+      
+      if (!clean.startsWith("EXM/") && !clean.startsWith("EXM")) {
+        clean = "EXM/" + clean;
+      }
+
+      if (clean.endsWith("/")) {
+        clean = clean + "index.html";
+      } else if (!clean.includes(".html") && !clean.includes(".")) {
+        clean = clean + "/index.html";
+      }
+
+      const base = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1);
+      return window.location.origin + base + clean;
+    }
 
     let repoProjects = [
-      { name: "xxx/", path: "xxx/", type: "dir" },
-      { name: "yyy/", path: "yyy/", type: "dir" },
-      { name: "zzz/", path: "zzz/", type: "dir" },
+      { name: "xxx", path: "EXM/xxx/", type: "dir" },
+      { name: "yyy", path: "EXM/yyy/", type: "dir" },
+      { name: "zzz", path: "EXM/zzz/", type: "dir" },
     ];
     let currentSelectedProject = repoProjects[0];
+    let isAudioEnabled = true;
+    let autoRefreshTimer = null;
 
     const loginView = document.getElementById("loginView");
     const dashboardView = document.getElementById("dashboardView");
@@ -729,10 +1098,22 @@ DOCTYPE html>
     const headerAdminName = document.getElementById("headerAdminName");
     const iframeOverlay = document.getElementById("iframeOverlay");
     const toast = document.getElementById("toast");
+    const systemClock = document.getElementById("systemClock");
+    const cmdModal = document.getElementById("cmdModal");
+    const cmdSearchInput = document.getElementById("cmdSearchInput");
+    const cmdResults = document.getElementById("cmdResults");
+    const adminScratchpad = document.getElementById("adminScratchpad");
+    const deployHostBadge = document.getElementById("deployHostBadge");
 
     let isPassVisible = false;
 
     window.addEventListener("DOMContentLoaded", () => {
+      if (window.location.hostname.includes("github.io")) {
+        deployHostBadge.textContent = "GitHub Pages: /EXM/";
+      } else {
+        deployHostBadge.textContent = "Local Server: /EXM/";
+      }
+
       const isAuth = sessionStorage.getItem(SESSION_KEY) === "true";
       const savedUser = sessionStorage.getItem("lumina_godx_user") || "Anish x";
       
@@ -745,13 +1126,49 @@ DOCTYPE html>
 
       renderProjectList();
       fetchRepoProjects();
+      startSystemClock();
+      loadScratchpad();
+      initMetricsChart();
     });
+
+    function startSystemClock() {
+      setInterval(() => {
+        const now = new Date();
+        systemClock.textContent = now.toTimeString().split(" ")[0] + " LOCAL";
+      }, 1000);
+    }
+
+    function playAudioTone(freq = 440, type = "sine", duration = 0.08) {
+      if (!isAudioEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function toggleAudioFeedback() {
+      isAudioEnabled = !isAudioEnabled;
+      const icon = document.getElementById("audioIcon");
+      icon.setAttribute("data-lucide", isAudioEnabled ? "volume-2" : "volume-x");
+      lucide.createIcons();
+      showToast("Audio Feedback", isAudioEnabled ? "Enabled" : "Muted");
+    }
 
     function showDashboard() {
       loginView.classList.add("hidden");
       dashboardView.classList.remove("hidden");
       gsap.from("#dashboardView", { opacity: 0, y: 15, duration: 0.5, ease: "power2.out" });
       lucide.createIcons();
+      playAudioTone(587, "triangle", 0.15);
     }
 
     function showLogin() {
@@ -773,6 +1190,7 @@ DOCTYPE html>
     function autofillPass() {
       passInput.value = MASTER_PASS;
       loginError.classList.add("hidden");
+      playAudioTone(659, "sine", 0.05);
     }
 
     function handleLogin(e) {
@@ -806,19 +1224,39 @@ DOCTYPE html>
           showDashboard();
         } else {
           loginError.classList.remove("hidden");
+          playAudioTone(220, "sawtooth", 0.2);
           gsap.fromTo(
             "#loginCard",
             { x: -10 },
             { x: 10, duration: 0.08, repeat: 4, yoyo: true, ease: "power1.inOut" }
           );
         }
-      }, 500);
+      }, 450);
     }
 
     function handleLogout() {
       sessionStorage.removeItem(SESSION_KEY);
+      playAudioTone(330, "sine", 0.1);
       showToast("Session Locked", "Console logged out.");
       showLogin();
+    }
+
+    function switchTab(tabId) {
+      playAudioTone(523, "sine", 0.04);
+      document.querySelectorAll(".tab-pane").forEach(pane => pane.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.remove("nav-tab-active", "text-white");
+        btn.classList.add("text-zinc-400");
+      });
+
+      const activePane = document.getElementById(tabId);
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      if (activePane) activePane.classList.remove("hidden");
+      if (activeBtn) {
+        activeBtn.classList.add("nav-tab-active", "text-white");
+        activeBtn.classList.remove("text-zinc-400");
+      }
+      lucide.createIcons();
     }
 
     async function fetchRepoProjects() {
@@ -829,27 +1267,26 @@ DOCTYPE html>
         const response = await fetch(REPO_API_URL);
         if (response.ok) {
           const data = await response.json();
-          const detectedDirs = data
-            .filter(item => item.type === "dir" && !item.name.startsWith("."))
-            .map(item => ({ name: item.name + "/", path: item.name + "/", type: "dir" }));
+          
+          const detected = data
+            .filter(item => !item.name.startsWith("."))
+            .map(item => ({
+              name: item.name,
+              path: `EXM/${item.name}${item.type === "dir" ? "/" : ""}`,
+              type: item.type
+            }));
 
-          const detectedFiles = data
-            .filter(item => item.type === "file" && item.name.endsWith(".html") && !["index.html", "404.html"].includes(item.name.toLowerCase()))
-            .map(item => ({ name: item.name, path: item.name, type: "file" }));
-
-          const combined = [...detectedDirs, ...detectedFiles];
-
-          if (combined.length > 0) {
-            combined.forEach(p => {
-              if (!repoProjects.some(existing => existing.path === p.path)) {
+          if (detected.length > 0) {
+            detected.forEach(p => {
+              if (!repoProjects.some(existing => existing.name === p.name)) {
                 repoProjects.push(p);
               }
             });
-            showToast("Repo Scanned", `Discovered ${repoProjects.length} projects.`);
+            showToast("EXM Scanned", `Found ${repoProjects.length} items in /EXM/.`);
           }
         }
       } catch (err) {
-        console.log("GitHub API scan note: Using preset project list.", err);
+        console.log("EXM directory scan notice: using current list.");
       } finally {
         if (refreshIcon) refreshIcon.classList.remove("animate-spin");
         renderProjectList();
@@ -859,11 +1296,10 @@ DOCTYPE html>
     function renderProjectList() {
       projectChipsContainer.innerHTML = "";
       projectSelect.innerHTML = "";
-
-      projectCountBadge.textContent = `${repoProjects.length} Projects`;
+      projectCountBadge.textContent = `${repoProjects.length} Items in EXM`;
 
       repoProjects.forEach((proj) => {
-        const isSelected = proj.path === currentSelectedProject.path;
+        const isSelected = proj.name === currentSelectedProject.name;
 
         const chip = document.createElement("button");
         chip.type = "button";
@@ -872,7 +1308,6 @@ DOCTYPE html>
             ? "active-project-pill font-bold"
             : "bg-surface-900 hover:bg-surface-850 border-white/5 text-zinc-300 hover:text-white"
         }`;
-        
         chip.innerHTML = `
           <i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-indigo-300' : 'text-zinc-500'}"></i>
           <span>${proj.name}</span>
@@ -881,8 +1316,8 @@ DOCTYPE html>
         projectChipsContainer.appendChild(chip);
 
         const opt = document.createElement("option");
-        opt.value = proj.path;
-        opt.textContent = `${proj.type === 'dir' ? '📁 ' : '📄 '} ${proj.name}`;
+        opt.value = proj.name;
+        opt.textContent = `${proj.type === 'dir' ? '📁 ' : '📄 '} EXM/${proj.name}`;
         opt.className = "bg-surface-900 text-white";
         if (isSelected) opt.selected = true;
         projectSelect.appendChild(opt);
@@ -892,15 +1327,16 @@ DOCTYPE html>
     }
 
     function selectProject(proj) {
+      playAudioTone(493, "sine", 0.04);
       currentSelectedProject = proj;
-      activeProjectTitle.textContent = proj.name;
+      activeProjectTitle.textContent = `EXM/${proj.name}/`;
       renderProjectList();
       loadActiveIntoPreview();
     }
 
     function onDropdownSelect() {
-      const selectedPath = projectSelect.value;
-      const target = repoProjects.find(p => p.path === selectedPath);
+      const selectedName = projectSelect.value;
+      const target = repoProjects.find(p => p.name === selectedName);
       if (target) selectProject(target);
     }
 
@@ -908,41 +1344,44 @@ DOCTYPE html>
       const val = customProjectInput.value.trim();
       if (!val) return;
       
-      const isHtml = val.endsWith(".html");
-      const formattedPath = isHtml ? val : (val.endsWith("/") ? val : `${val}/`);
-      const formattedName = formattedPath;
-
+      const cleanName = val.replace(/^EXM\//i, "").replace(/^\/+|\/+$/g, "");
+      const isHtml = cleanName.endsWith(".html");
+      
       const newProj = {
-        name: formattedName,
-        path: formattedPath,
+        name: cleanName,
+        path: `EXM/${cleanName}${isHtml ? "" : "/"}`,
         type: isHtml ? "file" : "dir"
       };
 
-      if (!repoProjects.some(p => p.path === newProj.path)) {
+      if (!repoProjects.some(p => p.name === newProj.name)) {
         repoProjects.push(newProj);
       }
       customProjectInput.value = "";
       selectProject(newProj);
-      showToast("Project Added", `Added ${formattedName} to project list.`);
+      showToast("EXM Item Added", `Added EXM/${cleanName}`);
     }
 
     function loadActiveIntoPreview() {
-      activeProjectTitle.textContent = currentSelectedProject.name;
-      previewIframe.src = currentSelectedProject.path;
+      activeProjectTitle.textContent = `EXM/${currentSelectedProject.name}/`;
+      const targetUrl = resolveProjectUrl(currentSelectedProject.path);
+      previewIframe.src = targetUrl;
       iframeOverlay.classList.add("hidden");
-      showToast("Loading Preview", `Embedding ${currentSelectedProject.name}`);
     }
 
     function openActiveInNewTab() {
-      window.open(currentSelectedProject.path, "_blank");
+      playAudioTone(659, "sine", 0.08);
+      const targetUrl = resolveProjectUrl(currentSelectedProject.path);
+      window.open(targetUrl, "_blank");
     }
 
     function reloadIframe() {
+      playAudioTone(440, "sine", 0.05);
       previewIframe.src = previewIframe.src;
       showToast("Reloading Viewport", "Frame refreshed.");
     }
 
     function setViewportDevice(width) {
+      playAudioTone(523, "sine", 0.03);
       const wrapper = document.getElementById("iframeWrapper");
       wrapper.style.maxWidth = width;
       
@@ -973,7 +1412,316 @@ DOCTYPE html>
       iframeOverlay.classList.remove("hidden");
     }
 
+    function applySandboxPolicy() {
+      const allowScripts = document.getElementById("checkAllowScripts").checked;
+      const allowOrigin = document.getElementById("checkAllowOrigin").checked;
+      const allowPopups = document.getElementById("checkAllowPopups").checked;
+
+      let flags = [];
+      if (allowScripts) flags.push("allow-scripts");
+      if (allowOrigin) flags.push("allow-same-origin");
+      if (allowPopups) flags.push("allow-popups", "allow-modals");
+
+      previewIframe.setAttribute("sandbox", flags.join(" "));
+      reloadIframe();
+      showToast("Sandbox Applied", `Active policies: ${flags.join(", ")}`);
+    }
+
+    function setupAutoRefresh() {
+      const sec = parseInt(document.getElementById("autoRefreshSelect").value, 10);
+      const statusText = document.getElementById("autoRefreshStatusText");
+
+      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+      if (sec > 0) {
+        statusText.textContent = `Timer: Every ${sec}s`;
+        autoRefreshTimer = setInterval(() => {
+          reloadIframe();
+        }, sec * 1000);
+        showToast("Auto-Refresh Enabled", `Polling every ${sec} seconds.`);
+      } else {
+        statusText.textContent = "Timer: Off";
+        showToast("Auto-Refresh Disabled", "Manual reload mode.");
+      }
+    }
+
+    function injectCustomCode() {
+      const code = document.getElementById("customInjectCode").value.trim();
+      if (!code) return;
+      try {
+        eval(code);
+        showToast("Code Injected", "Script executed successfully.");
+      } catch (err) {
+        showToast("Execution Error", err.message);
+      }
+    }
+
+    function setDashboardTheme(themeName) {
+      showToast("Theme Configured", `Switched to ${themeName} palette.`);
+    }
+
+    function exportDashboardConfig() {
+      const config = {
+        user: "Anish x",
+        moniker: "GODx",
+        baseDir: "EXM",
+        projects: repoProjects,
+        notes: adminScratchpad.value,
+        timestamp: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "lumina_godx_config.json";
+      a.click();
+      showToast("Config Exported", "Downloaded backup JSON file.");
+    }
+
+    function importDashboardConfig() {
+      showToast("Import Ready", "Paste JSON or load from file.");
+    }
+
+    function handleTerminalCommand(e) {
+      e.preventDefault();
+      const input = document.getElementById("terminalInput");
+      const cmd = input.value.trim();
+      if (!cmd) return;
+
+      const screen = document.getElementById("terminalScreen");
+      
+      const echoLine = document.createElement("div");
+      echoLine.className = "text-zinc-400";
+      echoLine.innerHTML = `<span class="text-indigo-400 font-bold">anish@godx:~$</span> ${cmd}`;
+      screen.appendChild(echoLine);
+
+      const parts = cmd.split(" ");
+      const action = parts[0].toLowerCase();
+      const arg = parts.slice(1).join(" ");
+
+      const responseLine = document.createElement("div");
+
+      switch (action) {
+        case "help":
+          responseLine.className = "text-zinc-300";
+          responseLine.innerHTML = `
+            Available Commands:<br/>
+            - <span class="text-indigo-300 font-bold">ls / projects</span>: List all /EXM/ projects and folders<br/>
+            - <span class="text-indigo-300 font-bold">open &lt;name&gt;</span>: Switch active viewport to target EXM project<br/>
+            - <span class="text-indigo-300 font-bold">fetch</span>: Scan /EXM/ folder via GitHub API<br/>
+            - <span class="text-indigo-300 font-bold">whoami</span>: Display active profile signature<br/>
+            - <span class="text-indigo-300 font-bold">clear</span>: Clear terminal console<br/>
+            - <span class="text-indigo-300 font-bold">stats</span>: View system performance parameters<br/>
+            - <span class="text-indigo-300 font-bold">logout</span>: Lock console and log out
+          `;
+          break;
+
+        case "ls":
+        case "projects":
+          responseLine.className = "text-emerald-400";
+          responseLine.textContent = repoProjects.map(p => "EXM/" + p.name).join("   ");
+          break;
+
+        case "open":
+          if (!arg) {
+            responseLine.className = "text-rose-400";
+            responseLine.textContent = "Usage: open <project_name> (e.g. open xxx)";
+          } else {
+            const cleanArg = arg.replace(/^EXM\//i, "").replace(/\/+$/g, "");
+            const match = repoProjects.find(p => p.name.toLowerCase() === cleanArg.toLowerCase());
+            if (match) {
+              selectProject(match);
+              switchTab("tab-projects");
+              responseLine.className = "text-emerald-400";
+              responseLine.textContent = `✓ Switched and launched EXM/${match.name}/`;
+            } else {
+              responseLine.className = "text-amber-400";
+              responseLine.textContent = `Project '${arg}' not found. Added to custom runner.`;
+              customProjectInput.value = cleanArg;
+              addCustomProject();
+            }
+          }
+          break;
+
+        case "whoami":
+          responseLine.className = "text-purple-300";
+          responseLine.textContent = "Root Admin: Anish x | Moniker: GODx | Base Path: /EXM/ | Repo: SubhadraRoy/LuminaVista";
+          break;
+
+        case "fetch":
+          fetchRepoProjects();
+          responseLine.className = "text-indigo-300";
+          responseLine.textContent = "Scanning /EXM/ via GitHub API...";
+          break;
+
+        case "clear":
+          screen.innerHTML = "";
+          input.value = "";
+          return;
+
+        case "stats":
+          responseLine.className = "text-sky-300";
+          responseLine.textContent = `EXM Items: ${repoProjects.length} | Latency: 0.42ms | FPS: 60 | Status: Optimal`;
+          break;
+
+        case "logout":
+          handleLogout();
+          return;
+
+        default:
+          responseLine.className = "text-rose-400";
+          responseLine.textContent = `Command not recognized: '${action}'. Type 'help' for available commands.`;
+          break;
+      }
+
+      screen.appendChild(responseLine);
+      input.value = "";
+      screen.scrollTop = screen.scrollHeight;
+    }
+
+    function saveScratchpad() {
+      localStorage.setItem("lumina_godx_scratchpad", adminScratchpad.value);
+    }
+
+    function loadScratchpad() {
+      const saved = localStorage.getItem("lumina_godx_scratchpad");
+      if (saved) adminScratchpad.value = saved;
+    }
+
+    function copySnippet(type) {
+      let code = "";
+      if (type === 1) {
+        code = `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <link rel="stylesheet" href="style.css" />\n  <title>EXM Sub Project</title>\n</head>\n<body>\n  <h1>Project Active in /EXM/</h1>\n  <script src="script.js"><\/script>\n</body>\n</html>`;
+      } else {
+        code = `window.parent.postMessage({ type: 'GODX_EVENT', payload: 'Ready' }, '*');`;
+      }
+      navigator.clipboard.writeText(code).then(() => {
+        showToast("Snippet Copied", "Code copied to clipboard.");
+      });
+    }
+
+    function openCommandPalette() {
+      cmdModal.classList.remove("hidden");
+      setTimeout(() => {
+        cmdModal.classList.remove("opacity-0");
+        cmdModal.querySelector("div").classList.remove("scale-95");
+        cmdSearchInput.focus();
+      }, 10);
+      populateCmdResults("");
+    }
+
+    function closeCommandPalette() {
+      cmdModal.classList.add("opacity-0");
+      cmdModal.querySelector("div").classList.add("scale-95");
+      setTimeout(() => cmdModal.classList.add("hidden"), 200);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        openCommandPalette();
+      }
+      if (e.key === "Escape" && !cmdModal.classList.contains("hidden")) {
+        closeCommandPalette();
+      }
+    });
+
+    cmdModal.addEventListener("click", (e) => {
+      if (e.target === cmdModal) closeCommandPalette();
+    });
+
+    function populateCmdResults(query) {
+      cmdResults.innerHTML = "";
+      const q = query.toLowerCase();
+
+      const actions = [
+        { label: "Switch Tab: EXM Projects Hub", icon: "folder-tree", action: () => switchTab("tab-projects") },
+        { label: "Switch Tab: System Controls", icon: "sliders", action: () => switchTab("tab-controls") },
+        { label: "Switch Tab: GODx Terminal", icon: "terminal", action: () => switchTab("tab-terminal") },
+        { label: "Switch Tab: Performance Analytics", icon: "activity", action: () => switchTab("tab-analytics") },
+        { label: "Switch Tab: Scratchpad", icon: "file-text", action: () => switchTab("tab-scratchpad") },
+        { label: "Action: Scan /EXM/ Folder", icon: "refresh-cw", action: () => fetchRepoProjects() },
+        { label: "Action: Reload Current Viewport", icon: "rotate-cw", action: () => reloadIframe() },
+        { label: "Action: Lock Console (Logout)", icon: "log-out", action: () => handleLogout() },
+      ];
+
+      repoProjects.forEach(p => {
+        actions.push({
+          label: `Open EXM Project: ${p.name}`,
+          icon: p.type === "dir" ? "folder" : "file-code",
+          action: () => { selectProject(p); switchTab("tab-projects"); }
+        });
+      });
+
+      const filtered = actions.filter(a => a.label.toLowerCase().includes(q));
+
+      filtered.forEach(item => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "w-full p-2.5 rounded-xl hover:bg-surface-850 flex items-center justify-between text-left text-zinc-300 hover:text-white transition-colors";
+        btn.innerHTML = `
+          <span class="flex items-center gap-2">
+            <i data-lucide="${item.icon}" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>${item.label}</span>
+          </span>
+          <span class="text-[10px] text-zinc-500">Run ↵</span>
+        `;
+        btn.onclick = () => {
+          closeCommandPalette();
+          item.action();
+        };
+        cmdResults.appendChild(btn);
+      });
+
+      lucide.createIcons();
+    }
+
+    function handleCmdSearch(e) {
+      populateCmdResults(e.target.value);
+    }
+
+    function initMetricsChart() {
+      const chartCanvas = document.getElementById("metricsChart");
+      if (!chartCanvas) return;
+      const cctx = chartCanvas.getContext("2d");
+      let dataPoints = Array.from({ length: 50 }, () => Math.random() * 20 + 40);
+
+      function draw() {
+        chartCanvas.width = chartCanvas.parentElement.clientWidth;
+        chartCanvas.height = 160;
+
+        cctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+        
+        cctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+        cctx.lineWidth = 1;
+        for (let i = 0; i < chartCanvas.height; i += 40) {
+          cctx.beginPath();
+          cctx.moveTo(0, i);
+          cctx.lineTo(chartCanvas.width, i);
+          cctx.stroke();
+        }
+
+        cctx.beginPath();
+        const step = chartCanvas.width / (dataPoints.length - 1);
+        dataPoints.forEach((val, idx) => {
+          const y = chartCanvas.height - (val / 100) * chartCanvas.height;
+          if (idx === 0) cctx.moveTo(0, y);
+          else cctx.lineTo(idx * step, y);
+        });
+
+        cctx.strokeStyle = "#818cf8";
+        cctx.lineWidth = 2;
+        cctx.stroke();
+
+        dataPoints.shift();
+        dataPoints.push(Math.min(100, Math.max(20, dataPoints[dataPoints.length - 1] + (Math.random() - 0.5) * 10)));
+      }
+
+      setInterval(draw, 1000);
+    }
+
     function showToast(title, msg) {
+      playAudioTone(880, "sine", 0.05);
       document.getElementById("toastTitle").textContent = title;
       document.getElementById("toastMsg").textContent = msg;
       toast.classList.remove("translate-y-24", "opacity-0");
@@ -982,6 +1730,7 @@ DOCTYPE html>
       }, 3500);
     }
 
+    // Ambient Particles
     const canvas = document.getElementById("ambientCanvas");
     const ctx = canvas.getContext("2d");
     let width = canvas.width = window.innerWidth;
@@ -1013,6 +1762,7 @@ DOCTYPE html>
       height = canvas.height = window.innerHeight;
     });
 
+    // 3D Tilt Effect on Login Card
     const cardWrapper = document.querySelector(".card-3d-wrapper");
     const loginCard = document.getElementById("loginCard");
     if (window.innerWidth > 768 && cardWrapper && loginCard) {
