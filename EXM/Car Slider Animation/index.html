@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>JoinRace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" integrity="sha512-16esztaSRplJROstbIIdwX3N97V1+pZvV33ABoG1H2OyTttBxEGkTsoIVsiP1iaTtM8b3+hu2kB6pQ4Clr5yug==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main>
+        <div class="logo">JoinRace</div>
+        <div class="social">
+            <div class="bar"></div>
+            <a href=""><i class="fab fa-facebook"></i></a>
+            <a href=""><i class="fab fa-instagram"></i></a>
+            <a href=""><i class="fab fa-twitter"></i></a>
+        </div>
+        <div class="menu">
+            <i class="fas fa-bars"></i>
+        </div>
+        <div class="swiper">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide first">
+                    <div class="yellow"></div>
+                    <div class="black"></div>
+                    <div class="content">
+                        <div class="title">
+                            <div class="small">Let's</div>
+                            <div class="big"><span>R</span><span>A</span><span>C</span><span>E</span></div>
+                        </div>
+                        <div class="image">
+                            <img src="images/img-1.png" alt="">
+                        </div>
+                        <div class="specs">
+                            <span><b>302</b> MPH</span>
+                            <span><b>0-100</b> KMPH</span>
+                            <span><b>350</b> KW</span>
+                            <button>Discover Now <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="red"></div>
+                    <div class="black"></div>
+                    <div class="content">
+                        <div class="title">
+                            <div class="small">Let's</div>
+                            <div class="big">RACE</div>
+                        </div>
+                        <div class="image">
+                            <img src="images/img-2.png" alt="">
+                        </div>
+                        <div class="specs red-c">
+                            <span><b>302</b> MPH</span>
+                            <span><b>0-100</b> KMPH</span>
+                            <span><b>350</b> KW</span>
+                            <button class="red-c">Discover Now <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="blue"></div>
+                    <div class="black"></div>
+                    <div class="content">
+                        <div class="title">
+                            <div class="small">Let's</div>
+                            <div class="big">RACE</div>
+                        </div>
+                        <div class="image">
+                            <img src="images/img-3.png" alt="">
+                        </div>
+                        <div class="specs blue-c">
+                            <span><b>302</b> MPH</span>
+                            <span><b>0-100</b> KMPH</span>
+                            <span><b>350</b> KW</span>
+                            <button class="blue-c">Discover Now <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="swiper-pagination"></div>
+        </div>
+    </main>
+
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+
+    <!-- Initialize Swiper -->
+    <script>
+        var swiper = new Swiper(".swiper", {
+            direction: "vertical",
+            slidesPerView: 1,
+            spaceBetween: 30,
+            mousewheel: true,
+            effect: "coverflow",
+            speed: 2000,
+            coverflowEffect: {
+                rotate: 50,
+                stretch: 0,
+                depth: 100,
+                modifier: 1,
+                slideShadows: true,
+            },
+
+            pagination: {
+                el: ".swiper-pagination",
+                clickable: true,
+                renderBullet: function (index, className) {
+                    return '<span class="' + className + '"> <span>' + String(index + 1).padStart(2, '0') + '</span></span>';
+                },
+            },
+        });
+
+
+        gsap.from(".first .yellow", {
+            y: -1000,
+            duration: 2
+        })
+        gsap.from(".first .black", {
+            y: 1000,
+            duration: 2
+        })
+        gsap.from(".first img", {
+            x: 1000,
+            duration: 2
+        })
+        gsap.from(".first .small", {
+            y: 100,
+            opacity: 0,
+            delay: 2.1
+        })
+        gsap.from(".first .big span", {
+            y: 100,
+            opacity: 0,
+            stagger: 0.2,
+            delay: 2.1
+        })
+    </script>
+</body>
+
+</html>
