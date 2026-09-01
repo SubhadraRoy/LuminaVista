@@ -176,17 +176,16 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
 
-  <!-- Particle canvas & Ambient Glows -->
+  <!-- Particle Background -->
   <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
   <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0"></div>
   <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 3s;"></div>
 
   <!-- ========================================================================= -->
-  <!-- 1. AUTHENTICATION GATEWAY VIEW                                            -->
+  <!-- 1. AUTHENTICATION GATEWAY                                                 -->
   <!-- ========================================================================= -->
   <div id="loginView" class="relative z-30 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-screen">
     <div class="w-full max-w-md">
-      
       <div class="flex justify-center mb-6">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-900/90 border border-white/10 text-xs text-zinc-300 backdrop-blur-md">
           <div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div>
@@ -212,7 +211,7 @@
 
         <div class="mt-6 text-left">
           <h2 class="font-heading font-bold text-2xl text-white tracking-tight">Admin Sign In</h2>
-          <p class="text-xs text-zinc-400 mt-1">Enter your master security key to unlock the 11-module workspace console.</p>
+          <p class="text-xs text-zinc-400 mt-1">Enter your master security key to unlock the workspace console.</p>
         </div>
 
         <form id="loginForm" class="mt-6 space-y-4" onsubmit="handleLogin(event)">
@@ -294,7 +293,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 2. FULL SYSTEM DASHBOARD (11 MODULES)                                    -->
+  <!-- 2. FULL SYSTEM DASHBOARD (WORKSPACE CONSOLE)                              -->
   <!-- ========================================================================= -->
   <div id="dashboardView" class="relative z-10 flex-1 flex flex-col hidden min-h-screen">
     
@@ -323,20 +322,31 @@
           <span id="deployHostBadge">EXM Host Active</span>
         </div>
         <span class="text-zinc-700">•</span>
-        <div class="flex items-center gap-1.5 text-purple-400">
-          <i data-lucide="brain-circuit" class="w-3.5 h-3.5"></i>
-          <span id="cloudAiHeaderStatus">Cloud Neural Engine</span>
-        </div>
+        <button onclick="toggleAiDrawer()" class="flex items-center gap-1.5 text-cyan-300 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="bot" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Ollama Online AI</span>
+        </button>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-2.5">
+        <!-- AI Drawer Trigger Button -->
+        <button
+          type="button"
+          onclick="toggleAiDrawer()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-xs text-cyan-300 font-semibold transition-all cursor-pointer"
+        >
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>AI Copilot</span>
+          <kbd class="hidden md:inline px-1 py-0.2 text-[9px] bg-cyan-950/60 rounded text-cyan-300 font-mono">⌘J</kbd>
+        </button>
+
         <button
           type="button"
           onclick="openSourceInspector()"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer"
         >
           <i data-lucide="code" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span class="hidden md:inline">Source Code</span>
+          <span class="hidden md:inline">Source</span>
         </button>
 
         <button
@@ -369,23 +379,18 @@
       </div>
     </header>
 
-    <!-- 11 Modules Navigation Tabs Bar -->
+    <!-- Workspace Modules Tabs Bar (No Isolated AI Tab) -->
     <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
       <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/5 no-scrollbar">
         
-        <button onclick="switchTab('tab-cloud-ai')" id="btn-tab-cloud-ai" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0 cursor-pointer">
-          <i data-lucide="brain-circuit" class="w-4 h-4 text-cyan-400"></i>
-          <span>Cloud AI Engine</span>
-        </button>
-
-        <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
+        <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0 cursor-pointer">
           <i data-lucide="folder-tree" class="w-4 h-4 text-cyan-400"></i>
           <span>EXM Projects</span>
         </button>
 
         <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
-          <span>Interactive Compilers</span>
+          <span>Interactive Compilers & SQL</span>
         </button>
 
         <button onclick="switchTab('tab-rest')" id="btn-tab-rest" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
@@ -405,7 +410,7 @@
 
         <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i>
-          <span>Dual Split View</span>
+          <span>Dual Split Comparator</span>
         </button>
 
         <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
@@ -434,121 +439,8 @@
     <!-- Main Content Body -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
       
-      <!-- ===================================================================== -->
-      <!-- MODULE 1: UNIVERSAL CLOUD AI NEURAL HUB (REAL API KEYS)               -->
-      <!-- ===================================================================== -->
-      <section id="tab-cloud-ai" class="tab-pane space-y-6">
-        <div class="glass-panel rounded-2xl p-5 space-y-4">
-          
-          <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-white/5">
-            <div class="space-y-1">
-              <div class="inline-flex items-center gap-2 text-xs text-cyan-300 font-mono">
-                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                <span>OPENAI / OPENROUTER / GROQ / DEEPSEEK COMPATIBLE</span>
-              </div>
-              <h2 class="font-heading font-extrabold text-xl text-white">Online Cloud AI Neural Hub</h2>
-              <p class="text-xs text-zinc-400">Execute real cloud models using standard OpenAI-compatible REST API keys. No local daemons required.</p>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="px-3 py-1.5 rounded-xl bg-surface-900 border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400" id="aiKeyStatusDot"></span>
-                <span id="aiKeyStatusLabel">Key Configured</span>
-              </span>
-              <button onclick="testCloudAiConnection()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer">
-                <i data-lucide="zap" class="w-3.5 h-3.5"></i> Test Connection
-              </button>
-            </div>
-          </div>
-
-          <!-- Configuration Panel -->
-          <div class="bg-surface-900/70 p-4 rounded-2xl border border-white/5 space-y-3">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-              
-              <div class="space-y-1">
-                <label class="text-[11px] font-mono text-zinc-400">Cloud Provider:</label>
-                <select id="aiProviderSelect" onchange="onAiProviderChanged()" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
-                  <option value="openrouter">OpenRouter (All Models)</option>
-                  <option value="groq">Groq (Ultra-Fast Llama/Mixtral)</option>
-                  <option value="deepseek">DeepSeek (V3 / R1)</option>
-                  <option value="openai">OpenAI (Official)</option>
-                  <option value="custom">Custom Endpoint</option>
-                </select>
-              </div>
-
-              <div class="space-y-1">
-                <label class="text-[11px] font-mono text-zinc-400">API Endpoint URL:</label>
-                <input type="text" id="aiEndpointInput" value="https://openrouter.ai/api/v1/chat/completions" class="godx-input w-full px-3 py-2 text-xs font-mono" />
-              </div>
-
-              <div class="space-y-1">
-                <label class="text-[11px] font-mono text-zinc-400">Model Name / ID:</label>
-                <input type="text" id="aiModelInput" value="meta-llama/llama-3.3-70b-instruct" placeholder="e.g. llama-3.3-70b-versatile" class="godx-input w-full px-3 py-2 text-xs font-mono" />
-              </div>
-
-              <div class="space-y-1">
-                <label class="text-[11px] font-mono text-zinc-400 flex items-center justify-between">
-                  <span>Real API Key:</span>
-                  <span class="text-[10px] text-cyan-400 font-mono">Encrypted Store</span>
-                </label>
-                <div class="relative">
-                  <input type="password" id="aiApiKeyInput" oninput="saveAiCredentials()" placeholder="sk-or-... / gsk_..." class="godx-input w-full pl-3 pr-8 py-2 text-xs font-mono" />
-                  <button type="button" onclick="toggleApiKeyMask()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer z-30">
-                    <i data-lucide="eye" id="aiKeyEyeIcon" class="w-3.5 h-3.5"></i>
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5 text-xs">
-              <div class="flex items-center gap-2">
-                <span class="text-zinc-400 font-mono text-[11px]">System Persona:</span>
-                <select id="aiSystemPromptSelect" class="godx-input px-2.5 py-1 text-xs cursor-pointer">
-                  <option value="godx">GODx Supreme Architect (Elite DevOps & System Engineer)</option>
-                  <option value="coding">Full-Stack Web & Logic Specialist</option>
-                  <option value="security">Vault Auditor & Cyber Security Expert</option>
-                  <option value="minimal">Raw Code Snippets Only</option>
-                </select>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <button onclick="clearAiChatHistory()" class="text-zinc-500 hover:text-rose-400 font-mono text-[11px] flex items-center gap-1 cursor-pointer">
-                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Chat
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Chat Screen -->
-          <div id="aiChatBox" class="bg-surface-950 rounded-2xl p-4 min-h-[380px] max-h-[500px] overflow-y-auto space-y-4 border border-white/5 font-sans text-xs"></div>
-
-          <!-- Chat Input -->
-          <form onsubmit="handleSendAiMessage(event)" class="flex gap-2">
-            <textarea
-              id="aiPromptInput"
-              rows="2"
-              placeholder="Prompt cloud model for code generation, architecture reviews, microservice designs..."
-              class="godx-input w-full p-3 font-mono text-xs outline-none resize-none"
-              onkeydown="if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); handleSendAiMessage(); }"
-            ></textarea>
-            <button
-              type="submit"
-              id="btnAiSend"
-              class="btn-gradient px-5 rounded-xl font-bold text-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20 active:scale-95 transition-transform"
-            >
-              <i data-lucide="send" class="w-4 h-4"></i>
-              <span class="hidden sm:inline">Send</span>
-            </button>
-          </form>
-
-        </div>
-      </section>
-
-      <!-- ===================================================================== -->
-      <!-- MODULE 2: EXM PROJECTS HUB & LIVE VIEWPORT                            -->
-      <!-- ===================================================================== -->
-      <section id="tab-projects" class="tab-pane space-y-6 hidden">
+      <!-- TAB 1: EXM PROJECTS HUB & LIVE VIEWPORT -->
+      <section id="tab-projects" class="tab-pane space-y-6">
         <div class="glass-panel glow-border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
             <div class="inline-flex items-center gap-1.5 text-xs text-cyan-300 font-mono">
@@ -559,7 +451,7 @@
               LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400">Anish x</span>
             </h2>
             <p class="text-xs text-zinc-400">
-              Live scanning repository directory <code class="text-cyan-300 font-mono">/EXM/</code>. Sub-projects execute in sandboxed frames.
+              Live scanning repository directory <code class="text-cyan-300 font-mono">/EXM/</code>. All sub-projects execute independently.
             </p>
           </div>
 
@@ -712,9 +604,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 3: MULTI-LANGUAGE INTERACTIVE COMPILERS (HTML, Python, C++, Java, SQL) -->
-      <!-- ===================================================================== -->
+      <!-- TAB 2: MULTI-LANGUAGE INTERACTIVE COMPILERS & IN-MEMORY SQL -->
       <section id="tab-sandbox" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-white/5">
@@ -801,9 +691,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 4: REST API TESTER & NETWORK WORKBENCH                         -->
-      <!-- ===================================================================== -->
+      <!-- TAB 3: REST API TESTER -->
       <section id="tab-rest" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
@@ -812,7 +700,7 @@
                 <i data-lucide="send" class="w-4 h-4 text-amber-400"></i>
                 REST API Tester & Network Workbench
               </h3>
-              <p class="text-xs text-zinc-400">Simulate endpoints, query external microservices, and inspect payloads.</p>
+              <p class="text-xs text-zinc-400">Simulate endpoints, test external microservices, and inspect JSON payloads.</p>
             </div>
             <div class="flex items-center gap-2 text-xs font-mono">
               <span id="apiLatencyBadge" class="text-zinc-400">Latency: -- ms</span>
@@ -868,9 +756,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 5: CANVAS WHITEBOARD & ARCHITECTURE SKETCHPAD                  -->
-      <!-- ===================================================================== -->
+      <!-- TAB 4: CANVAS WHITEBOARD & ARCHITECTURE SKETCHPAD -->
       <section id="tab-whiteboard" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
@@ -903,15 +789,13 @@
             </div>
           </div>
 
-          <div class="relative w-full h-[480px] rounded-2xl overflow-hidden border border-white/10 bg-surface-950">
+          <div id="whiteboardContainer" class="relative w-full h-[480px] rounded-2xl overflow-hidden border border-white/10 bg-surface-950">
             <canvas id="whiteboardCanvas" class="w-full h-full cursor-crosshair"></canvas>
           </div>
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 6: UI DESIGN STUDIO & GLASSMORPHISM GENERATOR                  -->
-      <!-- ===================================================================== -->
+      <!-- TAB 5: UI DESIGN STUDIO & GLASSMORPHISM GENERATOR -->
       <section id="tab-design" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-white/5">
@@ -989,9 +873,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 7: DUAL SPLIT COMPARATOR                                       -->
-      <!-- ===================================================================== -->
+      <!-- TAB 6: DUAL SPLIT COMPARATOR -->
       <section id="tab-split" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
@@ -1029,9 +911,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 8: INTERACTIVE QUANTUM TERMINAL CLI                            -->
-      <!-- ===================================================================== -->
+      <!-- TAB 7: QUANTUM TERMINAL CLI -->
       <section id="tab-terminal" class="tab-pane space-y-4 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-white/5">
@@ -1053,7 +933,7 @@
             <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 4.0.0]</div>
             <div class="text-zinc-400">Authenticated Session: <span class="text-emerald-400">Anish x (Root Administrator)</span></div>
             <div class="text-zinc-500">Root Directory: <span class="text-cyan-300 font-mono">/EXM/</span></div>
-            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view all commands or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt online cloud models.</div>
+            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> for commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Ollama Online.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
 
@@ -1063,6 +943,7 @@
               type="text"
               id="terminalInput"
               autocomplete="off"
+              onkeydown="handleTerminalKeyDown(event)"
               placeholder="Type command (e.g. ls, open <folder>, ai <msg>, ping, status, stats, cat <file>)..."
               class="godx-input flex-1 px-3 py-2 text-xs font-mono"
             />
@@ -1073,9 +954,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 9: PERFORMANCE TELEMETRY & LIVE WAVEFORM                       -->
-      <!-- ===================================================================== -->
+      <!-- TAB 8: PERFORMANCE TELEMETRY -->
       <section id="tab-analytics" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="glass-panel p-4 rounded-2xl space-y-1">
@@ -1099,9 +978,9 @@
           </div>
 
           <div class="glass-panel p-4 rounded-2xl space-y-1">
-            <span class="text-[10px] font-mono uppercase text-zinc-400">Cloud AI Hub</span>
-            <div class="text-2xl font-heading font-extrabold text-purple-300">Online REST</div>
-            <span class="text-[11px] text-purple-400">Cloud API Verified</span>
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Ollama Cloud AI</span>
+            <div class="text-2xl font-heading font-extrabold text-purple-300">Ready</div>
+            <span class="text-[11px] text-purple-400">Online API Verified</span>
           </div>
         </div>
 
@@ -1135,9 +1014,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 10: SCRATCHPAD & NOTES VAULT                                   -->
-      <!-- ===================================================================== -->
+      <!-- TAB 9: SCRATCHPAD & NOTES VAULT -->
       <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
@@ -1198,9 +1075,7 @@
         </div>
       </section>
 
-      <!-- ===================================================================== -->
-      <!-- MODULE 11: SYSTEM CONTROLS & SETTINGS                                 -->
-      <!-- ===================================================================== -->
+      <!-- TAB 10: SYSTEM SETTINGS -->
       <section id="tab-controls" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           
@@ -1287,6 +1162,89 @@
 
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- 3. GLOBAL NEURAL COPILOT DRAWER (PERSISTENT & ACCESSIBLE EVERYWHERE)      -->
+  <!-- ========================================================================= -->
+  <div id="aiCopilotDrawer" class="fixed top-0 right-0 h-full w-full max-w-md z-50 transform translate-x-full transition-transform duration-300 ease-in-out glass-panel border-l border-white/10 shadow-2xl flex flex-col">
+    
+    <!-- Drawer Header -->
+    <div class="p-4 border-b border-white/10 flex items-center justify-between bg-surface-900/60">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="font-heading font-bold text-sm text-white flex items-center gap-1.5">
+            Ollama Neural Copilot
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          </h3>
+          <p class="text-[10px] text-zinc-400" id="aiDrawerModelLabel">Active Model: llama3</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button onclick="toggleAiConfigDrawer()" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer" title="Config & API Key">
+          <i data-lucide="settings-2" class="w-4 h-4"></i>
+        </button>
+        <button onclick="clearAiChatHistory()" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-rose-400 cursor-pointer" title="Clear History">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleAiDrawer()" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- AI Configuration Sub-Drawer (Editable anytime) -->
+    <div id="aiConfigSubdrawer" class="hidden p-4 bg-surface-950 border-b border-white/10 space-y-3 font-mono text-xs">
+      <div class="space-y-1">
+        <label class="text-[10px] text-zinc-400">Ollama Online Endpoint URL:</label>
+        <input type="text" id="cfgOllamaEndpoint" class="godx-input w-full px-3 py-1.5 text-xs" />
+      </div>
+      <div class="space-y-1">
+        <label class="text-[10px] text-zinc-400">Online Ollama Model Name:</label>
+        <input type="text" id="cfgOllamaModel" class="godx-input w-full px-3 py-1.5 text-xs" />
+      </div>
+      <div class="space-y-1">
+        <label class="text-[10px] text-zinc-400">Real Ollama API Key / Token:</label>
+        <input type="password" id="cfgOllamaApiKey" placeholder="Bearer Key" class="godx-input w-full px-3 py-1.5 text-xs" />
+      </div>
+      <button onclick="saveAiConfigFromSubdrawer()" class="btn-gradient w-full py-2 rounded-xl text-xs font-bold text-black cursor-pointer">
+        Save & Lock Configuration
+      </button>
+    </div>
+
+    <!-- Drawer Messages Scroll Area -->
+    <div id="aiDrawerChatBox" class="flex-1 p-4 overflow-y-auto space-y-3 font-sans text-xs bg-surface-950/80"></div>
+
+    <!-- Drawer Input Area -->
+    <form onsubmit="handleSendAiMessage(event)" class="p-3 border-t border-white/10 bg-surface-900/60 flex gap-2">
+      <textarea
+        id="aiDrawerPromptInput"
+        rows="2"
+        placeholder="Ask Ollama to write code, review EXM modules, construct API payloads..."
+        class="godx-input w-full p-2.5 font-mono text-xs outline-none resize-none"
+        onkeydown="if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); handleSendAiMessage(); }"
+      ></textarea>
+      <button
+        type="submit"
+        id="btnAiSendDrawer"
+        class="btn-gradient px-4 rounded-xl font-bold text-black flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+      >
+        <i data-lucide="send" class="w-4 h-4"></i>
+      </button>
+    </form>
+  </div>
+
+  <!-- Floating Quick AI Button (FAB) -->
+  <button
+    onclick="toggleAiDrawer()"
+    class="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full btn-gradient shadow-2xl flex items-center justify-center text-black font-bold active:scale-90 transition-transform cursor-pointer"
+    title="Open Ollama Copilot (Ctrl+J)"
+  >
+    <i data-lucide="bot" class="w-6 h-6"></i>
+  </button>
+
   <!-- Source Inspector Modal -->
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-4xl w-full p-5 sm:p-6 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
@@ -1323,7 +1281,7 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
+  <div id="toast" class="fixed bottom-6 left-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
     <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
       <i data-lucide="check" class="w-5 h-5"></i>
     </div>
@@ -1335,9 +1293,25 @@
 
   <!-- JavaScript Engine -->
   <script>
+    // =========================================================================
+    // 1. TOP-LEVEL CONFIGURATION (SET YOUR ONLINE OLLAMA API HERE ONCE)
+    // =========================================================================
+    const AI_CONFIG = {
+      // Paste your Online Ollama Endpoint here (or customize in the drawer settings)
+      endpoint: localStorage.getItem("lumina_ollama_endpoint") || "https://api.ollama.com/v1/chat/completions",
+      
+      // Paste your real API Key here
+      apiKey: localStorage.getItem("lumina_ollama_key") || "",
+      
+      // Default online model
+      model: localStorage.getItem("lumina_ollama_model") || "llama3",
+      
+      systemPrompt: "You are the GODx LuminaVista Supreme AI Architect. Provide ultra high-performance code, bug fixes, and system designs."
+    };
+
     lucide.createIcons();
 
-    const AUTH_ENCODED = "eHBzQGFkbWlu";
+    const AUTH_ENCODED = "eHBzQGFkbWlu"; // Base64 for xps@admin
     const SESSION_KEY = "lumina_godx_session";
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
 
@@ -1361,13 +1335,13 @@
     let isAudioEnabled = true;
     let isPassVisible = false;
 
-    // Cloud AI State
-    let aiConversation = JSON.parse(localStorage.getItem("lumina_cloud_ai_history") || "[]");
-    let isKeyVisible = false;
+    // AI State
+    let aiConversation = JSON.parse(localStorage.getItem("lumina_ollama_history") || "[]");
+    let isAiDrawerOpen = false;
 
-    // Multi-Note Storage Structure
+    // Multi-Note Vault
     let vaultNotes = JSON.parse(localStorage.getItem("lumina_godx_multi_notes") || JSON.stringify([
-      { id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace Checklist\n- [x] EXM sub-projects deployed\n- [x] Security authentication active\n- [x] Online Cloud AI Connected\n- [x] REST API Workbench live" }
+      { id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace Checklist\n- [x] EXM sub-projects deployed\n- [x] Security authentication active\n- [x] Online Ollama AI Copilot ready\n- [x] In-memory SQL & Sandbox verified" }
     ]));
     let activeNoteId = vaultNotes[0].id;
     let isMarkdownPreviewActive = false;
@@ -1377,6 +1351,10 @@
     let wbCurrentTool = 'pen';
     let wbCurrentColor = '#00f2fe';
     let wbCurrentSize = 3;
+
+    // Terminal History Buffer
+    let termHistory = [];
+    let termHistoryIdx = -1;
 
     window.addEventListener("DOMContentLoaded", () => {
       const savedTheme = localStorage.getItem("lumina_theme") || "cyan";
@@ -1392,9 +1370,7 @@
         showLogin();
       }
 
-      // Load saved AI credentials
-      loadAiCredentials();
-
+      initAiConfigUI();
       renderProjectList();
       fetchRepoProjects();
       startSystemClock();
@@ -1509,6 +1485,9 @@
       showLogin();
     }
 
+    // =========================================================================
+    // TAB LIFECYCLE (FIXES CANVAS SIZING IN HIDDEN TABS)
+    // =========================================================================
     function switchTab(tabId) {
       playAudioTone(523, "sine", 0.04);
       document.querySelectorAll(".tab-pane").forEach(pane => pane.classList.add("hidden"));
@@ -1525,123 +1504,70 @@
         activeBtn.classList.remove("text-zinc-400");
       }
       lucide.createIcons();
-    }
 
-    // =========================================================================
-    // ONLINE CLOUD AI INTEGRATION ENGINE (REAL API KEYS)
-    // =========================================================================
-    function onAiProviderChanged() {
-      const provider = document.getElementById("aiProviderSelect").value;
-      const endpointInput = document.getElementById("aiEndpointInput");
-      const modelInput = document.getElementById("aiModelInput");
-
-      if (provider === "openrouter") {
-        endpointInput.value = "https://openrouter.ai/api/v1/chat/completions";
-        modelInput.value = "meta-llama/llama-3.3-70b-instruct";
-      } else if (provider === "groq") {
-        endpointInput.value = "https://api.groq.com/openai/v1/chat/completions";
-        modelInput.value = "llama-3.3-70b-versatile";
-      } else if (provider === "deepseek") {
-        endpointInput.value = "https://api.deepseek.com/chat/completions";
-        modelInput.value = "deepseek-chat";
-      } else if (provider === "openai") {
-        endpointInput.value = "https://api.openai.com/v1/chat/completions";
-        modelInput.value = "gpt-4o-mini";
+      // Bug Fix: Resize canvases upon becoming visible
+      if (tabId === "tab-whiteboard") {
+        setTimeout(resizeWhiteboardCanvas, 50);
+      } else if (tabId === "tab-analytics") {
+        setTimeout(initMetricsChart, 50);
       }
-      saveAiCredentials();
     }
 
-    function saveAiCredentials() {
-      const provider = document.getElementById("aiProviderSelect").value;
-      const endpoint = document.getElementById("aiEndpointInput").value.trim();
-      const model = document.getElementById("aiModelInput").value.trim();
-      const key = document.getElementById("aiApiKeyInput").value.trim();
-
-      localStorage.setItem("lumina_cloud_ai_provider", provider);
-      localStorage.setItem("lumina_cloud_ai_endpoint", endpoint);
-      localStorage.setItem("lumina_cloud_ai_model", model);
-      if (key) localStorage.setItem("lumina_cloud_ai_key", key);
-
-      const dot = document.getElementById("aiKeyStatusDot");
-      const label = document.getElementById("aiKeyStatusLabel");
-      if (key) {
-        dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-        label.textContent = "Key Configured";
+    // =========================================================================
+    // OLLAMA NEURAL COPILOT DRAWER (PERSISTENT & ACCESSIBLE EVERYWHERE)
+    // =========================================================================
+    function toggleAiDrawer() {
+      const drawer = document.getElementById("aiCopilotDrawer");
+      isAiDrawerOpen = !isAiDrawerOpen;
+      if (isAiDrawerOpen) {
+        drawer.classList.remove("translate-x-full");
+        setTimeout(() => document.getElementById("aiDrawerPromptInput").focus(), 150);
       } else {
-        dot.className = "w-2 h-2 rounded-full bg-amber-400";
-        label.textContent = "Missing API Key";
+        drawer.classList.add("translate-x-full");
       }
     }
 
-    function loadAiCredentials() {
-      const p = localStorage.getItem("lumina_cloud_ai_provider") || "openrouter";
-      const ep = localStorage.getItem("lumina_cloud_ai_endpoint") || "https://openrouter.ai/api/v1/chat/completions";
-      const m = localStorage.getItem("lumina_cloud_ai_model") || "meta-llama/llama-3.3-70b-instruct";
-      const k = localStorage.getItem("lumina_cloud_ai_key") || "";
-
-      document.getElementById("aiProviderSelect").value = p;
-      document.getElementById("aiEndpointInput").value = ep;
-      document.getElementById("aiModelInput").value = m;
-      document.getElementById("aiApiKeyInput").value = k;
-      saveAiCredentials();
+    function toggleAiConfigDrawer() {
+      const sub = document.getElementById("aiConfigSubdrawer");
+      sub.classList.toggle("hidden");
     }
 
-    function toggleApiKeyMask() {
-      isKeyVisible = !isKeyVisible;
-      const keyInput = document.getElementById("aiApiKeyInput");
-      keyInput.type = isKeyVisible ? "text" : "password";
-      document.getElementById("aiKeyEyeIcon").setAttribute("data-lucide", isKeyVisible ? "eye-off" : "eye");
-      lucide.createIcons();
+    function initAiConfigUI() {
+      document.getElementById("cfgOllamaEndpoint").value = AI_CONFIG.endpoint;
+      document.getElementById("cfgOllamaModel").value = AI_CONFIG.model;
+      document.getElementById("cfgOllamaApiKey").value = AI_CONFIG.apiKey;
+      document.getElementById("aiDrawerModelLabel").textContent = `Active Model: ${AI_CONFIG.model}`;
     }
 
-    async function testCloudAiConnection() {
-      const endpoint = document.getElementById("aiEndpointInput").value.trim();
-      const key = document.getElementById("aiApiKeyInput").value.trim();
-      const model = document.getElementById("aiModelInput").value.trim();
+    function saveAiConfigFromSubdrawer() {
+      const ep = document.getElementById("cfgOllamaEndpoint").value.trim();
+      const m = document.getElementById("cfgOllamaModel").value.trim();
+      const k = document.getElementById("cfgOllamaApiKey").value.trim();
 
-      if (!key) {
-        showToast("Key Required", "Please enter your real Cloud API key.");
-        return;
-      }
+      AI_CONFIG.endpoint = ep;
+      AI_CONFIG.model = m;
+      AI_CONFIG.apiKey = k;
 
-      showToast("Verifying Link", "Testing Cloud AI handshake...");
+      localStorage.setItem("lumina_ollama_endpoint", ep);
+      localStorage.setItem("lumina_ollama_model", m);
+      localStorage.setItem("lumina_ollama_key", k);
 
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${key}`
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: [{ role: "user", content: "ping" }],
-            max_tokens: 5
-          })
-        });
-
-        if (res.ok) {
-          showToast("Connection Success", `Authenticated with ${model} successfully.`);
-        } else {
-          const errData = await res.json().catch(() => ({}));
-          showToast("API Handshake Failed", `HTTP ${res.status}: ${errData.error?.message || res.statusText}`);
-        }
-      } catch (err) {
-        showToast("Network Error", `Could not reach ${endpoint}. Check CORS policy.`);
-      }
+      document.getElementById("aiDrawerModelLabel").textContent = `Active Model: ${m}`;
+      toggleAiConfigDrawer();
+      showToast("Config Saved", "Online Ollama settings locked.");
     }
 
     function renderAiChat() {
-      const box = document.getElementById("aiChatBox");
+      const box = document.getElementById("aiDrawerChatBox");
       box.innerHTML = "";
 
       if (aiConversation.length === 0) {
         box.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold shrink-0 border border-cyan-500/30">AI</div>
-            <div class="p-3.5 rounded-2xl bg-surface-900 border border-white/10 text-zinc-200 max-w-2xl">
-              <div class="font-semibold text-cyan-300 font-heading text-xs">GODx Cloud Neural Engine Active</div>
-              <p class="leading-relaxed text-zinc-300">Ready to assist with /EXM/ code generation, microservices, and system architecture. Type your prompt below.</p>
+          <div class="flex items-start gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold shrink-0 border border-cyan-500/30">AI</div>
+            <div class="p-3 rounded-2xl bg-surface-900 border border-white/10 text-zinc-200">
+              <div class="font-semibold text-cyan-300 font-heading text-xs">Ollama Copilot Online</div>
+              <p class="leading-relaxed text-zinc-400 text-xs mt-1">Ready to assist with EXM sub-projects, code debugging, and microservice queries.</p>
             </div>
           </div>
         `;
@@ -1651,13 +1577,13 @@
       aiConversation.forEach(msg => {
         const isUser = msg.role === "user";
         const div = document.createElement("div");
-        div.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+        div.className = `flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : ''}`;
         div.innerHTML = `
-          <div class="w-8 h-8 rounded-xl ${isUser ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'} flex items-center justify-center font-bold shrink-0 border">
+          <div class="w-7 h-7 rounded-lg ${isUser ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'} flex items-center justify-center font-bold shrink-0 border">
             ${isUser ? 'ME' : 'AI'}
           </div>
-          <div class="p-3.5 rounded-2xl ${isUser ? 'bg-surface-850 text-white' : 'bg-surface-900 text-zinc-200 border border-white/10'} max-w-2xl space-y-1 whitespace-pre-wrap font-mono text-xs">
-            ${msg.content.replace(/```([\s\S]*?)```/g, '<pre class="bg-surface-950 p-3 rounded-xl my-2 border border-white/10 text-cyan-300 overflow-x-auto"><code>$1</code></pre>')}
+          <div class="p-3 rounded-2xl ${isUser ? 'bg-surface-850 text-white' : 'bg-surface-900 text-zinc-200 border border-white/10'} max-w-[85%] space-y-1 whitespace-pre-wrap font-mono text-xs">
+            ${msg.content.replace(/```([\s\S]*?)```/g, '<pre class="bg-surface-950 p-2.5 rounded-xl my-1.5 border border-white/10 text-cyan-300 overflow-x-auto"><code>$1</code></pre>')}
           </div>
         `;
         box.appendChild(div);
@@ -1667,225 +1593,87 @@
 
     async function handleSendAiMessage(e) {
       if (e) e.preventDefault();
-      const input = document.getElementById("aiPromptInput");
+      const input = document.getElementById("aiDrawerPromptInput");
       const prompt = input.value.trim();
       if (!prompt) return;
-
-      const endpoint = document.getElementById("aiEndpointInput").value.trim();
-      const model = document.getElementById("aiModelInput").value.trim();
-      const apiKey = document.getElementById("aiApiKeyInput").value.trim();
-      const persona = document.getElementById("aiSystemPromptSelect").value;
-
-      if (!apiKey) {
-        showToast("Key Missing", "Please paste your Cloud API key in the configuration bar.");
-        return;
-      }
-
-      let systemPrompt = "You are the GODx LuminaVista Supreme Architect. Provide ultra high-performance code and architectural designs.";
-      if (persona === "coding") systemPrompt = "You are a senior full-stack developer. Deliver robust code blocks in HTML, JavaScript, Python, C++, Java, or SQL.";
-      if (persona === "security") systemPrompt = "You are an ethical security and EXM isolation auditor. Scrutinize all inputs and architectures.";
-      if (persona === "minimal") systemPrompt = "Respond with raw code snippets and minimal commentary.";
 
       aiConversation.push({ role: "user", content: prompt });
       input.value = "";
       renderAiChat();
 
-      const btn = document.getElementById("btnAiSend");
+      const btn = document.getElementById("btnAiSendDrawer");
       btn.disabled = true;
 
       try {
-        const messages = [
-          { role: "system", content: systemPrompt },
-          ...aiConversation.slice(-8).map(m => ({ role: m.role, content: m.content }))
-        ];
+        let headers = { "Content-Type": "application/json" };
+        if (AI_CONFIG.apiKey) {
+          headers["Authorization"] = `Bearer ${AI_CONFIG.apiKey}`;
+        }
 
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-            "HTTP-Referer": window.location.origin,
-            "X-Title": "LuminaVista OS"
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: messages,
+        // Handles standard /v1/chat/completions or Ollama REST /api/chat
+        const isOllamaNative = AI_CONFIG.endpoint.endsWith("/api/chat") || AI_CONFIG.endpoint.endsWith("/api/generate");
+
+        let bodyPayload = {};
+        if (isOllamaNative) {
+          bodyPayload = {
+            model: AI_CONFIG.model,
+            messages: [
+              { role: "system", content: AI_CONFIG.systemPrompt },
+              ...aiConversation.slice(-6)
+            ],
+            stream: false
+          };
+        } else {
+          bodyPayload = {
+            model: AI_CONFIG.model,
+            messages: [
+              { role: "system", content: AI_CONFIG.systemPrompt },
+              ...aiConversation.slice(-6)
+            ],
             temperature: 0.7
-          })
+          };
+        }
+
+        const res = await fetch(AI_CONFIG.endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(bodyPayload)
         });
 
         if (res.ok) {
           const data = await res.json();
-          const responseText = data.choices?.[0]?.message?.content || "No response text received.";
+          const responseText = data.choices?.[0]?.message?.content || data.message?.content || data.response || "No response received.";
           aiConversation.push({ role: "assistant", content: responseText });
         } else {
           const errBody = await res.json().catch(() => ({}));
-          aiConversation.push({ role: "assistant", content: `[Cloud API Error ${res.status}]: ${errBody.error?.message || res.statusText}` });
+          aiConversation.push({ role: "assistant", content: `[Ollama Error: HTTP ${res.status}]: ${errBody.error?.message || errBody.error || res.statusText}` });
         }
       } catch (err) {
-        aiConversation.push({ role: "assistant", content: `[Connection Exception]: ${err.message}. If using OpenAI directly in the browser, ensure your endpoint or CORS proxy permits browser origin requests.` });
+        aiConversation.push({ role: "assistant", content: `[Connection Exception]: ${err.message}. Please verify the online endpoint, CORS permissions, and your API key in Settings.` });
       } finally {
         btn.disabled = false;
-        localStorage.setItem("lumina_cloud_ai_history", JSON.stringify(aiConversation));
+        localStorage.setItem("lumina_ollama_history", JSON.stringify(aiConversation));
         renderAiChat();
       }
     }
 
     function clearAiChatHistory() {
       aiConversation = [];
-      localStorage.removeItem("lumina_cloud_ai_history");
+      localStorage.removeItem("lumina_ollama_history");
       renderAiChat();
-      showToast("Chat Cleared", "Neural conversation memory reset.");
+      showToast("Chat Cleared", "AI conversation memory reset.");
     }
 
-    // =========================================================================
-    // REST API TESTER ENGINE
-    // =========================================================================
-    async function executeApiRequest() {
-      const method = document.getElementById("apiMethod").value;
-      const url = document.getElementById("apiUrlInput").value.trim();
-      const rawBody = document.getElementById("apiRequestBody").value.trim();
-      const resView = document.getElementById("apiResponseView");
-      const statusBadge = document.getElementById("apiStatusBadge");
-      const latencyBadge = document.getElementById("apiLatencyBadge");
-
-      if (!url) return;
-      resView.textContent = "Dispatching HTTP request...";
-      const startTime = performance.now();
-
-      try {
-        let options = { method };
-        let parsed = null;
-        try { parsed = JSON.parse(rawBody); } catch(e) {}
-
-        if (parsed && parsed.headers) {
-          options.headers = parsed.headers;
-        }
-
-        if (method !== "GET" && parsed && parsed.body) {
-          options.body = JSON.stringify(parsed.body);
-        }
-
-        const res = await fetch(url, options);
-        const duration = (performance.now() - startTime).toFixed(1);
-        latencyBadge.textContent = `Latency: ${duration} ms`;
-        statusBadge.textContent = `Status: ${res.status} ${res.statusText}`;
-
-        const text = await res.text();
-        try {
-          const json = JSON.parse(text);
-          resView.textContent = JSON.stringify(json, null, 2);
-        } catch {
-          resView.textContent = text;
-        }
-        showToast("Request Complete", `HTTP ${res.status} in ${duration}ms`);
-      } catch (err) {
-        latencyBadge.textContent = "Latency: ERR";
-        statusBadge.textContent = "Status: Failed";
-        resView.textContent = `Error: ${err.message}`;
+    // Shortcut: Ctrl/Cmd + J opens the Global AI Copilot Drawer
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        toggleAiDrawer();
       }
-    }
-
-    function copyApiResponse() {
-      const text = document.getElementById("apiResponseView").textContent;
-      navigator.clipboard.writeText(text).then(() => showToast("Copied", "Response payload copied."));
-    }
+    });
 
     // =========================================================================
-    // CANVAS WHITEBOARD ENGINE
-    // =========================================================================
-    function initWhiteboard() {
-      const canvas = document.getElementById("whiteboardCanvas");
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-
-      function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-      }
-      resize();
-      window.addEventListener("resize", resize);
-
-      canvas.addEventListener("mousedown", (e) => {
-        isDrawing = true;
-        ctx.beginPath();
-        ctx.moveTo(e.offsetX, e.offsetY);
-      });
-
-      canvas.addEventListener("mousemove", (e) => {
-        if (!isDrawing) return;
-        ctx.strokeStyle = wbCurrentTool === "eraser" ? "#030712" : wbCurrentColor;
-        ctx.lineWidth = wbCurrentSize;
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.stroke();
-      });
-
-      canvas.addEventListener("mouseup", () => isDrawing = false);
-      canvas.addEventListener("mouseleave", () => isDrawing = false);
-    }
-
-    function setWhiteboardTool(tool) {
-      wbCurrentTool = tool;
-      document.getElementById("wbToolPen").className = tool === "pen" ? "p-1.5 rounded-lg bg-cyan-500 text-black cursor-pointer" : "p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
-      document.getElementById("wbToolEraser").className = tool === "eraser" ? "p-1.5 rounded-lg bg-cyan-500 text-black cursor-pointer" : "p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
-    }
-
-    function updateWbColor(c) { wbCurrentColor = c; }
-    function updateWbSize(s) { wbCurrentSize = s; }
-
-    function clearWhiteboard() {
-      const canvas = document.getElementById("whiteboardCanvas");
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      showToast("Whiteboard Cleared", "Canvas reset.");
-    }
-
-    function downloadWhiteboard() {
-      const canvas = document.getElementById("whiteboardCanvas");
-      const link = document.createElement("a");
-      link.download = `lumina_sketch_${Date.now()}.png`;
-      link.href = canvas.toDataURL();
-      link.click();
-      showToast("Export Complete", "Whiteboard exported to PNG.");
-    }
-
-    // =========================================================================
-    // UI DESIGN STUDIO ENGINE
-    // =========================================================================
-    function updateDesignPreview() {
-      const blur = document.getElementById("sliderBlur").value;
-      const opacity = document.getElementById("sliderOpacity").value / 100;
-      const radius = document.getElementById("sliderRadius").value;
-      const glow = document.getElementById("sliderGlow").value / 100;
-
-      document.getElementById("lblBlurVal").textContent = `${blur}px`;
-      document.getElementById("lblOpacityVal").textContent = `${Math.round(opacity * 100)}%`;
-      document.getElementById("lblRadiusVal").textContent = `${radius}px`;
-      document.getElementById("lblGlowVal").textContent = `${Math.round(glow * 100)}%`;
-
-      const card = document.getElementById("glassPreviewCard");
-      card.style.backdropFilter = `blur(${blur}px)`;
-      card.style.webkitBackdropFilter = `blur(${blur}px)`;
-      card.style.backgroundColor = `rgba(11, 15, 25, ${opacity})`;
-      card.style.borderRadius = `${radius}px`;
-      card.style.border = `1px solid rgba(255, 255, 255, 0.12)`;
-      card.style.boxShadow = `0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${glow})`;
-    }
-
-    function copyGeneratedDesignCss() {
-      const blur = document.getElementById("sliderBlur").value;
-      const opacity = document.getElementById("sliderOpacity").value / 100;
-      const radius = document.getElementById("sliderRadius").value;
-      const glow = document.getElementById("sliderGlow").value / 100;
-
-      const css = `.lumina-glass {\n  background: rgba(11, 15, 25, ${opacity});\n  backdrop-filter: blur(${blur}px);\n  -webkit-backdrop-filter: blur(${blur}px);\n  border-radius: ${radius}px;\n  border: 1px solid rgba(255, 255, 255, 0.12);\n  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${glow});\n}`;
-      navigator.clipboard.writeText(css).then(() => showToast("CSS Copied", "Glassmorphism token ready."));
-    }
-
-    // =========================================================================
-    // MULTI-LANGUAGE COMPILER ENGINE
+    // MULTI-LANGUAGE INTERACTIVE COMPILERS & IN-MEMORY SQL ENGINE
     // =========================================================================
     let currentSandboxLang = "html";
 
@@ -1964,7 +1752,7 @@
         stdout.textContent = `=== GODx In-Memory SQL Database Engine ===\nExecuting Query: ${code.trim()}\n\n` +
           `| ID | NAME                 | CATEGORY   | STATUS |\n` +
           `|----|----------------------|------------|--------|\n` +
-          `| 1  | Cloud Neural Engine  | AI_CORE    | ACTIVE |\n` +
+          `| 1  | Online Ollama Copilot| AI_CORE    | ACTIVE |\n` +
           `| 2  | REST Workbench       | NETWORK    | ACTIVE |\n` +
           `| 3  | Canvas Whiteboard    | GRAPHICS   | ACTIVE |\n` +
           `| 4  | Multi-Lang Sandbox   | COMPILER   | ACTIVE |\n` +
@@ -2041,7 +1829,160 @@
     }
 
     // =========================================================================
-    // PROJECTS & REPOSITORY SCANNER
+    // REST API TESTER
+    // =========================================================================
+    async function executeApiRequest() {
+      const method = document.getElementById("apiMethod").value;
+      const url = document.getElementById("apiUrlInput").value.trim();
+      const rawBody = document.getElementById("apiRequestBody").value.trim();
+      const resView = document.getElementById("apiResponseView");
+      const statusBadge = document.getElementById("apiStatusBadge");
+      const latencyBadge = document.getElementById("apiLatencyBadge");
+
+      if (!url) return;
+      resView.textContent = "Dispatching HTTP request...";
+      const startTime = performance.now();
+
+      try {
+        let options = { method };
+        let parsed = null;
+        try { parsed = JSON.parse(rawBody); } catch(e) {}
+
+        if (parsed && parsed.headers) {
+          options.headers = parsed.headers;
+        }
+
+        if (method !== "GET" && parsed && parsed.body) {
+          options.body = JSON.stringify(parsed.body);
+        }
+
+        const res = await fetch(url, options);
+        const duration = (performance.now() - startTime).toFixed(1);
+        latencyBadge.textContent = `Latency: ${duration} ms`;
+        statusBadge.textContent = `Status: ${res.status} ${res.statusText}`;
+
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          resView.textContent = JSON.stringify(json, null, 2);
+        } catch {
+          resView.textContent = text;
+        }
+        showToast("Request Complete", `HTTP ${res.status} in ${duration}ms`);
+      } catch (err) {
+        latencyBadge.textContent = "Latency: ERR";
+        statusBadge.textContent = "Status: Failed";
+        resView.textContent = `Error: ${err.message}`;
+      }
+    }
+
+    function copyApiResponse() {
+      const text = document.getElementById("apiResponseView").textContent;
+      navigator.clipboard.writeText(text).then(() => showToast("Copied", "Response payload copied."));
+    }
+
+    // =========================================================================
+    // CANVAS WHITEBOARD (WITH RE-SIZE LIFECYCLE FIX)
+    // =========================================================================
+    function resizeWhiteboardCanvas() {
+      const canvas = document.getElementById("whiteboardCanvas");
+      if (!canvas || !canvas.parentElement) return;
+      const ctx = canvas.getContext("2d");
+      
+      const temp = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      try { ctx.putImageData(temp, 0, 0); } catch(e) {}
+    }
+
+    function initWhiteboard() {
+      const canvas = document.getElementById("whiteboardCanvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+
+      resizeWhiteboardCanvas();
+      window.addEventListener("resize", resizeWhiteboardCanvas);
+
+      canvas.addEventListener("mousedown", (e) => {
+        isDrawing = true;
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (!isDrawing) return;
+        ctx.strokeStyle = wbCurrentTool === "eraser" ? "#030712" : wbCurrentColor;
+        ctx.lineWidth = wbCurrentSize;
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+      });
+
+      canvas.addEventListener("mouseup", () => isDrawing = false);
+      canvas.addEventListener("mouseleave", () => isDrawing = false);
+    }
+
+    function setWhiteboardTool(tool) {
+      wbCurrentTool = tool;
+      document.getElementById("wbToolPen").className = tool === "pen" ? "p-1.5 rounded-lg bg-cyan-500 text-black cursor-pointer" : "p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
+      document.getElementById("wbToolEraser").className = tool === "eraser" ? "p-1.5 rounded-lg bg-cyan-500 text-black cursor-pointer" : "p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
+    }
+
+    function updateWbColor(c) { wbCurrentColor = c; }
+    function updateWbSize(s) { wbCurrentSize = s; }
+
+    function clearWhiteboard() {
+      const canvas = document.getElementById("whiteboardCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      showToast("Whiteboard Cleared", "Canvas reset.");
+    }
+
+    function downloadWhiteboard() {
+      const canvas = document.getElementById("whiteboardCanvas");
+      const link = document.createElement("a");
+      link.download = `lumina_sketch_${Date.now()}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      showToast("Export Complete", "Whiteboard exported to PNG.");
+    }
+
+    // =========================================================================
+    // UI DESIGN STUDIO
+    // =========================================================================
+    function updateDesignPreview() {
+      const blur = document.getElementById("sliderBlur").value;
+      const opacity = document.getElementById("sliderOpacity").value / 100;
+      const radius = document.getElementById("sliderRadius").value;
+      const glow = document.getElementById("sliderGlow").value / 100;
+
+      document.getElementById("lblBlurVal").textContent = `${blur}px`;
+      document.getElementById("lblOpacityVal").textContent = `${Math.round(opacity * 100)}%`;
+      document.getElementById("lblRadiusVal").textContent = `${radius}px`;
+      document.getElementById("lblGlowVal").textContent = `${Math.round(glow * 100)}%`;
+
+      const card = document.getElementById("glassPreviewCard");
+      card.style.backdropFilter = `blur(${blur}px)`;
+      card.style.webkitBackdropFilter = `blur(${blur}px)`;
+      card.style.backgroundColor = `rgba(11, 15, 25, ${opacity})`;
+      card.style.borderRadius = `${radius}px`;
+      card.style.border = `1px solid rgba(255, 255, 255, 0.12)`;
+      card.style.boxShadow = `0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${glow})`;
+    }
+
+    function copyGeneratedDesignCss() {
+      const blur = document.getElementById("sliderBlur").value;
+      const opacity = document.getElementById("sliderOpacity").value / 100;
+      const radius = document.getElementById("sliderRadius").value;
+      const glow = document.getElementById("sliderGlow").value / 100;
+
+      const css = `.lumina-glass {\n  background: rgba(11, 15, 25, ${opacity});\n  backdrop-filter: blur(${blur}px);\n  -webkit-backdrop-filter: blur(${blur}px);\n  border-radius: ${radius}px;\n  border: 1px solid rgba(255, 255, 255, 0.12);\n  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${glow});\n}`;
+      navigator.clipboard.writeText(css).then(() => showToast("CSS Copied", "Glassmorphism token ready."));
+    }
+
+    // =========================================================================
+    // PROJECTS SCANNER & VIEWPORT
     // =========================================================================
     async function fetchRepoProjects() {
       const refreshIcon = document.getElementById("refreshIcon");
@@ -2273,7 +2214,7 @@
     }
 
     // =========================================================================
-    // MULTI-NOTE VAULT ENGINE
+    // MULTI-NOTE VAULT
     // =========================================================================
     function renderNoteTabs() {
       const container = document.getElementById("noteTabsContainer");
@@ -2512,6 +2453,7 @@
         projects: repoProjects,
         pinned: pinnedProjects,
         notes: vaultNotes,
+        aiConfig: AI_CONFIG,
         timestamp: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
@@ -2524,7 +2466,7 @@
     }
 
     function flushWorkspaceCache() {
-      if (confirm("Reset and flush all locally saved projects & note caches?")) {
+      if (confirm("Reset and flush all locally saved projects, API keys & note caches?")) {
         localStorage.clear();
         showToast("Storage Flushed", "All caches cleared. Reloading...");
         setTimeout(() => location.reload(), 800);
@@ -2532,13 +2474,38 @@
     }
 
     // =========================================================================
-    // QUANTUM TERMINAL CLI
+    // QUANTUM TERMINAL CLI (WITH BASH HISTORY NAVIGATION)
     // =========================================================================
+    function handleTerminalKeyDown(e) {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (termHistory.length > 0 && termHistoryIdx > 0) {
+          termHistoryIdx--;
+          e.target.value = termHistory[termHistoryIdx];
+        } else if (termHistory.length > 0 && termHistoryIdx === -1) {
+          termHistoryIdx = termHistory.length - 1;
+          e.target.value = termHistory[termHistoryIdx];
+        }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (termHistoryIdx >= 0 && termHistoryIdx < termHistory.length - 1) {
+          termHistoryIdx++;
+          e.target.value = termHistory[termHistoryIdx];
+        } else {
+          termHistoryIdx = -1;
+          e.target.value = "";
+        }
+      }
+    }
+
     async function handleTerminalCommand(e) {
       e.preventDefault();
       const input = document.getElementById("terminalInput");
       const cmd = input.value.trim();
       if (!cmd) return;
+
+      termHistory.push(cmd);
+      termHistoryIdx = -1;
 
       const screen = document.getElementById("terminalScreen");
       const echoLine = document.createElement("div");
@@ -2558,12 +2525,19 @@
             Commands:<br/>
             - <span class="text-cyan-300 font-bold">ls / projects</span>: List EXM projects<br/>
             - <span class="text-cyan-300 font-bold">open &lt;folder&gt;</span>: Launch subproject viewport<br/>
-            - <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span>: Prompt Online Cloud AI model<br/>
+            - <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span>: Execute prompt via Online Ollama<br/>
+            - <span class="text-cyan-300 font-bold">copilot</span>: Toggle Neural Copilot Drawer (Ctrl+J)<br/>
             - <span class="text-cyan-300 font-bold">status</span>: Display system and host telemetry<br/>
             - <span class="text-cyan-300 font-bold">theme &lt;cyan|emerald|amber|rose&gt;</span>: Change palette<br/>
             - <span class="text-cyan-300 font-bold">ping</span>: Measure host latency<br/>
             - <span class="text-cyan-300 font-bold">clear</span>: Clear console screen
           `;
+          break;
+
+        case "copilot":
+          toggleAiDrawer();
+          responseLine.className = "text-cyan-300";
+          responseLine.textContent = "✓ Toggled AI Copilot Drawer.";
           break;
 
         case "ai":
@@ -2572,27 +2546,16 @@
             responseLine.textContent = "Usage: ai <prompt>";
           } else {
             responseLine.className = "text-purple-300";
-            responseLine.textContent = "Querying Cloud AI model...";
-            const endpoint = document.getElementById("aiEndpointInput").value.trim();
-            const model = document.getElementById("aiModelInput").value.trim();
-            const apiKey = document.getElementById("aiApiKeyInput").value.trim();
-
-            if (!apiKey) {
-              responseLine.className = "text-rose-400";
-              responseLine.textContent = "Error: Cloud API Key missing. Set it in the Cloud AI Engine tab.";
-              break;
-            }
-
+            responseLine.textContent = "Querying Online Ollama...";
             try {
-              const res = await fetch(endpoint, {
+              let headers = { "Content-Type": "application/json" };
+              if (AI_CONFIG.apiKey) headers["Authorization"] = `Bearer ${AI_CONFIG.apiKey}`;
+
+              const res = await fetch(AI_CONFIG.endpoint, {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${apiKey}`,
-                  "HTTP-Referer": window.location.origin
-                },
+                headers,
                 body: JSON.stringify({
-                  model: model,
+                  model: AI_CONFIG.model,
                   messages: [{ role: "user", content: arg }],
                   temperature: 0.7
                 })
@@ -2600,9 +2563,10 @@
 
               if (res.ok) {
                 const d = await res.json();
-                responseLine.textContent = `[AI ${model}]: ${d.choices?.[0]?.message?.content || 'No output'}`;
+                const out = d.choices?.[0]?.message?.content || d.message?.content || d.response || "No output";
+                responseLine.textContent = `[Ollama]: ${out}`;
               } else {
-                responseLine.textContent = `[Cloud API Error: HTTP ${res.status}]`;
+                responseLine.textContent = `[Ollama Error: HTTP ${res.status}]`;
               }
             } catch (err) {
               responseLine.textContent = `[Error]: ${err.message}`;
@@ -2639,7 +2603,7 @@
 
         case "status":
           responseLine.className = "text-cyan-300";
-          responseLine.innerHTML = `User: Anish x (GODx Root) | Repo: SubhadraRoy/LuminaVista | Target: /EXM/ | Discovered: ${repoProjects.length}`;
+          responseLine.innerHTML = `User: Anish x (GODx Root) | Repo: SubhadraRoy/LuminaVista | Target: /EXM/ | AI Model: ${AI_CONFIG.model}`;
           break;
 
         case "clear":
@@ -2697,9 +2661,9 @@
       const q = query.toLowerCase();
 
       const actions = [
-        { label: "Switch Tab: Cloud AI Neural Hub", icon: "brain-circuit", action: () => switchTab("tab-cloud-ai") },
+        { label: "Action: Open Online Ollama Copilot", icon: "bot", action: () => toggleAiDrawer() },
         { label: "Switch Tab: EXM Projects Hub", icon: "folder-tree", action: () => switchTab("tab-projects") },
-        { label: "Switch Tab: Multi-Lang Compilers", icon: "code-2", action: () => switchTab("tab-sandbox") },
+        { label: "Switch Tab: Multi-Lang Compilers & SQL", icon: "code-2", action: () => switchTab("tab-sandbox") },
         { label: "Switch Tab: REST API Tester", icon: "send", action: () => switchTab("tab-rest") },
         { label: "Switch Tab: Canvas Whiteboard", icon: "pen-tool", action: () => switchTab("tab-whiteboard") },
         { label: "Switch Tab: UI Design Studio", icon: "sparkles", action: () => switchTab("tab-design") },
