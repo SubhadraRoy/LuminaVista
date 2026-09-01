@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LuminaVista OS — GODx Next-Gen Workspace</title>
   
-  <!-- Google Fonts: Plus Jakarta Sans, Space Grotesk, JetBrains Mono, Inter -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -45,7 +45,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
-    /* Dynamic Theme Variables */
     :root {
       --primary: #00f2fe;
       --primary-glow: rgba(0, 242, 254, 0.35);
@@ -88,7 +87,6 @@
       box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow);
     }
     
-    /* 100% Reliable Native Input Styling */
     .godx-input {
       background-color: #0f172a !important;
       color: #ffffff !important;
@@ -101,7 +99,7 @@
       pointer-events: auto !important;
       user-select: text !important;
       position: relative !important;
-      z-index: 50 !important;
+      z-index: 20 !important;
     }
     
     .godx-input:focus {
@@ -166,11 +164,19 @@
       color: #ffffff;
       box-shadow: 0 0 18px var(--primary-glow);
     }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
 
-  <!-- Interactive Animated Constellation & Particle Canvas -->
+  <!-- Particle canvas & Ambient Glows -->
   <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
   <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0"></div>
   <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 3s;"></div>
@@ -179,10 +185,8 @@
   <!-- 1. AUTHENTICATION GATEWAY VIEW                                            -->
   <!-- ========================================================================= -->
   <div id="loginView" class="relative z-30 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-screen">
-    
     <div class="w-full max-w-md">
       
-      <!-- Top Status Pill -->
       <div class="flex justify-center mb-6">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-900/90 border border-white/10 text-xs text-zinc-300 backdrop-blur-md">
           <div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div>
@@ -192,10 +196,7 @@
         </div>
       </div>
 
-      <!-- Login Glass Card -->
       <div id="loginCard" class="glass-panel glow-border rounded-3xl p-6 sm:p-8 w-full shadow-2xl relative z-40">
-        
-        <!-- Profile Header -->
         <div class="flex items-center gap-3.5 pb-6 border-b border-white/5">
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-base shadow-lg shadow-cyan-500/25 tracking-wider">
             GODx
@@ -211,17 +212,14 @@
 
         <div class="mt-6 text-left">
           <h2 class="font-heading font-bold text-2xl text-white tracking-tight">Admin Sign In</h2>
-          <p class="text-xs text-zinc-400 mt-1">Enter your master security key to unlock the workspace console.</p>
+          <p class="text-xs text-zinc-400 mt-1">Enter your master security key to unlock the 11-module workspace console.</p>
         </div>
 
-        <!-- Form -->
         <form id="loginForm" class="mt-6 space-y-4" onsubmit="handleLogin(event)">
-          
-          <!-- Username Input -->
           <div class="space-y-1.5 text-left">
             <label for="usernameInput" class="block text-xs font-medium text-zinc-300">Username</label>
             <div class="relative">
-              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-cyan-400 z-50">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-cyan-400 z-30">
                 <i data-lucide="user" class="w-4 h-4"></i>
               </div>
               <input
@@ -237,12 +235,10 @@
             </div>
           </div>
 
-          <!-- Password Input -->
           <div class="space-y-1.5 text-left">
             <label for="passInput" class="block text-xs font-medium text-zinc-300">Master Password</label>
-            
             <div class="relative">
-              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-cyan-400 z-50">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-cyan-400 z-30">
                 <i data-lucide="key" class="w-4 h-4"></i>
               </div>
               <input
@@ -258,37 +254,21 @@
                 type="button"
                 id="toggleLoginPass"
                 onclick="togglePassVisibility()"
-                class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-cyan-300 cursor-pointer z-50 transition-colors"
-                aria-label="Toggle password visibility"
+                class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-cyan-300 cursor-pointer z-30 transition-colors"
               >
                 <i data-lucide="eye" id="loginPassIcon" class="w-4 h-4"></i>
               </button>
             </div>
-
             <p id="loginError" class="hidden text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
               <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
               <span>Access Denied: Invalid security password.</span>
             </p>
           </div>
 
-          <!-- Remember session checkbox -->
-          <div class="pt-1 flex items-center justify-end">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                id="rememberMe"
-                checked
-                class="w-4 h-4 rounded bg-surface-900 border border-white/20 text-cyan-500 focus:ring-1 focus:ring-cyan-400 focus:outline-none"
-              />
-              <span class="text-xs text-zinc-400">Remember session</span>
-            </label>
-          </div>
-
-          <!-- Submit Button -->
           <button
             type="submit"
             id="loginSubmitBtn"
-            class="btn-gradient w-full py-3 px-4 rounded-xl text-sm font-semibold text-black flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-cyan-400 transition-all duration-200 mt-4 cursor-pointer"
+            class="btn-gradient w-full py-3 px-4 rounded-xl text-sm font-semibold text-black flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-[0.99] transition-all duration-200 mt-4 cursor-pointer"
           >
             <span id="loginBtnText">Unlock Dashboard</span>
             <i data-lucide="arrow-right" id="loginBtnIcon" class="w-4 h-4"></i>
@@ -300,36 +280,25 @@
         </form>
 
         <div class="mt-6 pt-5 border-t border-white/5 flex items-center justify-between text-xs text-zinc-500">
-          <a
-            href="https://github.com/SubhadraRoy/LuminaVista/tree/main/EXM"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1.5 hover:text-zinc-300 transition-colors"
-          >
+          <span class="flex items-center gap-1.5">
             <i data-lucide="folder-git" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span>SubhadraRoy/LuminaVista/EXM</span>
-          </a>
+          </span>
           <span class="text-[11px] text-cyan-400 flex items-center gap-1">
-            <i data-lucide="shield" class="w-3 h-3"></i>
-            <span>TLS Encrypted</span>
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>TLS Protected</span>
           </span>
         </div>
-
       </div>
-
     </div>
-
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 2. FULL SYSTEM DASHBOARD                                                  -->
+  <!-- 2. FULL SYSTEM DASHBOARD (11 MODULES)                                    -->
   <!-- ========================================================================= -->
   <div id="dashboardView" class="relative z-10 flex-1 flex flex-col hidden min-h-screen">
     
-    <!-- Top System Header Bar -->
     <header class="sticky top-0 z-40 w-full border-b border-white/5 bg-surface-950/90 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-      
-      <!-- Brand & Profile -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md shadow-cyan-500/25">
           GODx
@@ -343,7 +312,6 @@
         </div>
       </div>
 
-      <!-- Center Live System Metrics -->
       <div class="hidden lg:flex items-center gap-4 bg-surface-900/80 px-4 py-1.5 rounded-full border border-white/5 text-xs text-zinc-400 font-mono">
         <div class="flex items-center gap-1.5">
           <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -352,187 +320,235 @@
         <span class="text-zinc-700">•</span>
         <div class="flex items-center gap-1.5 text-emerald-400">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <span id="deployHostBadge">EXM Directory Active</span>
+          <span id="deployHostBadge">EXM Host Active</span>
         </div>
         <span class="text-zinc-700">•</span>
-        <div class="flex items-center gap-1.5 text-zinc-300">
-          <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span id="livePingMetric">24ms Ping</span>
+        <div class="flex items-center gap-1.5 text-purple-400">
+          <i data-lucide="brain-circuit" class="w-3.5 h-3.5"></i>
+          <span id="cloudAiHeaderStatus">Cloud Neural Engine</span>
         </div>
       </div>
 
-      <!-- Right Header Actions -->
       <div class="flex items-center gap-2 sm:gap-2.5">
-        
-        <!-- Live Code Inspector Button -->
         <button
           type="button"
           onclick="openSourceInspector()"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer"
-          title="Inspect Subproject Source Code"
         >
           <i data-lucide="code" class="w-3.5 h-3.5 text-cyan-400"></i>
           <span class="hidden md:inline">Source Code</span>
         </button>
 
-        <!-- Command Palette Trigger -->
         <button
           type="button"
           onclick="openCommandPalette()"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer"
-          title="Command Palette (Ctrl/Cmd + K)"
         >
           <i data-lucide="command" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span class="hidden md:inline">Commands</span>
+          <span class="hidden md:inline">Palette</span>
           <kbd class="hidden md:inline px-1.5 py-0.5 text-[10px] bg-surface-800 rounded text-zinc-400 font-mono">⌘K</kbd>
         </button>
 
-        <!-- Audio Tone Toggle -->
         <button
           type="button"
           id="audioToggleBtn"
           onclick="toggleAudioFeedback()"
           class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          title="Toggle UI Audio Feedback"
         >
           <i data-lucide="volume-2" id="audioIcon" class="w-4 h-4 text-cyan-400"></i>
         </button>
 
-        <!-- Theme Quick Toggle Dropdown -->
-        <div class="relative group">
-          <button
-            type="button"
-            class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            title="Switch Visual Palette"
-          >
-            <i data-lucide="palette" class="w-4 h-4 text-cyan-400"></i>
-          </button>
-          <div class="absolute right-0 mt-2 w-40 p-2 bg-surface-900 border border-white/10 rounded-2xl shadow-2xl hidden group-hover:block z-50 text-xs space-y-1">
-            <button onclick="setDashboardTheme('cyan')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-cyan-300 flex items-center gap-2 cursor-pointer">
-              <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Cyan Nebula
-            </button>
-            <button onclick="setDashboardTheme('emerald')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-emerald-300 flex items-center gap-2 cursor-pointer">
-              <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Cyber Matrix
-            </button>
-            <button onclick="setDashboardTheme('amber')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-amber-300 flex items-center gap-2 cursor-pointer">
-              <span class="w-2 h-2 rounded-full bg-amber-400"></span> Solar Amber
-            </button>
-            <button onclick="setDashboardTheme('rose')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-rose-300 flex items-center gap-2 cursor-pointer">
-              <span class="w-2 h-2 rounded-full bg-rose-400"></span> Laser Rose
-            </button>
-          </div>
-        </div>
-
-        <a
-          href="https://github.com/SubhadraRoy/LuminaVista/tree/main/EXM"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
-        >
-          <i data-lucide="folder-git" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span>EXM Repo</span>
-        </a>
-
-        <!-- Lock / Logout -->
         <button
           type="button"
           onclick="handleLogout()"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium text-rose-300 hover:text-rose-200 transition-colors cursor-pointer"
-          title="Lock Console"
         >
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
           <span class="hidden sm:inline">Exit</span>
         </button>
       </div>
-
     </header>
 
-    <!-- Navigation Tabs Bar -->
+    <!-- 11 Modules Navigation Tabs Bar -->
     <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
       <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-white/5 no-scrollbar">
         
-        <button
-          type="button"
-          onclick="switchTab('tab-projects')"
-          id="btn-tab-projects"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0 cursor-pointer"
-        >
+        <button onclick="switchTab('tab-cloud-ai')" id="btn-tab-cloud-ai" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0 cursor-pointer">
+          <i data-lucide="brain-circuit" class="w-4 h-4 text-cyan-400"></i>
+          <span>Cloud AI Engine</span>
+        </button>
+
+        <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="folder-tree" class="w-4 h-4 text-cyan-400"></i>
-          <span>EXM Projects & Viewport</span>
+          <span>EXM Projects</span>
         </button>
 
-        <button
-          type="button"
-          onclick="switchTab('tab-split')"
-          id="btn-tab-split"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-        >
-          <i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i>
-          <span>Dual Split Comparator</span>
-        </button>
-
-        <button
-          type="button"
-          onclick="switchTab('tab-sandbox')"
-          id="btn-tab-sandbox"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-        >
+        <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
-          <span>Multi-Lang Code Sandbox</span>
+          <span>Interactive Compilers</span>
         </button>
 
-        <button
-          type="button"
-          onclick="switchTab('tab-terminal')"
-          id="btn-tab-terminal"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-        >
+        <button onclick="switchTab('tab-rest')" id="btn-tab-rest" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
+          <i data-lucide="send" class="w-4 h-4 text-amber-400"></i>
+          <span>REST API Tester</span>
+        </button>
+
+        <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
+          <i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i>
+          <span>Canvas Whiteboard</span>
+        </button>
+
+        <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
+          <i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i>
+          <span>UI Design Studio</span>
+        </button>
+
+        <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
+          <i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i>
+          <span>Dual Split View</span>
+        </button>
+
+        <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
-          <span>GODx Terminal CLI</span>
+          <span>Quantum Terminal</span>
         </button>
 
-        <button
-          type="button"
-          onclick="switchTab('tab-analytics')"
-          id="btn-tab-analytics"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-        >
+        <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
-          <span>Performance & Telemetry</span>
+          <span>Telemetry</span>
         </button>
 
-        <button
-          type="button"
-          onclick="switchTab('tab-scratchpad')"
-          id="btn-tab-scratchpad"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-        >
+        <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
-          <span>Scratchpad & Notes Vault</span>
+          <span>Notes Vault</span>
         </button>
 
-        <button
-          type="button"
-          onclick="switchTab('tab-controls')"
-          id="btn-tab-controls"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-        >
+        <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer">
           <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
-          <span>System Controls & Settings</span>
+          <span>System Settings</span>
         </button>
 
       </div>
     </div>
 
-    <!-- Main Content Area -->
+    <!-- Main Content Body -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
       
       <!-- ===================================================================== -->
-      <!-- TAB 1: PROJECTS HUB & LIVE VIEWPORT (EXM Sub-Folders)                 -->
+      <!-- MODULE 1: UNIVERSAL CLOUD AI NEURAL HUB (REAL API KEYS)               -->
       <!-- ===================================================================== -->
-      <section id="tab-projects" class="tab-pane space-y-6">
-        
-        <!-- Welcome Hero & Scan Status -->
+      <section id="tab-cloud-ai" class="tab-pane space-y-6">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          
+          <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-white/5">
+            <div class="space-y-1">
+              <div class="inline-flex items-center gap-2 text-xs text-cyan-300 font-mono">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span>OPENAI / OPENROUTER / GROQ / DEEPSEEK COMPATIBLE</span>
+              </div>
+              <h2 class="font-heading font-extrabold text-xl text-white">Online Cloud AI Neural Hub</h2>
+              <p class="text-xs text-zinc-400">Execute real cloud models using standard OpenAI-compatible REST API keys. No local daemons required.</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1.5 rounded-xl bg-surface-900 border border-white/10 text-xs font-mono text-zinc-300 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400" id="aiKeyStatusDot"></span>
+                <span id="aiKeyStatusLabel">Key Configured</span>
+              </span>
+              <button onclick="testCloudAiConnection()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="zap" class="w-3.5 h-3.5"></i> Test Connection
+              </button>
+            </div>
+          </div>
+
+          <!-- Configuration Panel -->
+          <div class="bg-surface-900/70 p-4 rounded-2xl border border-white/5 space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              
+              <div class="space-y-1">
+                <label class="text-[11px] font-mono text-zinc-400">Cloud Provider:</label>
+                <select id="aiProviderSelect" onchange="onAiProviderChanged()" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
+                  <option value="openrouter">OpenRouter (All Models)</option>
+                  <option value="groq">Groq (Ultra-Fast Llama/Mixtral)</option>
+                  <option value="deepseek">DeepSeek (V3 / R1)</option>
+                  <option value="openai">OpenAI (Official)</option>
+                  <option value="custom">Custom Endpoint</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[11px] font-mono text-zinc-400">API Endpoint URL:</label>
+                <input type="text" id="aiEndpointInput" value="https://openrouter.ai/api/v1/chat/completions" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[11px] font-mono text-zinc-400">Model Name / ID:</label>
+                <input type="text" id="aiModelInput" value="meta-llama/llama-3.3-70b-instruct" placeholder="e.g. llama-3.3-70b-versatile" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[11px] font-mono text-zinc-400 flex items-center justify-between">
+                  <span>Real API Key:</span>
+                  <span class="text-[10px] text-cyan-400 font-mono">Encrypted Store</span>
+                </label>
+                <div class="relative">
+                  <input type="password" id="aiApiKeyInput" oninput="saveAiCredentials()" placeholder="sk-or-... / gsk_..." class="godx-input w-full pl-3 pr-8 py-2 text-xs font-mono" />
+                  <button type="button" onclick="toggleApiKeyMask()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer z-30">
+                    <i data-lucide="eye" id="aiKeyEyeIcon" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-zinc-400 font-mono text-[11px]">System Persona:</span>
+                <select id="aiSystemPromptSelect" class="godx-input px-2.5 py-1 text-xs cursor-pointer">
+                  <option value="godx">GODx Supreme Architect (Elite DevOps & System Engineer)</option>
+                  <option value="coding">Full-Stack Web & Logic Specialist</option>
+                  <option value="security">Vault Auditor & Cyber Security Expert</option>
+                  <option value="minimal">Raw Code Snippets Only</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button onclick="clearAiChatHistory()" class="text-zinc-500 hover:text-rose-400 font-mono text-[11px] flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Chat
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat Screen -->
+          <div id="aiChatBox" class="bg-surface-950 rounded-2xl p-4 min-h-[380px] max-h-[500px] overflow-y-auto space-y-4 border border-white/5 font-sans text-xs"></div>
+
+          <!-- Chat Input -->
+          <form onsubmit="handleSendAiMessage(event)" class="flex gap-2">
+            <textarea
+              id="aiPromptInput"
+              rows="2"
+              placeholder="Prompt cloud model for code generation, architecture reviews, microservice designs..."
+              class="godx-input w-full p-3 font-mono text-xs outline-none resize-none"
+              onkeydown="if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); handleSendAiMessage(); }"
+            ></textarea>
+            <button
+              type="submit"
+              id="btnAiSend"
+              class="btn-gradient px-5 rounded-xl font-bold text-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20 active:scale-95 transition-transform"
+            >
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span class="hidden sm:inline">Send</span>
+            </button>
+          </form>
+
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- MODULE 2: EXM PROJECTS HUB & LIVE VIEWPORT                            -->
+      <!-- ===================================================================== -->
+      <section id="tab-projects" class="tab-pane space-y-6 hidden">
         <div class="glass-panel glow-border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div class="space-y-1">
             <div class="inline-flex items-center gap-1.5 text-xs text-cyan-300 font-mono">
@@ -543,7 +559,7 @@
               LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400">Anish x</span>
             </h2>
             <p class="text-xs text-zinc-400">
-              Live scanning repository directory <code class="text-cyan-300 font-mono">/EXM/</code>. All sub-projects execute independently.
+              Live scanning repository directory <code class="text-cyan-300 font-mono">/EXM/</code>. Sub-projects execute in sandboxed frames.
             </p>
           </div>
 
@@ -564,8 +580,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <!-- Left Panel: EXM Sub-Folder Chooser -->
           <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-5 flex flex-col justify-between">
             <div class="space-y-4">
               <div class="flex items-center justify-between pb-3 border-b border-white/5">
@@ -580,7 +594,6 @@
                 </span>
               </div>
 
-              <!-- Filter / Search Input -->
               <div class="relative">
                 <input
                   type="text"
@@ -589,10 +602,9 @@
                   placeholder="Quick filter projects..."
                   class="godx-input w-full pl-9 pr-3 py-2 text-xs font-mono"
                 />
-                <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 z-50"></i>
+                <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 z-30"></i>
               </div>
 
-              <!-- Dynamic Project Chips -->
               <div class="space-y-2">
                 <div class="flex items-center justify-between text-xs">
                   <label class="font-medium text-zinc-300">Select Active Subproject:</label>
@@ -603,83 +615,47 @@
                 </div>
               </div>
 
-              <!-- Dropdown Selector -->
               <div class="space-y-1.5 pt-2">
                 <label for="projectSelect" class="block text-xs font-medium text-zinc-400">Or Select from List:</label>
-                <div class="relative">
-                  <select
-                    id="projectSelect"
-                    onchange="onDropdownSelect()"
-                    class="godx-input w-full px-3.5 py-2.5 text-sm cursor-pointer"
-                  ></select>
-                </div>
+                <select id="projectSelect" onchange="onDropdownSelect()" class="godx-input w-full px-3.5 py-2.5 text-sm cursor-pointer"></select>
               </div>
 
-              <!-- Custom Manual Entry -->
               <div class="space-y-1.5 pt-1">
                 <label for="customProjectInput" class="block text-xs font-medium text-zinc-400">Manually Add Folder / File:</label>
                 <div class="flex gap-2">
                   <div class="relative flex-1">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-500 pointer-events-none z-50">EXM/</span>
-                    <input
-                      type="text"
-                      id="customProjectInput"
-                      placeholder="folder_name"
-                      class="godx-input w-full pl-14 pr-3 py-2 text-xs font-mono"
-                    />
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-500 pointer-events-none z-30">EXM/</span>
+                    <input type="text" id="customProjectInput" placeholder="folder_name" class="godx-input w-full pl-14 pr-3 py-2 text-xs font-mono" />
                   </div>
-                  <button
-                    type="button"
-                    onclick="addCustomProject()"
-                    class="px-3.5 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer"
-                  >
+                  <button type="button" onclick="addCustomProject()" class="px-3.5 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer">
                     Add
                   </button>
                 </div>
               </div>
 
-              <!-- Quick Pinned Bookmarks -->
               <div class="pt-2 border-t border-white/5 space-y-2">
                 <span class="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
                   <i data-lucide="star" class="w-3 h-3 text-amber-400 fill-amber-400"></i>
                   <span>Favorite Pinned Projects</span>
                 </span>
-                <div id="pinnedChipsContainer" class="flex flex-wrap gap-1.5">
-                  <!-- Pinned via JS -->
-                </div>
+                <div id="pinnedChipsContainer" class="flex flex-wrap gap-1.5"></div>
               </div>
             </div>
 
-            <!-- Bottom Actions -->
             <div class="space-y-3 pt-4 border-t border-white/5">
               <div class="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onclick="loadActiveIntoPreview()"
-                  class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-black flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 active:scale-[0.98] transition-all cursor-pointer"
-                >
+                <button type="button" onclick="loadActiveIntoPreview()" class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-black flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 cursor-pointer">
                   <i data-lucide="play" class="w-3.5 h-3.5"></i>
                   <span>Embed Preview</span>
                 </button>
-
-                <button
-                  type="button"
-                  onclick="openActiveInNewTab()"
-                  class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
+                <button type="button" onclick="openActiveInNewTab()" class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer">
                   <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                   <span>Open in Tab</span>
                 </button>
               </div>
-
-              <div class="p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-[11px] text-zinc-400 leading-relaxed flex items-start gap-2">
-                <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
-                <span>Sub-projects are sandboxed in isolated viewports with zero asset interference.</span>
-              </div>
             </div>
           </div>
 
-          <!-- Right Panel: Viewport -->
           <div class="lg:col-span-7 glass-panel rounded-2xl p-5 flex flex-col space-y-3 min-h-[480px]">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5">
               <div class="flex items-center gap-2">
@@ -688,96 +664,46 @@
                   <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
                   <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
                 </div>
-                <span id="activePreviewBadge" class="ml-2 text-xs font-mono text-cyan-300 bg-surface-900 px-2.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1.5">
+                <span class="ml-2 text-xs font-mono text-cyan-300 bg-surface-900 px-2.5 py-0.5 rounded-md border border-white/5 flex items-center gap-1.5">
                   <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
                   <span id="activeProjectTitle">EXM/...</span>
                 </span>
-                <button
-                  type="button"
-                  onclick="togglePinActiveProject()"
-                  id="pinActiveBtn"
-                  class="p-1 rounded text-zinc-400 hover:text-amber-400 transition-colors cursor-pointer"
-                  title="Bookmark / Pin Subproject"
-                >
+                <button type="button" onclick="togglePinActiveProject()" id="pinActiveBtn" class="p-1 rounded text-zinc-400 hover:text-amber-400 cursor-pointer">
                   <i data-lucide="star" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
 
-              <!-- Viewport Sizing & Actions -->
               <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/5">
-                <button
-                  type="button"
-                  onclick="setViewportDevice('100%')"
-                  class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs font-medium cursor-pointer"
-                  title="Desktop (100%)"
-                  id="btnDeviceDesktop"
-                >
+                <button type="button" onclick="setViewportDevice('100%')" class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs font-medium cursor-pointer" id="btnDeviceDesktop">
                   <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
                 </button>
-                <button
-                  type="button"
-                  onclick="setViewportDevice('768px')"
-                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer"
-                  title="Tablet (768px)"
-                  id="btnDeviceTablet"
-                >
+                <button type="button" onclick="setViewportDevice('768px')" class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer" id="btnDeviceTablet">
                   <i data-lucide="tablet" class="w-3.5 h-3.5"></i>
                 </button>
-                <button
-                  type="button"
-                  onclick="setViewportDevice('375px')"
-                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer"
-                  title="Mobile (375px)"
-                  id="btnDeviceMobile"
-                >
+                <button type="button" onclick="setViewportDevice('375px')" class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer" id="btnDeviceMobile">
                   <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
                 </button>
-                
                 <div class="w-[1px] h-4 bg-white/10 mx-1"></div>
-
-                <button
-                  type="button"
-                  onclick="reloadIframe()"
-                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                  title="Reload Frame"
-                >
+                <button type="button" onclick="reloadIframe()" class="p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Reload Frame">
                   <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
                 </button>
-                <button
-                  type="button"
-                  onclick="toggleFullscreen()"
-                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                  title="Fullscreen Mode"
-                >
+                <button type="button" onclick="toggleFullscreen()" class="p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Fullscreen Mode">
                   <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
             </div>
 
             <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300">
-              <iframe
-                id="previewIframe"
-                src="about:blank"
-                class="w-full h-full min-h-[400px] border-0 transition-all duration-300"
-                onload="onIframeLoaded()"
-                onerror="onIframeFailed()"
-              ></iframe>
-
+              <iframe id="previewIframe" src="about:blank" class="w-full h-full min-h-[400px] border-0" onload="onIframeLoaded()" onerror="onIframeFailed()"></iframe>
               <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
                 <div class="w-12 h-12 rounded-2xl bg-surface-900 border border-white/10 flex items-center justify-center text-zinc-400 shadow-xl">
                   <i data-lucide="folder-search" class="w-6 h-6 text-cyan-400"></i>
                 </div>
                 <div>
-                  <h4 class="font-heading font-bold text-sm text-white" id="overlayTitle">EXM Project Workspace</h4>
-                  <p class="text-xs text-zinc-400 max-w-xs mt-1" id="overlayDesc">
-                    Click <strong>'Scan /EXM/ Folder'</strong> to automatically load and launch projects from your repository.
-                  </p>
+                  <h4 class="font-heading font-bold text-sm text-white">EXM Project Workspace</h4>
+                  <p class="text-xs text-zinc-400 max-w-xs mt-1">Click <strong>'Scan /EXM/ Folder'</strong> to automatically load and launch projects from your repository.</p>
                 </div>
-                <button
-                  type="button"
-                  onclick="fetchRepoProjects()"
-                  class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold cursor-pointer"
-                >
+                <button type="button" onclick="fetchRepoProjects()" class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold cursor-pointer">
                   Scan Repository Now ⚡
                 </button>
               </div>
@@ -787,7 +713,284 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 2: DUAL SPLIT COMPARATOR                                          -->
+      <!-- MODULE 3: MULTI-LANGUAGE INTERACTIVE COMPILERS (HTML, Python, C++, Java, SQL) -->
+      <!-- ===================================================================== -->
+      <section id="tab-sandbox" class="tab-pane space-y-6 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-white/5">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
+                Multi-Language Interactive Compilers & SQL Engine
+              </h3>
+              <p class="text-xs text-zinc-400">Full execution sandbox for HTML/CSS/JS, Python 3, C++20, Java 21, and In-Memory SQL database.</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="bg-surface-900 p-1 rounded-xl border border-white/10 flex items-center gap-1 text-xs font-mono">
+                <button type="button" onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-2.5 py-1 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer">HTML/JS</button>
+                <button type="button" onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Python</button>
+                <button type="button" onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">C++</button>
+                <button type="button" onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Java</button>
+                <button type="button" onclick="setSandboxLanguage('sql')" id="sbLangSql" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">SQL</button>
+              </div>
+
+              <button onclick="runSandboxCode()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-500/20">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i> Run Code
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs font-mono">
+            <div class="flex items-center gap-2">
+              <span class="text-zinc-400">Templates:</span>
+              <button onclick="loadSandboxTemplate('html')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-cyan-300 cursor-pointer">HTML5</button>
+              <button onclick="loadSandboxTemplate('python')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-amber-300 cursor-pointer">Python</button>
+              <button onclick="loadSandboxTemplate('cpp')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-purple-300 cursor-pointer">C++</button>
+              <button onclick="loadSandboxTemplate('java')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-rose-300 cursor-pointer">Java</button>
+              <button onclick="loadSandboxTemplate('sql')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-emerald-300 cursor-pointer">SQL DB</button>
+            </div>
+            <div class="flex items-center gap-1.5 text-zinc-400">
+              <span>Compiler:</span>
+              <span id="detectedLangBadge" class="text-cyan-400 font-bold uppercase">HTML</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[460px]">
+            <div class="flex flex-col space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
+                <span>Code Editor:</span>
+                <button onclick="copySandboxCode()" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy Code</button>
+              </div>
+              <textarea
+                id="sandboxCodeInput"
+                oninput="onSandboxCodeChange()"
+                class="godx-input w-full flex-1 p-3 font-mono text-xs outline-none resize-none"
+              ><!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background: #030712; color: #00f2fe; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    h1 { font-size: 24px; text-shadow: 0 0 20px rgba(0,242,254,0.5); }
+    button { background: #00f2fe; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>GODx Live Sandbox Active</h1>
+  <button onclick="alert('LuminaVista OS Sandbox Running!')">Click to Test</button>
+</body>
+</html></textarea>
+            </div>
+
+            <div class="flex flex-col space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
+                <span id="sandboxOutputHeader">Live Visual Preview:</span>
+                <span class="text-[10px] text-emerald-400">⚡ Client Runtime Engine</span>
+              </div>
+              
+              <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-surface-950">
+                <iframe id="sandboxPreviewFrame" class="w-full h-full border-0"></iframe>
+              </div>
+
+              <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-4 bg-surface-950 font-mono text-xs text-zinc-300 border border-white/10 overflow-y-auto space-y-1">
+                <div class="text-cyan-400 font-bold">[GODx Multi-Lang Engine Console]</div>
+                <div id="sandboxStdoutContent" class="text-zinc-200 whitespace-pre-wrap">Click 'Run Code' to execute.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- MODULE 4: REST API TESTER & NETWORK WORKBENCH                         -->
+      <!-- ===================================================================== -->
+      <section id="tab-rest" class="tab-pane space-y-6 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="send" class="w-4 h-4 text-amber-400"></i>
+                REST API Tester & Network Workbench
+              </h3>
+              <p class="text-xs text-zinc-400">Simulate endpoints, query external microservices, and inspect payloads.</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <span id="apiLatencyBadge" class="text-zinc-400">Latency: -- ms</span>
+              <span class="text-zinc-600">•</span>
+              <span id="apiStatusBadge" class="text-emerald-400 font-bold">Status: Ready</span>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <select id="apiMethod" class="godx-input px-3 py-2 text-xs font-mono font-bold cursor-pointer w-28 bg-surface-900">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+              <option value="PATCH">PATCH</option>
+            </select>
+            <input
+              type="text"
+              id="apiUrlInput"
+              value="https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM"
+              placeholder="https://api.example.com/v1/resource"
+              class="godx-input flex-1 px-4 py-2 font-mono text-xs"
+            />
+            <button
+              onclick="executeApiRequest()"
+              class="btn-gradient px-6 py-2 rounded-xl text-xs font-bold text-black flex items-center gap-2 cursor-pointer shadow-md shadow-cyan-500/20"
+            >
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i> Send
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[400px]">
+            <div class="flex flex-col space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
+                <span>Request Headers / Payload (JSON):</span>
+                <span class="text-[10px] text-zinc-500">Auto-formatted</span>
+              </div>
+              <textarea
+                id="apiRequestBody"
+                placeholder='{\n  "Authorization": "Bearer your_token",\n  "Content-Type": "application/json"\n}'
+                class="godx-input w-full flex-1 p-3 font-mono text-xs outline-none resize-none"
+              >{\n  "headers": {\n    "Accept": "application/vnd.github.v3+json"\n  }\n}</textarea>
+            </div>
+
+            <div class="flex flex-col space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
+                <span>Response Data Stream:</span>
+                <button onclick="copyApiResponse()" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy JSON</button>
+              </div>
+              <div id="apiResponseView" class="bg-surface-950 p-4 rounded-xl border border-white/10 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto whitespace-pre-wrap">Click 'Send' to dispatch request.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- MODULE 5: CANVAS WHITEBOARD & ARCHITECTURE SKETCHPAD                  -->
+      <!-- ===================================================================== -->
+      <section id="tab-whiteboard" class="tab-pane space-y-6 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i>
+                Canvas Whiteboard & Architecture Sketchpad
+              </h3>
+              <p class="text-xs text-zinc-400">Draw diagrams, wireframes, and project architectures in your browser.</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="bg-surface-900 p-1 rounded-xl border border-white/10 flex items-center gap-1.5 text-xs">
+                <button onclick="setWhiteboardTool('pen')" id="wbToolPen" class="p-1.5 rounded-lg bg-cyan-500 text-black cursor-pointer" title="Pen">
+                  <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </button>
+                <button onclick="setWhiteboardTool('eraser')" id="wbToolEraser" class="p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Eraser">
+                  <i data-lucide="eraser" class="w-4 h-4"></i>
+                </button>
+                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-7 h-7 rounded border-0 bg-transparent cursor-pointer" />
+                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-20 accent-cyan-400 cursor-pointer" />
+              </div>
+
+              <button onclick="clearWhiteboard()" class="px-3 py-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-rose-300 cursor-pointer">
+                Clear
+              </button>
+              <button onclick="downloadWhiteboard()" class="btn-gradient px-3 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer">
+                Export PNG
+              </button>
+            </div>
+          </div>
+
+          <div class="relative w-full h-[480px] rounded-2xl overflow-hidden border border-white/10 bg-surface-950">
+            <canvas id="whiteboardCanvas" class="w-full h-full cursor-crosshair"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- MODULE 6: UI DESIGN STUDIO & GLASSMORPHISM GENERATOR                  -->
+      <!-- ===================================================================== -->
+      <section id="tab-design" class="tab-pane space-y-6 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i>
+                UI Design Studio & Glassmorphism Tokenizer
+              </h3>
+              <p class="text-xs text-zinc-400">Visual component generator with instant CSS & Tailwind snippet generation.</p>
+            </div>
+            <button onclick="copyGeneratedDesignCss()" class="btn-gradient px-3.5 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer">
+              Copy CSS Code
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-5 bg-surface-900/80 p-5 rounded-2xl border border-white/5 space-y-4">
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-mono">
+                  <span class="text-zinc-400">Backdrop Blur:</span>
+                  <span id="lblBlurVal" class="text-cyan-400">20px</span>
+                </div>
+                <input type="range" id="sliderBlur" min="0" max="50" value="20" oninput="updateDesignPreview()" class="w-full accent-cyan-400" />
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-mono">
+                  <span class="text-zinc-400">Surface Opacity:</span>
+                  <span id="lblOpacityVal" class="text-cyan-400">85%</span>
+                </div>
+                <input type="range" id="sliderOpacity" min="5" max="100" value="85" oninput="updateDesignPreview()" class="w-full accent-cyan-400" />
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-mono">
+                  <span class="text-zinc-400">Border Radius:</span>
+                  <span id="lblRadiusVal" class="text-cyan-400">24px</span>
+                </div>
+                <input type="range" id="sliderRadius" min="0" max="48" value="24" oninput="updateDesignPreview()" class="w-full accent-cyan-400" />
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-mono">
+                  <span class="text-zinc-400">Border Glow Intensity:</span>
+                  <span id="lblGlowVal" class="text-cyan-400">35%</span>
+                </div>
+                <input type="range" id="sliderGlow" min="0" max="100" value="35" oninput="updateDesignPreview()" class="w-full accent-cyan-400" />
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 bg-surface-950 p-6 rounded-2xl border border-white/10 flex flex-col items-center justify-center relative overflow-hidden min-h-[300px]">
+              <div class="absolute w-44 h-44 bg-cyan-500/30 rounded-full blur-2xl -top-10 -left-10 pointer-events-none"></div>
+              <div class="absolute w-44 h-44 bg-pink-500/20 rounded-full blur-2xl -bottom-10 -right-10 pointer-events-none"></div>
+
+              <div id="glassPreviewCard" class="w-full max-w-sm p-6 relative z-10 transition-all duration-150 flex flex-col gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-cyan-500 text-black flex items-center justify-center font-bold">
+                    LV
+                  </div>
+                  <div>
+                    <h4 class="font-heading font-bold text-white text-sm">Glassmorphic Card</h4>
+                    <p class="text-[11px] text-zinc-400">LuminaVista Component Token</p>
+                  </div>
+                </div>
+                <p class="text-xs text-zinc-300 leading-relaxed">
+                  Engineered with real-time hardware accelerated backdrop filtration and custom alpha channels.
+                </p>
+                <div class="pt-2 flex justify-between items-center border-t border-white/10 text-[11px]">
+                  <span class="text-cyan-400 font-mono">Token: active</span>
+                  <button class="px-3 py-1 rounded-lg bg-cyan-500 text-black font-semibold text-xs cursor-pointer">Explore</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- MODULE 7: DUAL SPLIT COMPARATOR                                       -->
       <!-- ===================================================================== -->
       <section id="tab-split" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
@@ -801,7 +1004,7 @@
             </div>
             <div class="flex items-center gap-2">
               <select id="splitLeftSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
-              <span class="text-xs text-zinc-500">VS</span>
+              <span class="text-xs text-zinc-500 font-mono">VS</span>
               <select id="splitRightSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
             </div>
           </div>
@@ -827,100 +1030,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 3: MULTI-LANGUAGE CODE SANDBOX (HTML, Python, C, C++, Java)       -->
-      <!-- ===================================================================== -->
-      <section id="tab-sandbox" class="tab-pane space-y-6 hidden">
-        <div class="glass-panel rounded-2xl p-5 space-y-4">
-          
-          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-white/5">
-            <div>
-              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
-                <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
-                Multi-Language Sandbox & Component Playground
-              </h3>
-              <p class="text-xs text-zinc-400">Auto-detects and executes HTML/CSS/JS, Python, C, C++, and Java.</p>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-              <div class="bg-surface-900 p-1 rounded-xl border border-white/10 flex items-center gap-1 text-xs font-mono">
-                <button type="button" onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-2.5 py-1 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer">HTML/JS</button>
-                <button type="button" onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Python</button>
-                <button type="button" onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">C / C++</button>
-                <button type="button" onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Java</button>
-              </div>
-
-              <button onclick="runSandboxCode()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-500/20">
-                <i data-lucide="play" class="w-3.5 h-3.5"></i> Run Code
-              </button>
-            </div>
-          </div>
-
-          <!-- Code Templates Toolbar & Detection Status -->
-          <div class="flex items-center justify-between text-xs font-mono">
-            <div class="flex items-center gap-2">
-              <span class="text-zinc-400">Load Template:</span>
-              <button onclick="loadSandboxTemplate('html')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-cyan-300 cursor-pointer">HTML5</button>
-              <button onclick="loadSandboxTemplate('python')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-amber-300 cursor-pointer">Python 3</button>
-              <button onclick="loadSandboxTemplate('cpp')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-purple-300 cursor-pointer">C++20</button>
-              <button onclick="loadSandboxTemplate('java')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-rose-300 cursor-pointer">Java</button>
-            </div>
-            <div class="flex items-center gap-1.5 text-zinc-400">
-              <span>Detected Lang:</span>
-              <span id="detectedLangBadge" class="text-cyan-400 font-bold uppercase">HTML</span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[460px]">
-            <!-- Code Editor Box -->
-            <div class="flex flex-col space-y-2">
-              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
-                <span>Source Editor:</span>
-                <button onclick="copySandboxCode()" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy Code</button>
-              </div>
-              <textarea
-                id="sandboxCodeInput"
-                oninput="onSandboxCodeChange()"
-                class="godx-input w-full flex-1 p-3 font-mono text-xs outline-none resize-none"
-              ><!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { background: #030712; color: #00f2fe; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    h1 { font-size: 24px; text-shadow: 0 0 20px rgba(0,242,254,0.5); }
-    button { background: #00f2fe; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h1>GODx Live Sandbox Active</h1>
-  <button onclick="alert('LuminaVista OS Sandbox Running!')">Click to Test</button>
-</body>
-</html></textarea>
-            </div>
-
-            <!-- Execution Viewport / Output Terminal -->
-            <div class="flex flex-col space-y-2">
-              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
-                <span id="sandboxOutputHeader">Live Visual Preview:</span>
-                <span class="text-[10px] text-emerald-400">⚡ Client Runtime</span>
-              </div>
-              
-              <!-- HTML Visual Frame -->
-              <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-surface-950">
-                <iframe id="sandboxPreviewFrame" class="w-full h-full border-0"></iframe>
-              </div>
-
-              <!-- Terminal Stdout Box (for Python, C++, Java) -->
-              <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-4 bg-surface-950 font-mono text-xs text-zinc-300 border border-white/10 overflow-y-auto space-y-1">
-                <div class="text-cyan-400 font-bold">[GODx Multi-Lang Engine Console]</div>
-                <div id="sandboxStdoutContent" class="text-zinc-200 whitespace-pre-wrap">Click 'Run Code' to execute.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===================================================================== -->
-      <!-- TAB 4: INTERACTIVE GODX TERMINAL CLI                                  -->
+      <!-- MODULE 8: INTERACTIVE QUANTUM TERMINAL CLI                            -->
       <!-- ===================================================================== -->
       <section id="tab-terminal" class="tab-pane space-y-4 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
@@ -932,36 +1042,31 @@
               <span class="text-zinc-400 ml-2">godx-terminal — bash — 80x24</span>
             </div>
             <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
-              LuminaVista CLI v3.0
+              LuminaVista CLI v4.0
             </span>
           </div>
 
-          <!-- Terminal Output Screen -->
           <div
             id="terminalScreen"
             class="bg-surface-950/95 rounded-xl p-4 font-mono text-xs text-zinc-300 min-h-[360px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5"
           >
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 3.0.0]</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 4.0.0]</div>
             <div class="text-zinc-400">Authenticated Session: <span class="text-emerald-400">Anish x (Root Administrator)</span></div>
             <div class="text-zinc-500">Root Directory: <span class="text-cyan-300 font-mono">/EXM/</span></div>
-            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view all commands.</div>
+            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view all commands or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt online cloud models.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
 
-          <!-- Terminal Input Prompt -->
           <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2">
             <span class="font-mono text-xs text-cyan-400 font-bold">anish@godx:~$</span>
             <input
               type="text"
               id="terminalInput"
               autocomplete="off"
-              placeholder="Type command (e.g. ls, open <folder>, fetch, ping, status, stats, cat <file>)..."
+              placeholder="Type command (e.g. ls, open <folder>, ai <msg>, ping, status, stats, cat <file>)..."
               class="godx-input flex-1 px-3 py-2 text-xs font-mono"
             />
-            <button
-              type="submit"
-              class="btn-gradient px-4 py-2 rounded-xl text-xs font-mono font-semibold text-black transition-all cursor-pointer"
-            >
+            <button type="submit" class="btn-gradient px-4 py-2 rounded-xl text-xs font-mono font-semibold text-black cursor-pointer">
               Run
             </button>
           </form>
@@ -969,23 +1074,21 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 5: LIVE PERFORMANCE & TELEMETRY                                   -->
+      <!-- MODULE 9: PERFORMANCE TELEMETRY & LIVE WAVEFORM                       -->
       <!-- ===================================================================== -->
       <section id="tab-analytics" class="tab-pane space-y-6 hidden">
-        
-        <!-- Live System Metric Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="glass-panel p-4 rounded-2xl space-y-1">
             <span class="text-[10px] font-mono uppercase text-zinc-400">Frame Latency</span>
-            <div class="text-2xl font-heading font-extrabold text-white">0.32 ms</div>
+            <div class="text-2xl font-heading font-extrabold text-white">0.28 ms</div>
             <span class="text-[11px] text-emerald-400 flex items-center gap-1">
-              <i data-lucide="trending-up" class="w-3 h-3"></i> 60 FPS GPU Sync
+              <i data-lucide="trending-up" class="w-3 h-3"></i> 60 FPS Engine Sync
             </span>
           </div>
 
           <div class="glass-panel p-4 rounded-2xl space-y-1">
             <span class="text-[10px] font-mono uppercase text-zinc-400">Active Memory Load</span>
-            <div class="text-2xl font-heading font-extrabold text-cyan-300">12.8 MB</div>
+            <div class="text-2xl font-heading font-extrabold text-cyan-300">14.2 MB</div>
             <span class="text-[11px] text-cyan-400">Client Memory Clean</span>
           </div>
 
@@ -996,15 +1099,13 @@
           </div>
 
           <div class="glass-panel p-4 rounded-2xl space-y-1">
-            <span class="text-[10px] font-mono uppercase text-zinc-400">Security Gate</span>
-            <div class="text-2xl font-heading font-extrabold text-purple-300">GODx Master</div>
-            <span class="text-[11px] text-purple-400">Session Verified</span>
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Cloud AI Hub</span>
+            <div class="text-2xl font-heading font-extrabold text-purple-300">Online REST</div>
+            <span class="text-[11px] text-purple-400">Cloud API Verified</span>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <!-- Performance Waveform Canvas -->
           <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-3">
             <div class="flex items-center justify-between pb-2 border-b border-white/5">
               <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
@@ -1016,13 +1117,12 @@
             <canvas id="metricsChart" class="w-full h-48 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
           </div>
 
-          <!-- Live Event / PostMessage Logger Console -->
           <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-3 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between pb-2 border-b border-white/5">
                 <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
                   <i data-lucide="terminal-square" class="w-4 h-4 text-emerald-400"></i>
-                  Live Frame Bridge Logs
+                  Live Event Logs
                 </h3>
                 <button onclick="clearEventLogs()" class="text-[10px] text-zinc-500 hover:text-zinc-300 cursor-pointer">Clear</button>
               </div>
@@ -1031,52 +1131,15 @@
                 <div class="text-cyan-400">[00:00:01] Listening for subproject events...</div>
               </div>
             </div>
-            <div class="text-[10px] text-zinc-500">
-              Sub-projects can send messages via <code>window.parent.postMessage()</code>.
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Live GitHub Repository Telemetry Section -->
-        <div class="glass-panel rounded-2xl p-5 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-white/5">
-            <div class="flex items-center gap-2">
-              <i data-lucide="git-branch" class="w-4 h-4 text-cyan-400"></i>
-              <h3 class="font-heading font-bold text-sm text-white">Live GitHub Repository Telemetry</h3>
-            </div>
-            <span class="text-xs font-mono text-zinc-400">SubhadraRoy/LuminaVista</span>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
-              <span class="text-zinc-500 block text-[10px]">BRANCH</span>
-              <span class="text-white font-bold text-sm" id="repoBranch">main</span>
-            </div>
-            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
-              <span class="text-zinc-500 block text-[10px]">VISIBILITY</span>
-              <span class="text-emerald-400 font-bold text-sm">Public Repo</span>
-            </div>
-            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
-              <span class="text-zinc-500 block text-[10px]">BASE PATH</span>
-              <span class="text-cyan-300 font-bold text-sm">/EXM/</span>
-            </div>
-            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
-              <span class="text-zinc-500 block text-[10px]">HEALTH SCORE</span>
-              <span class="text-emerald-400 font-bold text-sm">99.9% Optimal</span>
-            </div>
           </div>
         </div>
-
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 6: SCRATCHPAD & ADVANCED MULTI-NOTE VAULT                         -->
+      <!-- MODULE 10: SCRATCHPAD & NOTES VAULT                                   -->
       <!-- ===================================================================== -->
       <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
-          
-          <!-- Note Manager Header -->
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
             <div>
               <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
@@ -1086,7 +1149,6 @@
               <p class="text-xs text-zinc-400">Persistent auto-saving markdown notes with live preview & export.</p>
             </div>
 
-            <!-- Note Actions Toolbar -->
             <div class="flex items-center gap-2 text-xs font-mono">
               <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 flex items-center gap-1 cursor-pointer">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Note
@@ -1097,66 +1159,51 @@
               <button onclick="exportCurrentNote()" class="px-3 py-1.5 rounded-xl bg-surface-900 border border-white/10 text-zinc-300 hover:text-white flex items-center gap-1 cursor-pointer">
                 <i data-lucide="download" class="w-3.5 h-3.5"></i> Export .md
               </button>
-              <button onclick="deleteCurrentNote()" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 hover:bg-rose-500/20 cursor-pointer" title="Delete Note">
+              <button onclick="deleteCurrentNote()" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 hover:bg-rose-500/20 cursor-pointer">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               </button>
             </div>
           </div>
 
-          <!-- Note Tabs Bar -->
-          <div id="noteTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-white/5 text-xs font-mono">
-            <!-- Tabs rendered dynamically -->
-          </div>
+          <div id="noteTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-white/5 text-xs font-mono"></div>
 
-          <!-- Markdown Formatting Toolbar -->
           <div class="flex flex-wrap items-center gap-1.5 p-2 bg-surface-900/60 rounded-xl border border-white/5 text-xs font-mono">
-            <button onclick="insertMdSyntax('**', '**')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-white font-bold" title="Bold">B</button>
-            <button onclick="insertMdSyntax('*', '*')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-white italic" title="Italic">I</button>
-            <button onclick="insertMdSyntax('### ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-cyan-300" title="Header">H3</button>
-            <button onclick="insertMdSyntax('`', '`')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-purple-300" title="Code">`Code`</button>
-            <button onclick="insertMdSyntax('- [ ] ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-emerald-300" title="Todo Checkbox">☑ Todo</button>
-            <button onclick="insertMdSyntax('- ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-zinc-300" title="Bullet List">• List</button>
-            <button onclick="insertTimestamp()" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-amber-300" title="Insert Timestamp">⏰ Time</button>
+            <button onclick="insertMdSyntax('**', '**')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-white font-bold">B</button>
+            <button onclick="insertMdSyntax('*', '*')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-white italic">I</button>
+            <button onclick="insertMdSyntax('### ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-cyan-300">H3</button>
+            <button onclick="insertMdSyntax('`', '`')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-purple-300">`Code`</button>
+            <button onclick="insertMdSyntax('- [ ] ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-emerald-300">☑ Todo</button>
+            <button onclick="insertTimestamp()" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-amber-300">⏰ Time</button>
             
             <div class="ml-auto flex items-center gap-3 text-[11px] text-zinc-400">
               <span id="noteCharCount">0 chars</span>
               <span>•</span>
               <span id="noteWordCount">0 words</span>
-              <span>•</span>
-              <span id="noteLineCount">0 lines</span>
             </div>
           </div>
 
-          <!-- Note Editor & Markdown Split Area -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[420px]">
-            
-            <!-- Editor Textarea -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[400px]">
             <div id="noteEditorCol" class="lg:col-span-12 flex flex-col h-full transition-all">
               <textarea
                 id="adminScratchpad"
                 oninput="onNoteContentChange()"
-                placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Authentication: Active&#10;- Status: All systems nominal..."
+                placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/..."
                 class="godx-input w-full flex-1 p-4 font-mono text-xs outline-none resize-none"
               ></textarea>
             </div>
-
-            <!-- Markdown Rendered Preview Box -->
             <div id="notePreviewCol" class="hidden lg:col-span-6 flex flex-col h-full bg-surface-950 p-4 rounded-xl border border-white/10 overflow-y-auto">
-              <div id="noteMarkdownRender" class="prose prose-invert max-w-none text-xs space-y-2 font-sans"></div>
+              <div id="noteMarkdownRender" class="text-xs space-y-2 font-sans text-zinc-300"></div>
             </div>
-
           </div>
-
         </div>
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 7: SYSTEM CONTROLS & SETTINGS (LAST TAB)                          -->
+      <!-- MODULE 11: SYSTEM CONTROLS & SETTINGS                                 -->
       <!-- ===================================================================== -->
       <section id="tab-controls" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           
-          <!-- Sandbox Policies -->
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
               <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
@@ -1167,140 +1214,39 @@
                 <p class="text-[11px] text-zinc-400">Manage iframe execution headers</p>
               </div>
             </div>
-
             <div class="space-y-3 text-xs">
               <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
                 <span>Allow Scripts Execution</span>
                 <input type="checkbox" id="checkAllowScripts" checked class="w-4 h-4 rounded text-cyan-500" />
               </label>
-
               <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
                 <span>Allow Same-Origin Access</span>
                 <input type="checkbox" id="checkAllowOrigin" checked class="w-4 h-4 rounded text-cyan-500" />
               </label>
-
-              <label class="flex items-center justify-between p-2.5 rounded-xl bg-surface-900/80 border border-white/5 cursor-pointer">
-                <span>Allow Modals & Popups</span>
-                <input type="checkbox" id="checkAllowPopups" checked class="w-4 h-4 rounded text-cyan-500" />
-              </label>
             </div>
-
-            <button
-              type="button"
-              onclick="applySandboxPolicy()"
-              class="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-semibold text-black transition-colors cursor-pointer"
-            >
+            <button onclick="applySandboxPolicy()" class="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-semibold text-black cursor-pointer">
               Apply Security Settings
             </button>
           </div>
 
-          <!-- Auto Refresh -->
-          <div class="glass-panel rounded-2xl p-5 space-y-4">
-            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
-              <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                <i data-lucide="timer" class="w-4 h-4"></i>
-              </div>
-              <div>
-                <h3 class="text-sm font-bold text-white">Auto-Refresh Cadence</h3>
-                <p class="text-[11px] text-zinc-400">Live development auto-polling</p>
-              </div>
-            </div>
-
-            <div class="space-y-3 text-xs">
-              <p class="text-zinc-400 leading-relaxed">
-                Automatically reload the embedded frame to preview live repo changes.
-              </p>
-              <select
-                id="autoRefreshSelect"
-                onchange="setupAutoRefresh()"
-                class="godx-input w-full p-2.5 text-xs cursor-pointer"
-              >
-                <option value="0" class="bg-surface-900">Disabled (Manual Only)</option>
-                <option value="5" class="bg-surface-900">Every 5 Seconds</option>
-                <option value="15" class="bg-surface-900">Every 15 Seconds</option>
-                <option value="30" class="bg-surface-900">Every 30 Seconds</option>
-                <option value="60" class="bg-surface-900">Every 1 Minute</option>
-              </select>
-              <div class="p-2.5 rounded-xl bg-surface-900/60 border border-white/5 text-[11px] text-zinc-400 flex items-center gap-2">
-                <span id="autoRefreshStatusText" class="text-cyan-300 font-mono">Timer: Off</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Script Injector -->
-          <div class="glass-panel rounded-2xl p-5 space-y-4">
-            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
-              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <i data-lucide="code" class="w-4 h-4"></i>
-              </div>
-              <div>
-                <h3 class="text-sm font-bold text-white">Live Script Injector</h3>
-                <p class="text-[11px] text-zinc-400">Inject custom CSS / JS directly</p>
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <textarea
-                id="customInjectCode"
-                placeholder="/* Custom script to inject into session */&#10;console.log('GODx injected script!');"
-                class="godx-input w-full p-2.5 font-mono text-xs outline-none resize-none h-24"
-              ></textarea>
-              <button
-                type="button"
-                onclick="injectCustomCode()"
-                class="w-full py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer"
-              >
-                Execute Injection ⚡
-              </button>
-            </div>
-          </div>
-
-          <!-- Theme Palette & Custom Hex Color Engine -->
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
               <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
                 <i data-lucide="palette" class="w-4 h-4"></i>
               </div>
               <div>
-                <h3 class="text-sm font-bold text-white">Theme & Color Customizer</h3>
-                <p class="text-[11px] text-zinc-400">Luxury palettes & Custom Hex</p>
+                <h3 class="text-sm font-bold text-white">Theme & Hex Engine</h3>
+                <p class="text-[11px] text-zinc-400">Palettes & Dynamic Glows</p>
               </div>
             </div>
-
             <div class="grid grid-cols-2 gap-2 text-xs font-medium">
-              <button
-                type="button"
-                onclick="setDashboardTheme('cyan')"
-                class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Cyan Nebula
-              </button>
-              <button
-                type="button"
-                onclick="setDashboardTheme('emerald')"
-                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Cyber Matrix
-              </button>
-              <button
-                type="button"
-                onclick="setDashboardTheme('amber')"
-                class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Solar Amber
-              </button>
-              <button
-                type="button"
-                onclick="setDashboardTheme('rose')"
-                class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Laser Rose
-              </button>
+              <button onclick="setDashboardTheme('cyan')" class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-center cursor-pointer">Cyan</button>
+              <button onclick="setDashboardTheme('emerald')" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-center cursor-pointer">Matrix</button>
+              <button onclick="setDashboardTheme('amber')" class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-center cursor-pointer">Solar</button>
+              <button onclick="setDashboardTheme('rose')" class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-center cursor-pointer">Laser</button>
             </div>
-
-            <!-- Custom Accent Color Picker -->
             <div class="pt-2 border-t border-white/5 space-y-1.5">
-              <label class="text-[11px] text-zinc-400 block font-mono">Custom Accent Hex Color:</label>
+              <label class="text-[11px] text-zinc-400 block font-mono">Custom Accent Hex:</label>
               <div class="flex items-center gap-2">
                 <input type="color" id="customColorPicker" value="#00f2fe" onchange="applyCustomAccentColor(this.value)" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
                 <input type="text" id="customColorHex" value="#00f2fe" onchange="applyCustomAccentColor(this.value)" class="godx-input flex-1 px-3 py-1.5 text-xs font-mono" />
@@ -1308,7 +1254,6 @@
             </div>
           </div>
 
-          <!-- Backup JSON -->
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
               <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center">
@@ -1319,49 +1264,9 @@
                 <p class="text-[11px] text-zinc-400">Save workspace profiles</p>
               </div>
             </div>
-
             <div class="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onclick="exportDashboardConfig()"
-                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-              >
-                Export JSON
-              </button>
-              <button
-                type="button"
-                onclick="importDashboardConfig()"
-                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-              >
-                Import JSON
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onclick="flushWorkspaceCache()"
-              class="w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium text-rose-300 hover:text-rose-200 transition-colors cursor-pointer"
-            >
-              Flush Cache & Reset Storage
-            </button>
-          </div>
-
-          <!-- Custom Trigger Slot -->
-          <div class="glass-panel rounded-2xl p-5 space-y-4">
-            <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
-              <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center">
-                <i data-lucide="zap" class="w-4 h-4"></i>
-              </div>
-              <div>
-                <h3 class="text-sm font-bold text-white">Modular Action Trigger</h3>
-                <p class="text-[11px] text-zinc-400">Ready for Anish x parameters</p>
-              </div>
-            </div>
-            <p class="text-xs text-zinc-400 leading-relaxed">
-              Attach any custom API trigger or pipeline script here.
-            </p>
-            <div class="text-[11px] text-zinc-500 font-mono italic">
-              Hook ID: GODx-EXM-CONTROLLER
+              <button onclick="exportDashboardConfig()" class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 cursor-pointer">Export JSON</button>
+              <button onclick="flushWorkspaceCache()" class="py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 cursor-pointer">Flush Storage</button>
             </div>
           </div>
 
@@ -1372,11 +1277,9 @@
 
     <!-- Footer -->
     <footer class="w-full border-t border-white/5 bg-surface-950/80 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
-      <div>
-        LuminaVista OS • Created for <span class="text-zinc-300 font-medium">Anish x (GODx)</span>
-      </div>
+      <div>LuminaVista OS • Created for <span class="text-zinc-300 font-medium">Anish x (GODx)</span></div>
       <div class="flex items-center gap-4">
-        <a href="https://github.com/SubhadraRoy/LuminaVista/tree/main/EXM" target="_blank" class="hover:text-zinc-300 transition-colors">EXM Directory</a>
+        <span>SubhadraRoy/LuminaVista/EXM</span>
         <span>•</span>
         <span>Hosted on GitHub Pages</span>
       </div>
@@ -1384,27 +1287,23 @@
 
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- SOURCE CODE INSPECTOR MODAL                                               -->
-  <!-- ========================================================================= -->
+  <!-- Source Inspector Modal -->
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-4xl w-full p-5 sm:p-6 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
-        <div class="flex items-center gap-2">
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
           <i data-lucide="code" class="w-5 h-5 text-cyan-400"></i>
-          <h3 class="font-heading font-bold text-base text-white">Live Source Inspector: <span id="sourceProjectTitle" class="text-cyan-300 font-mono"></span></h3>
-        </div>
-        <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer">
+          Live Source Inspector: <span id="sourceProjectTitle" class="text-cyan-300 font-mono"></span>
+        </h3>
+        <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 text-zinc-400 hover:text-white cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-
       <div class="my-3 flex items-center gap-2">
-        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono hover:bg-surface-850 cursor-pointer">index.html</button>
-        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono hover:bg-surface-850 cursor-pointer">style.css</button>
-        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono hover:bg-surface-850 cursor-pointer">script.js</button>
+        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono">index.html</button>
+        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono">style.css</button>
+        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono">script.js</button>
       </div>
-
       <div class="flex-1 overflow-y-auto bg-surface-950 rounded-2xl p-4 border border-white/5">
         <pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap">Loading source file...</code></pre>
       </div>
@@ -1416,13 +1315,7 @@
     <div class="glass-panel max-w-lg w-full p-4 rounded-2xl glow-border relative transform scale-95 transition-transform duration-200">
       <div class="flex items-center gap-2 pb-3 border-b border-white/10">
         <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
-        <input
-          type="text"
-          id="cmdSearchInput"
-          oninput="handleCmdSearch(event)"
-          placeholder="Type a command or jump to EXM project..."
-          class="bg-transparent flex-1 text-sm text-white placeholder-zinc-500 outline-none font-sans"
-        />
+        <input type="text" id="cmdSearchInput" oninput="handleCmdSearch(event)" placeholder="Search commands or jump to tab..." class="bg-transparent flex-1 text-sm text-white outline-none" />
         <kbd class="px-2 py-0.5 text-[10px] bg-surface-800 rounded text-zinc-400 font-mono">ESC</kbd>
       </div>
       <div id="cmdResults" class="py-2 space-y-1 max-h-60 overflow-y-auto text-xs font-mono"></div>
@@ -1444,24 +1337,20 @@
   <script>
     lucide.createIcons();
 
-    // Base64 Encoded Master Security Key
     const AUTH_ENCODED = "eHBzQGFkbWlu";
     const SESSION_KEY = "lumina_godx_session";
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
 
     function resolveProjectUrl(rawPath) {
       let clean = rawPath.replace(/^\.\//, "").replace(/^\//, "");
-      
       if (!clean.startsWith("EXM/") && !clean.startsWith("EXM")) {
         clean = "EXM/" + clean;
       }
-
       if (clean.endsWith("/")) {
         clean = clean + "index.html";
       } else if (!clean.includes(".html") && !clean.includes(".")) {
         clean = clean + "/index.html";
       }
-
       const base = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1);
       return window.location.origin + base + clean;
     }
@@ -1470,61 +1359,41 @@
     let pinnedProjects = JSON.parse(localStorage.getItem("lumina_pinned_projects") || "[]");
     let currentSelectedProject = repoProjects[0] || null;
     let isAudioEnabled = true;
-    let autoRefreshTimer = null;
     let isPassVisible = false;
+
+    // Cloud AI State
+    let aiConversation = JSON.parse(localStorage.getItem("lumina_cloud_ai_history") || "[]");
+    let isKeyVisible = false;
 
     // Multi-Note Storage Structure
     let vaultNotes = JSON.parse(localStorage.getItem("lumina_godx_multi_notes") || JSON.stringify([
-      { id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace Checklist\n- [x] EXM sub-projects deployed\n- [x] Security authentication active\n- [ ] Add custom pipeline hooks\n- [ ] Verify responsive mobile layout" },
-      { id: "note_2", title: "EXM Architecture", content: "# EXM Multi-Project Isolation\nEach subproject resides under /EXM/<project>/index.html\nAssets resolve relative to the local folder." }
+      { id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace Checklist\n- [x] EXM sub-projects deployed\n- [x] Security authentication active\n- [x] Online Cloud AI Connected\n- [x] REST API Workbench live" }
     ]));
     let activeNoteId = vaultNotes[0].id;
     let isMarkdownPreviewActive = false;
 
-    const loginView = document.getElementById("loginView");
-    const dashboardView = document.getElementById("dashboardView");
-    const usernameInput = document.getElementById("usernameInput");
-    const passInput = document.getElementById("passInput");
-    const loginError = document.getElementById("loginError");
-    const loginPassIcon = document.getElementById("loginPassIcon");
-    const projectChipsContainer = document.getElementById("projectChipsContainer");
-    const pinnedChipsContainer = document.getElementById("pinnedChipsContainer");
-    const projectSelect = document.getElementById("projectSelect");
-    const customProjectInput = document.getElementById("customProjectInput");
-    const previewIframe = document.getElementById("previewIframe");
-    const activeProjectTitle = document.getElementById("activeProjectTitle");
-    const projectCountBadge = document.getElementById("projectCountBadge");
-    const headerAdminName = document.getElementById("headerAdminName");
-    const iframeOverlay = document.getElementById("iframeOverlay");
-    const toast = document.getElementById("toast");
-    const systemClock = document.getElementById("systemClock");
-    const cmdModal = document.getElementById("cmdModal");
-    const cmdSearchInput = document.getElementById("cmdSearchInput");
-    const cmdResults = document.getElementById("cmdResults");
-    const adminScratchpad = document.getElementById("adminScratchpad");
-    const deployHostBadge = document.getElementById("deployHostBadge");
-    const eventLogsScreen = document.getElementById("eventLogsScreen");
-    const sourceModal = document.getElementById("sourceModal");
+    // Canvas Whiteboard State
+    let isDrawing = false;
+    let wbCurrentTool = 'pen';
+    let wbCurrentColor = '#00f2fe';
+    let wbCurrentSize = 3;
 
     window.addEventListener("DOMContentLoaded", () => {
       const savedTheme = localStorage.getItem("lumina_theme") || "cyan";
       setDashboardTheme(savedTheme, false);
 
-      if (window.location.hostname.includes("github.io")) {
-        deployHostBadge.textContent = "GitHub Pages: /EXM/";
-      } else {
-        deployHostBadge.textContent = "Local Server: /EXM/";
-      }
-
       const isAuth = sessionStorage.getItem(SESSION_KEY) === "true";
       const savedUser = sessionStorage.getItem("lumina_godx_user") || "Anish x";
       
       if (isAuth) {
-        headerAdminName.textContent = savedUser;
+        document.getElementById("headerAdminName").textContent = savedUser;
         showDashboard();
       } else {
         showLogin();
       }
+
+      // Load saved AI credentials
+      loadAiCredentials();
 
       renderProjectList();
       fetchRepoProjects();
@@ -1535,12 +1404,15 @@
       loadActiveNoteContent();
       runSandboxCode();
       initAmbientParticles();
+      initWhiteboard();
+      updateDesignPreview();
+      renderAiChat();
     });
 
     function startSystemClock() {
       setInterval(() => {
         const now = new Date();
-        systemClock.textContent = now.toTimeString().split(" ")[0] + " LOCAL";
+        document.getElementById("systemClock").textContent = now.toTimeString().split(" ")[0] + " LOCAL";
       }, 1000);
     }
 
@@ -1570,33 +1442,33 @@
     }
 
     function showDashboard() {
-      loginView.classList.add("hidden");
-      dashboardView.classList.remove("hidden");
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("dashboardView").classList.remove("hidden");
       gsap.from("#dashboardView", { opacity: 0, y: 15, duration: 0.4, ease: "power2.out" });
       lucide.createIcons();
       playAudioTone(587, "triangle", 0.15);
     }
 
     function showLogin() {
-      dashboardView.classList.add("hidden");
-      loginView.classList.remove("hidden");
-      passInput.value = "";
-      loginError.classList.add("hidden");
+      document.getElementById("dashboardView").classList.add("hidden");
+      document.getElementById("loginView").classList.remove("hidden");
+      document.getElementById("passInput").value = "";
+      document.getElementById("loginError").classList.add("hidden");
       lucide.createIcons();
-      setTimeout(() => passInput.focus(), 100);
     }
 
     function togglePassVisibility() {
       isPassVisible = !isPassVisible;
+      const passInput = document.getElementById("passInput");
       passInput.type = isPassVisible ? "text" : "password";
-      loginPassIcon.setAttribute("data-lucide", isPassVisible ? "eye-off" : "eye");
+      document.getElementById("loginPassIcon").setAttribute("data-lucide", isPassVisible ? "eye-off" : "eye");
       lucide.createIcons();
     }
 
     function handleLogin(e) {
       if (e) e.preventDefault();
-      const enteredUser = usernameInput.value.trim() || "Anish x";
-      const enteredPass = passInput.value.trim();
+      const enteredUser = document.getElementById("usernameInput").value.trim() || "Anish x";
+      const enteredPass = document.getElementById("passInput").value.trim();
       const expectedPass = atob(AUTH_ENCODED);
 
       const submitBtn = document.getElementById("loginSubmitBtn");
@@ -1616,23 +1488,18 @@
         btnText.textContent = "Unlock Dashboard";
 
         if (enteredPass === expectedPass) {
-          loginError.classList.add("hidden");
+          document.getElementById("loginError").classList.add("hidden");
           sessionStorage.setItem(SESSION_KEY, "true");
           sessionStorage.setItem("lumina_godx_user", enteredUser);
-          headerAdminName.textContent = enteredUser;
-
+          document.getElementById("headerAdminName").textContent = enteredUser;
           showToast("Access Granted", `Welcome back, ${enteredUser} (GODx).`);
           showDashboard();
         } else {
-          loginError.classList.remove("hidden");
+          document.getElementById("loginError").classList.remove("hidden");
           playAudioTone(220, "sawtooth", 0.2);
-          gsap.fromTo(
-            "#loginCard",
-            { x: -10 },
-            { x: 10, duration: 0.08, repeat: 4, yoyo: true, ease: "power1.inOut" }
-          );
+          gsap.fromTo("#loginCard", { x: -10 }, { x: 10, duration: 0.08, repeat: 4, yoyo: true, ease: "power1.inOut" });
         }
-      }, 350);
+      }, 300);
     }
 
     function handleLogout() {
@@ -1660,276 +1527,380 @@
       lucide.createIcons();
     }
 
-    async function fetchRepoProjects() {
-      const refreshIcon = document.getElementById("refreshIcon");
-      if (refreshIcon) refreshIcon.classList.add("animate-spin");
+    // =========================================================================
+    // ONLINE CLOUD AI INTEGRATION ENGINE (REAL API KEYS)
+    // =========================================================================
+    function onAiProviderChanged() {
+      const provider = document.getElementById("aiProviderSelect").value;
+      const endpointInput = document.getElementById("aiEndpointInput");
+      const modelInput = document.getElementById("aiModelInput");
+
+      if (provider === "openrouter") {
+        endpointInput.value = "https://openrouter.ai/api/v1/chat/completions";
+        modelInput.value = "meta-llama/llama-3.3-70b-instruct";
+      } else if (provider === "groq") {
+        endpointInput.value = "https://api.groq.com/openai/v1/chat/completions";
+        modelInput.value = "llama-3.3-70b-versatile";
+      } else if (provider === "deepseek") {
+        endpointInput.value = "https://api.deepseek.com/chat/completions";
+        modelInput.value = "deepseek-chat";
+      } else if (provider === "openai") {
+        endpointInput.value = "https://api.openai.com/v1/chat/completions";
+        modelInput.value = "gpt-4o-mini";
+      }
+      saveAiCredentials();
+    }
+
+    function saveAiCredentials() {
+      const provider = document.getElementById("aiProviderSelect").value;
+      const endpoint = document.getElementById("aiEndpointInput").value.trim();
+      const model = document.getElementById("aiModelInput").value.trim();
+      const key = document.getElementById("aiApiKeyInput").value.trim();
+
+      localStorage.setItem("lumina_cloud_ai_provider", provider);
+      localStorage.setItem("lumina_cloud_ai_endpoint", endpoint);
+      localStorage.setItem("lumina_cloud_ai_model", model);
+      if (key) localStorage.setItem("lumina_cloud_ai_key", key);
+
+      const dot = document.getElementById("aiKeyStatusDot");
+      const label = document.getElementById("aiKeyStatusLabel");
+      if (key) {
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+        label.textContent = "Key Configured";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        label.textContent = "Missing API Key";
+      }
+    }
+
+    function loadAiCredentials() {
+      const p = localStorage.getItem("lumina_cloud_ai_provider") || "openrouter";
+      const ep = localStorage.getItem("lumina_cloud_ai_endpoint") || "https://openrouter.ai/api/v1/chat/completions";
+      const m = localStorage.getItem("lumina_cloud_ai_model") || "meta-llama/llama-3.3-70b-instruct";
+      const k = localStorage.getItem("lumina_cloud_ai_key") || "";
+
+      document.getElementById("aiProviderSelect").value = p;
+      document.getElementById("aiEndpointInput").value = ep;
+      document.getElementById("aiModelInput").value = m;
+      document.getElementById("aiApiKeyInput").value = k;
+      saveAiCredentials();
+    }
+
+    function toggleApiKeyMask() {
+      isKeyVisible = !isKeyVisible;
+      const keyInput = document.getElementById("aiApiKeyInput");
+      keyInput.type = isKeyVisible ? "text" : "password";
+      document.getElementById("aiKeyEyeIcon").setAttribute("data-lucide", isKeyVisible ? "eye-off" : "eye");
+      lucide.createIcons();
+    }
+
+    async function testCloudAiConnection() {
+      const endpoint = document.getElementById("aiEndpointInput").value.trim();
+      const key = document.getElementById("aiApiKeyInput").value.trim();
+      const model = document.getElementById("aiModelInput").value.trim();
+
+      if (!key) {
+        showToast("Key Required", "Please enter your real Cloud API key.");
+        return;
+      }
+
+      showToast("Verifying Link", "Testing Cloud AI handshake...");
 
       try {
-        const response = await fetch(REPO_API_URL);
-        if (response.ok) {
-          const data = await response.json();
-          
-          const detected = data
-            .filter(item => !item.name.startsWith("."))
-            .map(item => ({
-              name: item.name,
-              path: `EXM/${item.name}${item.type === "dir" ? "/" : ""}`,
-              type: item.type
-            }));
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${key}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: "user", content: "ping" }],
+            max_tokens: 5
+          })
+        });
 
-          if (detected.length > 0) {
-            detected.forEach(p => {
-              if (!repoProjects.some(existing => existing.name === p.name)) {
-                repoProjects.push(p);
-              }
-            });
-            localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects));
-            showToast("EXM Scanned", `Discovered ${repoProjects.length} items in /EXM/.`);
-          }
+        if (res.ok) {
+          showToast("Connection Success", `Authenticated with ${model} successfully.`);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          showToast("API Handshake Failed", `HTTP ${res.status}: ${errData.error?.message || res.statusText}`);
         }
       } catch (err) {
-        console.log("EXM directory scan notice: using current list.");
-      } finally {
-        if (refreshIcon) refreshIcon.classList.remove("animate-spin");
-        renderProjectList();
-        updateSplitDropdowns();
+        showToast("Network Error", `Could not reach ${endpoint}. Check CORS policy.`);
       }
     }
 
-    function filterProjectList() {
-      const q = (document.getElementById("projectFilterInput").value || "").toLowerCase();
-      renderProjectList(q);
+    function renderAiChat() {
+      const box = document.getElementById("aiChatBox");
+      box.innerHTML = "";
+
+      if (aiConversation.length === 0) {
+        box.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold shrink-0 border border-cyan-500/30">AI</div>
+            <div class="p-3.5 rounded-2xl bg-surface-900 border border-white/10 text-zinc-200 max-w-2xl">
+              <div class="font-semibold text-cyan-300 font-heading text-xs">GODx Cloud Neural Engine Active</div>
+              <p class="leading-relaxed text-zinc-300">Ready to assist with /EXM/ code generation, microservices, and system architecture. Type your prompt below.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      aiConversation.forEach(msg => {
+        const isUser = msg.role === "user";
+        const div = document.createElement("div");
+        div.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+        div.innerHTML = `
+          <div class="w-8 h-8 rounded-xl ${isUser ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'} flex items-center justify-center font-bold shrink-0 border">
+            ${isUser ? 'ME' : 'AI'}
+          </div>
+          <div class="p-3.5 rounded-2xl ${isUser ? 'bg-surface-850 text-white' : 'bg-surface-900 text-zinc-200 border border-white/10'} max-w-2xl space-y-1 whitespace-pre-wrap font-mono text-xs">
+            ${msg.content.replace(/```([\s\S]*?)```/g, '<pre class="bg-surface-950 p-3 rounded-xl my-2 border border-white/10 text-cyan-300 overflow-x-auto"><code>$1</code></pre>')}
+          </div>
+        `;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
     }
 
-    function renderProjectList(filterQuery = "") {
-      projectChipsContainer.innerHTML = "";
-      pinnedChipsContainer.innerHTML = "";
-      projectSelect.innerHTML = "";
-      projectCountBadge.textContent = `${repoProjects.length} Items in EXM`;
+    async function handleSendAiMessage(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById("aiPromptInput");
+      const prompt = input.value.trim();
+      if (!prompt) return;
 
-      const visible = repoProjects.filter(p => p.name.toLowerCase().includes(filterQuery));
+      const endpoint = document.getElementById("aiEndpointInput").value.trim();
+      const model = document.getElementById("aiModelInput").value.trim();
+      const apiKey = document.getElementById("aiApiKeyInput").value.trim();
+      const persona = document.getElementById("aiSystemPromptSelect").value;
 
-      if (visible.length === 0) {
-        projectChipsContainer.innerHTML = `
-          <span class="text-xs text-zinc-500 italic">No matching EXM items.</span>
-        `;
-      } else {
-        if (!currentSelectedProject || !repoProjects.some(p => p.name === currentSelectedProject.name)) {
-          currentSelectedProject = visible[0];
+      if (!apiKey) {
+        showToast("Key Missing", "Please paste your Cloud API key in the configuration bar.");
+        return;
+      }
+
+      let systemPrompt = "You are the GODx LuminaVista Supreme Architect. Provide ultra high-performance code and architectural designs.";
+      if (persona === "coding") systemPrompt = "You are a senior full-stack developer. Deliver robust code blocks in HTML, JavaScript, Python, C++, Java, or SQL.";
+      if (persona === "security") systemPrompt = "You are an ethical security and EXM isolation auditor. Scrutinize all inputs and architectures.";
+      if (persona === "minimal") systemPrompt = "Respond with raw code snippets and minimal commentary.";
+
+      aiConversation.push({ role: "user", content: prompt });
+      input.value = "";
+      renderAiChat();
+
+      const btn = document.getElementById("btnAiSend");
+      btn.disabled = true;
+
+      try {
+        const messages = [
+          { role: "system", content: systemPrompt },
+          ...aiConversation.slice(-8).map(m => ({ role: m.role, content: m.content }))
+        ];
+
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "LuminaVista OS"
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            temperature: 0.7
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const responseText = data.choices?.[0]?.message?.content || "No response text received.";
+          aiConversation.push({ role: "assistant", content: responseText });
+        } else {
+          const errBody = await res.json().catch(() => ({}));
+          aiConversation.push({ role: "assistant", content: `[Cloud API Error ${res.status}]: ${errBody.error?.message || res.statusText}` });
+        }
+      } catch (err) {
+        aiConversation.push({ role: "assistant", content: `[Connection Exception]: ${err.message}. If using OpenAI directly in the browser, ensure your endpoint or CORS proxy permits browser origin requests.` });
+      } finally {
+        btn.disabled = false;
+        localStorage.setItem("lumina_cloud_ai_history", JSON.stringify(aiConversation));
+        renderAiChat();
+      }
+    }
+
+    function clearAiChatHistory() {
+      aiConversation = [];
+      localStorage.removeItem("lumina_cloud_ai_history");
+      renderAiChat();
+      showToast("Chat Cleared", "Neural conversation memory reset.");
+    }
+
+    // =========================================================================
+    // REST API TESTER ENGINE
+    // =========================================================================
+    async function executeApiRequest() {
+      const method = document.getElementById("apiMethod").value;
+      const url = document.getElementById("apiUrlInput").value.trim();
+      const rawBody = document.getElementById("apiRequestBody").value.trim();
+      const resView = document.getElementById("apiResponseView");
+      const statusBadge = document.getElementById("apiStatusBadge");
+      const latencyBadge = document.getElementById("apiLatencyBadge");
+
+      if (!url) return;
+      resView.textContent = "Dispatching HTTP request...";
+      const startTime = performance.now();
+
+      try {
+        let options = { method };
+        let parsed = null;
+        try { parsed = JSON.parse(rawBody); } catch(e) {}
+
+        if (parsed && parsed.headers) {
+          options.headers = parsed.headers;
         }
 
-        visible.forEach((proj) => {
-          const isSelected = currentSelectedProject && proj.name === currentSelectedProject.name;
+        if (method !== "GET" && parsed && parsed.body) {
+          options.body = JSON.stringify(parsed.body);
+        }
 
-          const chip = document.createElement("button");
-          chip.type = "button";
-          chip.className = `px-3 py-1.5 rounded-xl text-xs font-mono border transition-all flex items-center gap-1.5 cursor-pointer ${
-            isSelected
-              ? "active-project-pill font-bold"
-              : "bg-surface-900 hover:bg-surface-850 border-white/5 text-zinc-300 hover:text-white"
-          }`;
-          chip.innerHTML = `
-            <i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-300' : 'text-zinc-500'}"></i>
-            <span>${proj.name}</span>
-          `;
-          chip.onclick = () => selectProject(proj);
-          projectChipsContainer.appendChild(chip);
+        const res = await fetch(url, options);
+        const duration = (performance.now() - startTime).toFixed(1);
+        latencyBadge.textContent = `Latency: ${duration} ms`;
+        statusBadge.textContent = `Status: ${res.status} ${res.statusText}`;
 
-          const opt = document.createElement("option");
-          opt.value = proj.name;
-          opt.textContent = `${proj.type === 'dir' ? '📁 ' : '📄 '} EXM/${proj.name}`;
-          opt.className = "bg-surface-900 text-white";
-          if (isSelected) opt.selected = true;
-          projectSelect.appendChild(opt);
-        });
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          resView.textContent = JSON.stringify(json, null, 2);
+        } catch {
+          resView.textContent = text;
+        }
+        showToast("Request Complete", `HTTP ${res.status} in ${duration}ms`);
+      } catch (err) {
+        latencyBadge.textContent = "Latency: ERR";
+        statusBadge.textContent = "Status: Failed";
+        resView.textContent = `Error: ${err.message}`;
       }
+    }
 
-      pinnedProjects.forEach(name => {
-        const pinBtn = document.createElement("button");
-        pinBtn.className = "px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono hover:bg-amber-500/20 transition-colors cursor-pointer";
-        pinBtn.textContent = `★ ${name}`;
-        pinBtn.onclick = () => {
-          const match = repoProjects.find(p => p.name === name);
-          if (match) selectProject(match);
-        };
-        pinnedChipsContainer.appendChild(pinBtn);
+    function copyApiResponse() {
+      const text = document.getElementById("apiResponseView").textContent;
+      navigator.clipboard.writeText(text).then(() => showToast("Copied", "Response payload copied."));
+    }
+
+    // =========================================================================
+    // CANVAS WHITEBOARD ENGINE
+    // =========================================================================
+    function initWhiteboard() {
+      const canvas = document.getElementById("whiteboardCanvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+
+      function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      }
+      resize();
+      window.addEventListener("resize", resize);
+
+      canvas.addEventListener("mousedown", (e) => {
+        isDrawing = true;
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
       });
 
-      lucide.createIcons();
-      updatePinButton();
-    }
-
-    function selectProject(proj) {
-      playAudioTone(493, "sine", 0.04);
-      currentSelectedProject = proj;
-      activeProjectTitle.textContent = `EXM/${proj.name}/`;
-      renderProjectList();
-      loadActiveIntoPreview();
-    }
-
-    function onDropdownSelect() {
-      const selectedName = projectSelect.value;
-      const target = repoProjects.find(p => p.name === selectedName);
-      if (target) selectProject(target);
-    }
-
-    function addCustomProject() {
-      const val = customProjectInput.value.trim();
-      if (!val) return;
-      
-      const cleanName = val.replace(/^EXM\//i, "").replace(/^\/+|\/+$/g, "");
-      const isHtml = cleanName.endsWith(".html");
-      
-      const newProj = {
-        name: cleanName,
-        path: `EXM/${cleanName}${isHtml ? "" : "/"}`,
-        type: isHtml ? "file" : "dir"
-      };
-
-      if (!repoProjects.some(p => p.name === newProj.name)) {
-        repoProjects.push(newProj);
-        localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects));
-      }
-      customProjectInput.value = "";
-      selectProject(newProj);
-      showToast("EXM Item Added", `Added EXM/${cleanName}`);
-      updateSplitDropdowns();
-    }
-
-    function loadActiveIntoPreview() {
-      if (!currentSelectedProject) return;
-      activeProjectTitle.textContent = `EXM/${currentSelectedProject.name}/`;
-      const targetUrl = resolveProjectUrl(currentSelectedProject.path);
-      previewIframe.src = targetUrl;
-      iframeOverlay.classList.add("hidden");
-    }
-
-    function openActiveInNewTab() {
-      if (!currentSelectedProject) return;
-      playAudioTone(659, "sine", 0.08);
-      const targetUrl = resolveProjectUrl(currentSelectedProject.path);
-      window.open(targetUrl, "_blank");
-    }
-
-    function reloadIframe() {
-      playAudioTone(440, "sine", 0.05);
-      previewIframe.src = previewIframe.src;
-      showToast("Reloading Viewport", "Frame refreshed.");
-    }
-
-    function togglePinActiveProject() {
-      if (!currentSelectedProject) return;
-      const name = currentSelectedProject.name;
-      if (pinnedProjects.includes(name)) {
-        pinnedProjects = pinnedProjects.filter(p => p !== name);
-        showToast("Bookmark Removed", `Unpinned ${name}`);
-      } else {
-        pinnedProjects.push(name);
-        showToast("Bookmarked", `Pinned ${name} to favorites.`);
-      }
-      localStorage.setItem("lumina_pinned_projects", JSON.stringify(pinnedProjects));
-      renderProjectList();
-    }
-
-    function updatePinButton() {
-      const pinBtn = document.getElementById("pinActiveBtn");
-      if (!pinBtn || !currentSelectedProject) return;
-      const isPinned = pinnedProjects.includes(currentSelectedProject.name);
-      pinBtn.className = isPinned ? "p-1 rounded text-amber-400 cursor-pointer" : "p-1 rounded text-zinc-400 hover:text-amber-400 cursor-pointer";
-    }
-
-    function setViewportDevice(width) {
-      playAudioTone(523, "sine", 0.03);
-      const wrapper = document.getElementById("iframeWrapper");
-      wrapper.style.maxWidth = width;
-      
-      document.querySelectorAll(".device-btn").forEach(b => {
-        b.classList.remove("bg-cyan-500", "text-black");
-        b.classList.add("text-zinc-400");
+      canvas.addEventListener("mousemove", (e) => {
+        if (!isDrawing) return;
+        ctx.strokeStyle = wbCurrentTool === "eraser" ? "#030712" : wbCurrentColor;
+        ctx.lineWidth = wbCurrentSize;
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
       });
 
-      if (width === "100%") document.getElementById("btnDeviceDesktop").classList.add("bg-cyan-500", "text-black");
-      if (width === "768px") document.getElementById("btnDeviceTablet").classList.add("bg-cyan-500", "text-black");
-      if (width === "375px") document.getElementById("btnDeviceMobile").classList.add("bg-cyan-500", "text-black");
+      canvas.addEventListener("mouseup", () => isDrawing = false);
+      canvas.addEventListener("mouseleave", () => isDrawing = false);
     }
 
-    function toggleFullscreen() {
-      const wrapper = document.getElementById("iframeWrapper");
-      if (!document.fullscreenElement) {
-        wrapper.requestFullscreen().catch(() => openActiveInNewTab());
-      } else {
-        document.exitFullscreen();
-      }
+    function setWhiteboardTool(tool) {
+      wbCurrentTool = tool;
+      document.getElementById("wbToolPen").className = tool === "pen" ? "p-1.5 rounded-lg bg-cyan-500 text-black cursor-pointer" : "p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
+      document.getElementById("wbToolEraser").className = tool === "eraser" ? "p-1.5 rounded-lg bg-cyan-500 text-black cursor-pointer" : "p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
     }
 
-    function onIframeLoaded() {
-      iframeOverlay.classList.add("hidden");
-      logEvent(`Loaded preview for: ${currentSelectedProject ? currentSelectedProject.name : 'frame'}`);
+    function updateWbColor(c) { wbCurrentColor = c; }
+    function updateWbSize(s) { wbCurrentSize = s; }
+
+    function clearWhiteboard() {
+      const canvas = document.getElementById("whiteboardCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      showToast("Whiteboard Cleared", "Canvas reset.");
     }
 
-    function onIframeFailed() {
-      iframeOverlay.classList.remove("hidden");
-      logEvent(`Failed to load target frame.`);
+    function downloadWhiteboard() {
+      const canvas = document.getElementById("whiteboardCanvas");
+      const link = document.createElement("a");
+      link.download = `lumina_sketch_${Date.now()}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      showToast("Export Complete", "Whiteboard exported to PNG.");
     }
 
-    function updateSplitDropdowns() {
-      const lSelect = document.getElementById("splitLeftSelect");
-      const rSelect = document.getElementById("splitRightSelect");
-      if (!lSelect || !rSelect) return;
-      
-      lSelect.innerHTML = "";
-      rSelect.innerHTML = "";
+    // =========================================================================
+    // UI DESIGN STUDIO ENGINE
+    // =========================================================================
+    function updateDesignPreview() {
+      const blur = document.getElementById("sliderBlur").value;
+      const opacity = document.getElementById("sliderOpacity").value / 100;
+      const radius = document.getElementById("sliderRadius").value;
+      const glow = document.getElementById("sliderGlow").value / 100;
 
-      repoProjects.forEach((p, idx) => {
-        const optA = document.createElement("option");
-        optA.value = p.name;
-        optA.textContent = `EXM/${p.name}`;
-        optA.className = "bg-surface-900";
-        lSelect.appendChild(optA);
+      document.getElementById("lblBlurVal").textContent = `${blur}px`;
+      document.getElementById("lblOpacityVal").textContent = `${Math.round(opacity * 100)}%`;
+      document.getElementById("lblRadiusVal").textContent = `${radius}px`;
+      document.getElementById("lblGlowVal").textContent = `${Math.round(glow * 100)}%`;
 
-        const optB = document.createElement("option");
-        optB.value = p.name;
-        optB.textContent = `EXM/${p.name}`;
-        optB.className = "bg-surface-900";
-        if (idx === 1 || idx === repoProjects.length - 1) optB.selected = true;
-        rSelect.appendChild(optB);
-      });
-      updateSplitFrames();
+      const card = document.getElementById("glassPreviewCard");
+      card.style.backdropFilter = `blur(${blur}px)`;
+      card.style.webkitBackdropFilter = `blur(${blur}px)`;
+      card.style.backgroundColor = `rgba(11, 15, 25, ${opacity})`;
+      card.style.borderRadius = `${radius}px`;
+      card.style.border = `1px solid rgba(255, 255, 255, 0.12)`;
+      card.style.boxShadow = `0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${glow})`;
     }
 
-    function updateSplitFrames() {
-      const lVal = document.getElementById("splitLeftSelect").value;
-      const rVal = document.getElementById("splitRightSelect").value;
-      
-      const pL = repoProjects.find(p => p.name === lVal);
-      const pR = repoProjects.find(p => p.name === rVal);
+    function copyGeneratedDesignCss() {
+      const blur = document.getElementById("sliderBlur").value;
+      const opacity = document.getElementById("sliderOpacity").value / 100;
+      const radius = document.getElementById("sliderRadius").value;
+      const glow = document.getElementById("sliderGlow").value / 100;
 
-      if (pL) {
-        document.getElementById("splitLeftFrame").src = resolveProjectUrl(pL.path);
-        document.getElementById("splitLeftTitle").textContent = `EXM/${pL.name}/`;
-      }
-      if (pR) {
-        document.getElementById("splitRightFrame").src = resolveProjectUrl(pR.path);
-        document.getElementById("splitRightTitle").textContent = `EXM/${pR.name}/`;
-      }
+      const css = `.lumina-glass {\n  background: rgba(11, 15, 25, ${opacity});\n  backdrop-filter: blur(${blur}px);\n  -webkit-backdrop-filter: blur(${blur}px);\n  border-radius: ${radius}px;\n  border: 1px solid rgba(255, 255, 255, 0.12);\n  box-shadow: 0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${glow});\n}`;
+      navigator.clipboard.writeText(css).then(() => showToast("CSS Copied", "Glassmorphism token ready."));
     }
 
-    // MULTI-LANGUAGE SANDBOX ENGINE
+    // =========================================================================
+    // MULTI-LANGUAGE COMPILER ENGINE
+    // =========================================================================
     let currentSandboxLang = "html";
 
     function setSandboxLanguage(lang) {
       currentSandboxLang = lang;
-      ["sbLangHtml", "sbLangPy", "sbLangCpp", "sbLangJava"].forEach(id => {
+      ["sbLangHtml", "sbLangPy", "sbLangCpp", "sbLangJava", "sbLangSql"].forEach(id => {
         const b = document.getElementById(id);
-        if (b) {
-          b.className = "px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
-        }
+        if (b) b.className = "px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
       });
 
       if (lang === "html") document.getElementById("sbLangHtml").className = "px-2.5 py-1 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer";
       if (lang === "python") document.getElementById("sbLangPy").className = "px-2.5 py-1 rounded-lg bg-amber-500 text-black font-bold cursor-pointer";
       if (lang === "cpp") document.getElementById("sbLangCpp").className = "px-2.5 py-1 rounded-lg bg-purple-500 text-black font-bold cursor-pointer";
       if (lang === "java") document.getElementById("sbLangJava").className = "px-2.5 py-1 rounded-lg bg-rose-500 text-black font-bold cursor-pointer";
+      if (lang === "sql") document.getElementById("sbLangSql").className = "px-2.5 py-1 rounded-lg bg-emerald-500 text-black font-bold cursor-pointer";
 
       document.getElementById("detectedLangBadge").textContent = lang.toUpperCase();
       
@@ -1950,13 +1921,15 @@
 
     function onSandboxCodeChange() {
       const code = document.getElementById("sandboxCodeInput").value;
-      if (code.includes("#include") || code.includes("std::cout") || code.includes("printf(")) {
+      if (code.includes("SELECT ") || code.includes("FROM ") || code.includes("INSERT INTO")) {
+        setSandboxLanguage("sql");
+      } else if (code.includes("#include") || code.includes("std::cout")) {
         setSandboxLanguage("cpp");
       } else if (code.includes("public class") || code.includes("System.out.println")) {
         setSandboxLanguage("java");
       } else if (code.includes("def ") || code.includes("import ") || code.includes("print(")) {
         setSandboxLanguage("python");
-      } else if (code.includes("<html") || code.includes("<!DOCTYPE") || code.includes("<body")) {
+      } else if (code.includes("<html") || code.includes("<!DOCTYPE")) {
         setSandboxLanguage("html");
       }
     }
@@ -1970,7 +1943,9 @@
       } else if (lang === "cpp") {
         input.value = `#include <iostream>\n#include <vector>\n#include <numeric>\n\nint main() {\n    std::cout << "=== GODx C++ Runtime Environment ===" << std::endl;\n    std::vector<int> numbers = {10, 20, 30, 40, 50};\n    int sum = std::accumulate(numbers.begin(), numbers.end(), 0);\n    std::cout << "Vector elements processed: " << numbers.size() << std::endl;\n    std::cout << "Computed total sum: " << sum << std::endl;\n    return 0;\n}`;
       } else if (lang === "java") {
-        input.value = `public class Main {\n    public static void main(String[] args) {\n        System.out.println("=== GODx Java 21 Virtual Engine ===");\n        String admin = "Anish x (GODx)";\n        System.out.println("Authenticated User: " + admin);\n        System.out.println("Repository: SubhadraRoy/LuminaVista");\n        System.out.println("Execution Completed Successfully (Exit Code 0)");\n    }\n}`;
+        input.value = `public class Main {\n    public static void main(String[] args) {\n        System.out.println("=== GODx Java 21 Virtual Engine ===");\n        String admin = "Anish x (GODx)";\n        System.out.println("Authenticated User: " + admin);\n        System.out.println("Execution Completed Successfully (Exit Code 0)");\n    }\n}`;
+      } else if (lang === "sql") {
+        input.value = `-- GODx In-Memory SQL Query Engine\nSELECT id, name, category, status FROM exm_modules WHERE status = 'ACTIVE';`;
       }
       setSandboxLanguage(lang);
       runSandboxCode();
@@ -1984,7 +1959,17 @@
       if (currentSandboxLang === "html") {
         const frame = document.getElementById("sandboxPreviewFrame");
         frame.srcdoc = code;
-        showToast("HTML Sandbox Rendered", "Updated live visual viewport.");
+        showToast("HTML Sandbox Rendered", "Updated visual frame.");
+      } else if (currentSandboxLang === "sql") {
+        stdout.textContent = `=== GODx In-Memory SQL Database Engine ===\nExecuting Query: ${code.trim()}\n\n` +
+          `| ID | NAME                 | CATEGORY   | STATUS |\n` +
+          `|----|----------------------|------------|--------|\n` +
+          `| 1  | Cloud Neural Engine  | AI_CORE    | ACTIVE |\n` +
+          `| 2  | REST Workbench       | NETWORK    | ACTIVE |\n` +
+          `| 3  | Canvas Whiteboard    | GRAPHICS   | ACTIVE |\n` +
+          `| 4  | Multi-Lang Sandbox   | COMPILER   | ACTIVE |\n` +
+          `\nQuery returned 4 rows (Execution Time: 0.12ms)`;
+        showToast("SQL Executed", "Query table returned 4 rows.");
       } else if (currentSandboxLang === "python") {
         stdout.textContent = "Executing Python script...\n";
         let output = "";
@@ -2023,9 +2008,6 @@
                   else output += cleaned + " ";
                 });
               }
-            } else if (l.includes("printf(")) {
-              const match = l.match(/printf\("(.*?)"/);
-              if (match) output += match[1] + "\n";
             }
           });
           if (!output.trim()) output += "Program executed with return code 0.\n";
@@ -2055,12 +2037,244 @@
 
     function copySandboxCode() {
       const code = document.getElementById("sandboxCodeInput").value;
-      navigator.clipboard.writeText(code).then(() => {
-        showToast("Code Copied", "Sandbox source code copied.");
-      });
+      navigator.clipboard.writeText(code).then(() => showToast("Code Copied", "Sandbox source code copied."));
     }
 
-    // MULTI-NOTE VAULT FUNCTIONS
+    // =========================================================================
+    // PROJECTS & REPOSITORY SCANNER
+    // =========================================================================
+    async function fetchRepoProjects() {
+      const refreshIcon = document.getElementById("refreshIcon");
+      if (refreshIcon) refreshIcon.classList.add("animate-spin");
+
+      try {
+        const response = await fetch(REPO_API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          const detected = data
+            .filter(item => !item.name.startsWith("."))
+            .map(item => ({
+              name: item.name,
+              path: `EXM/${item.name}${item.type === "dir" ? "/" : ""}`,
+              type: item.type
+            }));
+
+          if (detected.length > 0) {
+            detected.forEach(p => {
+              if (!repoProjects.some(existing => existing.name === p.name)) {
+                repoProjects.push(p);
+              }
+            });
+            localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects));
+            showToast("EXM Scanned", `Discovered ${repoProjects.length} items in /EXM/.`);
+          }
+        }
+      } catch (err) {
+        console.log("EXM directory scan using local cache.");
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove("animate-spin");
+        renderProjectList();
+        updateSplitDropdowns();
+      }
+    }
+
+    function filterProjectList() {
+      const q = (document.getElementById("projectFilterInput").value || "").toLowerCase();
+      renderProjectList(q);
+    }
+
+    function renderProjectList(filterQuery = "") {
+      const chips = document.getElementById("projectChipsContainer");
+      const pinContainer = document.getElementById("pinnedChipsContainer");
+      const pSelect = document.getElementById("projectSelect");
+      chips.innerHTML = "";
+      pinContainer.innerHTML = "";
+      pSelect.innerHTML = "";
+      document.getElementById("projectCountBadge").textContent = `${repoProjects.length} Items in EXM`;
+
+      const visible = repoProjects.filter(p => p.name.toLowerCase().includes(filterQuery));
+
+      if (visible.length === 0) {
+        chips.innerHTML = `<span class="text-xs text-zinc-500 italic">No matching EXM items.</span>`;
+      } else {
+        if (!currentSelectedProject || !repoProjects.some(p => p.name === currentSelectedProject.name)) {
+          currentSelectedProject = visible[0];
+        }
+
+        visible.forEach((proj) => {
+          const isSelected = currentSelectedProject && proj.name === currentSelectedProject.name;
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = `px-3 py-1.5 rounded-xl text-xs font-mono border transition-all flex items-center gap-1.5 cursor-pointer ${
+            isSelected ? "active-project-pill font-bold" : "bg-surface-900 hover:bg-surface-850 border-white/5 text-zinc-300 hover:text-white"
+          }`;
+          chip.innerHTML = `<i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-300' : 'text-zinc-500'}"></i><span>${proj.name}</span>`;
+          chip.onclick = () => selectProject(proj);
+          chips.appendChild(chip);
+
+          const opt = document.createElement("option");
+          opt.value = proj.name;
+          opt.textContent = `${proj.type === 'dir' ? '📁 ' : '📄 '} EXM/${proj.name}`;
+          opt.className = "bg-surface-900 text-white";
+          if (isSelected) opt.selected = true;
+          pSelect.appendChild(opt);
+        });
+      }
+
+      pinnedProjects.forEach(name => {
+        const pinBtn = document.createElement("button");
+        pinBtn.className = "px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono hover:bg-amber-500/20 cursor-pointer";
+        pinBtn.textContent = `★ ${name}`;
+        pinBtn.onclick = () => {
+          const match = repoProjects.find(p => p.name === name);
+          if (match) selectProject(match);
+        };
+        pinContainer.appendChild(pinBtn);
+      });
+
+      lucide.createIcons();
+    }
+
+    function selectProject(proj) {
+      playAudioTone(493, "sine", 0.04);
+      currentSelectedProject = proj;
+      document.getElementById("activeProjectTitle").textContent = `EXM/${proj.name}/`;
+      renderProjectList();
+      loadActiveIntoPreview();
+    }
+
+    function onDropdownSelect() {
+      const selectedName = document.getElementById("projectSelect").value;
+      const target = repoProjects.find(p => p.name === selectedName);
+      if (target) selectProject(target);
+    }
+
+    function addCustomProject() {
+      const val = document.getElementById("customProjectInput").value.trim();
+      if (!val) return;
+      const cleanName = val.replace(/^EXM\//i, "").replace(/^\/+|\/+$/g, "");
+      const isHtml = cleanName.endsWith(".html");
+      const newProj = { name: cleanName, path: `EXM/${cleanName}${isHtml ? "" : "/"}`, type: isHtml ? "file" : "dir" };
+
+      if (!repoProjects.some(p => p.name === newProj.name)) {
+        repoProjects.push(newProj);
+        localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects));
+      }
+      document.getElementById("customProjectInput").value = "";
+      selectProject(newProj);
+      showToast("EXM Item Added", `Added EXM/${cleanName}`);
+      updateSplitDropdowns();
+    }
+
+    function loadActiveIntoPreview() {
+      if (!currentSelectedProject) return;
+      document.getElementById("activeProjectTitle").textContent = `EXM/${currentSelectedProject.name}/`;
+      document.getElementById("previewIframe").src = resolveProjectUrl(currentSelectedProject.path);
+      document.getElementById("iframeOverlay").classList.add("hidden");
+    }
+
+    function openActiveInNewTab() {
+      if (!currentSelectedProject) return;
+      playAudioTone(659, "sine", 0.08);
+      window.open(resolveProjectUrl(currentSelectedProject.path), "_blank");
+    }
+
+    function reloadIframe() {
+      playAudioTone(440, "sine", 0.05);
+      const frame = document.getElementById("previewIframe");
+      frame.src = frame.src;
+      showToast("Reloading Viewport", "Frame refreshed.");
+    }
+
+    function togglePinActiveProject() {
+      if (!currentSelectedProject) return;
+      const name = currentSelectedProject.name;
+      if (pinnedProjects.includes(name)) {
+        pinnedProjects = pinnedProjects.filter(p => p !== name);
+        showToast("Bookmark Removed", `Unpinned ${name}`);
+      } else {
+        pinnedProjects.push(name);
+        showToast("Bookmarked", `Pinned ${name} to favorites.`);
+      }
+      localStorage.setItem("lumina_pinned_projects", JSON.stringify(pinnedProjects));
+      renderProjectList();
+    }
+
+    function setViewportDevice(width) {
+      playAudioTone(523, "sine", 0.03);
+      const wrapper = document.getElementById("iframeWrapper");
+      wrapper.style.maxWidth = width;
+      document.querySelectorAll(".device-btn").forEach(b => {
+        b.classList.remove("bg-cyan-500", "text-black");
+        b.classList.add("text-zinc-400");
+      });
+      if (width === "100%") document.getElementById("btnDeviceDesktop").classList.add("bg-cyan-500", "text-black");
+      if (width === "768px") document.getElementById("btnDeviceTablet").classList.add("bg-cyan-500", "text-black");
+      if (width === "375px") document.getElementById("btnDeviceMobile").classList.add("bg-cyan-500", "text-black");
+    }
+
+    function toggleFullscreen() {
+      const wrapper = document.getElementById("iframeWrapper");
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen().catch(() => openActiveInNewTab());
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function onIframeLoaded() {
+      document.getElementById("iframeOverlay").classList.add("hidden");
+      logEvent(`Loaded preview for: ${currentSelectedProject ? currentSelectedProject.name : 'frame'}`);
+    }
+
+    function onIframeFailed() {
+      document.getElementById("iframeOverlay").classList.remove("hidden");
+      logEvent(`Failed to load target frame.`);
+    }
+
+    function updateSplitDropdowns() {
+      const lSelect = document.getElementById("splitLeftSelect");
+      const rSelect = document.getElementById("splitRightSelect");
+      if (!lSelect || !rSelect) return;
+      lSelect.innerHTML = "";
+      rSelect.innerHTML = "";
+
+      repoProjects.forEach((p, idx) => {
+        const optA = document.createElement("option");
+        optA.value = p.name;
+        optA.textContent = `EXM/${p.name}`;
+        optA.className = "bg-surface-900";
+        lSelect.appendChild(optA);
+
+        const optB = document.createElement("option");
+        optB.value = p.name;
+        optB.textContent = `EXM/${p.name}`;
+        optB.className = "bg-surface-900";
+        if (idx === 1 || idx === repoProjects.length - 1) optB.selected = true;
+        rSelect.appendChild(optB);
+      });
+      updateSplitFrames();
+    }
+
+    function updateSplitFrames() {
+      const lVal = document.getElementById("splitLeftSelect").value;
+      const rVal = document.getElementById("splitRightSelect").value;
+      const pL = repoProjects.find(p => p.name === lVal);
+      const pR = repoProjects.find(p => p.name === rVal);
+
+      if (pL) {
+        document.getElementById("splitLeftFrame").src = resolveProjectUrl(pL.path);
+        document.getElementById("splitLeftTitle").textContent = `EXM/${pL.name}/`;
+      }
+      if (pR) {
+        document.getElementById("splitRightFrame").src = resolveProjectUrl(pR.path);
+        document.getElementById("splitRightTitle").textContent = `EXM/${pR.name}/`;
+      }
+    }
+
+    // =========================================================================
+    // MULTI-NOTE VAULT ENGINE
+    // =========================================================================
     function renderNoteTabs() {
       const container = document.getElementById("noteTabsContainer");
       if (!container) return;
@@ -2073,10 +2287,7 @@
         tabBtn.className = `px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
           isSelected ? "bg-cyan-500/20 border-cyan-500 text-cyan-300 font-bold" : "bg-surface-900 border-white/10 text-zinc-400 hover:text-white"
         }`;
-        tabBtn.innerHTML = `
-          <i data-lucide="file-text" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-400' : 'text-zinc-500'}"></i>
-          <span>${note.title}</span>
-        `;
+        tabBtn.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-400' : 'text-zinc-500'}"></i><span>${note.title}</span>`;
         tabBtn.onclick = () => selectNote(note.id);
         container.appendChild(tabBtn);
       });
@@ -2092,7 +2303,7 @@
     function loadActiveNoteContent() {
       const note = vaultNotes.find(n => n.id === activeNoteId) || vaultNotes[0];
       if (note) {
-        adminScratchpad.value = note.content;
+        document.getElementById("adminScratchpad").value = note.content;
         updateNoteStats();
         if (isMarkdownPreviewActive) updateMarkdownRender();
       }
@@ -2101,7 +2312,7 @@
     function onNoteContentChange() {
       const note = vaultNotes.find(n => n.id === activeNoteId);
       if (note) {
-        note.content = adminScratchpad.value;
+        note.content = document.getElementById("adminScratchpad").value;
         localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes));
         updateNoteStats();
         if (isMarkdownPreviewActive) updateMarkdownRender();
@@ -2126,7 +2337,7 @@
 
     function deleteCurrentNote() {
       if (vaultNotes.length <= 1) {
-        showToast("Action Blocked", "Cannot delete the only remaining note.");
+        showToast("Action Blocked", "Cannot delete the only note.");
         return;
       }
       vaultNotes = vaultNotes.filter(n => n.id !== activeNoteId);
@@ -2168,7 +2379,7 @@
     }
 
     function updateMarkdownRender() {
-      const raw = adminScratchpad.value;
+      const raw = document.getElementById("adminScratchpad").value;
       const renderBox = document.getElementById("noteMarkdownRender");
       let html = raw
         .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-2">$1</h3>')
@@ -2185,7 +2396,7 @@
     }
 
     function insertMdSyntax(prefix, suffix) {
-      const el = adminScratchpad;
+      const el = document.getElementById("adminScratchpad");
       const start = el.selectionStart;
       const end = el.selectionEnd;
       const text = el.value;
@@ -2202,13 +2413,14 @@
     }
 
     function updateNoteStats() {
-      const text = adminScratchpad.value;
+      const text = document.getElementById("adminScratchpad").value;
       document.getElementById("noteCharCount").textContent = `${text.length} chars`;
       document.getElementById("noteWordCount").textContent = `${text.trim() ? text.trim().split(/\s+/).length : 0} words`;
-      document.getElementById("noteLineCount").textContent = `${text ? text.split("\n").length : 0} lines`;
     }
 
-    // MESSAGE BRIDGE LOGS
+    // =========================================================================
+    // EVENT BRIDGE & SOURCE INSPECTOR
+    // =========================================================================
     function initMessageBridge() {
       window.addEventListener("message", (e) => {
         logEvent(`[Iframe Message] ${typeof e.data === 'string' ? e.data : JSON.stringify(e.data)}`);
@@ -2217,114 +2429,72 @@
 
     function logEvent(msg) {
       const now = new Date().toTimeString().split(" ")[0];
+      const screen = document.getElementById("eventLogsScreen");
       const div = document.createElement("div");
       div.className = "text-zinc-300";
       div.textContent = `[${now}] ${msg}`;
-      eventLogsScreen.appendChild(div);
-      eventLogsScreen.scrollTop = eventLogsScreen.scrollHeight;
+      screen.appendChild(div);
+      screen.scrollTop = screen.scrollHeight;
     }
 
     function clearEventLogs() {
-      eventLogsScreen.innerHTML = '<div class="text-zinc-500">Logs cleared.</div>';
+      document.getElementById("eventLogsScreen").innerHTML = '<div class="text-zinc-500">Logs cleared.</div>';
     }
 
-    // SOURCE CODE INSPECTOR
     function openSourceInspector() {
       if (!currentSelectedProject) return;
       document.getElementById("sourceProjectTitle").textContent = currentSelectedProject.name;
-      sourceModal.style.display = "flex";
+      const modal = document.getElementById("sourceModal");
+      modal.style.display = "flex";
       setTimeout(() => {
-        sourceModal.classList.remove("opacity-0");
-        sourceModal.querySelector("div").classList.remove("scale-95");
+        modal.classList.remove("opacity-0");
+        modal.querySelector("div").classList.remove("scale-95");
       }, 10);
       loadSourceFile("index.html");
     }
 
     function closeSourceInspector() {
-      sourceModal.classList.add("opacity-0");
-      sourceModal.querySelector("div").classList.add("scale-95");
-      setTimeout(() => {
-        sourceModal.style.display = "none";
-      }, 200);
+      const modal = document.getElementById("sourceModal");
+      modal.classList.add("opacity-0");
+      modal.querySelector("div").classList.add("scale-95");
+      setTimeout(() => { modal.style.display = "none"; }, 200);
     }
 
     async function loadSourceFile(filename) {
       const block = document.getElementById("sourceCodeBlock");
       block.textContent = `Fetching ${filename} from /EXM/${currentSelectedProject.name}/${filename}...`;
-
       try {
         const targetUrl = resolveProjectUrl(currentSelectedProject.path).replace(/index\.html$/, "") + filename;
         const res = await fetch(targetUrl);
         if (res.ok) {
-          const text = await res.text();
-          block.textContent = text;
+          block.textContent = await res.text();
         } else {
-          block.textContent = `/* ${filename} not found or inaccessible at ${targetUrl} */`;
+          block.textContent = `/* ${filename} not found at ${targetUrl} */`;
         }
       } catch (err) {
-        block.textContent = `/* Error fetching file: ${err.message} */`;
+        block.textContent = `/* Error: ${err.message} */`;
       }
     }
 
-    // SYSTEM SETTINGS & THEME ENGINE
+    // =========================================================================
+    // SETTINGS & PALETTES
+    // =========================================================================
     function applySandboxPolicy() {
       const allowScripts = document.getElementById("checkAllowScripts").checked;
       const allowOrigin = document.getElementById("checkAllowOrigin").checked;
-      const allowPopups = document.getElementById("checkAllowPopups").checked;
-
       let flags = [];
       if (allowScripts) flags.push("allow-scripts");
       if (allowOrigin) flags.push("allow-same-origin");
-      if (allowPopups) flags.push("allow-popups", "allow-modals");
-
-      previewIframe.setAttribute("sandbox", flags.join(" "));
+      document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" "));
       reloadIframe();
-      showToast("Sandbox Applied", `Active policies: ${flags.join(", ")}`);
-    }
-
-    function setupAutoRefresh() {
-      const sec = parseInt(document.getElementById("autoRefreshSelect").value, 10);
-      const statusText = document.getElementById("autoRefreshStatusText");
-
-      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-
-      if (sec > 0) {
-        statusText.textContent = `Timer: Every ${sec}s`;
-        autoRefreshTimer = setInterval(() => {
-          reloadIframe();
-        }, sec * 1000);
-        showToast("Auto-Refresh Enabled", `Polling every ${sec} seconds.`);
-      } else {
-        statusText.textContent = "Timer: Off";
-        showToast("Auto-Refresh Disabled", "Manual reload mode.");
-      }
-    }
-
-    function injectCustomCode() {
-      const code = document.getElementById("customInjectCode").value.trim();
-      if (!code) return;
-      try {
-        eval(code);
-        showToast("Code Injected", "Script executed successfully.");
-      } catch (err) {
-        showToast("Execution Error", err.message);
-      }
+      showToast("Sandbox Applied", `Policies: ${flags.join(", ")}`);
     }
 
     function setDashboardTheme(themeName, notify = true) {
       document.documentElement.setAttribute("data-theme", themeName);
       localStorage.setItem("lumina_theme", themeName);
-
-      const orb1 = document.getElementById("orb1");
-      if (orb1) {
-        if (themeName === "cyan") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
-        if (themeName === "emerald") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
-        if (themeName === "amber") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-amber-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
-        if (themeName === "rose") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-rose-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
-      }
-
       renderProjectList();
-      if (notify) showToast("Theme Updated", `Switched to ${themeName.toUpperCase()} visual palette.`);
+      if (notify) showToast("Theme Updated", `Switched to ${themeName.toUpperCase()}`);
     }
 
     function applyCustomAccentColor(hex) {
@@ -2339,11 +2509,10 @@
       const config = {
         user: "Anish x",
         moniker: "GODx",
-        baseDir: "EXM",
         projects: repoProjects,
         pinned: pinnedProjects,
         notes: vaultNotes,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -2351,11 +2520,7 @@
       a.href = url;
       a.download = "lumina_godx_config.json";
       a.click();
-      showToast("Config Exported", "Downloaded backup JSON file.");
-    }
-
-    function importDashboardConfig() {
-      showToast("Import Ready", "Paste JSON or load from file.");
+      showToast("Config Exported", "Downloaded configuration backup JSON.");
     }
 
     function flushWorkspaceCache() {
@@ -2366,15 +2531,16 @@
       }
     }
 
-    // EXPANDED TERMINAL COMMAND PROCESSOR
-    function handleTerminalCommand(e) {
+    // =========================================================================
+    // QUANTUM TERMINAL CLI
+    // =========================================================================
+    async function handleTerminalCommand(e) {
       e.preventDefault();
       const input = document.getElementById("terminalInput");
       const cmd = input.value.trim();
       if (!cmd) return;
 
       const screen = document.getElementById("terminalScreen");
-      
       const echoLine = document.createElement("div");
       echoLine.className = "text-zinc-400";
       echoLine.innerHTML = `<span class="text-cyan-400 font-bold">anish@godx:~$</span> ${cmd}`;
@@ -2383,41 +2549,77 @@
       const parts = cmd.split(" ");
       const action = parts[0].toLowerCase();
       const arg = parts.slice(1).join(" ");
-
       const responseLine = document.createElement("div");
 
       switch (action) {
         case "help":
           responseLine.className = "text-zinc-300";
           responseLine.innerHTML = `
-            Available Commands:<br/>
-            - <span class="text-cyan-300 font-bold">ls / projects / dir</span>: List all /EXM/ projects & directories<br/>
-            - <span class="text-cyan-300 font-bold">open &lt;name&gt;</span>: Switch active viewport to target EXM project<br/>
-            - <span class="text-cyan-300 font-bold">fetch</span>: Scan /EXM/ folder via GitHub API<br/>
-            - <span class="text-cyan-300 font-bold">status</span>: Display system status, host, base path, active project<br/>
-            - <span class="text-cyan-300 font-bold">ping</span>: Measure roundtrip latency to host<br/>
-            - <span class="text-cyan-300 font-bold">theme &lt;cyan|emerald|amber|rose&gt;</span>: Change visual theme<br/>
-            - <span class="text-cyan-300 font-bold">cat &lt;file&gt;</span>: Inspect file content in active subproject<br/>
-            - <span class="text-cyan-300 font-bold">notes</span>: Print active note snippet directly in terminal<br/>
-            - <span class="text-cyan-300 font-bold">eval &lt;js&gt;</span>: Execute live JavaScript in safe sandbox<br/>
-            - <span class="text-cyan-300 font-bold">date / time</span>: Display current date and time<br/>
-            - <span class="text-cyan-300 font-bold">whoami</span>: Display active profile credentials<br/>
-            - <span class="text-cyan-300 font-bold">clear / cls</span>: Clear terminal console screen<br/>
-            - <span class="text-cyan-300 font-bold">logout</span>: Lock console and log out
+            Commands:<br/>
+            - <span class="text-cyan-300 font-bold">ls / projects</span>: List EXM projects<br/>
+            - <span class="text-cyan-300 font-bold">open &lt;folder&gt;</span>: Launch subproject viewport<br/>
+            - <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span>: Prompt Online Cloud AI model<br/>
+            - <span class="text-cyan-300 font-bold">status</span>: Display system and host telemetry<br/>
+            - <span class="text-cyan-300 font-bold">theme &lt;cyan|emerald|amber|rose&gt;</span>: Change palette<br/>
+            - <span class="text-cyan-300 font-bold">ping</span>: Measure host latency<br/>
+            - <span class="text-cyan-300 font-bold">clear</span>: Clear console screen
           `;
+          break;
+
+        case "ai":
+          if (!arg) {
+            responseLine.className = "text-rose-400";
+            responseLine.textContent = "Usage: ai <prompt>";
+          } else {
+            responseLine.className = "text-purple-300";
+            responseLine.textContent = "Querying Cloud AI model...";
+            const endpoint = document.getElementById("aiEndpointInput").value.trim();
+            const model = document.getElementById("aiModelInput").value.trim();
+            const apiKey = document.getElementById("aiApiKeyInput").value.trim();
+
+            if (!apiKey) {
+              responseLine.className = "text-rose-400";
+              responseLine.textContent = "Error: Cloud API Key missing. Set it in the Cloud AI Engine tab.";
+              break;
+            }
+
+            try {
+              const res = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${apiKey}`,
+                  "HTTP-Referer": window.location.origin
+                },
+                body: JSON.stringify({
+                  model: model,
+                  messages: [{ role: "user", content: arg }],
+                  temperature: 0.7
+                })
+              });
+
+              if (res.ok) {
+                const d = await res.json();
+                responseLine.textContent = `[AI ${model}]: ${d.choices?.[0]?.message?.content || 'No output'}`;
+              } else {
+                responseLine.textContent = `[Cloud API Error: HTTP ${res.status}]`;
+              }
+            } catch (err) {
+              responseLine.textContent = `[Error]: ${err.message}`;
+            }
+          }
           break;
 
         case "ls":
         case "projects":
-        case "dir":
           responseLine.className = "text-emerald-400";
-          responseLine.textContent = repoProjects.map(p => (p.type === "dir" ? "📁 " : "📄 ") + "EXM/" + p.name).join("   ") || "No EXM items found. Run 'fetch'.";
+          responseLine.textContent = repoProjects.map(p => (p.type === "dir" ? "📁 " : "📄 ") + "EXM/" + p.name).join("   ") || "No items found.";
           break;
 
         case "open":
           if (!arg) {
             responseLine.className = "text-rose-400";
-            responseLine.textContent = "Usage: open <project_name> (e.g. open demo)";
+            responseLine.textContent = "Usage: open <project_name>";
           } else {
             const cleanArg = arg.replace(/^EXM\//i, "").replace(/\/+$/g, "");
             const match = repoProjects.find(p => p.name.toLowerCase() === cleanArg.toLowerCase());
@@ -2425,11 +2627,11 @@
               selectProject(match);
               switchTab("tab-projects");
               responseLine.className = "text-emerald-400";
-              responseLine.textContent = `✓ Switched and launched EXM/${match.name}/`;
+              responseLine.textContent = `✓ Launched EXM/${match.name}/`;
             } else {
               responseLine.className = "text-amber-400";
-              responseLine.textContent = `Project '${arg}' not found in scan. Adding to custom runner.`;
-              customProjectInput.value = cleanArg;
+              responseLine.textContent = `Adding ${arg} to runner...`;
+              document.getElementById("customProjectInput").value = cleanArg;
               addCustomProject();
             }
           }
@@ -2437,97 +2639,7 @@
 
         case "status":
           responseLine.className = "text-cyan-300";
-          responseLine.innerHTML = `
-            LuminaVista OS System Report:<br/>
-            - User: <span class="text-white font-bold">Anish x</span> (GODx Root Admin)<br/>
-            - Repository: <span class="text-white font-bold">SubhadraRoy/LuminaVista</span><br/>
-            - Target Sub-Directory: <span class="text-white font-bold">/EXM/</span><br/>
-            - Active Project: <span class="text-white font-bold">${currentSelectedProject ? currentSelectedProject.name : 'None'}</span><br/>
-            - Discovered Items: <span class="text-white font-bold">${repoProjects.length}</span><br/>
-            - Host: <span class="text-white font-bold">${window.location.hostname}</span><br/>
-            - Security: <span class="text-emerald-400 font-bold">Protected / TLS Active</span>
-          `;
-          break;
-
-        case "cat":
-          if (!arg) {
-            responseLine.className = "text-rose-400";
-            responseLine.textContent = "Usage: cat <filename> (e.g. cat index.html)";
-          } else if (!currentSelectedProject) {
-            responseLine.className = "text-rose-400";
-            responseLine.textContent = "No active project selected. Select a project first.";
-          } else {
-            responseLine.className = "text-zinc-300";
-            responseLine.textContent = `Fetching /EXM/${currentSelectedProject.name}/${arg}...`;
-            fetch(resolveProjectUrl(currentSelectedProject.path).replace(/index\.html$/, "") + arg)
-              .then(r => r.text())
-              .then(t => {
-                const pre = document.createElement("pre");
-                pre.className = "text-zinc-300 text-[11px] max-h-40 overflow-y-auto bg-surface-900 p-2 rounded";
-                pre.textContent = t;
-                screen.appendChild(pre);
-              })
-              .catch(err => {
-                responseLine.className = "text-rose-400";
-                responseLine.textContent = `Error reading file: ${err.message}`;
-              });
-          }
-          break;
-
-        case "notes":
-          const activeN = vaultNotes.find(n => n.id === activeNoteId);
-          responseLine.className = "text-sky-300 whitespace-pre-wrap";
-          responseLine.textContent = activeN ? activeN.content : "No active note.";
-          break;
-
-        case "eval":
-        case "js":
-          if (!arg) {
-            responseLine.className = "text-rose-400";
-            responseLine.textContent = "Usage: eval <javascript code>";
-          } else {
-            try {
-              const res = eval(arg);
-              responseLine.className = "text-emerald-400";
-              responseLine.textContent = `=> ${typeof res === 'object' ? JSON.stringify(res) : res}`;
-            } catch (err) {
-              responseLine.className = "text-rose-400";
-              responseLine.textContent = `Evaluation Error: ${err.message}`;
-            }
-          }
-          break;
-
-        case "date":
-        case "time":
-          responseLine.className = "text-cyan-300";
-          responseLine.textContent = new Date().toLocaleString();
-          break;
-
-        case "theme":
-          if (["cyan", "emerald", "amber", "rose"].includes(arg.toLowerCase())) {
-            setDashboardTheme(arg.toLowerCase());
-            responseLine.className = "text-cyan-300";
-            responseLine.textContent = `Theme updated to: ${arg}`;
-          } else {
-            responseLine.className = "text-rose-400";
-            responseLine.textContent = "Valid themes: cyan, emerald, amber, rose";
-          }
-          break;
-
-        case "ping":
-          responseLine.className = "text-cyan-300";
-          responseLine.textContent = `Ping to GitHub Pages host: ${Math.floor(Math.random() * 15 + 18)}ms (Latency: Optimal)`;
-          break;
-
-        case "whoami":
-          responseLine.className = "text-purple-300";
-          responseLine.textContent = "Root Admin: Anish x | Moniker: GODx | Base Path: /EXM/ | Repo: SubhadraRoy/LuminaVista";
-          break;
-
-        case "fetch":
-          fetchRepoProjects();
-          responseLine.className = "text-cyan-300";
-          responseLine.textContent = "Scanning /EXM/ via GitHub API...";
+          responseLine.innerHTML = `User: Anish x (GODx Root) | Repo: SubhadraRoy/LuminaVista | Target: /EXM/ | Discovered: ${repoProjects.length}`;
           break;
 
         case "clear":
@@ -2536,13 +2648,9 @@
           input.value = "";
           return;
 
-        case "logout":
-          handleLogout();
-          return;
-
         default:
           responseLine.className = "text-rose-400";
-          responseLine.textContent = `Command not recognized: '${action}'. Type 'help' for available commands.`;
+          responseLine.textContent = `Command '${action}' not found. Type 'help'.`;
           break;
       }
 
@@ -2551,23 +2659,25 @@
       screen.scrollTop = screen.scrollHeight;
     }
 
-    // COMMAND PALETTE (CTRL/CMD + K)
+    // =========================================================================
+    // COMMAND PALETTE
+    // =========================================================================
     function openCommandPalette() {
-      cmdModal.style.display = "flex";
+      const modal = document.getElementById("cmdModal");
+      modal.style.display = "flex";
       setTimeout(() => {
-        cmdModal.classList.remove("opacity-0");
-        cmdModal.querySelector("div").classList.remove("scale-95");
-        cmdSearchInput.focus();
+        modal.classList.remove("opacity-0");
+        modal.querySelector("div").classList.remove("scale-95");
+        document.getElementById("cmdSearchInput").focus();
       }, 10);
       populateCmdResults("");
     }
 
     function closeCommandPalette() {
-      cmdModal.classList.add("opacity-0");
-      cmdModal.querySelector("div").classList.add("scale-95");
-      setTimeout(() => {
-        cmdModal.style.display = "none";
-      }, 200);
+      const modal = document.getElementById("cmdModal");
+      modal.classList.add("opacity-0");
+      modal.querySelector("div").classList.add("scale-95");
+      setTimeout(() => { modal.style.display = "none"; }, 200);
     }
 
     window.addEventListener("keydown", (e) => {
@@ -2576,72 +2686,48 @@
         openCommandPalette();
       }
       if (e.key === "Escape") {
-        if (cmdModal.style.display !== "none") closeCommandPalette();
-        if (sourceModal.style.display !== "none") closeSourceInspector();
+        closeCommandPalette();
+        closeSourceInspector();
       }
     });
 
-    cmdModal.addEventListener("click", (e) => {
-      if (e.target === cmdModal) closeCommandPalette();
-    });
-
-    sourceModal.addEventListener("click", (e) => {
-      if (e.target === sourceModal) closeSourceInspector();
-    });
-
     function populateCmdResults(query) {
-      cmdResults.innerHTML = "";
+      const results = document.getElementById("cmdResults");
+      results.innerHTML = "";
       const q = query.toLowerCase();
 
       const actions = [
+        { label: "Switch Tab: Cloud AI Neural Hub", icon: "brain-circuit", action: () => switchTab("tab-cloud-ai") },
         { label: "Switch Tab: EXM Projects Hub", icon: "folder-tree", action: () => switchTab("tab-projects") },
-        { label: "Switch Tab: Dual Split Comparator", icon: "columns", action: () => switchTab("tab-split") },
-        { label: "Switch Tab: Multi-Lang Code Sandbox", icon: "code-2", action: () => switchTab("tab-sandbox") },
-        { label: "Switch Tab: GODx Terminal", icon: "terminal", action: () => switchTab("tab-terminal") },
-        { label: "Switch Tab: Performance & Telemetry", icon: "activity", action: () => switchTab("tab-analytics") },
-        { label: "Switch Tab: Scratchpad & Notes Vault", icon: "file-text", action: () => switchTab("tab-scratchpad") },
-        { label: "Switch Tab: System Settings & Controls", icon: "sliders", action: () => switchTab("tab-controls") },
+        { label: "Switch Tab: Multi-Lang Compilers", icon: "code-2", action: () => switchTab("tab-sandbox") },
+        { label: "Switch Tab: REST API Tester", icon: "send", action: () => switchTab("tab-rest") },
+        { label: "Switch Tab: Canvas Whiteboard", icon: "pen-tool", action: () => switchTab("tab-whiteboard") },
+        { label: "Switch Tab: UI Design Studio", icon: "sparkles", action: () => switchTab("tab-design") },
+        { label: "Switch Tab: Dual Split View", icon: "columns", action: () => switchTab("tab-split") },
+        { label: "Switch Tab: Quantum Terminal", icon: "terminal", action: () => switchTab("tab-terminal") },
+        { label: "Switch Tab: Performance Telemetry", icon: "activity", action: () => switchTab("tab-analytics") },
+        { label: "Switch Tab: Scratchpad Notes", icon: "file-text", action: () => switchTab("tab-scratchpad") },
         { label: "Action: Scan /EXM/ Folder", icon: "refresh-cw", action: () => fetchRepoProjects() },
-        { label: "Action: Inspect Source Code", icon: "code", action: () => openSourceInspector() },
-        { label: "Action: Reload Current Viewport", icon: "rotate-cw", action: () => reloadIframe() },
-        { label: "Action: Lock Console (Logout)", icon: "log-out", action: () => handleLogout() },
+        { label: "Action: Lock Console", icon: "log-out", action: () => handleLogout() }
       ];
 
-      repoProjects.forEach(p => {
-        actions.push({
-          label: `Open EXM Project: ${p.name}`,
-          icon: p.type === "dir" ? "folder" : "file-code",
-          action: () => { selectProject(p); switchTab("tab-projects"); }
-        });
-      });
-
       const filtered = actions.filter(a => a.label.toLowerCase().includes(q));
-
       filtered.forEach(item => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "w-full p-2.5 rounded-xl hover:bg-surface-850 flex items-center justify-between text-left text-zinc-300 hover:text-white transition-colors cursor-pointer";
-        btn.innerHTML = `
-          <span class="flex items-center gap-2">
-            <i data-lucide="${item.icon}" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>${item.label}</span>
-          </span>
-          <span class="text-[10px] text-zinc-500">Run ↵</span>
-        `;
-        btn.onclick = () => {
-          closeCommandPalette();
-          item.action();
-        };
-        cmdResults.appendChild(btn);
+        btn.innerHTML = `<span class="flex items-center gap-2"><i data-lucide="${item.icon}" class="w-3.5 h-3.5 text-cyan-400"></i><span>${item.label}</span></span><span class="text-[10px] text-zinc-500">Run ↵</span>`;
+        btn.onclick = () => { closeCommandPalette(); item.action(); };
+        results.appendChild(btn);
       });
-
       lucide.createIcons();
     }
 
-    function handleCmdSearch(e) {
-      populateCmdResults(e.target.value);
-    }
+    function handleCmdSearch(e) { populateCmdResults(e.target.value); }
 
+    // =========================================================================
+    // TELEMETRY & AMBIENT CANVAS
+    // =========================================================================
     function initMetricsChart() {
       const chartCanvas = document.getElementById("metricsChart");
       if (!chartCanvas) return;
@@ -2651,9 +2737,8 @@
       function draw() {
         chartCanvas.width = chartCanvas.parentElement.clientWidth;
         chartCanvas.height = 180;
-
         cctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
-        
+
         cctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
         cctx.lineWidth = 1;
         for (let i = 0; i < chartCanvas.height; i += 40) {
@@ -2678,7 +2763,6 @@
         dataPoints.shift();
         dataPoints.push(Math.min(100, Math.max(20, dataPoints[dataPoints.length - 1] + (Math.random() - 0.5) * 10)));
       }
-
       setInterval(draw, 1000);
     }
 
@@ -2686,20 +2770,18 @@
       playAudioTone(880, "sine", 0.05);
       document.getElementById("toastTitle").textContent = title;
       document.getElementById("toastMsg").textContent = msg;
+      const toast = document.getElementById("toast");
       toast.classList.remove("translate-y-24", "opacity-0");
-      setTimeout(() => {
-        toast.classList.add("translate-y-24", "opacity-0");
-      }, 3500);
+      setTimeout(() => { toast.classList.add("translate-y-24", "opacity-0"); }, 3500);
     }
 
-    // Interactive Animated Constellation Particles
     function initAmbientParticles() {
       const canvas = document.getElementById("ambientCanvas");
       const ctx = canvas.getContext("2d");
       let width = canvas.width = window.innerWidth;
       let height = canvas.height = window.innerHeight;
 
-      const particles = Array.from({ length: 55 }, () => ({
+      const particles = Array.from({ length: 45 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
         vx: (Math.random() - 0.5) * 0.45,
@@ -2710,13 +2792,11 @@
 
       function animate() {
         ctx.clearRect(0, 0, width, height);
-
         for (let i = 0; i < particles.length; i++) {
           for (let j = i + 1; j < particles.length; j++) {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-
             if (dist < 110) {
               ctx.beginPath();
               ctx.moveTo(particles[i].x, particles[i].y);
@@ -2736,10 +2816,8 @@
           ctx.fillStyle = `rgba(0, 242, 254, ${p.alpha})`;
           ctx.fill();
         });
-
         requestAnimationFrame(animate);
       }
-
       animate();
 
       window.addEventListener("resize", () => {
