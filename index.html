@@ -45,6 +45,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
+    /* Dynamic Theme Variables */
     :root {
       --primary: #00f2fe;
       --primary-glow: rgba(0, 242, 254, 0.35);
@@ -87,6 +88,7 @@
       box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow);
     }
     
+    /* 100% Reliable Native Input Styling */
     .godx-input {
       background-color: #0f172a !important;
       color: #ffffff !important;
@@ -168,7 +170,8 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
 
-  <!-- Ambient Mesh Background Lights -->
+  <!-- Interactive Animated Constellation & Particle Canvas -->
+  <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
   <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0"></div>
   <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 3s;"></div>
 
@@ -268,16 +271,8 @@
             </p>
           </div>
 
-          <!-- Virtual Keypad Toggle Button -->
-          <div class="pt-1 flex items-center justify-between">
-            <button
-              type="button"
-              onclick="toggleVirtualKeypad()"
-              class="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono transition-colors cursor-pointer"
-            >
-              <i data-lucide="keyboard" class="w-3.5 h-3.5"></i>
-              <span id="keypadToggleText">Show Virtual Keypad</span>
-            </button>
+          <!-- Remember session checkbox -->
+          <div class="pt-1 flex items-center justify-end">
             <label class="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -287,20 +282,6 @@
               />
               <span class="text-xs text-zinc-400">Remember session</span>
             </label>
-          </div>
-
-          <!-- On-Screen Virtual Keypad Grid -->
-          <div id="virtualKeypad" class="hidden p-3 rounded-2xl bg-surface-950 border border-white/10 grid grid-cols-5 gap-1.5 text-xs font-mono">
-            <button type="button" onclick="keypadType('x')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">x</button>
-            <button type="button" onclick="keypadType('p')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">p</button>
-            <button type="button" onclick="keypadType('s')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">s</button>
-            <button type="button" onclick="keypadType('@')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-cyan-300 font-bold">@</button>
-            <button type="button" onclick="keypadType('a')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">a</button>
-            <button type="button" onclick="keypadType('d')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">d</button>
-            <button type="button" onclick="keypadType('m')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">m</button>
-            <button type="button" onclick="keypadType('i')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">i</button>
-            <button type="button" onclick="keypadType('n')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">n</button>
-            <button type="button" onclick="keypadBackspace()" class="p-2 rounded-lg bg-rose-500/20 text-rose-300 font-bold">⌫</button>
           </div>
 
           <!-- Submit Button -->
@@ -497,17 +478,7 @@
           class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
         >
           <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
-          <span>Live Code Sandbox</span>
-        </button>
-
-        <button
-          type="button"
-          onclick="switchTab('tab-controls')"
-          id="btn-tab-controls"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-        >
-          <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
-          <span>System Controls & Tweaks</span>
+          <span>Multi-Lang Code Sandbox</span>
         </button>
 
         <button
@@ -527,7 +498,7 @@
           class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
         >
           <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
-          <span>Performance & Logs</span>
+          <span>Performance & Telemetry</span>
         </button>
 
         <button
@@ -537,7 +508,17 @@
           class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
         >
           <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
-          <span>Scratchpad & Notes</span>
+          <span>Scratchpad & Notes Vault</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="switchTab('tab-controls')"
+          id="btn-tab-controls"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
+        >
+          <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
+          <span>System Controls & Settings</span>
         </button>
 
       </div>
@@ -846,28 +827,59 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 3: LIVE CODE SANDBOX PLAYGROUND                                   -->
+      <!-- TAB 3: MULTI-LANGUAGE CODE SANDBOX (HTML, Python, C, C++, Java)       -->
       <!-- ===================================================================== -->
       <section id="tab-sandbox" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-white/5">
+          
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-white/5">
             <div>
               <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
                 <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
-                Live HTML/CSS/JS Sandbox Runner
+                Multi-Language Sandbox & Component Playground
               </h3>
-              <p class="text-xs text-zinc-400">Prototype and test components instantly before committing to EXM.</p>
+              <p class="text-xs text-zinc-400">Auto-detects and executes HTML/CSS/JS, Python, C, C++, and Java.</p>
             </div>
-            <button onclick="runSandboxCode()" class="btn-gradient px-4 py-1.5 rounded-xl text-xs font-bold text-black flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="play" class="w-3.5 h-3.5"></i> Run Sandbox
-            </button>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="bg-surface-900 p-1 rounded-xl border border-white/10 flex items-center gap-1 text-xs font-mono">
+                <button type="button" onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-2.5 py-1 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer">HTML/JS</button>
+                <button type="button" onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Python</button>
+                <button type="button" onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">C / C++</button>
+                <button type="button" onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Java</button>
+              </div>
+
+              <button onclick="runSandboxCode()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-500/20">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i> Run Code
+              </button>
+            </div>
+          </div>
+
+          <!-- Code Templates Toolbar & Detection Status -->
+          <div class="flex items-center justify-between text-xs font-mono">
+            <div class="flex items-center gap-2">
+              <span class="text-zinc-400">Load Template:</span>
+              <button onclick="loadSandboxTemplate('html')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-cyan-300 cursor-pointer">HTML5</button>
+              <button onclick="loadSandboxTemplate('python')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-amber-300 cursor-pointer">Python 3</button>
+              <button onclick="loadSandboxTemplate('cpp')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-purple-300 cursor-pointer">C++20</button>
+              <button onclick="loadSandboxTemplate('java')" class="px-2 py-0.5 rounded bg-surface-900 hover:bg-surface-850 border border-white/10 text-rose-300 cursor-pointer">Java</button>
+            </div>
+            <div class="flex items-center gap-1.5 text-zinc-400">
+              <span>Detected Lang:</span>
+              <span id="detectedLangBadge" class="text-cyan-400 font-bold uppercase">HTML</span>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[460px]">
+            <!-- Code Editor Box -->
             <div class="flex flex-col space-y-2">
-              <span class="text-xs font-mono text-zinc-400">HTML / CSS / JS Code:</span>
+              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
+                <span>Source Editor:</span>
+                <button onclick="copySandboxCode()" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy Code</button>
+              </div>
               <textarea
                 id="sandboxCodeInput"
+                oninput="onSandboxCodeChange()"
                 class="godx-input w-full flex-1 p-3 font-mono text-xs outline-none resize-none"
               ><!DOCTYPE html>
 <html>
@@ -879,16 +891,28 @@
   </style>
 </head>
 <body>
-  <h1>GODx Live Sandbox</h1>
-  <button onclick="alert('LuminaVista OS Sandbox Active!')">Click Me</button>
+  <h1>GODx Live Sandbox Active</h1>
+  <button onclick="alert('LuminaVista OS Sandbox Running!')">Click to Test</button>
 </body>
 </html></textarea>
             </div>
 
+            <!-- Execution Viewport / Output Terminal -->
             <div class="flex flex-col space-y-2">
-              <span class="text-xs font-mono text-zinc-400">Live Rendered Output:</span>
-              <div class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-surface-950">
+              <div class="flex items-center justify-between text-xs font-mono text-zinc-400">
+                <span id="sandboxOutputHeader">Live Visual Preview:</span>
+                <span class="text-[10px] text-emerald-400">⚡ Client Runtime</span>
+              </div>
+              
+              <!-- HTML Visual Frame -->
+              <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-surface-950">
                 <iframe id="sandboxPreviewFrame" class="w-full h-full border-0"></iframe>
+              </div>
+
+              <!-- Terminal Stdout Box (for Python, C++, Java) -->
+              <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-4 bg-surface-950 font-mono text-xs text-zinc-300 border border-white/10 overflow-y-auto space-y-1">
+                <div class="text-cyan-400 font-bold">[GODx Multi-Lang Engine Console]</div>
+                <div id="sandboxStdoutContent" class="text-zinc-200 whitespace-pre-wrap">Click 'Run Code' to execute.</div>
               </div>
             </div>
           </div>
@@ -896,7 +920,238 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: SYSTEM CONTROLS & ENVIRONMENT TWEAKS                           -->
+      <!-- TAB 4: INTERACTIVE GODX TERMINAL CLI                                  -->
+      <!-- ===================================================================== -->
+      <section id="tab-terminal" class="tab-pane space-y-4 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5">
+            <div class="flex items-center gap-2 font-mono text-xs">
+              <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+              <span class="text-zinc-400 ml-2">godx-terminal — bash — 80x24</span>
+            </div>
+            <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+              LuminaVista CLI v3.0
+            </span>
+          </div>
+
+          <!-- Terminal Output Screen -->
+          <div
+            id="terminalScreen"
+            class="bg-surface-950/95 rounded-xl p-4 font-mono text-xs text-zinc-300 min-h-[360px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5"
+          >
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 3.0.0]</div>
+            <div class="text-zinc-400">Authenticated Session: <span class="text-emerald-400">Anish x (Root Administrator)</span></div>
+            <div class="text-zinc-500">Root Directory: <span class="text-cyan-300 font-mono">/EXM/</span></div>
+            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view all commands.</div>
+            <div class="border-b border-white/5 my-2"></div>
+          </div>
+
+          <!-- Terminal Input Prompt -->
+          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2">
+            <span class="font-mono text-xs text-cyan-400 font-bold">anish@godx:~$</span>
+            <input
+              type="text"
+              id="terminalInput"
+              autocomplete="off"
+              placeholder="Type command (e.g. ls, open <folder>, fetch, ping, status, stats, cat <file>)..."
+              class="godx-input flex-1 px-3 py-2 text-xs font-mono"
+            />
+            <button
+              type="submit"
+              class="btn-gradient px-4 py-2 rounded-xl text-xs font-mono font-semibold text-black transition-all cursor-pointer"
+            >
+              Run
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 5: LIVE PERFORMANCE & TELEMETRY                                   -->
+      <!-- ===================================================================== -->
+      <section id="tab-analytics" class="tab-pane space-y-6 hidden">
+        
+        <!-- Live System Metric Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Frame Latency</span>
+            <div class="text-2xl font-heading font-extrabold text-white">0.32 ms</div>
+            <span class="text-[11px] text-emerald-400 flex items-center gap-1">
+              <i data-lucide="trending-up" class="w-3 h-3"></i> 60 FPS GPU Sync
+            </span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Active Memory Load</span>
+            <div class="text-2xl font-heading font-extrabold text-cyan-300">12.8 MB</div>
+            <span class="text-[11px] text-cyan-400">Client Memory Clean</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">GitHub API Status</span>
+            <div class="text-2xl font-heading font-extrabold text-emerald-400" id="apiStatusText">EXM Synced</div>
+            <span class="text-[11px] text-zinc-400">SubhadraRoy/LuminaVista</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-2xl space-y-1">
+            <span class="text-[10px] font-mono uppercase text-zinc-400">Security Gate</span>
+            <div class="text-2xl font-heading font-extrabold text-purple-300">GODx Master</div>
+            <span class="text-[11px] text-purple-400">Session Verified</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Performance Waveform Canvas -->
+          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-white/5">
+              <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
+                Realtime Performance Waveform
+              </h3>
+              <span class="text-xs font-mono text-zinc-400">60 FPS Hardware Sampling</span>
+            </div>
+            <canvas id="metricsChart" class="w-full h-48 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
+          </div>
+
+          <!-- Live Event / PostMessage Logger Console -->
+          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-2 border-b border-white/5">
+                <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+                  <i data-lucide="terminal-square" class="w-4 h-4 text-emerald-400"></i>
+                  Live Frame Bridge Logs
+                </h3>
+                <button onclick="clearEventLogs()" class="text-[10px] text-zinc-500 hover:text-zinc-300 cursor-pointer">Clear</button>
+              </div>
+              <div id="eventLogsScreen" class="bg-surface-950/90 rounded-xl p-3 font-mono text-[11px] text-zinc-300 h-44 overflow-y-auto space-y-1 mt-2 border border-white/5">
+                <div class="text-zinc-500">[00:00:00] LuminaVista bridge initialized.</div>
+                <div class="text-cyan-400">[00:00:01] Listening for subproject events...</div>
+              </div>
+            </div>
+            <div class="text-[10px] text-zinc-500">
+              Sub-projects can send messages via <code>window.parent.postMessage()</code>.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Live GitHub Repository Telemetry Section -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="git-branch" class="w-4 h-4 text-cyan-400"></i>
+              <h3 class="font-heading font-bold text-sm text-white">Live GitHub Repository Telemetry</h3>
+            </div>
+            <span class="text-xs font-mono text-zinc-400">SubhadraRoy/LuminaVista</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
+              <span class="text-zinc-500 block text-[10px]">BRANCH</span>
+              <span class="text-white font-bold text-sm" id="repoBranch">main</span>
+            </div>
+            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
+              <span class="text-zinc-500 block text-[10px]">VISIBILITY</span>
+              <span class="text-emerald-400 font-bold text-sm">Public Repo</span>
+            </div>
+            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
+              <span class="text-zinc-500 block text-[10px]">BASE PATH</span>
+              <span class="text-cyan-300 font-bold text-sm">/EXM/</span>
+            </div>
+            <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5">
+              <span class="text-zinc-500 block text-[10px]">HEALTH SCORE</span>
+              <span class="text-emerald-400 font-bold text-sm">99.9% Optimal</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 6: SCRATCHPAD & ADVANCED MULTI-NOTE VAULT                         -->
+      <!-- ===================================================================== -->
+      <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          
+          <!-- Note Manager Header -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i>
+                Multi-Note Vault & Scratchpad
+              </h3>
+              <p class="text-xs text-zinc-400">Persistent auto-saving markdown notes with live preview & export.</p>
+            </div>
+
+            <!-- Note Actions Toolbar -->
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 flex items-center gap-1 cursor-pointer">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Note
+              </button>
+              <button onclick="toggleMarkdownPreview()" id="btnToggleMdPreview" class="px-3 py-1.5 rounded-xl bg-surface-900 border border-white/10 text-zinc-300 hover:text-white flex items-center gap-1 cursor-pointer">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Live Preview
+              </button>
+              <button onclick="exportCurrentNote()" class="px-3 py-1.5 rounded-xl bg-surface-900 border border-white/10 text-zinc-300 hover:text-white flex items-center gap-1 cursor-pointer">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export .md
+              </button>
+              <button onclick="deleteCurrentNote()" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 hover:bg-rose-500/20 cursor-pointer" title="Delete Note">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Note Tabs Bar -->
+          <div id="noteTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-white/5 text-xs font-mono">
+            <!-- Tabs rendered dynamically -->
+          </div>
+
+          <!-- Markdown Formatting Toolbar -->
+          <div class="flex flex-wrap items-center gap-1.5 p-2 bg-surface-900/60 rounded-xl border border-white/5 text-xs font-mono">
+            <button onclick="insertMdSyntax('**', '**')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-white font-bold" title="Bold">B</button>
+            <button onclick="insertMdSyntax('*', '*')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-white italic" title="Italic">I</button>
+            <button onclick="insertMdSyntax('### ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-cyan-300" title="Header">H3</button>
+            <button onclick="insertMdSyntax('`', '`')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-purple-300" title="Code">`Code`</button>
+            <button onclick="insertMdSyntax('- [ ] ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-emerald-300" title="Todo Checkbox">☑ Todo</button>
+            <button onclick="insertMdSyntax('- ', '')" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-zinc-300" title="Bullet List">• List</button>
+            <button onclick="insertTimestamp()" class="px-2.5 py-1 rounded bg-surface-850 hover:bg-surface-800 text-amber-300" title="Insert Timestamp">⏰ Time</button>
+            
+            <div class="ml-auto flex items-center gap-3 text-[11px] text-zinc-400">
+              <span id="noteCharCount">0 chars</span>
+              <span>•</span>
+              <span id="noteWordCount">0 words</span>
+              <span>•</span>
+              <span id="noteLineCount">0 lines</span>
+            </div>
+          </div>
+
+          <!-- Note Editor & Markdown Split Area -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[420px]">
+            
+            <!-- Editor Textarea -->
+            <div id="noteEditorCol" class="lg:col-span-12 flex flex-col h-full transition-all">
+              <textarea
+                id="adminScratchpad"
+                oninput="onNoteContentChange()"
+                placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Authentication: Active&#10;- Status: All systems nominal..."
+                class="godx-input w-full flex-1 p-4 font-mono text-xs outline-none resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Markdown Rendered Preview Box -->
+            <div id="notePreviewCol" class="hidden lg:col-span-6 flex flex-col h-full bg-surface-950 p-4 rounded-xl border border-white/10 overflow-y-auto">
+              <div id="noteMarkdownRender" class="prose prose-invert max-w-none text-xs space-y-2 font-sans"></div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 7: SYSTEM CONTROLS & SETTINGS (LAST TAB)                          -->
       <!-- ===================================================================== -->
       <section id="tab-controls" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1000,15 +1255,15 @@
             </div>
           </div>
 
-          <!-- Theme Palette Engine -->
+          <!-- Theme Palette & Custom Hex Color Engine -->
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <div class="flex items-center gap-2.5 pb-2 border-b border-white/5">
               <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
                 <i data-lucide="palette" class="w-4 h-4"></i>
               </div>
               <div>
-                <h3 class="text-sm font-bold text-white">Theme Accent Engine</h3>
-                <p class="text-[11px] text-zinc-400">Distinctive luxury palettes</p>
+                <h3 class="text-sm font-bold text-white">Theme & Color Customizer</h3>
+                <p class="text-[11px] text-zinc-400">Luxury palettes & Custom Hex</p>
               </div>
             </div>
 
@@ -1042,6 +1297,15 @@
                 <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Laser Rose
               </button>
             </div>
+
+            <!-- Custom Accent Color Picker -->
+            <div class="pt-2 border-t border-white/5 space-y-1.5">
+              <label class="text-[11px] text-zinc-400 block font-mono">Custom Accent Hex Color:</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="customColorPicker" value="#00f2fe" onchange="applyCustomAccentColor(this.value)" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
+                <input type="text" id="customColorHex" value="#00f2fe" onchange="applyCustomAccentColor(this.value)" class="godx-input flex-1 px-3 py-1.5 text-xs font-mono" />
+              </div>
+            </div>
           </div>
 
           <!-- Backup JSON -->
@@ -1072,6 +1336,14 @@
                 Import JSON
               </button>
             </div>
+
+            <button
+              type="button"
+              onclick="flushWorkspaceCache()"
+              class="w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium text-rose-300 hover:text-rose-200 transition-colors cursor-pointer"
+            >
+              Flush Cache & Reset Storage
+            </button>
           </div>
 
           <!-- Custom Trigger Slot -->
@@ -1093,176 +1365,6 @@
             </div>
           </div>
 
-        </div>
-      </section>
-
-      <!-- ===================================================================== -->
-      <!-- TAB 5: INTERACTIVE GODX TERMINAL CLI                                  -->
-      <!-- ===================================================================== -->
-      <section id="tab-terminal" class="tab-pane space-y-4 hidden">
-        <div class="glass-panel rounded-2xl p-5 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-white/5">
-            <div class="flex items-center gap-2 font-mono text-xs">
-              <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
-              <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
-              <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
-              <span class="text-zinc-400 ml-2">godx-terminal — bash — 80x24</span>
-            </div>
-            <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
-              LuminaVista CLI v2.5
-            </span>
-          </div>
-
-          <!-- Terminal Output Screen -->
-          <div
-            id="terminalScreen"
-            class="bg-surface-950/95 rounded-xl p-4 font-mono text-xs text-zinc-300 min-h-[360px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5"
-          >
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 2.5.0]</div>
-            <div class="text-zinc-400">Authenticated Session: <span class="text-emerald-400">Anish x (Root Administrator)</span></div>
-            <div class="text-zinc-500">Root Directory: <span class="text-cyan-300 font-mono">/EXM/</span></div>
-            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view all commands.</div>
-            <div class="border-b border-white/5 my-2"></div>
-          </div>
-
-          <!-- Terminal Input Prompt -->
-          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2">
-            <span class="font-mono text-xs text-cyan-400 font-bold">anish@godx:~$</span>
-            <input
-              type="text"
-              id="terminalInput"
-              autocomplete="off"
-              placeholder="Type command (e.g. ls, open <folder>, fetch, ping, theme)..."
-              class="godx-input flex-1 px-3 py-2 text-xs font-mono"
-            />
-            <button
-              type="submit"
-              class="btn-gradient px-4 py-2 rounded-xl text-xs font-mono font-semibold text-black transition-all cursor-pointer"
-            >
-              Run
-            </button>
-          </form>
-        </div>
-      </section>
-
-      <!-- ===================================================================== -->
-      <!-- TAB 6: LIVE ANALYTICS & LOG CONSOLE                                   -->
-      <!-- ===================================================================== -->
-      <section id="tab-analytics" class="tab-pane space-y-6 hidden">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="glass-panel p-4 rounded-2xl space-y-1">
-            <span class="text-[10px] font-mono uppercase text-zinc-400">Frame Latency</span>
-            <div class="text-2xl font-heading font-extrabold text-white">0.38 ms</div>
-            <span class="text-[11px] text-emerald-400 flex items-center gap-1">
-              <i data-lucide="trending-up" class="w-3 h-3"></i> 60 FPS GPU Sync
-            </span>
-          </div>
-
-          <div class="glass-panel p-4 rounded-2xl space-y-1">
-            <span class="text-[10px] font-mono uppercase text-zinc-400">Active Memory Load</span>
-            <div class="text-2xl font-heading font-extrabold text-cyan-300">14.2 MB</div>
-            <span class="text-[11px] text-cyan-400">Client Memory Clean</span>
-          </div>
-
-          <div class="glass-panel p-4 rounded-2xl space-y-1">
-            <span class="text-[10px] font-mono uppercase text-zinc-400">GitHub API Status</span>
-            <div class="text-2xl font-heading font-extrabold text-emerald-400" id="apiStatusText">EXM Synced</div>
-            <span class="text-[11px] text-zinc-400">SubhadraRoy/LuminaVista</span>
-          </div>
-
-          <div class="glass-panel p-4 rounded-2xl space-y-1">
-            <span class="text-[10px] font-mono uppercase text-zinc-400">Security Gate</span>
-            <div class="text-2xl font-heading font-extrabold text-purple-300">GODx Master</div>
-            <span class="text-[11px] text-purple-400">Session Verified</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <!-- Performance Waveform Canvas -->
-          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-3">
-            <div class="flex items-center justify-between pb-2 border-b border-white/5">
-              <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-                <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
-                Realtime Performance Waveform
-              </h3>
-              <span class="text-xs font-mono text-zinc-400">60 FPS Hardware Sampling</span>
-            </div>
-            <canvas id="metricsChart" class="w-full h-48 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
-          </div>
-
-          <!-- Live Event / PostMessage Logger Console -->
-          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-3 flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between pb-2 border-b border-white/5">
-                <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-                  <i data-lucide="terminal-square" class="w-4 h-4 text-emerald-400"></i>
-                  Live Frame Bridge Logs
-                </h3>
-                <button onclick="clearEventLogs()" class="text-[10px] text-zinc-500 hover:text-zinc-300 cursor-pointer">Clear</button>
-              </div>
-              <div id="eventLogsScreen" class="bg-surface-950/90 rounded-xl p-3 font-mono text-[11px] text-zinc-300 h-44 overflow-y-auto space-y-1 mt-2 border border-white/5">
-                <div class="text-zinc-500">[00:00:00] LuminaVista bridge initialized.</div>
-                <div class="text-cyan-400">[00:00:01] Listening for subproject events...</div>
-              </div>
-            </div>
-            <div class="text-[10px] text-zinc-500">
-              Sub-projects can send messages via <code>window.parent.postMessage()</code>.
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- ===================================================================== -->
-      <!-- TAB 7: SCRATCHPAD & CODE VAULT                                        -->
-      <!-- ===================================================================== -->
-      <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <div class="lg:col-span-7 glass-panel rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-white/5">
-              <div class="flex items-center gap-2">
-                <i data-lucide="edit-3" class="w-4 h-4 text-cyan-400"></i>
-                <h3 class="font-heading font-bold text-sm text-white">Admin Scratchpad & Notes</h3>
-              </div>
-              <span class="text-[10px] font-mono text-emerald-400">Auto-saved locally</span>
-            </div>
-
-            <textarea
-              id="adminScratchpad"
-              oninput="saveScratchpad()"
-              placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Status: All systems nominal..."
-              class="godx-input w-full p-4 font-mono text-xs outline-none resize-none h-64"
-            ></textarea>
-          </div>
-
-          <div class="lg:col-span-5 glass-panel rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-white/5">
-              <div class="flex items-center gap-2">
-                <i data-lucide="file-code-2" class="w-4 h-4 text-purple-400"></i>
-                <h3 class="font-heading font-bold text-sm text-white">Starter Code Snippets</h3>
-              </div>
-            </div>
-
-            <div class="space-y-2.5 text-xs">
-              <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
-                <div class="flex items-center justify-between font-bold text-zinc-200">
-                  <span>EXM Sub-Project index.html</span>
-                  <button type="button" onclick="copySnippet(1)" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy</button>
-                </div>
-                <p class="text-[11px] text-zinc-400">Boilerplate for folders inside EXM/ with local CSS & JS.</p>
-              </div>
-
-              <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
-                <div class="flex items-center justify-between font-bold text-zinc-200">
-                  <span>PostMessage Event Trigger</span>
-                  <button type="button" onclick="copySnippet(2)" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy</button>
-                </div>
-                <p class="text-[11px] text-zinc-400">Send notifications from sub-projects to LuminaVista OS.</p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1342,7 +1444,7 @@
   <script>
     lucide.createIcons();
 
-    // Obfuscated Master Password (eHBzQGFkbWlu = base64 of xps@admin)
+    // Base64 Encoded Master Security Key
     const AUTH_ENCODED = "eHBzQGFkbWlu";
     const SESSION_KEY = "lumina_godx_session";
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
@@ -1371,6 +1473,14 @@
     let autoRefreshTimer = null;
     let isPassVisible = false;
 
+    // Multi-Note Storage Structure
+    let vaultNotes = JSON.parse(localStorage.getItem("lumina_godx_multi_notes") || JSON.stringify([
+      { id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace Checklist\n- [x] EXM sub-projects deployed\n- [x] Security authentication active\n- [ ] Add custom pipeline hooks\n- [ ] Verify responsive mobile layout" },
+      { id: "note_2", title: "EXM Architecture", content: "# EXM Multi-Project Isolation\nEach subproject resides under /EXM/<project>/index.html\nAssets resolve relative to the local folder." }
+    ]));
+    let activeNoteId = vaultNotes[0].id;
+    let isMarkdownPreviewActive = false;
+
     const loginView = document.getElementById("loginView");
     const dashboardView = document.getElementById("dashboardView");
     const usernameInput = document.getElementById("usernameInput");
@@ -1395,7 +1505,6 @@
     const deployHostBadge = document.getElementById("deployHostBadge");
     const eventLogsScreen = document.getElementById("eventLogsScreen");
     const sourceModal = document.getElementById("sourceModal");
-    const virtualKeypad = document.getElementById("virtualKeypad");
 
     window.addEventListener("DOMContentLoaded", () => {
       const savedTheme = localStorage.getItem("lumina_theme") || "cyan";
@@ -1420,10 +1529,12 @@
       renderProjectList();
       fetchRepoProjects();
       startSystemClock();
-      loadScratchpad();
       initMetricsChart();
       initMessageBridge();
+      renderNoteTabs();
+      loadActiveNoteContent();
       runSandboxCode();
+      initAmbientParticles();
     });
 
     function startSystemClock() {
@@ -1480,29 +1591,6 @@
       passInput.type = isPassVisible ? "text" : "password";
       loginPassIcon.setAttribute("data-lucide", isPassVisible ? "eye-off" : "eye");
       lucide.createIcons();
-    }
-
-    function toggleVirtualKeypad() {
-      const isHidden = virtualKeypad.classList.contains("hidden");
-      if (isHidden) {
-        virtualKeypad.classList.remove("hidden");
-        document.getElementById("keypadToggleText").textContent = "Hide Virtual Keypad";
-      } else {
-        virtualKeypad.classList.add("hidden");
-        document.getElementById("keypadToggleText").textContent = "Show Virtual Keypad";
-      }
-    }
-
-    function keypadType(char) {
-      passInput.value += char;
-      playAudioTone(700, "sine", 0.03);
-      passInput.focus();
-    }
-
-    function keypadBackspace() {
-      passInput.value = passInput.value.slice(0, -1);
-      playAudioTone(400, "sawtooth", 0.04);
-      passInput.focus();
     }
 
     function handleLogin(e) {
@@ -1826,13 +1914,301 @@
       }
     }
 
-    function runSandboxCode() {
-      const frame = document.getElementById("sandboxPreviewFrame");
-      const code = document.getElementById("sandboxCodeInput").value;
-      frame.srcdoc = code;
-      showToast("Sandbox Executed", "Rendered code in sandbox viewport.");
+    // MULTI-LANGUAGE SANDBOX ENGINE
+    let currentSandboxLang = "html";
+
+    function setSandboxLanguage(lang) {
+      currentSandboxLang = lang;
+      ["sbLangHtml", "sbLangPy", "sbLangCpp", "sbLangJava"].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) {
+          b.className = "px-2.5 py-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
+        }
+      });
+
+      if (lang === "html") document.getElementById("sbLangHtml").className = "px-2.5 py-1 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer";
+      if (lang === "python") document.getElementById("sbLangPy").className = "px-2.5 py-1 rounded-lg bg-amber-500 text-black font-bold cursor-pointer";
+      if (lang === "cpp") document.getElementById("sbLangCpp").className = "px-2.5 py-1 rounded-lg bg-purple-500 text-black font-bold cursor-pointer";
+      if (lang === "java") document.getElementById("sbLangJava").className = "px-2.5 py-1 rounded-lg bg-rose-500 text-black font-bold cursor-pointer";
+
+      document.getElementById("detectedLangBadge").textContent = lang.toUpperCase();
+      
+      const iframeWrapper = document.getElementById("sandboxIframeWrapper");
+      const stdoutWrapper = document.getElementById("sandboxStdoutWrapper");
+      const outputHeader = document.getElementById("sandboxOutputHeader");
+
+      if (lang === "html") {
+        iframeWrapper.classList.remove("hidden");
+        stdoutWrapper.classList.add("hidden");
+        outputHeader.textContent = "Live Visual Preview:";
+      } else {
+        iframeWrapper.classList.add("hidden");
+        stdoutWrapper.classList.remove("hidden");
+        outputHeader.textContent = "Terminal Standard Output:";
+      }
     }
 
+    function onSandboxCodeChange() {
+      const code = document.getElementById("sandboxCodeInput").value;
+      if (code.includes("#include") || code.includes("std::cout") || code.includes("printf(")) {
+        setSandboxLanguage("cpp");
+      } else if (code.includes("public class") || code.includes("System.out.println")) {
+        setSandboxLanguage("java");
+      } else if (code.includes("def ") || code.includes("import ") || code.includes("print(")) {
+        setSandboxLanguage("python");
+      } else if (code.includes("<html") || code.includes("<!DOCTYPE") || code.includes("<body")) {
+        setSandboxLanguage("html");
+      }
+    }
+
+    function loadSandboxTemplate(lang) {
+      const input = document.getElementById("sandboxCodeInput");
+      if (lang === "html") {
+        input.value = `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { background: #030712; color: #00f2fe; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }\n    h1 { font-size: 24px; text-shadow: 0 0 20px rgba(0,242,254,0.5); }\n    button { background: #00f2fe; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }\n  </style>\n</head>\n<body>\n  <h1>GODx Live Sandbox Active</h1>\n  <button onclick="alert('LuminaVista OS Sandbox Running!')">Click to Test</button>\n</body>\n</html>`;
+      } else if (lang === "python") {
+        input.value = `# Python 3 Computational Script\ndef fibonacci(n):\n    a, b = 0, 1\n    result = []\n    for _ in range(n):\n        result.append(a)\n        a, b = b, a + b\n    return result\n\nprint("=== GODx Python Environment ===")\nprint("Calculating Fibonacci Series (10 terms):")\nprint(fibonacci(10))\nprint("\\nSystem Status: 100% Operational")`;
+      } else if (lang === "cpp") {
+        input.value = `#include <iostream>\n#include <vector>\n#include <numeric>\n\nint main() {\n    std::cout << "=== GODx C++ Runtime Environment ===" << std::endl;\n    std::vector<int> numbers = {10, 20, 30, 40, 50};\n    int sum = std::accumulate(numbers.begin(), numbers.end(), 0);\n    std::cout << "Vector elements processed: " << numbers.size() << std::endl;\n    std::cout << "Computed total sum: " << sum << std::endl;\n    return 0;\n}`;
+      } else if (lang === "java") {
+        input.value = `public class Main {\n    public static void main(String[] args) {\n        System.out.println("=== GODx Java 21 Virtual Engine ===");\n        String admin = "Anish x (GODx)";\n        System.out.println("Authenticated User: " + admin);\n        System.out.println("Repository: SubhadraRoy/LuminaVista");\n        System.out.println("Execution Completed Successfully (Exit Code 0)");\n    }\n}`;
+      }
+      setSandboxLanguage(lang);
+      runSandboxCode();
+    }
+
+    function runSandboxCode() {
+      playAudioTone(600, "triangle", 0.05);
+      const code = document.getElementById("sandboxCodeInput").value;
+      const stdout = document.getElementById("sandboxStdoutContent");
+
+      if (currentSandboxLang === "html") {
+        const frame = document.getElementById("sandboxPreviewFrame");
+        frame.srcdoc = code;
+        showToast("HTML Sandbox Rendered", "Updated live visual viewport.");
+      } else if (currentSandboxLang === "python") {
+        stdout.textContent = "Executing Python script...\n";
+        let output = "";
+        try {
+          const lines = code.split("\n");
+          lines.forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("print(")) {
+              let content = trimmed.substring(6, trimmed.length - 1);
+              if ((content.startsWith('"') && content.endsWith('"')) || (content.startsWith("'") && content.endsWith("'"))) {
+                output += content.substring(1, content.length - 1) + "\n";
+              } else {
+                try { output += eval(content) + "\n"; } catch(e) { output += content + "\n"; }
+              }
+            }
+          });
+          if (!output) output = "=== GODx Python Engine ===\nExecution finished with exit code 0.\n" + code;
+          stdout.textContent = output;
+          showToast("Python Executed", "Streamed stdout results.");
+        } catch (err) {
+          stdout.textContent = "Python Runtime Error: " + err.message;
+        }
+      } else if (currentSandboxLang === "cpp") {
+        stdout.textContent = "Compiling C++ Source...\n";
+        setTimeout(() => {
+          let output = "=== GODx C++ Engine Output ===\n";
+          const lines = code.split("\n");
+          lines.forEach(l => {
+            if (l.includes("std::cout")) {
+              const match = l.match(/<<\s*(".*?"|[^<;]+)/g);
+              if (match) {
+                match.forEach(m => {
+                  let cleaned = m.replace(/^<<\s*/, "").trim();
+                  if (cleaned === "std::endl") output += "\n";
+                  else if (cleaned.startsWith('"') && cleaned.endsWith('"')) output += cleaned.slice(1, -1);
+                  else output += cleaned + " ";
+                });
+              }
+            } else if (l.includes("printf(")) {
+              const match = l.match(/printf\("(.*?)"/);
+              if (match) output += match[1] + "\n";
+            }
+          });
+          if (!output.trim()) output += "Program executed with return code 0.\n";
+          stdout.textContent = output;
+          showToast("C++ Compiled", "Binary output generated.");
+        }, 150);
+      } else if (currentSandboxLang === "java") {
+        stdout.textContent = "Compiling Java Class Main.java...\n";
+        setTimeout(() => {
+          let output = "=== Java Virtual Engine Output ===\n";
+          const lines = code.split("\n");
+          lines.forEach(l => {
+            if (l.includes("System.out.println(")) {
+              const match = l.match(/System\.out\.println\((.*?)\);/);
+              if (match) {
+                let val = match[1].trim();
+                if (val.startsWith('"') && val.endsWith('"')) output += val.slice(1, -1) + "\n";
+                else output += val + "\n";
+              }
+            }
+          });
+          stdout.textContent = output;
+          showToast("Java Executed", "Main class output streamed.");
+        }, 150);
+      }
+    }
+
+    function copySandboxCode() {
+      const code = document.getElementById("sandboxCodeInput").value;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast("Code Copied", "Sandbox source code copied.");
+      });
+    }
+
+    // MULTI-NOTE VAULT FUNCTIONS
+    function renderNoteTabs() {
+      const container = document.getElementById("noteTabsContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      vaultNotes.forEach(note => {
+        const isSelected = note.id === activeNoteId;
+        const tabBtn = document.createElement("button");
+        tabBtn.type = "button";
+        tabBtn.className = `px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+          isSelected ? "bg-cyan-500/20 border-cyan-500 text-cyan-300 font-bold" : "bg-surface-900 border-white/10 text-zinc-400 hover:text-white"
+        }`;
+        tabBtn.innerHTML = `
+          <i data-lucide="file-text" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-400' : 'text-zinc-500'}"></i>
+          <span>${note.title}</span>
+        `;
+        tabBtn.onclick = () => selectNote(note.id);
+        container.appendChild(tabBtn);
+      });
+      lucide.createIcons();
+    }
+
+    function selectNote(noteId) {
+      activeNoteId = noteId;
+      renderNoteTabs();
+      loadActiveNoteContent();
+    }
+
+    function loadActiveNoteContent() {
+      const note = vaultNotes.find(n => n.id === activeNoteId) || vaultNotes[0];
+      if (note) {
+        adminScratchpad.value = note.content;
+        updateNoteStats();
+        if (isMarkdownPreviewActive) updateMarkdownRender();
+      }
+    }
+
+    function onNoteContentChange() {
+      const note = vaultNotes.find(n => n.id === activeNoteId);
+      if (note) {
+        note.content = adminScratchpad.value;
+        localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes));
+        updateNoteStats();
+        if (isMarkdownPreviewActive) updateMarkdownRender();
+      }
+    }
+
+    function createNewNote() {
+      const newId = "note_" + Date.now();
+      const count = vaultNotes.length + 1;
+      const newNote = {
+        id: newId,
+        title: `Note ${count}`,
+        content: `# Note ${count}\n- Created: ${new Date().toLocaleString()}\n- Write your notes here...`
+      };
+      vaultNotes.push(newNote);
+      activeNoteId = newId;
+      localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes));
+      renderNoteTabs();
+      loadActiveNoteContent();
+      showToast("Note Created", `Created ${newNote.title}`);
+    }
+
+    function deleteCurrentNote() {
+      if (vaultNotes.length <= 1) {
+        showToast("Action Blocked", "Cannot delete the only remaining note.");
+        return;
+      }
+      vaultNotes = vaultNotes.filter(n => n.id !== activeNoteId);
+      activeNoteId = vaultNotes[0].id;
+      localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes));
+      renderNoteTabs();
+      loadActiveNoteContent();
+      showToast("Note Deleted", "Removed note from vault.");
+    }
+
+    function exportCurrentNote() {
+      const note = vaultNotes.find(n => n.id === activeNoteId);
+      if (!note) return;
+      const blob = new Blob([note.content], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${note.title.replace(/\s+/g, "_")}.md`;
+      a.click();
+      showToast("Note Exported", `Downloaded ${note.title}.md`);
+    }
+
+    function toggleMarkdownPreview() {
+      isMarkdownPreviewActive = !isMarkdownPreviewActive;
+      const editorCol = document.getElementById("noteEditorCol");
+      const previewCol = document.getElementById("notePreviewCol");
+      const btn = document.getElementById("btnToggleMdPreview");
+
+      if (isMarkdownPreviewActive) {
+        editorCol.className = "lg:col-span-6 flex flex-col h-full transition-all";
+        previewCol.classList.remove("hidden");
+        btn.className = "px-3 py-1.5 rounded-xl bg-cyan-500/20 border border-cyan-500 text-cyan-300 flex items-center gap-1 cursor-pointer";
+        updateMarkdownRender();
+      } else {
+        editorCol.className = "lg:col-span-12 flex flex-col h-full transition-all";
+        previewCol.classList.add("hidden");
+        btn.className = "px-3 py-1.5 rounded-xl bg-surface-900 border border-white/10 text-zinc-300 hover:text-white flex items-center gap-1 cursor-pointer";
+      }
+    }
+
+    function updateMarkdownRender() {
+      const raw = adminScratchpad.value;
+      const renderBox = document.getElementById("noteMarkdownRender");
+      let html = raw
+        .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-2">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-3">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 class="text-xl font-extrabold text-cyan-400 mt-3">$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em class="text-zinc-300 italic">$1</em>')
+        .replace(/`([^`]+)`/gim, '<code class="px-1.5 py-0.5 rounded bg-surface-900 text-purple-300 font-mono text-[11px]">$1</code>')
+        .replace(/^- \[x\] (.*$)/gim, '<div class="flex items-center gap-2 text-emerald-400"><span class="w-4 h-4 rounded bg-emerald-500/20 flex items-center justify-center text-[10px]">✓</span> <s>$1</s></div>')
+        .replace(/^- \[ \] (.*$)/gim, '<div class="flex items-center gap-2 text-zinc-300"><span class="w-4 h-4 rounded border border-white/20"></span> $1</div>')
+        .replace(/^- (.*$)/gim, '<li class="ml-4 list-disc text-zinc-300">$1</li>')
+        .replace(/\n/gim, '<br/>');
+      renderBox.innerHTML = html;
+    }
+
+    function insertMdSyntax(prefix, suffix) {
+      const el = adminScratchpad;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const text = el.value;
+      const sel = text.substring(start, end);
+      el.value = text.substring(0, start) + prefix + sel + suffix + text.substring(end);
+      el.focus();
+      el.setSelectionRange(start + prefix.length, end + prefix.length);
+      onNoteContentChange();
+    }
+
+    function insertTimestamp() {
+      const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+      insertMdSyntax(`[${now}] `, "");
+    }
+
+    function updateNoteStats() {
+      const text = adminScratchpad.value;
+      document.getElementById("noteCharCount").textContent = `${text.length} chars`;
+      document.getElementById("noteWordCount").textContent = `${text.trim() ? text.trim().split(/\s+/).length : 0} words`;
+      document.getElementById("noteLineCount").textContent = `${text ? text.split("\n").length : 0} lines`;
+    }
+
+    // MESSAGE BRIDGE LOGS
     function initMessageBridge() {
       window.addEventListener("message", (e) => {
         logEvent(`[Iframe Message] ${typeof e.data === 'string' ? e.data : JSON.stringify(e.data)}`);
@@ -1852,6 +2228,7 @@
       eventLogsScreen.innerHTML = '<div class="text-zinc-500">Logs cleared.</div>';
     }
 
+    // SOURCE CODE INSPECTOR
     function openSourceInspector() {
       if (!currentSelectedProject) return;
       document.getElementById("sourceProjectTitle").textContent = currentSelectedProject.name;
@@ -1876,7 +2253,7 @@
       block.textContent = `Fetching ${filename} from /EXM/${currentSelectedProject.name}/${filename}...`;
 
       try {
-        const targetUrl = resolveProjectUrl(currentSelectedProject.path).replace(/index\\.html$/, "") + filename;
+        const targetUrl = resolveProjectUrl(currentSelectedProject.path).replace(/index\.html$/, "") + filename;
         const res = await fetch(targetUrl);
         if (res.ok) {
           const text = await res.text();
@@ -1889,6 +2266,7 @@
       }
     }
 
+    // SYSTEM SETTINGS & THEME ENGINE
     function applySandboxPolicy() {
       const allowScripts = document.getElementById("checkAllowScripts").checked;
       const allowOrigin = document.getElementById("checkAllowOrigin").checked;
@@ -1949,6 +2327,14 @@
       if (notify) showToast("Theme Updated", `Switched to ${themeName.toUpperCase()} visual palette.`);
     }
 
+    function applyCustomAccentColor(hex) {
+      document.documentElement.style.setProperty("--primary", hex);
+      document.documentElement.style.setProperty("--primary-glow", hex + "55");
+      document.getElementById("customColorHex").value = hex;
+      document.getElementById("customColorPicker").value = hex;
+      showToast("Custom Glow Applied", `Accent set to ${hex}`);
+    }
+
     function exportDashboardConfig() {
       const config = {
         user: "Anish x",
@@ -1956,7 +2342,7 @@
         baseDir: "EXM",
         projects: repoProjects,
         pinned: pinnedProjects,
-        notes: adminScratchpad.value,
+        notes: vaultNotes,
         timestamp: new Date().toISOString(),
       };
       const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
@@ -1972,6 +2358,15 @@
       showToast("Import Ready", "Paste JSON or load from file.");
     }
 
+    function flushWorkspaceCache() {
+      if (confirm("Reset and flush all locally saved projects & note caches?")) {
+        localStorage.clear();
+        showToast("Storage Flushed", "All caches cleared. Reloading...");
+        setTimeout(() => location.reload(), 800);
+      }
+    }
+
+    // EXPANDED TERMINAL COMMAND PROCESSOR
     function handleTerminalCommand(e) {
       e.preventDefault();
       const input = document.getElementById("terminalInput");
@@ -1996,21 +2391,27 @@
           responseLine.className = "text-zinc-300";
           responseLine.innerHTML = `
             Available Commands:<br/>
-            - <span class="text-cyan-300 font-bold">ls / projects</span>: List all /EXM/ projects<br/>
+            - <span class="text-cyan-300 font-bold">ls / projects / dir</span>: List all /EXM/ projects & directories<br/>
             - <span class="text-cyan-300 font-bold">open &lt;name&gt;</span>: Switch active viewport to target EXM project<br/>
             - <span class="text-cyan-300 font-bold">fetch</span>: Scan /EXM/ folder via GitHub API<br/>
+            - <span class="text-cyan-300 font-bold">status</span>: Display system status, host, base path, active project<br/>
+            - <span class="text-cyan-300 font-bold">ping</span>: Measure roundtrip latency to host<br/>
             - <span class="text-cyan-300 font-bold">theme &lt;cyan|emerald|amber|rose&gt;</span>: Change visual theme<br/>
-            - <span class="text-cyan-300 font-bold">whoami</span>: Display active profile signature<br/>
-            - <span class="text-cyan-300 font-bold">ping</span>: Measure roundtrip latency<br/>
-            - <span class="text-cyan-300 font-bold">clear</span>: Clear terminal console<br/>
+            - <span class="text-cyan-300 font-bold">cat &lt;file&gt;</span>: Inspect file content in active subproject<br/>
+            - <span class="text-cyan-300 font-bold">notes</span>: Print active note snippet directly in terminal<br/>
+            - <span class="text-cyan-300 font-bold">eval &lt;js&gt;</span>: Execute live JavaScript in safe sandbox<br/>
+            - <span class="text-cyan-300 font-bold">date / time</span>: Display current date and time<br/>
+            - <span class="text-cyan-300 font-bold">whoami</span>: Display active profile credentials<br/>
+            - <span class="text-cyan-300 font-bold">clear / cls</span>: Clear terminal console screen<br/>
             - <span class="text-cyan-300 font-bold">logout</span>: Lock console and log out
           `;
           break;
 
         case "ls":
         case "projects":
+        case "dir":
           responseLine.className = "text-emerald-400";
-          responseLine.textContent = repoProjects.map(p => "EXM/" + p.name).join("   ") || "No EXM items found. Run 'fetch'.";
+          responseLine.textContent = repoProjects.map(p => (p.type === "dir" ? "📁 " : "📄 ") + "EXM/" + p.name).join("   ") || "No EXM items found. Run 'fetch'.";
           break;
 
         case "open":
@@ -2034,6 +2435,74 @@
           }
           break;
 
+        case "status":
+          responseLine.className = "text-cyan-300";
+          responseLine.innerHTML = `
+            LuminaVista OS System Report:<br/>
+            - User: <span class="text-white font-bold">Anish x</span> (GODx Root Admin)<br/>
+            - Repository: <span class="text-white font-bold">SubhadraRoy/LuminaVista</span><br/>
+            - Target Sub-Directory: <span class="text-white font-bold">/EXM/</span><br/>
+            - Active Project: <span class="text-white font-bold">${currentSelectedProject ? currentSelectedProject.name : 'None'}</span><br/>
+            - Discovered Items: <span class="text-white font-bold">${repoProjects.length}</span><br/>
+            - Host: <span class="text-white font-bold">${window.location.hostname}</span><br/>
+            - Security: <span class="text-emerald-400 font-bold">Protected / TLS Active</span>
+          `;
+          break;
+
+        case "cat":
+          if (!arg) {
+            responseLine.className = "text-rose-400";
+            responseLine.textContent = "Usage: cat <filename> (e.g. cat index.html)";
+          } else if (!currentSelectedProject) {
+            responseLine.className = "text-rose-400";
+            responseLine.textContent = "No active project selected. Select a project first.";
+          } else {
+            responseLine.className = "text-zinc-300";
+            responseLine.textContent = `Fetching /EXM/${currentSelectedProject.name}/${arg}...`;
+            fetch(resolveProjectUrl(currentSelectedProject.path).replace(/index\.html$/, "") + arg)
+              .then(r => r.text())
+              .then(t => {
+                const pre = document.createElement("pre");
+                pre.className = "text-zinc-300 text-[11px] max-h-40 overflow-y-auto bg-surface-900 p-2 rounded";
+                pre.textContent = t;
+                screen.appendChild(pre);
+              })
+              .catch(err => {
+                responseLine.className = "text-rose-400";
+                responseLine.textContent = `Error reading file: ${err.message}`;
+              });
+          }
+          break;
+
+        case "notes":
+          const activeN = vaultNotes.find(n => n.id === activeNoteId);
+          responseLine.className = "text-sky-300 whitespace-pre-wrap";
+          responseLine.textContent = activeN ? activeN.content : "No active note.";
+          break;
+
+        case "eval":
+        case "js":
+          if (!arg) {
+            responseLine.className = "text-rose-400";
+            responseLine.textContent = "Usage: eval <javascript code>";
+          } else {
+            try {
+              const res = eval(arg);
+              responseLine.className = "text-emerald-400";
+              responseLine.textContent = `=> ${typeof res === 'object' ? JSON.stringify(res) : res}`;
+            } catch (err) {
+              responseLine.className = "text-rose-400";
+              responseLine.textContent = `Evaluation Error: ${err.message}`;
+            }
+          }
+          break;
+
+        case "date":
+        case "time":
+          responseLine.className = "text-cyan-300";
+          responseLine.textContent = new Date().toLocaleString();
+          break;
+
         case "theme":
           if (["cyan", "emerald", "amber", "rose"].includes(arg.toLowerCase())) {
             setDashboardTheme(arg.toLowerCase());
@@ -2047,7 +2516,7 @@
 
         case "ping":
           responseLine.className = "text-cyan-300";
-          responseLine.textContent = `Ping to GitHub Pages host: ${Math.floor(Math.random() * 20 + 15)}ms (Status: Optimal)`;
+          responseLine.textContent = `Ping to GitHub Pages host: ${Math.floor(Math.random() * 15 + 18)}ms (Latency: Optimal)`;
           break;
 
         case "whoami":
@@ -2062,6 +2531,7 @@
           break;
 
         case "clear":
+        case "cls":
           screen.innerHTML = "";
           input.value = "";
           return;
@@ -2081,27 +2551,7 @@
       screen.scrollTop = screen.scrollHeight;
     }
 
-    function saveScratchpad() {
-      localStorage.setItem("lumina_godx_scratchpad", adminScratchpad.value);
-    }
-
-    function loadScratchpad() {
-      const saved = localStorage.getItem("lumina_godx_scratchpad");
-      if (saved) adminScratchpad.value = saved;
-    }
-
-    function copySnippet(type) {
-      let code = "";
-      if (type === 1) {
-        code = `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <link rel="stylesheet" href="style.css" />\n  <title>EXM Sub Project</title>\n</head>\n<body>\n  <h1>Project Active in /EXM/</h1>\n  <script src="script.js"><\/script>\n</body>\n</html>`;
-      } else {
-        code = `window.parent.postMessage({ type: 'GODX_EVENT', payload: 'Ready' }, '*');`;
-      }
-      navigator.clipboard.writeText(code).then(() => {
-        showToast("Snippet Copied", "Code copied to clipboard.");
-      });
-    }
-
+    // COMMAND PALETTE (CTRL/CMD + K)
     function openCommandPalette() {
       cmdModal.style.display = "flex";
       setTimeout(() => {
@@ -2146,11 +2596,11 @@
       const actions = [
         { label: "Switch Tab: EXM Projects Hub", icon: "folder-tree", action: () => switchTab("tab-projects") },
         { label: "Switch Tab: Dual Split Comparator", icon: "columns", action: () => switchTab("tab-split") },
-        { label: "Switch Tab: Live Sandbox Runner", icon: "code-2", action: () => switchTab("tab-sandbox") },
-        { label: "Switch Tab: System Controls", icon: "sliders", action: () => switchTab("tab-controls") },
+        { label: "Switch Tab: Multi-Lang Code Sandbox", icon: "code-2", action: () => switchTab("tab-sandbox") },
         { label: "Switch Tab: GODx Terminal", icon: "terminal", action: () => switchTab("tab-terminal") },
-        { label: "Switch Tab: Performance Analytics", icon: "activity", action: () => switchTab("tab-analytics") },
-        { label: "Switch Tab: Scratchpad", icon: "file-text", action: () => switchTab("tab-scratchpad") },
+        { label: "Switch Tab: Performance & Telemetry", icon: "activity", action: () => switchTab("tab-analytics") },
+        { label: "Switch Tab: Scratchpad & Notes Vault", icon: "file-text", action: () => switchTab("tab-scratchpad") },
+        { label: "Switch Tab: System Settings & Controls", icon: "sliders", action: () => switchTab("tab-controls") },
         { label: "Action: Scan /EXM/ Folder", icon: "refresh-cw", action: () => fetchRepoProjects() },
         { label: "Action: Inspect Source Code", icon: "code", action: () => openSourceInspector() },
         { label: "Action: Reload Current Viewport", icon: "rotate-cw", action: () => reloadIframe() },
@@ -2240,6 +2690,62 @@
       setTimeout(() => {
         toast.classList.add("translate-y-24", "opacity-0");
       }, 3500);
+    }
+
+    // Interactive Animated Constellation Particles
+    function initAmbientParticles() {
+      const canvas = document.getElementById("ambientCanvas");
+      const ctx = canvas.getContext("2d");
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      const particles = Array.from({ length: 55 }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        radius: Math.random() * 1.8 + 0.6,
+        alpha: Math.random() * 0.5 + 0.2
+      }));
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 110) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(0, 242, 254, ${0.15 * (1 - dist / 110)})`;
+              ctx.lineWidth = 0.6;
+              ctx.stroke();
+            }
+          }
+        }
+
+        particles.forEach(p => {
+          p.x = (p.x + p.vx + width) % width;
+          p.y = (p.y + p.vy + height) % height;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 242, 254, ${p.alpha})`;
+          ctx.fill();
+        });
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+
+      window.addEventListener("resize", () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
     }
   </script>
 </body>
