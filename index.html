@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LuminaVista OS — GODx Next-Gen Workspace</title>
   
-  <!-- Google Fonts: Plus Jakarta Sans, Space Grotesk, JetBrains Mono -->
+  <!-- Google Fonts: Plus Jakarta Sans, Space Grotesk, JetBrains Mono, Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -24,13 +24,6 @@
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            accent: {
-              cyan: '#00f2fe',
-              emerald: '#10b981',
-              amber: '#f59e0b',
-              rose: '#f43f5e',
-              purple: '#a855f7',
-            },
             surface: {
               950: '#030712',
               900: '#0b0f19',
@@ -41,7 +34,6 @@
           },
           animation: {
             'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'spin-slow': 'spin 12s linear infinite',
           }
         }
       }
@@ -88,23 +80,32 @@
     }
     
     .glass-panel {
-      background: rgba(11, 15, 25, 0.85);
+      background: rgba(11, 15, 25, 0.92);
       -webkit-backdrop-filter: blur(24px);
       backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow);
     }
     
-    .glass-input {
-      background: rgba(17, 24, 39, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    .godx-input {
+      background-color: #0f172a !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      border-radius: 0.75rem !important;
+      font-size: 0.875rem !important;
+      line-height: 1.25rem !important;
+      outline: none !important;
+      transition: all 0.2s ease !important;
+      pointer-events: auto !important;
+      user-select: text !important;
+      position: relative !important;
+      z-index: 50 !important;
     }
     
-    .glass-input:focus {
-      background: rgba(17, 24, 39, 0.95);
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-glow);
+    .godx-input:focus {
+      background-color: #1e293b !important;
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 3px var(--primary-glow) !important;
     }
 
     .glow-border {
@@ -122,11 +123,7 @@
       -webkit-mask-composite: xor;
       mask-composite: exclude;
       pointer-events: none;
-    }
-
-    .card-3d-wrapper {
-      perspective: 1200px;
-      transform-style: preserve-3d;
+      z-index: 0;
     }
 
     .btn-gradient {
@@ -171,32 +168,31 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
 
-  <!-- Background Canvas & Lights -->
-  <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
-  <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow"></div>
-  <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow" style="animation-delay: 3s;"></div>
+  <!-- Ambient Mesh Background Lights -->
+  <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0"></div>
+  <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 3s;"></div>
 
   <!-- ========================================================================= -->
-  <!-- 1. AUTHENTICATION & PASS GATEWAY                                          -->
+  <!-- 1. AUTHENTICATION GATEWAY VIEW                                            -->
   <!-- ========================================================================= -->
-  <div id="loginView" class="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-screen">
+  <div id="loginView" class="relative z-30 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 min-h-screen">
     
-    <div class="card-3d-wrapper w-full max-w-md">
+    <div class="w-full max-w-md">
       
-      <!-- Top Status Badge -->
+      <!-- Top Status Pill -->
       <div class="flex justify-center mb-6">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-900/90 border border-white/10 text-xs text-zinc-300 backdrop-blur-md">
           <div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div>
           <span class="font-mono text-zinc-400">LuminaVista EXM Core</span>
           <span class="text-zinc-600">•</span>
-          <span class="text-cyan-400 font-mono font-medium">GODx Protocol</span>
+          <span class="text-cyan-400 font-mono font-medium">GODx Gateway</span>
         </div>
       </div>
 
       <!-- Login Glass Card -->
-      <div id="loginCard" class="glass-panel glow-border rounded-3xl p-6 sm:p-8 w-full shadow-2xl transition-transform duration-150 ease-out">
+      <div id="loginCard" class="glass-panel glow-border rounded-3xl p-6 sm:p-8 w-full shadow-2xl relative z-40">
         
-        <!-- User Profile Header -->
+        <!-- Profile Header -->
         <div class="flex items-center gap-3.5 pb-6 border-b border-white/5">
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-base shadow-lg shadow-cyan-500/25 tracking-wider">
             GODx
@@ -204,15 +200,15 @@
           <div>
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
               Anish x
-              <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] border border-cyan-500/30 uppercase font-mono">Root Admin</span>
+              <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] border border-cyan-500/30 uppercase font-mono font-semibold">Root Admin</span>
             </h3>
-            <p class="text-xs text-zinc-400">LuminaVista Workspace Access</p>
+            <p class="text-xs text-zinc-400">LuminaVista Portal Access</p>
           </div>
         </div>
 
         <div class="mt-6 text-left">
           <h2 class="font-heading font-bold text-2xl text-white tracking-tight">Admin Sign In</h2>
-          <p class="text-xs text-zinc-400 mt-1">Enter your master password to unlock the workspace console.</p>
+          <p class="text-xs text-zinc-400 mt-1">Enter your master security key to unlock the workspace console.</p>
         </div>
 
         <!-- Form -->
@@ -222,50 +218,44 @@
           <div class="space-y-1.5 text-left">
             <label for="usernameInput" class="block text-xs font-medium text-zinc-300">Username</label>
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
-                <i data-lucide="user" class="w-4 h-4 text-cyan-400"></i>
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-cyan-400 z-50">
+                <i data-lucide="user" class="w-4 h-4"></i>
               </div>
               <input
                 type="text"
                 id="usernameInput"
+                name="username"
                 required
-                placeholder="Anish x"
+                placeholder="Enter username"
                 value="Anish x"
                 autocomplete="username"
-                class="glass-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none"
+                class="godx-input w-full pl-10 pr-4 py-3"
               />
             </div>
           </div>
 
           <!-- Password Input -->
           <div class="space-y-1.5 text-left">
-            <div class="flex items-center justify-between">
-              <label for="passInput" class="block text-xs font-medium text-zinc-300">Password</label>
-              <button
-                type="button"
-                onclick="autofillPass()"
-                class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
-              >
-                Autofill (<code class="text-cyan-300 font-mono">admin</code>)
-              </button>
-            </div>
+            <label for="passInput" class="block text-xs font-medium text-zinc-300">Master Password</label>
             
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
-                <i data-lucide="lock" class="w-4 h-4 text-cyan-400"></i>
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-cyan-400 z-50">
+                <i data-lucide="key" class="w-4 h-4"></i>
               </div>
               <input
                 type="password"
                 id="passInput"
+                name="password"
                 required
-                placeholder="Enter password (admin)"
+                placeholder="••••••••••••"
                 autocomplete="current-password"
-                class="glass-input w-full pl-10 pr-10 py-2.5 rounded-xl text-sm text-white placeholder-zinc-500 outline-none"
+                class="godx-input w-full pl-10 pr-12 py-3"
               />
               <button
                 type="button"
                 id="toggleLoginPass"
-                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-zinc-300 focus:outline-none"
+                onclick="togglePassVisibility()"
+                class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-cyan-300 cursor-pointer z-50 transition-colors"
                 aria-label="Toggle password visibility"
               >
                 <i data-lucide="eye" id="loginPassIcon" class="w-4 h-4"></i>
@@ -274,12 +264,20 @@
 
             <p id="loginError" class="hidden text-[11px] text-rose-400 mt-1.5 flex items-center gap-1">
               <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-              <span>Access Denied: Invalid password. Try <code>admin</code>.</span>
+              <span>Access Denied: Invalid security password.</span>
             </p>
           </div>
 
-          <!-- Remember Session -->
-          <div class="flex items-center justify-between pt-1">
+          <!-- Virtual Keypad Toggle Button -->
+          <div class="pt-1 flex items-center justify-between">
+            <button
+              type="button"
+              onclick="toggleVirtualKeypad()"
+              class="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono transition-colors cursor-pointer"
+            >
+              <i data-lucide="keyboard" class="w-3.5 h-3.5"></i>
+              <span id="keypadToggleText">Show Virtual Keypad</span>
+            </button>
             <label class="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -287,8 +285,22 @@
                 checked
                 class="w-4 h-4 rounded bg-surface-900 border border-white/20 text-cyan-500 focus:ring-1 focus:ring-cyan-400 focus:outline-none"
               />
-              <span class="text-xs text-zinc-400">Keep session active</span>
+              <span class="text-xs text-zinc-400">Remember session</span>
             </label>
+          </div>
+
+          <!-- On-Screen Virtual Keypad Grid -->
+          <div id="virtualKeypad" class="hidden p-3 rounded-2xl bg-surface-950 border border-white/10 grid grid-cols-5 gap-1.5 text-xs font-mono">
+            <button type="button" onclick="keypadType('x')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">x</button>
+            <button type="button" onclick="keypadType('p')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">p</button>
+            <button type="button" onclick="keypadType('s')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">s</button>
+            <button type="button" onclick="keypadType('@')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-cyan-300 font-bold">@</button>
+            <button type="button" onclick="keypadType('a')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">a</button>
+            <button type="button" onclick="keypadType('d')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">d</button>
+            <button type="button" onclick="keypadType('m')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">m</button>
+            <button type="button" onclick="keypadType('i')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">i</button>
+            <button type="button" onclick="keypadType('n')" class="p-2 rounded-lg bg-surface-850 hover:bg-surface-800 text-white font-bold">n</button>
+            <button type="button" onclick="keypadBackspace()" class="p-2 rounded-lg bg-rose-500/20 text-rose-300 font-bold">⌫</button>
           </div>
 
           <!-- Submit Button -->
@@ -297,7 +309,7 @@
             id="loginSubmitBtn"
             class="btn-gradient w-full py-3 px-4 rounded-xl text-sm font-semibold text-black flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-cyan-400 transition-all duration-200 mt-4 cursor-pointer"
           >
-            <span id="loginBtnText">Unlock LuminaVista OS</span>
+            <span id="loginBtnText">Unlock Dashboard</span>
             <i data-lucide="arrow-right" id="loginBtnIcon" class="w-4 h-4"></i>
             <svg id="loginSpinner" class="hidden animate-spin h-5 w-5 text-black" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -317,7 +329,7 @@
             <span>SubhadraRoy/LuminaVista/EXM</span>
           </a>
           <span class="text-[11px] text-cyan-400 flex items-center gap-1">
-            <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+            <i data-lucide="shield" class="w-3 h-3"></i>
             <span>TLS Encrypted</span>
           </span>
         </div>
@@ -329,7 +341,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- 2. FULL SYSTEM DASHBOARD (Accessible After Login)                         -->
+  <!-- 2. FULL SYSTEM DASHBOARD                                                  -->
   <!-- ========================================================================= -->
   <div id="dashboardView" class="relative z-10 flex-1 flex flex-col hidden min-h-screen">
     
@@ -350,7 +362,7 @@
         </div>
       </div>
 
-      <!-- Center Live System Bar -->
+      <!-- Center Live System Metrics -->
       <div class="hidden lg:flex items-center gap-4 bg-surface-900/80 px-4 py-1.5 rounded-full border border-white/5 text-xs text-zinc-400 font-mono">
         <div class="flex items-center gap-1.5">
           <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -375,7 +387,7 @@
         <button
           type="button"
           onclick="openSourceInspector()"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer"
           title="Inspect Subproject Source Code"
         >
           <i data-lucide="code" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -386,7 +398,7 @@
         <button
           type="button"
           onclick="openCommandPalette()"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white transition-colors cursor-pointer"
           title="Command Palette (Ctrl/Cmd + K)"
         >
           <i data-lucide="command" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -399,32 +411,32 @@
           type="button"
           id="audioToggleBtn"
           onclick="toggleAudioFeedback()"
-          class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+          class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
           title="Toggle UI Audio Feedback"
         >
           <i data-lucide="volume-2" id="audioIcon" class="w-4 h-4 text-cyan-400"></i>
         </button>
 
-        <!-- Theme Quick Toggle -->
+        <!-- Theme Quick Toggle Dropdown -->
         <div class="relative group">
           <button
             type="button"
-            class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+            class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
             title="Switch Visual Palette"
           >
             <i data-lucide="palette" class="w-4 h-4 text-cyan-400"></i>
           </button>
           <div class="absolute right-0 mt-2 w-40 p-2 bg-surface-900 border border-white/10 rounded-2xl shadow-2xl hidden group-hover:block z-50 text-xs space-y-1">
-            <button onclick="setDashboardTheme('cyan')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-cyan-300 flex items-center gap-2">
+            <button onclick="setDashboardTheme('cyan')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-cyan-300 flex items-center gap-2 cursor-pointer">
               <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Cyan Nebula
             </button>
-            <button onclick="setDashboardTheme('emerald')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-emerald-300 flex items-center gap-2">
+            <button onclick="setDashboardTheme('emerald')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-emerald-300 flex items-center gap-2 cursor-pointer">
               <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Cyber Matrix
             </button>
-            <button onclick="setDashboardTheme('amber')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-amber-300 flex items-center gap-2">
+            <button onclick="setDashboardTheme('amber')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-amber-300 flex items-center gap-2 cursor-pointer">
               <span class="w-2 h-2 rounded-full bg-amber-400"></span> Solar Amber
             </button>
-            <button onclick="setDashboardTheme('rose')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-rose-300 flex items-center gap-2">
+            <button onclick="setDashboardTheme('rose')" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-800 text-rose-300 flex items-center gap-2 cursor-pointer">
               <span class="w-2 h-2 rounded-full bg-rose-400"></span> Laser Rose
             </button>
           </div>
@@ -444,7 +456,7 @@
         <button
           type="button"
           onclick="handleLogout()"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium text-rose-300 hover:text-rose-200 transition-colors"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium text-rose-300 hover:text-rose-200 transition-colors cursor-pointer"
           title="Lock Console"
         >
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
@@ -462,7 +474,7 @@
           type="button"
           onclick="switchTab('tab-projects')"
           id="btn-tab-projects"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent transition-all nav-tab-active shrink-0 cursor-pointer"
         >
           <i data-lucide="folder-tree" class="w-4 h-4 text-cyan-400"></i>
           <span>EXM Projects & Viewport</span>
@@ -470,9 +482,29 @@
 
         <button
           type="button"
+          onclick="switchTab('tab-split')"
+          id="btn-tab-split"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
+        >
+          <i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i>
+          <span>Dual Split Comparator</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="switchTab('tab-sandbox')"
+          id="btn-tab-sandbox"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
+        >
+          <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
+          <span>Live Code Sandbox</span>
+        </button>
+
+        <button
+          type="button"
           onclick="switchTab('tab-controls')"
           id="btn-tab-controls"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
         >
           <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
           <span>System Controls & Tweaks</span>
@@ -482,7 +514,7 @@
           type="button"
           onclick="switchTab('tab-terminal')"
           id="btn-tab-terminal"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
         >
           <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i>
           <span>GODx Terminal CLI</span>
@@ -492,7 +524,7 @@
           type="button"
           onclick="switchTab('tab-analytics')"
           id="btn-tab-analytics"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
         >
           <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
           <span>Performance & Logs</span>
@@ -502,10 +534,10 @@
           type="button"
           onclick="switchTab('tab-scratchpad')"
           id="btn-tab-scratchpad"
-          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0"
+          class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
         >
           <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
-          <span>Scratchpad & Code Vault</span>
+          <span>Scratchpad & Notes</span>
         </button>
 
       </div>
@@ -524,7 +556,7 @@
           <div class="space-y-1">
             <div class="inline-flex items-center gap-1.5 text-xs text-cyan-300 font-mono">
               <i data-lucide="folder-check" class="w-3.5 h-3.5 text-cyan-400"></i>
-              <span>EXM FOLDER WORKSPACE CONSOLE</span>
+              <span>EXM WORKSPACE CONSOLE</span>
             </div>
             <h2 class="font-heading font-extrabold text-xl sm:text-2xl text-white">
               LuminaVista Console: <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400">Anish x</span>
@@ -538,7 +570,7 @@
             <button
               type="button"
               onclick="fetchRepoProjects()"
-              class="px-3.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white flex items-center gap-2 transition-all group"
+              class="px-3.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 hover:text-white flex items-center gap-2 transition-all group cursor-pointer"
             >
               <i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-180 transition-transform"></i>
               <span>Scan /EXM/ Folder</span>
@@ -567,6 +599,18 @@
                 </span>
               </div>
 
+              <!-- Filter / Search Input -->
+              <div class="relative">
+                <input
+                  type="text"
+                  id="projectFilterInput"
+                  oninput="filterProjectList()"
+                  placeholder="Quick filter projects..."
+                  class="godx-input w-full pl-9 pr-3 py-2 text-xs font-mono"
+                />
+                <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 z-50"></i>
+              </div>
+
               <!-- Dynamic Project Chips -->
               <div class="space-y-2">
                 <div class="flex items-center justify-between text-xs">
@@ -585,7 +629,7 @@
                   <select
                     id="projectSelect"
                     onchange="onDropdownSelect()"
-                    class="glass-input w-full px-3.5 py-2.5 rounded-xl text-sm text-white outline-none cursor-pointer"
+                    class="godx-input w-full px-3.5 py-2.5 text-sm cursor-pointer"
                   ></select>
                 </div>
               </div>
@@ -595,18 +639,18 @@
                 <label for="customProjectInput" class="block text-xs font-medium text-zinc-400">Manually Add Folder / File:</label>
                 <div class="flex gap-2">
                   <div class="relative flex-1">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-500 pointer-events-none">EXM/</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-500 pointer-events-none z-50">EXM/</span>
                     <input
                       type="text"
                       id="customProjectInput"
                       placeholder="folder_name"
-                      class="glass-input w-full pl-14 pr-3 py-2 rounded-xl text-xs font-mono text-white placeholder-zinc-500 outline-none"
+                      class="godx-input w-full pl-14 pr-3 py-2 text-xs font-mono"
                     />
                   </div>
                   <button
                     type="button"
                     onclick="addCustomProject()"
-                    class="px-3.5 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
+                    class="px-3.5 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer"
                   >
                     Add
                   </button>
@@ -631,7 +675,7 @@
                 <button
                   type="button"
                   onclick="loadActiveIntoPreview()"
-                  class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-black flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 active:scale-[0.98] transition-all"
+                  class="btn-gradient py-2.5 px-3 rounded-xl text-xs font-semibold text-black flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   <i data-lucide="play" class="w-3.5 h-3.5"></i>
                   <span>Embed Preview</span>
@@ -640,7 +684,7 @@
                 <button
                   type="button"
                   onclick="openActiveInNewTab()"
-                  class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all"
+                  class="py-2.5 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-semibold text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                   <span>Open in Tab</span>
@@ -671,7 +715,7 @@
                   type="button"
                   onclick="togglePinActiveProject()"
                   id="pinActiveBtn"
-                  class="p-1 rounded text-zinc-400 hover:text-amber-400 transition-colors"
+                  class="p-1 rounded text-zinc-400 hover:text-amber-400 transition-colors cursor-pointer"
                   title="Bookmark / Pin Subproject"
                 >
                   <i data-lucide="star" class="w-3.5 h-3.5"></i>
@@ -683,7 +727,7 @@
                 <button
                   type="button"
                   onclick="setViewportDevice('100%')"
-                  class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs font-medium"
+                  class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs font-medium cursor-pointer"
                   title="Desktop (100%)"
                   id="btnDeviceDesktop"
                 >
@@ -692,7 +736,7 @@
                 <button
                   type="button"
                   onclick="setViewportDevice('768px')"
-                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium"
+                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer"
                   title="Tablet (768px)"
                   id="btnDeviceTablet"
                 >
@@ -701,7 +745,7 @@
                 <button
                   type="button"
                   onclick="setViewportDevice('375px')"
-                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium"
+                  class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer"
                   title="Mobile (375px)"
                   id="btnDeviceMobile"
                 >
@@ -713,7 +757,7 @@
                 <button
                   type="button"
                   onclick="reloadIframe()"
-                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   title="Reload Frame"
                 >
                   <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
@@ -721,7 +765,7 @@
                 <button
                   type="button"
                   onclick="toggleFullscreen()"
-                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  class="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   title="Fullscreen Mode"
                 >
                   <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
@@ -751,7 +795,7 @@
                 <button
                   type="button"
                   onclick="fetchRepoProjects()"
-                  class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold"
+                  class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold cursor-pointer"
                 >
                   Scan Repository Now ⚡
                 </button>
@@ -762,7 +806,97 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 2: SYSTEM CONTROLS & ENVIRONMENT TWEAKS                           -->
+      <!-- TAB 2: DUAL SPLIT COMPARATOR                                          -->
+      <!-- ===================================================================== -->
+      <section id="tab-split" class="tab-pane space-y-6 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i>
+                Dual Viewport Split Comparator
+              </h3>
+              <p class="text-xs text-zinc-400">Run two EXM sub-projects side by side in parallel viewports.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="splitLeftSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
+              <span class="text-xs text-zinc-500">VS</span>
+              <select id="splitRightSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[500px]">
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-surface-950 flex flex-col">
+              <div class="p-2 bg-surface-900 border-b border-white/5 text-[11px] font-mono text-cyan-300 flex items-center justify-between">
+                <span id="splitLeftTitle">Viewport A</span>
+                <button onclick="document.getElementById('splitLeftFrame').src=document.getElementById('splitLeftFrame').src" class="text-zinc-400 hover:text-white cursor-pointer">↻</button>
+              </div>
+              <iframe id="splitLeftFrame" src="about:blank" class="w-full flex-1 border-0"></iframe>
+            </div>
+
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-surface-950 flex flex-col">
+              <div class="p-2 bg-surface-900 border-b border-white/5 text-[11px] font-mono text-purple-300 flex items-center justify-between">
+                <span id="splitRightTitle">Viewport B</span>
+                <button onclick="document.getElementById('splitRightFrame').src=document.getElementById('splitRightFrame').src" class="text-zinc-400 hover:text-white cursor-pointer">↻</button>
+              </div>
+              <iframe id="splitRightFrame" src="about:blank" class="w-full flex-1 border-0"></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 3: LIVE CODE SANDBOX PLAYGROUND                                   -->
+      <!-- ===================================================================== -->
+      <section id="tab-sandbox" class="tab-pane space-y-6 hidden">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i>
+                Live HTML/CSS/JS Sandbox Runner
+              </h3>
+              <p class="text-xs text-zinc-400">Prototype and test components instantly before committing to EXM.</p>
+            </div>
+            <button onclick="runSandboxCode()" class="btn-gradient px-4 py-1.5 rounded-xl text-xs font-bold text-black flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="play" class="w-3.5 h-3.5"></i> Run Sandbox
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[460px]">
+            <div class="flex flex-col space-y-2">
+              <span class="text-xs font-mono text-zinc-400">HTML / CSS / JS Code:</span>
+              <textarea
+                id="sandboxCodeInput"
+                class="godx-input w-full flex-1 p-3 font-mono text-xs outline-none resize-none"
+              ><!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background: #030712; color: #00f2fe; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    h1 { font-size: 24px; text-shadow: 0 0 20px rgba(0,242,254,0.5); }
+    button { background: #00f2fe; color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>GODx Live Sandbox</h1>
+  <button onclick="alert('LuminaVista OS Sandbox Active!')">Click Me</button>
+</body>
+</html></textarea>
+            </div>
+
+            <div class="flex flex-col space-y-2">
+              <span class="text-xs font-mono text-zinc-400">Live Rendered Output:</span>
+              <div class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-surface-950">
+                <iframe id="sandboxPreviewFrame" class="w-full h-full border-0"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 4: SYSTEM CONTROLS & ENVIRONMENT TWEAKS                           -->
       <!-- ===================================================================== -->
       <section id="tab-controls" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -799,7 +933,7 @@
             <button
               type="button"
               onclick="applySandboxPolicy()"
-              class="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-semibold text-black transition-colors"
+              class="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-xs font-semibold text-black transition-colors cursor-pointer"
             >
               Apply Security Settings
             </button>
@@ -824,7 +958,7 @@
               <select
                 id="autoRefreshSelect"
                 onchange="setupAutoRefresh()"
-                class="glass-input w-full p-2.5 rounded-xl text-xs text-white outline-none cursor-pointer"
+                class="godx-input w-full p-2.5 text-xs cursor-pointer"
               >
                 <option value="0" class="bg-surface-900">Disabled (Manual Only)</option>
                 <option value="5" class="bg-surface-900">Every 5 Seconds</option>
@@ -854,12 +988,12 @@
               <textarea
                 id="customInjectCode"
                 placeholder="/* Custom script to inject into session */&#10;console.log('GODx injected script!');"
-                class="glass-input w-full p-2.5 rounded-xl text-xs font-mono text-white placeholder-zinc-500 h-24 outline-none resize-none"
+                class="godx-input w-full p-2.5 font-mono text-xs outline-none resize-none h-24"
               ></textarea>
               <button
                 type="button"
                 onclick="injectCustomCode()"
-                class="w-full py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors"
+                class="w-full py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer"
               >
                 Execute Injection ⚡
               </button>
@@ -882,28 +1016,28 @@
               <button
                 type="button"
                 onclick="setDashboardTheme('cyan')"
-                class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
+                class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Cyan Nebula
               </button>
               <button
                 type="button"
                 onclick="setDashboardTheme('emerald')"
-                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
+                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Cyber Matrix
               </button>
               <button
                 type="button"
                 onclick="setDashboardTheme('amber')"
-                class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
+                class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Solar Amber
               </button>
               <button
                 type="button"
                 onclick="setDashboardTheme('rose')"
-                class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5"
+                class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:scale-105 transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Laser Rose
               </button>
@@ -926,14 +1060,14 @@
               <button
                 type="button"
                 onclick="exportDashboardConfig()"
-                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors"
+                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
               >
                 Export JSON
               </button>
               <button
                 type="button"
                 onclick="importDashboardConfig()"
-                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors"
+                class="py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
               >
                 Import JSON
               </button>
@@ -963,7 +1097,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 3: INTERACTIVE GODX TERMINAL CLI                                  -->
+      <!-- TAB 5: INTERACTIVE GODX TERMINAL CLI                                  -->
       <!-- ===================================================================== -->
       <section id="tab-terminal" class="tab-pane space-y-4 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
@@ -975,7 +1109,7 @@
               <span class="text-zinc-400 ml-2">godx-terminal — bash — 80x24</span>
             </div>
             <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
-              LuminaVista CLI v2.4
+              LuminaVista CLI v2.5
             </span>
           </div>
 
@@ -984,7 +1118,7 @@
             id="terminalScreen"
             class="bg-surface-950/95 rounded-xl p-4 font-mono text-xs text-zinc-300 min-h-[360px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5"
           >
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 2.4.0]</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [Version 2.5.0]</div>
             <div class="text-zinc-400">Authenticated Session: <span class="text-emerald-400">Anish x (Root Administrator)</span></div>
             <div class="text-zinc-500">Root Directory: <span class="text-cyan-300 font-mono">/EXM/</span></div>
             <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view all commands.</div>
@@ -999,11 +1133,11 @@
               id="terminalInput"
               autocomplete="off"
               placeholder="Type command (e.g. ls, open <folder>, fetch, ping, theme)..."
-              class="glass-input flex-1 px-3 py-2 rounded-xl font-mono text-xs text-white placeholder-zinc-500 outline-none"
+              class="godx-input flex-1 px-3 py-2 text-xs font-mono"
             />
             <button
               type="submit"
-              class="btn-gradient px-4 py-2 rounded-xl text-xs font-mono font-semibold text-black transition-all"
+              class="btn-gradient px-4 py-2 rounded-xl text-xs font-mono font-semibold text-black transition-all cursor-pointer"
             >
               Run
             </button>
@@ -1012,7 +1146,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: LIVE ANALYTICS & LOG CONSOLE                                   -->
+      <!-- TAB 6: LIVE ANALYTICS & LOG CONSOLE                                   -->
       <!-- ===================================================================== -->
       <section id="tab-analytics" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1065,7 +1199,7 @@
                   <i data-lucide="terminal-square" class="w-4 h-4 text-emerald-400"></i>
                   Live Frame Bridge Logs
                 </h3>
-                <button onclick="clearEventLogs()" class="text-[10px] text-zinc-500 hover:text-zinc-300">Clear</button>
+                <button onclick="clearEventLogs()" class="text-[10px] text-zinc-500 hover:text-zinc-300 cursor-pointer">Clear</button>
               </div>
               <div id="eventLogsScreen" class="bg-surface-950/90 rounded-xl p-3 font-mono text-[11px] text-zinc-300 h-44 overflow-y-auto space-y-1 mt-2 border border-white/5">
                 <div class="text-zinc-500">[00:00:00] LuminaVista bridge initialized.</div>
@@ -1081,7 +1215,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 5: SCRATCHPAD & CODE VAULT                                        -->
+      <!-- TAB 7: SCRATCHPAD & CODE VAULT                                        -->
       <!-- ===================================================================== -->
       <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1098,8 +1232,8 @@
             <textarea
               id="adminScratchpad"
               oninput="saveScratchpad()"
-              placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Master Password: admin&#10;- Status: All systems nominal..."
-              class="glass-input w-full p-4 rounded-xl font-mono text-xs text-white placeholder-zinc-500 h-64 outline-none resize-none"
+              placeholder="# GODx Workspace Notes&#10;- Sub-projects located in /EXM/&#10;- Status: All systems nominal..."
+              class="godx-input w-full p-4 font-mono text-xs outline-none resize-none h-64"
             ></textarea>
           </div>
 
@@ -1115,7 +1249,7 @@
               <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
                 <div class="flex items-center justify-between font-bold text-zinc-200">
                   <span>EXM Sub-Project index.html</span>
-                  <button type="button" onclick="copySnippet(1)" class="text-cyan-400 hover:text-cyan-300">Copy</button>
+                  <button type="button" onclick="copySnippet(1)" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy</button>
                 </div>
                 <p class="text-[11px] text-zinc-400">Boilerplate for folders inside EXM/ with local CSS & JS.</p>
               </div>
@@ -1123,7 +1257,7 @@
               <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5">
                 <div class="flex items-center justify-between font-bold text-zinc-200">
                   <span>PostMessage Event Trigger</span>
-                  <button type="button" onclick="copySnippet(2)" class="text-cyan-400 hover:text-cyan-300">Copy</button>
+                  <button type="button" onclick="copySnippet(2)" class="text-cyan-400 hover:text-cyan-300 cursor-pointer">Copy</button>
                 </div>
                 <p class="text-[11px] text-zinc-400">Send notifications from sub-projects to LuminaVista OS.</p>
               </div>
@@ -1151,22 +1285,22 @@
   <!-- ========================================================================= -->
   <!-- SOURCE CODE INSPECTOR MODAL                                               -->
   <!-- ========================================================================= -->
-  <div id="sourceModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 hidden opacity-0 transition-opacity duration-200">
+  <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-4xl w-full p-5 sm:p-6 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <div class="flex items-center gap-2">
           <i data-lucide="code" class="w-5 h-5 text-cyan-400"></i>
           <h3 class="font-heading font-bold text-base text-white">Live Source Inspector: <span id="sourceProjectTitle" class="text-cyan-300 font-mono"></span></h3>
         </div>
-        <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white">
+        <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
       <div class="my-3 flex items-center gap-2">
-        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono hover:bg-surface-850">index.html</button>
-        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono hover:bg-surface-850">style.css</button>
-        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono hover:bg-surface-850">script.js</button>
+        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono hover:bg-surface-850 cursor-pointer">index.html</button>
+        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono hover:bg-surface-850 cursor-pointer">style.css</button>
+        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono hover:bg-surface-850 cursor-pointer">script.js</button>
       </div>
 
       <div class="flex-1 overflow-y-auto bg-surface-950 rounded-2xl p-4 border border-white/5">
@@ -1176,7 +1310,7 @@
   </div>
 
   <!-- Command Palette Modal (Ctrl/Cmd + K) -->
-  <div id="cmdModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 p-4 hidden opacity-0 transition-opacity duration-200">
+  <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 p-4 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-lg w-full p-4 rounded-2xl glow-border relative transform scale-95 transition-transform duration-200">
       <div class="flex items-center gap-2 pb-3 border-b border-white/10">
         <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
@@ -1208,7 +1342,8 @@
   <script>
     lucide.createIcons();
 
-    const MASTER_PASS = "admin";
+    // Obfuscated Master Password (eHBzQGFkbWlu = base64 of xps@admin)
+    const AUTH_ENCODED = "eHBzQGFkbWlu";
     const SESSION_KEY = "lumina_godx_session";
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
 
@@ -1234,13 +1369,13 @@
     let currentSelectedProject = repoProjects[0] || null;
     let isAudioEnabled = true;
     let autoRefreshTimer = null;
+    let isPassVisible = false;
 
     const loginView = document.getElementById("loginView");
     const dashboardView = document.getElementById("dashboardView");
     const usernameInput = document.getElementById("usernameInput");
     const passInput = document.getElementById("passInput");
     const loginError = document.getElementById("loginError");
-    const toggleLoginPass = document.getElementById("toggleLoginPass");
     const loginPassIcon = document.getElementById("loginPassIcon");
     const projectChipsContainer = document.getElementById("projectChipsContainer");
     const pinnedChipsContainer = document.getElementById("pinnedChipsContainer");
@@ -1260,8 +1395,7 @@
     const deployHostBadge = document.getElementById("deployHostBadge");
     const eventLogsScreen = document.getElementById("eventLogsScreen");
     const sourceModal = document.getElementById("sourceModal");
-
-    let isPassVisible = false;
+    const virtualKeypad = document.getElementById("virtualKeypad");
 
     window.addEventListener("DOMContentLoaded", () => {
       const savedTheme = localStorage.getItem("lumina_theme") || "cyan";
@@ -1289,6 +1423,7 @@
       loadScratchpad();
       initMetricsChart();
       initMessageBridge();
+      runSandboxCode();
     });
 
     function startSystemClock() {
@@ -1326,7 +1461,7 @@
     function showDashboard() {
       loginView.classList.add("hidden");
       dashboardView.classList.remove("hidden");
-      gsap.from("#dashboardView", { opacity: 0, y: 15, duration: 0.5, ease: "power2.out" });
+      gsap.from("#dashboardView", { opacity: 0, y: 15, duration: 0.4, ease: "power2.out" });
       lucide.createIcons();
       playAudioTone(587, "triangle", 0.15);
     }
@@ -1336,27 +1471,45 @@
       loginView.classList.remove("hidden");
       passInput.value = "";
       loginError.classList.add("hidden");
-      gsap.from("#loginCard", { opacity: 0, scale: 0.96, duration: 0.5, ease: "power2.out" });
       lucide.createIcons();
+      setTimeout(() => passInput.focus(), 100);
     }
 
-    toggleLoginPass.addEventListener("click", () => {
+    function togglePassVisibility() {
       isPassVisible = !isPassVisible;
       passInput.type = isPassVisible ? "text" : "password";
       loginPassIcon.setAttribute("data-lucide", isPassVisible ? "eye-off" : "eye");
       lucide.createIcons();
-    });
+    }
 
-    function autofillPass() {
-      passInput.value = MASTER_PASS;
-      loginError.classList.add("hidden");
-      playAudioTone(659, "sine", 0.05);
+    function toggleVirtualKeypad() {
+      const isHidden = virtualKeypad.classList.contains("hidden");
+      if (isHidden) {
+        virtualKeypad.classList.remove("hidden");
+        document.getElementById("keypadToggleText").textContent = "Hide Virtual Keypad";
+      } else {
+        virtualKeypad.classList.add("hidden");
+        document.getElementById("keypadToggleText").textContent = "Show Virtual Keypad";
+      }
+    }
+
+    function keypadType(char) {
+      passInput.value += char;
+      playAudioTone(700, "sine", 0.03);
+      passInput.focus();
+    }
+
+    function keypadBackspace() {
+      passInput.value = passInput.value.slice(0, -1);
+      playAudioTone(400, "sawtooth", 0.04);
+      passInput.focus();
     }
 
     function handleLogin(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const enteredUser = usernameInput.value.trim() || "Anish x";
       const enteredPass = passInput.value.trim();
+      const expectedPass = atob(AUTH_ENCODED);
 
       const submitBtn = document.getElementById("loginSubmitBtn");
       const btnText = document.getElementById("loginBtnText");
@@ -1372,9 +1525,9 @@
         spinner.classList.add("hidden");
         submitBtn.disabled = false;
         btnIcon.classList.remove("hidden");
-        btnText.textContent = "Unlock LuminaVista OS";
+        btnText.textContent = "Unlock Dashboard";
 
-        if (enteredPass === MASTER_PASS) {
+        if (enteredPass === expectedPass) {
           loginError.classList.add("hidden");
           sessionStorage.setItem(SESSION_KEY, "true");
           sessionStorage.setItem("lumina_godx_user", enteredUser);
@@ -1391,7 +1544,7 @@
             { x: 10, duration: 0.08, repeat: 4, yoyo: true, ease: "power1.inOut" }
           );
         }
-      }, 450);
+      }, 350);
     }
 
     function handleLogout() {
@@ -1447,59 +1600,65 @@
           }
         }
       } catch (err) {
-        console.log("EXM directory notice: using current list.");
+        console.log("EXM directory scan notice: using current list.");
       } finally {
         if (refreshIcon) refreshIcon.classList.remove("animate-spin");
         renderProjectList();
+        updateSplitDropdowns();
       }
     }
 
-    function renderProjectList() {
+    function filterProjectList() {
+      const q = (document.getElementById("projectFilterInput").value || "").toLowerCase();
+      renderProjectList(q);
+    }
+
+    function renderProjectList(filterQuery = "") {
       projectChipsContainer.innerHTML = "";
       pinnedChipsContainer.innerHTML = "";
       projectSelect.innerHTML = "";
       projectCountBadge.textContent = `${repoProjects.length} Items in EXM`;
 
-      if (repoProjects.length === 0) {
+      const visible = repoProjects.filter(p => p.name.toLowerCase().includes(filterQuery));
+
+      if (visible.length === 0) {
         projectChipsContainer.innerHTML = `
-          <span class="text-xs text-zinc-500 italic">No EXM items loaded. Click 'Scan /EXM/ Folder' or enter folder manually.</span>
+          <span class="text-xs text-zinc-500 italic">No matching EXM items.</span>
         `;
-        activeProjectTitle.textContent = "No project selected";
-        return;
+      } else {
+        if (!currentSelectedProject || !repoProjects.some(p => p.name === currentSelectedProject.name)) {
+          currentSelectedProject = visible[0];
+        }
+
+        visible.forEach((proj) => {
+          const isSelected = currentSelectedProject && proj.name === currentSelectedProject.name;
+
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = `px-3 py-1.5 rounded-xl text-xs font-mono border transition-all flex items-center gap-1.5 cursor-pointer ${
+            isSelected
+              ? "active-project-pill font-bold"
+              : "bg-surface-900 hover:bg-surface-850 border-white/5 text-zinc-300 hover:text-white"
+          }`;
+          chip.innerHTML = `
+            <i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-300' : 'text-zinc-500'}"></i>
+            <span>${proj.name}</span>
+          `;
+          chip.onclick = () => selectProject(proj);
+          projectChipsContainer.appendChild(chip);
+
+          const opt = document.createElement("option");
+          opt.value = proj.name;
+          opt.textContent = `${proj.type === 'dir' ? '📁 ' : '📄 '} EXM/${proj.name}`;
+          opt.className = "bg-surface-900 text-white";
+          if (isSelected) opt.selected = true;
+          projectSelect.appendChild(opt);
+        });
       }
-
-      if (!currentSelectedProject || !repoProjects.some(p => p.name === currentSelectedProject.name)) {
-        currentSelectedProject = repoProjects[0];
-      }
-
-      repoProjects.forEach((proj) => {
-        const isSelected = currentSelectedProject && proj.name === currentSelectedProject.name;
-
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = `px-3 py-1.5 rounded-xl text-xs font-mono border transition-all flex items-center gap-1.5 ${
-          isSelected
-            ? "active-project-pill font-bold"
-            : "bg-surface-900 hover:bg-surface-850 border-white/5 text-zinc-300 hover:text-white"
-        }`;
-        chip.innerHTML = `
-          <i data-lucide="${proj.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5 ${isSelected ? 'text-cyan-300' : 'text-zinc-500'}"></i>
-          <span>${proj.name}</span>
-        `;
-        chip.onclick = () => selectProject(proj);
-        projectChipsContainer.appendChild(chip);
-
-        const opt = document.createElement("option");
-        opt.value = proj.name;
-        opt.textContent = `${proj.type === 'dir' ? '📁 ' : '📄 '} EXM/${proj.name}`;
-        opt.className = "bg-surface-900 text-white";
-        if (isSelected) opt.selected = true;
-        projectSelect.appendChild(opt);
-      });
 
       pinnedProjects.forEach(name => {
         const pinBtn = document.createElement("button");
-        pinBtn.className = "px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono hover:bg-amber-500/20 transition-colors";
+        pinBtn.className = "px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono hover:bg-amber-500/20 transition-colors cursor-pointer";
         pinBtn.textContent = `★ ${name}`;
         pinBtn.onclick = () => {
           const match = repoProjects.find(p => p.name === name);
@@ -1546,6 +1705,7 @@
       customProjectInput.value = "";
       selectProject(newProj);
       showToast("EXM Item Added", `Added EXM/${cleanName}`);
+      updateSplitDropdowns();
     }
 
     function loadActiveIntoPreview() {
@@ -1587,7 +1747,7 @@
       const pinBtn = document.getElementById("pinActiveBtn");
       if (!pinBtn || !currentSelectedProject) return;
       const isPinned = pinnedProjects.includes(currentSelectedProject.name);
-      pinBtn.className = isPinned ? "p-1 rounded text-amber-400" : "p-1 rounded text-zinc-400 hover:text-amber-400";
+      pinBtn.className = isPinned ? "p-1 rounded text-amber-400 cursor-pointer" : "p-1 rounded text-zinc-400 hover:text-amber-400 cursor-pointer";
     }
 
     function setViewportDevice(width) {
@@ -1624,6 +1784,55 @@
       logEvent(`Failed to load target frame.`);
     }
 
+    function updateSplitDropdowns() {
+      const lSelect = document.getElementById("splitLeftSelect");
+      const rSelect = document.getElementById("splitRightSelect");
+      if (!lSelect || !rSelect) return;
+      
+      lSelect.innerHTML = "";
+      rSelect.innerHTML = "";
+
+      repoProjects.forEach((p, idx) => {
+        const optA = document.createElement("option");
+        optA.value = p.name;
+        optA.textContent = `EXM/${p.name}`;
+        optA.className = "bg-surface-900";
+        lSelect.appendChild(optA);
+
+        const optB = document.createElement("option");
+        optB.value = p.name;
+        optB.textContent = `EXM/${p.name}`;
+        optB.className = "bg-surface-900";
+        if (idx === 1 || idx === repoProjects.length - 1) optB.selected = true;
+        rSelect.appendChild(optB);
+      });
+      updateSplitFrames();
+    }
+
+    function updateSplitFrames() {
+      const lVal = document.getElementById("splitLeftSelect").value;
+      const rVal = document.getElementById("splitRightSelect").value;
+      
+      const pL = repoProjects.find(p => p.name === lVal);
+      const pR = repoProjects.find(p => p.name === rVal);
+
+      if (pL) {
+        document.getElementById("splitLeftFrame").src = resolveProjectUrl(pL.path);
+        document.getElementById("splitLeftTitle").textContent = `EXM/${pL.name}/`;
+      }
+      if (pR) {
+        document.getElementById("splitRightFrame").src = resolveProjectUrl(pR.path);
+        document.getElementById("splitRightTitle").textContent = `EXM/${pR.name}/`;
+      }
+    }
+
+    function runSandboxCode() {
+      const frame = document.getElementById("sandboxPreviewFrame");
+      const code = document.getElementById("sandboxCodeInput").value;
+      frame.srcdoc = code;
+      showToast("Sandbox Executed", "Rendered code in sandbox viewport.");
+    }
+
     function initMessageBridge() {
       window.addEventListener("message", (e) => {
         logEvent(`[Iframe Message] ${typeof e.data === 'string' ? e.data : JSON.stringify(e.data)}`);
@@ -1646,7 +1855,7 @@
     function openSourceInspector() {
       if (!currentSelectedProject) return;
       document.getElementById("sourceProjectTitle").textContent = currentSelectedProject.name;
-      sourceModal.classList.remove("hidden");
+      sourceModal.style.display = "flex";
       setTimeout(() => {
         sourceModal.classList.remove("opacity-0");
         sourceModal.querySelector("div").classList.remove("scale-95");
@@ -1657,7 +1866,9 @@
     function closeSourceInspector() {
       sourceModal.classList.add("opacity-0");
       sourceModal.querySelector("div").classList.add("scale-95");
-      setTimeout(() => sourceModal.classList.add("hidden"), 200);
+      setTimeout(() => {
+        sourceModal.style.display = "none";
+      }, 200);
     }
 
     async function loadSourceFile(filename) {
@@ -1728,10 +1939,10 @@
 
       const orb1 = document.getElementById("orb1");
       if (orb1) {
-        if (themeName === "cyan") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
-        if (themeName === "emerald") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
-        if (themeName === "amber") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-amber-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
-        if (themeName === "rose") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-rose-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow";
+        if (themeName === "cyan") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
+        if (themeName === "emerald") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-emerald-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
+        if (themeName === "amber") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-amber-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
+        if (themeName === "rose") orb1.className = "fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-rose-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0";
       }
 
       renderProjectList();
@@ -1892,7 +2103,7 @@
     }
 
     function openCommandPalette() {
-      cmdModal.classList.remove("hidden");
+      cmdModal.style.display = "flex";
       setTimeout(() => {
         cmdModal.classList.remove("opacity-0");
         cmdModal.querySelector("div").classList.remove("scale-95");
@@ -1904,7 +2115,9 @@
     function closeCommandPalette() {
       cmdModal.classList.add("opacity-0");
       cmdModal.querySelector("div").classList.add("scale-95");
-      setTimeout(() => cmdModal.classList.add("hidden"), 200);
+      setTimeout(() => {
+        cmdModal.style.display = "none";
+      }, 200);
     }
 
     window.addEventListener("keydown", (e) => {
@@ -1912,13 +2125,18 @@
         e.preventDefault();
         openCommandPalette();
       }
-      if (e.key === "Escape" && !cmdModal.classList.contains("hidden")) {
-        closeCommandPalette();
+      if (e.key === "Escape") {
+        if (cmdModal.style.display !== "none") closeCommandPalette();
+        if (sourceModal.style.display !== "none") closeSourceInspector();
       }
     });
 
     cmdModal.addEventListener("click", (e) => {
       if (e.target === cmdModal) closeCommandPalette();
+    });
+
+    sourceModal.addEventListener("click", (e) => {
+      if (e.target === sourceModal) closeSourceInspector();
     });
 
     function populateCmdResults(query) {
@@ -1927,6 +2145,8 @@
 
       const actions = [
         { label: "Switch Tab: EXM Projects Hub", icon: "folder-tree", action: () => switchTab("tab-projects") },
+        { label: "Switch Tab: Dual Split Comparator", icon: "columns", action: () => switchTab("tab-split") },
+        { label: "Switch Tab: Live Sandbox Runner", icon: "code-2", action: () => switchTab("tab-sandbox") },
         { label: "Switch Tab: System Controls", icon: "sliders", action: () => switchTab("tab-controls") },
         { label: "Switch Tab: GODx Terminal", icon: "terminal", action: () => switchTab("tab-terminal") },
         { label: "Switch Tab: Performance Analytics", icon: "activity", action: () => switchTab("tab-analytics") },
@@ -1950,7 +2170,7 @@
       filtered.forEach(item => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "w-full p-2.5 rounded-xl hover:bg-surface-850 flex items-center justify-between text-left text-zinc-300 hover:text-white transition-colors";
+        btn.className = "w-full p-2.5 rounded-xl hover:bg-surface-850 flex items-center justify-between text-left text-zinc-300 hover:text-white transition-colors cursor-pointer";
         btn.innerHTML = `
           <span class="flex items-center gap-2">
             <i data-lucide="${item.icon}" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -2020,53 +2240,6 @@
       setTimeout(() => {
         toast.classList.add("translate-y-24", "opacity-0");
       }, 3500);
-    }
-
-    // Ambient Starfield Canvas
-    const canvas = document.getElementById("ambientCanvas");
-    const ctx = canvas.getContext("2d");
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const particles = Array.from({ length: 45 }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-      radius: Math.random() * 1.5 + 0.5,
-      alpha: Math.random() * 0.4 + 0.1
-    }));
-
-    function animateParticles() {
-      ctx.clearRect(0, 0, width, height);
-      particles.forEach(p => {
-        p.x = (p.x + p.vx + width) % width;
-        p.y = (p.y + p.vy + height) % height;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 242, 254, ${p.alpha})`;
-        ctx.fill();
-      });
-      requestAnimationFrame(animateParticles);
-    }
-    animateParticles();
-    window.addEventListener("resize", () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    });
-
-    // 3D Tilt Effect on Login Card
-    const cardWrapper = document.querySelector(".card-3d-wrapper");
-    const loginCard = document.getElementById("loginCard");
-    if (window.innerWidth > 768 && cardWrapper && loginCard) {
-      cardWrapper.addEventListener("mousemove", (e) => {
-        const rect = loginCard.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        loginCard.style.transform = `rotateX(${-(y / rect.height) * 8}deg) rotateY(${(x / rect.width) * 8}deg) scale3d(1.01, 1.01, 1.01)`;
-      });
-      cardWrapper.addEventListener("mouseleave", () => {
-        loginCard.style.transform = "rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
-      });
     }
   </script>
 </body>
