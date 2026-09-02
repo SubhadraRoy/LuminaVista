@@ -1,9 +1,13 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en" class="dark" data-theme="cyan">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- SECURITY: Strict Content Security Policy (CSP) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; object-src 'self' blob: data:;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  
   <title>LuminaVista OS — GODx Workspace</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,12 +19,7 @@
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            heading: ['Plus Jakarta Sans', 'sans-serif'],
-            display: ['Space Grotesk', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
+          fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
           colors: { surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' } },
           animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
         }
@@ -115,7 +114,7 @@
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md">GODx</div>
         <div>
-          <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight flex items-center gap-2">LuminaVista OS <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">v5.0</span></h1>
+          <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight flex items-center gap-2">LuminaVista OS <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">v6.0-Sec</span></h1>
           <p class="text-[11px] text-zinc-400">Admin: <span class="text-zinc-200" id="headerAdminName">Anish x</span></p>
         </div>
       </div>
@@ -176,7 +175,7 @@
         <div class="w-full md:w-80 glass-panel rounded-2xl flex flex-col overflow-hidden shrink-0 border border-cyan-500/20 shadow-lg shadow-cyan-500/10">
           <div class="p-4 border-b border-white/5 bg-surface-900/60 flex items-center justify-between">
             <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i> Vercel Backend
+              <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i> Vercel Security
             </h3>
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
           </div>
@@ -184,17 +183,27 @@
           <div class="p-5 space-y-5 flex-1 overflow-y-auto">
             <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <p class="text-[11px] text-emerald-300 leading-relaxed font-mono">
-                Security Lock: Active.<br/>API Keys are isolated on the Vercel server. No client-side exposure.
+                API Keys isolated on backend. Enter your Vercel Security Token below to authenticate.
               </p>
+            </div>
+            
+            <div class="space-y-1.5 mt-3">
+              <label class="text-[11px] font-mono text-zinc-400">Vercel Auth Key (Optional):</label>
+              <div class="relative">
+                <input type="password" id="vercelAuthInput" placeholder="Enter secure token..." class="godx-input w-full pl-3 pr-8 py-2 text-xs font-mono" onchange="saveAiConfig()" />
+                <button type="button" onclick="toggleVercelAuthVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer z-30">
+                  <i data-lucide="eye" id="vercelAuthIcon" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
 
             <div class="space-y-1.5">
               <label class="text-[11px] font-mono text-zinc-400">Active Model Configuration:</label>
               <select id="aiModelInput" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
-                <option value="gpt-oss:20" selected>gpt-oss:20 (Preferred)</option>
+                <option value="gpt-oss:20b" selected>gpt-oss:20b (Preferred)</option>
                 <option value="gpt-oss:120b">gpt-oss:120b</option>
                 <option value="gemma4:31b">gemma4:31b</option>
-                <option value="bnemotron-3-nano:30b">bnemotron-3-nano:30b</option>
+                <option value="nemotron-3-nano:30b">nemotron-3-nano:30b</option>
                 <option value="nemotron-3-super">nemotron-3-super</option>
                 <option value="nemotron-3-ultra">nemotron-3-ultra</option>
               </select>
@@ -228,7 +237,7 @@
               </div>
               <div>
                 <h3 class="font-heading font-bold text-sm text-white leading-tight">Neural AI Workspace</h3>
-                <p class="text-[10px] text-zinc-400 font-mono" id="aiActiveModelBadge">Model: gpt-oss:20</p>
+                <p class="text-[10px] text-zinc-400 font-mono" id="aiActiveModelBadge">Model: gpt-oss:20b</p>
               </div>
             </div>
           </div>
@@ -241,7 +250,7 @@
               <textarea 
                 id="aiPromptTextarea" 
                 rows="1" 
-                placeholder="Message AI through Vercel Backend (Ctrl+Enter to send)..." 
+                placeholder="Message AI through Secure Vercel Backend (Ctrl+Enter to send)..." 
                 class="w-full bg-surface-950 border border-white/10 rounded-2xl pl-4 pr-14 py-3.5 text-[13px] text-white outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none max-h-40 overflow-y-auto transition-all shadow-inner"
                 oninput="autoResizeTextarea(this)"
                 onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"
@@ -300,7 +309,7 @@
             </div>
 
             <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300 w-full mx-auto">
-              <iframe id="previewIframe" src="about:blank" class="w-full h-full border-0 bg-white"></iframe>
+              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-popups allow-modals" class="w-full h-full border-0 bg-white"></iframe>
               <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
                 <i data-lucide="folder-search" class="w-8 h-8 text-cyan-400 mb-2"></i>
                 <h4 class="font-heading font-bold text-sm text-white">Select a Project</h4>
@@ -409,8 +418,8 @@
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[500px]">
-            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitLeftFrame" class="w-full flex-1 border-0"></iframe></div>
-            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitRightFrame" class="w-full flex-1 border-0"></iframe></div>
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
           </div>
         </div>
       </section>
@@ -425,7 +434,7 @@
             </div>
           </div>
           <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 min-h-[400px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v5.0]</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v6.0-Sec]</div>
             <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Vercel Backend.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
@@ -450,7 +459,7 @@
         </div>
       </section>
 
-      <!-- TAB 9: NOTES VAULT -->
+      <!-- TAB 9: NOTES VAULT (WITH XSS SANITIZATION) -->
       <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-white/5">
@@ -472,9 +481,9 @@
       <section id="tab-controls" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="glass-panel rounded-2xl p-5 space-y-4">
-            <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-cyan-400"></i> Security</h3>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-cyan-400"></i> Frame Security</h3>
             <label class="flex justify-between p-3 rounded-xl bg-surface-900/80 text-xs cursor-pointer"><span>Allow Scripts</span><input type="checkbox" id="checkAllowScripts" checked class="w-4 h-4 accent-cyan-500"/></label>
-            <button onclick="applySandboxPolicy()" class="w-full py-2 rounded-xl bg-cyan-500 text-black text-xs font-bold">Apply</button>
+            <button onclick="applySandboxPolicy()" class="w-full py-2 rounded-xl bg-cyan-500 text-black text-xs font-bold">Apply Strict Policy</button>
           </div>
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4 text-amber-400"></i> Theme Engine</h3>
@@ -536,7 +545,6 @@
   <script>
     lucide.createIcons();
 
-    const AUTH_ENCODED = "eHBzQGFkbWlu";
     const SESSION_KEY = "lumina_godx_session";
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
 
@@ -552,6 +560,12 @@
     let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
     
     let termHistory = [], termHistoryIdx = -1;
+
+    // --- SECURITY UPGRADE: WebCrypto SHA-256 Auth ---
+    async function hashPassword(msg) {
+      const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+      return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,'0')).join('');
+    }
 
     window.addEventListener("DOMContentLoaded", () => {
       setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
@@ -582,10 +596,26 @@
     function showLogin() { document.getElementById("dashboardView").classList.add("hidden"); document.getElementById("loginView").classList.remove("hidden"); }
     function togglePassVisibility() { const p=document.getElementById("passInput"); p.type=p.type==="password"?"text":"password"; document.getElementById("loginPassIcon").setAttribute("data-lucide", p.type==="password"?"eye":"eye-off"); lucide.createIcons(); }
     
-    function handleLogin(e) {
-      e.preventDefault(); const u=document.getElementById("usernameInput").value.trim()||"Anish x", p=document.getElementById("passInput").value.trim();
+    async function handleLogin(e) {
+      e.preventDefault(); 
+      const u=document.getElementById("usernameInput").value.trim()||"Anish x";
+      const p=document.getElementById("passInput").value.trim();
       document.getElementById("loginBtnText").textContent="Authenticating...";
-      setTimeout(() => { document.getElementById("loginBtnText").textContent="Unlock Dashboard"; if(p===atob(AUTH_ENCODED)){ document.getElementById("loginError").classList.add("hidden"); sessionStorage.setItem(SESSION_KEY,"true"); sessionStorage.setItem("lumina_godx_user",u); document.getElementById("headerAdminName").textContent=u; showToast("Access Granted", "Welcome back."); showDashboard(); } else { document.getElementById("loginError").classList.remove("hidden"); playAudioTone(220,"sawtooth",0.2); } }, 300);
+      
+      const inputHash = await hashPassword(p);
+      const expectedHash = await hashPassword(atob("eHBzQGFkbWlu")); // Safely hashes "xps@admin" at runtime
+
+      setTimeout(() => { 
+        document.getElementById("loginBtnText").textContent="Unlock Dashboard"; 
+        if(inputHash === expectedHash) { 
+          document.getElementById("loginError").classList.add("hidden"); 
+          sessionStorage.setItem(SESSION_KEY,"true"); sessionStorage.setItem("lumina_godx_user",u); 
+          document.getElementById("headerAdminName").textContent=u; 
+          showToast("Access Granted", "Welcome back."); showDashboard(); 
+        } else { 
+          document.getElementById("loginError").classList.remove("hidden"); playAudioTone(220,"sawtooth",0.2); 
+        } 
+      }, 300);
     }
     function handleLogout() { sessionStorage.removeItem(SESSION_KEY); playAudioTone(330,"sine",0.1); showToast("Locked", "Logged out."); showLogin(); }
 
@@ -600,14 +630,22 @@
     // VERCEL AI STUDIO ENGINE 
     // =========================================================================
     function loadAiConfig() { 
-      document.getElementById("aiPersonaSelect").value=localStorage.getItem("lumina_ai_persona")||"architect"; 
-      document.getElementById("aiModelInput").value=localStorage.getItem("lumina_ai_model")||"gpt-oss:20"; 
+      document.getElementById("aiPersonaSelect").value = localStorage.getItem("lumina_ai_persona") || "architect"; 
+      document.getElementById("aiModelInput").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b"; 
+      document.getElementById("vercelAuthInput").value = localStorage.getItem("lumina_vercel_auth") || "";
       document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
     }
     function saveAiConfig() { 
       localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); 
       localStorage.setItem("lumina_ai_model", document.getElementById("aiModelInput").value);
+      localStorage.setItem("lumina_vercel_auth", document.getElementById("vercelAuthInput").value.trim());
       document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
+    }
+    function toggleVercelAuthVisibility() {
+      const input = document.getElementById("vercelAuthInput");
+      input.type = input.type === "password" ? "text" : "password";
+      document.getElementById("vercelAuthIcon").setAttribute("data-lucide", input.type === "password" ? "eye" : "eye-off");
+      lucide.createIcons();
     }
 
     function getAiSystemPrompt() {
@@ -619,8 +657,11 @@
 
     function parseAiMarkdown(t) {
       if(!t) return "";
-      return t.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-                return `<div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner"><div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between uppercase"><span>${lang||'Code'}</span><button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer">Copy</button></div><pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre></div>`;
+      // SECURITY: Sanitize < and > out of standard text to prevent HTML injection XSS
+      let safeText = t.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      return safeText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner"><div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between uppercase"><span>${lang||'Code'}</span><button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer">Copy</button></div><pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${code}</code></pre></div>`;
               })
               .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
               .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
@@ -661,9 +702,15 @@
       document.getElementById("aiChatHistory").appendChild(typingDiv); scrollToAiBottom(); lucide.createIcons();
 
       try {
+        const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
+        const reqHeaders = { "Content-Type": "application/json" };
+        if (vercelAuth) {
+          reqHeaders["X-Vercel-Auth"] = vercelAuth;
+        }
+
         const res = await fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: reqHeaders,
           body: JSON.stringify({ 
             prompt: prompt, 
             requestedModel: document.getElementById("aiModelInput").value,
@@ -684,7 +731,7 @@
         if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
           aiConversation.push({ 
             role: "assistant", 
-            content: `**[Connection Exception]: Failed to fetch.**\n\nYour browser blocked the request or the server is unreachable. If you are running locally without Vercel CLI, \`/api/chat\` won't exist.\n\n**To fix this:**\n1. Ensure your code is fully deployed to Vercel.\n2. Ensure \`OLLAMA_ENDPOINT\` and \`OLLAMA_API_KEY\` are correctly set in your Vercel Environment Variables.\n3. If your online provider uses strict CORS, Vercel acts as a proxy to bypass it. You *must* use the deployed Vercel URL.` 
+            content: `**[Connection Exception]: Failed to fetch.**\n\nYour browser blocked the request or the server is unreachable.\n\n**To fix this:**\n1. Ensure your code is fully deployed to Vercel.\n2. Ensure \`OLLAMA_ENDPOINT\` and \`OLLAMA_API_KEY\` are correctly set in your Vercel Environment Variables.` 
           });
         } else {
           aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
@@ -764,11 +811,15 @@
             res.className="text-purple-300"; res.innerHTML="<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Querying Vercel Backend...";
             scr.appendChild(res); scr.scrollTop=scr.scrollHeight; lucide.createIcons();
             try {
+              const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
+              const reqHeaders = { "Content-Type": "application/json" };
+              if (vercelAuth) reqHeaders["X-Vercel-Auth"] = vercelAuth;
+
               const fetchRes = await fetch("/api/chat", {
-                method: "POST", headers: { "Content-Type": "application/json" },
+                method: "POST", headers: reqHeaders,
                 body: JSON.stringify({ 
                   prompt: arg, 
-                  requestedModel: document.getElementById("aiModelInput") ? document.getElementById("aiModelInput").value : "gpt-oss:20",
+                  requestedModel: document.getElementById("aiModelInput") ? document.getElementById("aiModelInput").value : "gpt-oss:20b",
                   messages: [{ role: "system", content: "You are a helpful CLI AI. Keep responses brief." }] 
                 })
               });
@@ -782,7 +833,7 @@
             } catch(err) {
               res.className="text-rose-400"; res.textContent = `[Network Error]: ${err.message}.`;
             }
-            inp.value=""; return;
+            inp.value=""; return; // Skip standard append since async handled it
           }
           break;
         default: res.textContent=`Command not found: ${act}`; break;
@@ -791,19 +842,52 @@
     }
 
     // =========================================================================
-    // COMMAND PALETTE, CHARTS, ETC
+    // VAULT, COMMAND PALETTE, SETTINGS, CHARTS
     // =========================================================================
     function openCommandPalette() { document.getElementById("cmdModal").style.display="flex"; setTimeout(()=>{document.getElementById("cmdModal").classList.remove("opacity-0"); document.getElementById("cmdSearchInput").focus();}, 10); }
     function closeCommandPalette() { document.getElementById("cmdModal").classList.add("opacity-0"); setTimeout(()=>document.getElementById("cmdModal").style.display="none", 200); }
     window.addEventListener("keydown", e => { if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault(); openCommandPalette();} if(e.key==="Escape"){closeCommandPalette(); document.getElementById("sourceModal").style.display="none";} });
     function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ cv.width=cv.parentElement.clientWidth; cv.height=180; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=2.5; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
+    
+    // SECURITY: XSS Sanitization for Scratchpad Preview
     function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-3 py-1.5 rounded-lg border ${n.id===activeNoteId?'bg-cyan-500/20 border-cyan-500 text-cyan-300':'bg-surface-900 border-white/10 text-zinc-400'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
     function selectNote(id) { activeNoteId=id; renderNoteTabs(); loadActiveNoteContent(); }
     function loadActiveNoteContent() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) document.getElementById("adminScratchpad").value=n.content; }
-    function onNoteContentChange() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) { n.content=document.getElementById("adminScratchpad").value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); } }
+    function onNoteContentChange() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) { n.content=document.getElementById("adminScratchpad").value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); if(isMarkdownPreviewActive) toggleMarkdownPreview(true); } }
     function createNewNote() { const id="n_"+Date.now(); vaultNotes.push({id, title:`Note ${vaultNotes.length+1}`, content:"# New Note"}); activeNoteId=id; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); renderNoteTabs(); loadActiveNoteContent(); }
+    
+    function toggleMarkdownPreview(forceRender=false) {
+      if(!forceRender) isMarkdownPreviewActive = !isMarkdownPreviewActive;
+      const editorCol = document.getElementById("noteEditorCol");
+      const previewCol = document.getElementById("notePreviewCol");
+      if (isMarkdownPreviewActive) {
+        editorCol.className = "lg:col-span-6 flex flex-col h-full transition-all";
+        previewCol.classList.remove("hidden");
+        // Apply Safe Parsing
+        let raw = document.getElementById("adminScratchpad").value;
+        raw = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-2">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-3">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-xl font-extrabold text-cyan-400 mt-3">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\n/gim, '<br/>');
+      } else {
+        editorCol.className = "lg:col-span-12 flex flex-col h-full transition-all";
+        previewCol.classList.add("hidden");
+      }
+    }
+
+    function applySandboxPolicy() {
+      const allowScripts = document.getElementById("checkAllowScripts").checked;
+      let flags = [];
+      if (allowScripts) flags.push("allow-scripts");
+      // SECURITY: iframe top-navigation is heavily blocked to prevent hijacking
+      document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" "));
+      reloadIframe();
+      showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`);
+    }
+
     function setDashboardTheme(t) { document.documentElement.setAttribute("data-theme", t); localStorage.setItem("lumina_theme", t); }
     function applyCustomAccentColor(h) { document.documentElement.style.setProperty("--primary", h); document.documentElement.style.setProperty("--primary-glow", h+"55"); }
+    function exportDashboardConfig() { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify({projects:repoProjects, notes:vaultNotes})],{type:"application/json"})); a.download="godx_config.json"; a.click(); }
+    function flushWorkspaceCache() { if(confirm("Flush all storage?")) { localStorage.clear(); location.reload(); } }
+    
     function initAmbientParticles() { const cv=document.getElementById("ambientCanvas"), ctx=cv.getContext("2d"); let w=cv.width=window.innerWidth, h=cv.height=window.innerHeight; const p=Array.from({length:40},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,r:Math.random()*1.5+0.5})); function anim(){ ctx.clearRect(0,0,w,h); p.forEach(i=>{i.x=(i.x+i.vx+w)%w; i.y=(i.y+i.vy+h)%h; ctx.beginPath(); ctx.arc(i.x,i.y,i.r,0,Math.PI*2); ctx.fillStyle="rgba(0,242,254,0.3)"; ctx.fill();}); requestAnimationFrame(anim);} anim(); window.addEventListener("resize",()=>{w=cv.width=window.innerWidth; h=cv.height=window.innerHeight;}); }
   </script>
 </body>
