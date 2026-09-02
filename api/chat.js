@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // Set CORS headers so your frontend can call this backend from anywhere
+  // CORS Headers for preflight
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
@@ -8,7 +8,6 @@ export default async function handler(req, res) {
     "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
   );
 
-  // Handle preflight browser requests
   if (req.method === "OPTIONS") {
     res.status(200).end();
     return;
@@ -20,16 +19,17 @@ export default async function handler(req, res) {
 
   const { messages, prompt } = req.body;
 
-  // Retrieve environment variables configured in Vercel
+  // Retrieve environment variables configured securely in Vercel
   const targetEndpoint = process.env.OLLAMA_ENDPOINT;
   const apiKey = process.env.OLLAMA_API_KEY;
-  const defaultModel = process.env.OLLAMA_MODEL || "llama3";
+  const defaultModel = process.env.OLLAMA_MODEL || "gpt-oss:20b";
 
   if (!targetEndpoint) {
     return res.status(500).json({ error: "OLLAMA_ENDPOINT is not set in Vercel environment variables." });
   }
 
   try {
+    // Detect if this is standard OpenAI format or native Ollama
     const isNativeOllama = targetEndpoint.endsWith("/api/chat") || targetEndpoint.endsWith("/api/generate");
 
     let payload;
@@ -40,7 +40,6 @@ export default async function handler(req, res) {
         stream: false
       };
     } else {
-      // OpenAI-compatible endpoint format (/v1/chat/completions)
       payload = {
         model: defaultModel,
         messages: messages || [{ role: "user", content: prompt }],
@@ -62,7 +61,7 @@ export default async function handler(req, res) {
     if (!upstreamResponse.ok) {
       const errorText = await upstreamResponse.text();
       return res.status(upstreamResponse.status).json({
-        error: `Ollama upstream returned HTTP ${upstreamResponse.status}`,
+        error: `Provider API returned HTTP ${upstreamResponse.status}`,
         details: errorText
       });
     }
@@ -71,7 +70,7 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch (error) {
     return res.status(502).json({
-      error: "Bad Gateway / Connection Error",
+      error: "Bad Gateway / Backend Connection Error",
       message: error.message
     });
   }
