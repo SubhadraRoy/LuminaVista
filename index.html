@@ -73,7 +73,11 @@
     .glow-border::before {
       content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
       background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; pointer-events: none; z-index: 0;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none; z-index: 0;
     }
 
     .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
