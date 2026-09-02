@@ -1,14 +1,14 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en" class="dark" data-theme="cyan">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LuminaVista OS — GODx Neural Workspace</title>
+  <title>LuminaVista OS — GODx Workspace</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -21,78 +21,36 @@
             display: ['Space Grotesk', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
           },
-          colors: {
-            surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' }
-          },
+          colors: { surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' } },
           animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
         }
       }
     }
   </script>
-
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
-  <!-- Vercel Web Analytics -->
-  <script>
-    window.va = window.va || function () { 
-      (window.vaq = window.vaq || []).push(arguments); 
-    };
-  </script>
-  <script defer src="/_vercel/insights/script.js"></script>
-
   <style>
-    :root {
-      --primary: #00f2fe;
-      --primary-glow: rgba(0, 242, 254, 0.35);
-      --secondary: #4facfe;
-      --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%);
-    }
-
+    :root { --primary: #00f2fe; --primary-glow: rgba(0, 242, 254, 0.35); --secondary: #4facfe; --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%); }
     [data-theme="emerald"] { --primary: #10b981; --primary-glow: rgba(16, 185, 129, 0.35); --secondary: #059669; --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%); }
     [data-theme="amber"] { --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.35); --secondary: #d97706; --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%); }
     [data-theme="rose"] { --primary: #f43f5e; --primary-glow: rgba(244, 63, 94, 0.35); --secondary: #e11d48; --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #e11d48 100%); }
-
     body { background-color: #030712; color: #f8fafc; overflow-x: hidden; }
-    
-    .glass-panel {
-      background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow);
-    }
-    
-    .godx-input {
-      background-color: #0f172a !important; color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.18) !important; border-radius: 0.75rem !important;
-      font-size: 0.875rem !important; line-height: 1.25rem !important; outline: none !important;
-      transition: all 0.2s ease !important;
-    }
+    .glass-panel { background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow); }
+    .godx-input { background-color: #0f172a !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.18) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; line-height: 1.25rem !important; outline: none !important; transition: all 0.2s ease !important; }
     .godx-input:focus { background-color: #1e293b !important; border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--primary-glow) !important; }
-
     .glow-border { position: relative; }
-    .glow-border::before {
-      content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
-      background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none; z-index: 0;
-    }
-
+    .glow-border::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 0; }
     .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
     .btn-gradient:hover { background-position: right center; box-shadow: 0 0 25px var(--primary-glow); }
-
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #030712; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #334155; }
-
     .nav-tab-active { background: var(--primary-glow); border-color: var(--primary); color: #ffffff; box-shadow: 0 0 15px var(--primary-glow); }
     .active-project-pill { background: var(--primary-glow); border-color: var(--primary); color: #ffffff; box-shadow: 0 0 18px var(--primary-glow); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
     #aiChatHistory::-webkit-scrollbar { width: 4px; }
     #aiChatHistory::-webkit-scrollbar-thumb { background: rgba(0, 242, 254, 0.3); border-radius: 4px; }
   </style>
@@ -232,9 +190,14 @@
 
             <div class="space-y-1.5">
               <label class="text-[11px] font-mono text-zinc-400">Active Model Configuration:</label>
-              <div class="p-2.5 bg-surface-900 border border-white/10 rounded-xl text-xs font-mono text-cyan-300">
-                gpt-oss:20b
-              </div>
+              <select id="aiModelInput" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
+                <option value="gpt-oss:20" selected>gpt-oss:20 (Preferred)</option>
+                <option value="gpt-oss:120b">gpt-oss:120b</option>
+                <option value="gemma4:31b">gemma4:31b</option>
+                <option value="bnemotron-3-nano:30b">bnemotron-3-nano:30b</option>
+                <option value="nemotron-3-super">nemotron-3-super</option>
+                <option value="nemotron-3-ultra">nemotron-3-ultra</option>
+              </select>
             </div>
 
             <div class="space-y-1.5">
@@ -265,7 +228,7 @@
               </div>
               <div>
                 <h3 class="font-heading font-bold text-sm text-white leading-tight">Neural AI Workspace</h3>
-                <p class="text-[10px] text-zinc-400 font-mono">Model: gpt-oss:20b</p>
+                <p class="text-[10px] text-zinc-400 font-mono" id="aiActiveModelBadge">Model: gpt-oss:20</p>
               </div>
             </div>
           </div>
@@ -588,7 +551,6 @@
     let isMarkdownPreviewActive = false;
     let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
     
-    // Terminal State
     let termHistory = [], termHistoryIdx = -1;
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -635,10 +597,18 @@
     function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
 
     // =========================================================================
-    // VERCEL AI STUDIO ENGINE (NO API KEYS IN FRONTEND)
+    // VERCEL AI STUDIO ENGINE 
     // =========================================================================
-    function loadAiConfig() { document.getElementById("aiPersonaSelect").value=localStorage.getItem("lumina_ai_persona")||"architect"; }
-    function saveAiConfig() { localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); }
+    function loadAiConfig() { 
+      document.getElementById("aiPersonaSelect").value=localStorage.getItem("lumina_ai_persona")||"architect"; 
+      document.getElementById("aiModelInput").value=localStorage.getItem("lumina_ai_model")||"gpt-oss:20"; 
+      document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
+    }
+    function saveAiConfig() { 
+      localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); 
+      localStorage.setItem("lumina_ai_model", document.getElementById("aiModelInput").value);
+      document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
+    }
 
     function getAiSystemPrompt() {
       const p = document.getElementById("aiPersonaSelect").value;
@@ -647,7 +617,6 @@
       return "You are the GODx LuminaVista Supreme Architect. Provide expert, clear formatting, and elite architectural designs using Markdown.";
     }
 
-    // Flawless Markdown & Code Block escaping
     function parseAiMarkdown(t) {
       if(!t) return "";
       return t.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
@@ -678,7 +647,6 @@
     function scrollToAiBottom() { const b=document.getElementById("aiChatHistory"); b.scrollTop=b.scrollHeight; }
     function autoResizeTextarea(e) { e.style.height="auto"; e.style.height=(e.scrollHeight)+"px"; }
 
-    // Core Vercel Fetch Logic
     async function handleSendAiPrompt(e) {
       if (e) e.preventDefault();
       const inp = document.getElementById("aiPromptTextarea"), prompt = inp.value.trim(), btn = document.getElementById("btnAiSend");
@@ -696,7 +664,11 @@
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: prompt, messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation] })
+          body: JSON.stringify({ 
+            prompt: prompt, 
+            requestedModel: document.getElementById("aiModelInput").value,
+            messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation] 
+          })
         });
         document.getElementById("aiTypingIndicator")?.remove();
         const data = await res.json();
@@ -794,19 +766,23 @@
             try {
               const fetchRes = await fetch("/api/chat", {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: arg, messages: [{ role: "system", content: "You are a helpful CLI AI. Keep responses brief." }] })
+                body: JSON.stringify({ 
+                  prompt: arg, 
+                  requestedModel: document.getElementById("aiModelInput") ? document.getElementById("aiModelInput").value : "gpt-oss:20",
+                  messages: [{ role: "system", content: "You are a helpful CLI AI. Keep responses brief." }] 
+                })
               });
               const data = await fetchRes.json();
               if (fetchRes.ok) {
-                res.className="text-emerald-400 whitespace-pre-wrap"; 
-                res.textContent = `[gpt-oss:20b]:\n${data.choices?.[0]?.message?.content || data.response || "Done."}`;
+                res.className="text-emerald-400 whitespace-pre-wrap mt-2 mb-2"; 
+                res.textContent = `[${document.getElementById("aiModelInput").value}]:\n${data.choices?.[0]?.message?.content || data.response || "Done."}`;
               } else {
                 res.className="text-rose-400"; res.textContent = `[Backend Error]: ${data.error || "Unknown"}`;
               }
             } catch(err) {
               res.className="text-rose-400"; res.textContent = `[Network Error]: ${err.message}.`;
             }
-            inp.value=""; return; // Skip standard append since async handled it
+            inp.value=""; return;
           }
           break;
         default: res.textContent=`Command not found: ${act}`; break;
@@ -815,7 +791,7 @@
     }
 
     // =========================================================================
-    // VAULT, COMMAND PALETTE, CHARTS
+    // COMMAND PALETTE, CHARTS, ETC
     // =========================================================================
     function openCommandPalette() { document.getElementById("cmdModal").style.display="flex"; setTimeout(()=>{document.getElementById("cmdModal").classList.remove("opacity-0"); document.getElementById("cmdSearchInput").focus();}, 10); }
     function closeCommandPalette() { document.getElementById("cmdModal").classList.add("opacity-0"); setTimeout(()=>document.getElementById("cmdModal").style.display="none", 200); }

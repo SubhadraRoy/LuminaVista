@@ -1,5 +1,5 @@
+// api/chat.js
 export default async function handler(req, res) {
-  // CORS Headers for preflight
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
@@ -17,31 +17,34 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
 
-  const { messages, prompt } = req.body;
+  // The backend now accepts requestedModel dynamically from the frontend dropdown
+  const { messages, prompt, requestedModel } = req.body;
 
-  // Retrieve environment variables configured securely in Vercel
   const targetEndpoint = process.env.OLLAMA_ENDPOINT;
   const apiKey = process.env.OLLAMA_API_KEY;
-  const defaultModel = process.env.OLLAMA_MODEL || "gpt-oss:20b";
+  
+  // 1. Prioritize frontend UI selection. 
+  // 2. Fallback to Vercel OLLAMA_MODEL config. 
+  // 3. Absolute default is gpt-oss:20.
+  const activeModel = requestedModel || process.env.OLLAMA_MODEL || "gpt-oss:20";
 
   if (!targetEndpoint) {
     return res.status(500).json({ error: "OLLAMA_ENDPOINT is not set in Vercel environment variables." });
   }
 
   try {
-    // Detect if this is standard OpenAI format or native Ollama
     const isNativeOllama = targetEndpoint.endsWith("/api/chat") || targetEndpoint.endsWith("/api/generate");
 
     let payload;
     if (isNativeOllama) {
       payload = {
-        model: defaultModel,
+        model: activeModel,
         messages: messages || [{ role: "user", content: prompt }],
         stream: false
       };
     } else {
       payload = {
-        model: defaultModel,
+        model: activeModel,
         messages: messages || [{ role: "user", content: prompt }],
         temperature: 0.7
       };
