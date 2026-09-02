@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LuminaVista OS — GODx Workspace</title>
+  <title>LuminaVista OS — GODx Neural Workspace</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -20,36 +21,66 @@
             display: ['Space Grotesk', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
           },
-          colors: { surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' } },
+          colors: {
+            surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' }
+          },
           animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
         }
       }
     }
   </script>
+
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
-    :root { --primary: #00f2fe; --primary-glow: rgba(0, 242, 254, 0.35); --secondary: #4facfe; --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%); }
+    :root {
+      --primary: #00f2fe;
+      --primary-glow: rgba(0, 242, 254, 0.35);
+      --secondary: #4facfe;
+      --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%);
+    }
+
     [data-theme="emerald"] { --primary: #10b981; --primary-glow: rgba(16, 185, 129, 0.35); --secondary: #059669; --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%); }
     [data-theme="amber"] { --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.35); --secondary: #d97706; --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%); }
     [data-theme="rose"] { --primary: #f43f5e; --primary-glow: rgba(244, 63, 94, 0.35); --secondary: #e11d48; --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #e11d48 100%); }
+
     body { background-color: #030712; color: #f8fafc; overflow-x: hidden; }
-    .glass-panel { background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow); }
-    .godx-input { background-color: #0f172a !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.18) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; line-height: 1.25rem !important; outline: none !important; transition: all 0.2s ease !important; }
+    
+    .glass-panel {
+      background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow);
+    }
+    
+    .godx-input {
+      background-color: #0f172a !important; color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important; border-radius: 0.75rem !important;
+      font-size: 0.875rem !important; line-height: 1.25rem !important; outline: none !important;
+      transition: all 0.2s ease !important;
+    }
     .godx-input:focus { background-color: #1e293b !important; border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--primary-glow) !important; }
+
     .glow-border { position: relative; }
-    .glow-border::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; pointer-events: none; z-index: 0; }
+    .glow-border::before {
+      content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+      background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; pointer-events: none; z-index: 0;
+    }
+
     .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
     .btn-gradient:hover { background-position: right center; box-shadow: 0 0 25px var(--primary-glow); }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #030712; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
     .nav-tab-active { background: var(--primary-glow); border-color: var(--primary); color: #ffffff; box-shadow: 0 0 15px var(--primary-glow); }
     .active-project-pill { background: var(--primary-glow); border-color: var(--primary); color: #ffffff; box-shadow: 0 0 18px var(--primary-glow); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
     #aiChatHistory::-webkit-scrollbar { width: 4px; }
     #aiChatHistory::-webkit-scrollbar-thumb { background: rgba(0, 242, 254, 0.3); border-radius: 4px; }
   </style>
@@ -114,7 +145,7 @@
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md">GODx</div>
         <div>
-          <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight flex items-center gap-2">LuminaVista OS <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">v4.5</span></h1>
+          <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight flex items-center gap-2">LuminaVista OS <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">v5.0</span></h1>
           <p class="text-[11px] text-zinc-400">Admin: <span class="text-zinc-200" id="headerAdminName">Anish x</span></p>
         </div>
       </div>
@@ -169,13 +200,13 @@
 
     <main class="flex-1 max-w-[1400px] w-full mx-auto px-4 lg:px-8 py-6">
       
-      <!-- TAB 1: ONLINE OLLAMA AI STUDIO (Vercel Backend Powered) -->
+      <!-- TAB 1: ONLINE OLLAMA AI STUDIO -->
       <section id="tab-ai-studio" class="tab-pane h-[calc(100vh-180px)] min-h-[600px] flex flex-col md:flex-row gap-6">
         
         <div class="w-full md:w-80 glass-panel rounded-2xl flex flex-col overflow-hidden shrink-0 border border-cyan-500/20 shadow-lg shadow-cyan-500/10">
           <div class="p-4 border-b border-white/5 bg-surface-900/60 flex items-center justify-between">
             <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-              <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i> Vercel Connected
+              <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i> Vercel Backend
             </h3>
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
           </div>
@@ -183,22 +214,32 @@
           <div class="p-5 space-y-5 flex-1 overflow-y-auto">
             <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <p class="text-[11px] text-emerald-300 leading-relaxed font-mono">
-                API Key securely managed by Vercel Environment Variables. Safe from client-side inspection.
+                Security Lock: Active.<br/>API Keys are isolated on the Vercel server. No client-side exposure.
               </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-mono text-zinc-400">Active Model Configuration:</label>
+              <div class="p-2.5 bg-surface-900 border border-white/10 rounded-xl text-xs font-mono text-cyan-300">
+                gpt-oss:20b
+              </div>
             </div>
 
             <div class="space-y-1.5">
               <label class="text-[11px] font-mono text-zinc-400">System Persona:</label>
               <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="saveAiConfig()">
-                <option value="architect">GODx Supreme Architect (Expert Coder)</option>
-                <option value="minimal">Concise Hacker (Code Only, No Fluff)</option>
-                <option value="security">Cybersecurity / Vault Auditor</option>
+                <option value="architect">GODx Supreme Architect</option>
+                <option value="minimal">Concise Hacker (Raw Code)</option>
+                <option value="security">Cybersecurity Vault Auditor</option>
               </select>
             </div>
 
             <div class="pt-4 border-t border-white/5 space-y-2 mt-auto">
+              <button onclick="downloadAiChat()" class="w-full py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Thread
+              </button>
               <button onclick="clearAiChat()" class="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Conversation
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Memory
               </button>
             </div>
           </div>
@@ -220,7 +261,7 @@
           <div id="aiChatHistory" class="flex-1 p-5 overflow-y-auto space-y-6 bg-surface-950/80 font-sans text-[13px] leading-relaxed relative">
           </div>
 
-          <div class="p-4 bg-surface-900/90 border-t border-white/5 z-10">
+          <div class="p-4 bg-surface-900/90 border-t border-white/5 z-10 relative">
             <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
               <textarea 
                 id="aiPromptTextarea" 
@@ -238,7 +279,6 @@
                 <i data-lucide="arrow-up" class="w-4 h-4"></i>
               </button>
             </form>
-            <p class="text-center text-[10px] text-zinc-500 mt-2 font-mono">Requests routed securely through /api/chat.</p>
           </div>
         </div>
       </section>
@@ -406,12 +446,12 @@
           <div class="flex items-center justify-between pb-3 border-b border-white/5">
             <div class="flex items-center gap-2 font-mono text-xs">
               <span class="w-3 h-3 rounded-full bg-rose-500/80"></span><span class="w-3 h-3 rounded-full bg-amber-500/80"></span><span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
-              <span class="text-zinc-400 ml-2">godx-terminal — 80x24</span>
+              <span class="text-zinc-400 ml-2">godx-terminal — bash</span>
             </div>
           </div>
           <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 min-h-[400px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v4.5]</div>
-            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Vercel AI backend.</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v5.0]</div>
+            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Vercel Backend.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
           <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2">
@@ -483,7 +523,7 @@
 
     <footer class="w-full border-t border-white/5 bg-surface-950/80 px-6 py-4 flex justify-between text-xs text-zinc-500">
       <div>LuminaVista OS • <span class="text-zinc-300">Anish x</span></div>
-      <div>Hosted on Vercel & GitHub Pages</div>
+      <div>Hosted on Vercel Backend & GitHub Pages</div>
     </footer>
   </div>
 
@@ -517,12 +557,10 @@
     <div><h4 id="toastTitle" class="text-sm font-semibold text-white">Notification</h4><p id="toastMsg" class="text-xs text-zinc-300"></p></div>
   </div>
 
+  <!-- JAVASCRIPT LOGIC -->
   <script>
     lucide.createIcons();
 
-    // =========================================================================
-    // GLOBAL STATE
-    // =========================================================================
     const AUTH_ENCODED = "eHBzQGFkbWlu";
     const SESSION_KEY = "lumina_godx_session";
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
@@ -537,6 +575,8 @@
     let activeNoteId = vaultNotes[0].id;
     let isMarkdownPreviewActive = false;
     let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
+    
+    // Terminal State
     let termHistory = [], termHistoryIdx = -1;
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -583,7 +623,7 @@
     function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
 
     // =========================================================================
-    // VERCEL AI STUDIO ENGINE
+    // VERCEL AI STUDIO ENGINE (NO API KEYS IN FRONTEND)
     // =========================================================================
     function loadAiConfig() { document.getElementById("aiPersonaSelect").value=localStorage.getItem("lumina_ai_persona")||"architect"; }
     function saveAiConfig() { localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); }
@@ -595,8 +635,12 @@
       return "You are the GODx LuminaVista Supreme Architect. Provide expert, clear formatting, and elite architectural designs using Markdown.";
     }
 
+    // Flawless Markdown & Code Block escaping
     function parseAiMarkdown(t) {
-      return t.replace(/```(\w+)?\n([\s\S]*?)```/g, '<div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner"><div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between uppercase"><span>$1 Code</span><button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer">Copy</button></div><pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>$2</code></pre></div>')
+      if(!t) return "";
+      return t.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner"><div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between uppercase"><span>${lang||'Code'}</span><button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer">Copy</button></div><pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre></div>`;
+              })
               .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
               .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
               .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
@@ -608,7 +652,7 @@
     function renderAiChat() {
       const box = document.getElementById("aiChatHistory"); box.innerHTML = "";
       if (aiConversation.length === 0) {
-        box.innerHTML = `<div class="flex items-start gap-4 animate-fade-in"><div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400"><i data-lucide="bot" class="w-5 h-5"></i></div><div class="pt-1"><h4 class="font-bold text-white text-sm">Vercel Backend Ready</h4><p class="text-zinc-400 mt-1">Chat requests are routed to /api/chat.</p></div></div>`;
+        box.innerHTML = `<div class="flex items-start gap-4 animate-fade-in"><div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400"><i data-lucide="bot" class="w-5 h-5"></i></div><div class="pt-1"><h4 class="font-bold text-white text-sm">Vercel Backend Ready</h4><p class="text-zinc-400 mt-1">Chat requests are securely routed to <code class="text-cyan-400">/api/chat</code>.</p></div></div>`;
         lucide.createIcons(); return;
       }
       aiConversation.forEach(m => {
@@ -622,6 +666,7 @@
     function scrollToAiBottom() { const b=document.getElementById("aiChatHistory"); b.scrollTop=b.scrollHeight; }
     function autoResizeTextarea(e) { e.style.height="auto"; e.style.height=(e.scrollHeight)+"px"; }
 
+    // Core Vercel Fetch Logic
     async function handleSendAiPrompt(e) {
       if (e) e.preventDefault();
       const inp = document.getElementById("aiPromptTextarea"), prompt = inp.value.trim(), btn = document.getElementById("btnAiSend");
@@ -648,11 +693,18 @@
           const txt = data.choices?.[0]?.message?.content || data.message?.content || data.response || "No valid response.";
           aiConversation.push({ role: "assistant", content: txt });
         } else {
-          aiConversation.push({ role: "assistant", content: `**[Backend Error]:** ${data.error || res.statusText}\n${data.details || ""}` });
+          aiConversation.push({ role: "assistant", content: `**[Vercel Backend Error]:** ${data.error || res.statusText}\n${data.details || ""}` });
         }
       } catch (err) {
         document.getElementById("aiTypingIndicator")?.remove();
-        aiConversation.push({ role: "assistant", content: `**[Network Error]:** Failed to reach /api/chat. Ensure your Vercel backend is deployed. ${err.message}` });
+        if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+          aiConversation.push({ 
+            role: "assistant", 
+            content: `**[Connection Exception]: Failed to fetch.**\n\nYour browser blocked the request or the server is unreachable. If you are running locally without Vercel CLI, \`/api/chat\` won't exist.\n\n**To fix this:**\n1. Ensure your code is fully deployed to Vercel.\n2. Ensure \`OLLAMA_ENDPOINT\` and \`OLLAMA_API_KEY\` are correctly set in your Vercel Environment Variables.\n3. If your online provider uses strict CORS, Vercel acts as a proxy to bypass it. You *must* use the deployed Vercel URL.` 
+          });
+        } else {
+          aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
+        }
       } finally {
         btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>'; lucide.createIcons();
         localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); renderAiChat();
@@ -660,6 +712,13 @@
     }
 
     function clearAiChat() { aiConversation = []; localStorage.removeItem("lumina_ai_history"); renderAiChat(); showToast("Cleared", "Conversation memory reset."); }
+    
+    function downloadAiChat() {
+      if(aiConversation.length===0) return showToast("Empty", "No chat to export.");
+      let txt = "=== GODx Neural Thread ===\n\n";
+      aiConversation.forEach(m => txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`);
+      const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain"})); a.download=`Neural_Thread_${Date.now()}.txt`; a.click();
+    }
 
     // =========================================================================
     // EXM PROJECTS SCANNER
@@ -697,16 +756,47 @@
     function copyGeneratedDesignCss() { navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); showToast("Copied","CSS class ready."); }
 
     // =========================================================================
-    // TERMINAL
+    // TERMINAL (INTEGRATED WITH VERCEL BACKEND)
     // =========================================================================
     function handleTerminalKeyDown(e) { if(e.key==="ArrowUp"){e.preventDefault(); if(termHistory.length>0&&termHistoryIdx>0){termHistoryIdx--; e.target.value=termHistory[termHistoryIdx];}else if(termHistory.length>0&&termHistoryIdx===-1){termHistoryIdx=termHistory.length-1; e.target.value=termHistory[termHistoryIdx];}}else if(e.key==="ArrowDown"){e.preventDefault(); if(termHistoryIdx>=0&&termHistoryIdx<termHistory.length-1){termHistoryIdx++; e.target.value=termHistory[termHistoryIdx];}else{termHistoryIdx=-1; e.target.value="";}} }
-    async function handleTerminalCommand(e) { e.preventDefault(); const inp=document.getElementById("terminalInput"), cmd=inp.value.trim(); if(!cmd)return; termHistory.push(cmd); termHistoryIdx=-1; const scr=document.getElementById("terminalScreen"), l=document.createElement("div"); l.className="text-zinc-400"; l.innerHTML=`<span class="text-cyan-400 font-bold">anish@godx:~$</span> ${cmd}`; scr.appendChild(l); const pts=cmd.split(" "), act=pts[0].toLowerCase(), arg=pts.slice(1).join(" "), res=document.createElement("div"); 
+    
+    async function handleTerminalCommand(e) { 
+      e.preventDefault(); const inp=document.getElementById("terminalInput"), cmd=inp.value.trim(); if(!cmd)return; 
+      termHistory.push(cmd); termHistoryIdx=-1; 
+      const scr=document.getElementById("terminalScreen"), l=document.createElement("div"); 
+      l.className="text-zinc-400"; l.innerHTML=`<span class="text-cyan-400 font-bold">anish@godx:~$</span> ${cmd}`; scr.appendChild(l); 
+      
+      const pts=cmd.split(" "), act=pts[0].toLowerCase(), arg=pts.slice(1).join(" "), res=document.createElement("div"); 
+      
       switch(act) {
         case "help": res.innerHTML="- ls, open &lt;name&gt;, ai &lt;prompt&gt;, clear"; break;
         case "ls": res.textContent=repoProjects.map(p=>`EXM/${p.name}`).join("  ")||"Empty"; break;
         case "open": const m=repoProjects.find(p=>p.name.toLowerCase()===arg.replace("EXM/","").toLowerCase()); if(m){selectProject(m); switchTab("tab-projects"); res.textContent=`Launched EXM/${m.name}`;}else{res.textContent="Not found.";} break;
         case "clear": scr.innerHTML=""; inp.value=""; return;
-        case "ai": if(!arg)res.textContent="Usage: ai <prompt>"; else{res.textContent="[Vercel Backend]: Route via the AI Studio tab to view Markdown.";} break;
+        case "ai": 
+          if(!arg) {
+            res.className="text-rose-400"; res.textContent="Usage: ai <prompt>"; 
+          } else {
+            res.className="text-purple-300"; res.innerHTML="<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Querying Vercel Backend...";
+            scr.appendChild(res); scr.scrollTop=scr.scrollHeight; lucide.createIcons();
+            try {
+              const fetchRes = await fetch("/api/chat", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: arg, messages: [{ role: "system", content: "You are a helpful CLI AI. Keep responses brief." }] })
+              });
+              const data = await fetchRes.json();
+              if (fetchRes.ok) {
+                res.className="text-emerald-400 whitespace-pre-wrap"; 
+                res.textContent = `[gpt-oss:20b]:\n${data.choices?.[0]?.message?.content || data.response || "Done."}`;
+              } else {
+                res.className="text-rose-400"; res.textContent = `[Backend Error]: ${data.error || "Unknown"}`;
+              }
+            } catch(err) {
+              res.className="text-rose-400"; res.textContent = `[Network Error]: ${err.message}.`;
+            }
+            inp.value=""; return; // Skip standard append since async handled it
+          }
+          break;
         default: res.textContent=`Command not found: ${act}`; break;
       }
       scr.appendChild(res); inp.value=""; scr.scrollTop=scr.scrollHeight;
