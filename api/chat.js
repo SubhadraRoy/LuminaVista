@@ -1,9 +1,9 @@
 export default async function handler(req, res) {
   // 1. STRICT CORS DOMAIN VERIFICATION
   const allowedOrigins = [
-    'https://subhadraroy.github.io', // <-- Change this to your exact GitHub Pages URL
+    'https://subhadraroy.github.io/LuminaVista/', // <-- Change this to your exact GitHub Pages URL
     'http://localhost:3000',
-    'http://127.0.0.1:3000'
+    'http://127.0.0.1:3000',
     'https://lumina-vista-sigma.vercel.app'
   ];
   const origin = req.headers.origin;
