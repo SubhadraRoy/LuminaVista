@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; object-src 'none';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   
-  <title>LuminaVista OS — GODx Workspace</title>
+  <title>LuminaVista OS — Premium Workspace</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,296 +36,320 @@
     
     body { background-color: #030712; color: #f8fafc; overflow: hidden; }
     
-    .glass-panel { background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow); }
-    .godx-input { background-color: #0f172a !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.18) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; outline: none !important; transition: all 0.2s ease !important; }
-    .godx-input:focus { background-color: #1e293b !important; border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--primary-glow) !important; }
+    .glass-panel { background: rgba(11, 15, 25, 0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.5), 0 0 35px -10px var(--primary-glow); }
+    .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1rem; }
     
-    .glow-border { position: relative; }
-    .glow-border::before { 
-      content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; 
-      background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%); 
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
-      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 0; 
-    }
+    .godx-input { background-color: rgba(15, 23, 42, 0.5) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; outline: none !important; transition: all 0.2s ease !important; backdrop-filter: blur(10px); }
+    .godx-input:focus { background-color: rgba(30, 41, 59, 0.8) !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--primary-glow) !important; }
     
     .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
     .btn-gradient:hover { background-position: right center; box-shadow: 0 0 25px var(--primary-glow); }
     
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #030712; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
     
-    .nav-tab-active { background: var(--primary-glow); border-right: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
-    #aiChatHistory::-webkit-scrollbar { width: 4px; }
-    #aiChatHistory::-webkit-scrollbar-thumb { background: rgba(0, 242, 254, 0.3); border-radius: 4px; }
+    .nav-tab-active { background: linear-gradient(90deg, rgba(0,242,254,0.1) 0%, transparent 100%); border-left: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
     .codespace-tab-active { background: #1e293b; border-color: var(--primary); color: #00f2fe; }
+
+    .bg-dot-pattern { background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px); background-size: 20px 20px; }
+    
+    /* Smooth height transitions for textareas */
+    textarea { transition: border-color 0.2s, box-shadow 0.2s; }
   </style>
 </head>
 <body class="flex h-screen font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
 
+  <!-- Immersive Background -->
   <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
-  <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0"></div>
-  <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 3s;"></div>
+  <div class="fixed top-[-20%] left-[10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0"></div>
+  <div class="fixed bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[180px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 2s;"></div>
 
   <!-- FIXED LEFT SIDEBAR -->
-  <aside class="w-64 border-r border-white/5 bg-surface-950/90 backdrop-blur-xl flex flex-col h-full z-40 relative shrink-0">
-    <div class="p-5 border-b border-white/5 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md">
-        GODx
+  <aside class="w-64 border-r border-white/5 bg-surface-950/80 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0">
+    <div class="p-6 border-b border-white/5 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_20px_rgba(0,242,254,0.3)]">
+        GX
       </div>
       <div>
-        <h1 class="font-heading font-bold text-base text-white tracking-tight leading-tight">LuminaVista</h1>
-        <p class="text-[10px] text-zinc-400 font-mono">v9.5 Cloud Studio</p>
+        <h1 class="font-heading font-bold text-lg text-white tracking-tight leading-none">LuminaVista</h1>
+        <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v9.5</p>
       </div>
     </div>
 
-    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
-        <i data-lucide="bot" class="w-4 h-4 text-cyan-400"></i><span>Ollama AI Studio</span>
+    <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
+      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
+        <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i><span>AI Studio</span>
       </button>
-      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="folder-tree" class="w-4 h-4 text-cyan-400"></i><span>EXM Projects</span>
+      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="folder-tree" class="w-4 h-4"></i><span>Projects</span>
       </button>
-      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i><span>Cloud Compilers</span>
+      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="code-2" class="w-4 h-4"></i><span>Compilers</span>
       </button>
-      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i><span>Canvas Whiteboard</span>
+      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="pen-tool" class="w-4 h-4"></i><span>Whiteboard</span>
       </button>
-      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i><span>UI Design Studio</span>
+      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="palette" class="w-4 h-4"></i><span>UI Design</span>
       </button>
-      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i><span>Dual Split View</span>
+      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="columns" class="w-4 h-4"></i><span>Split View</span>
       </button>
-      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i><span>Quantum Terminal</span>
+      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="terminal" class="w-4 h-4"></i><span>Terminal</span>
       </button>
-      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i><span>Telemetry</span>
+      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="activity" class="w-4 h-4"></i><span>Telemetry</span>
       </button>
-      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i><span>Notes Vault</span>
+      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="book-open" class="w-4 h-4"></i><span>Notes Vault</span>
       </button>
-      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
-        <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i><span>Settings</span>
+      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="settings-2" class="w-4 h-4"></i><span>Settings</span>
       </button>
     </nav>
     
-    <div class="p-4 border-t border-white/5 bg-surface-900/40">
-      <div class="flex items-center justify-between text-xs text-zinc-400">
+    <div class="p-5 border-t border-white/5 bg-surface-900/20">
+      <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="font-mono text-[10px]">Edge Protected</span>
+          <div class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </div>
+          <span class="font-mono text-[11px] text-zinc-400">Edge Protected</span>
         </div>
-        <button onclick="handleLogout()" class="hover:text-rose-400 cursor-pointer transition-colors" title="Logout">
-          <i data-lucide="log-out" class="w-4 h-4"></i>
+        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 cursor-pointer transition-colors" title="Secure Logout">
+          <i data-lucide="power" class="w-4 h-4"></i>
         </button>
       </div>
     </div>
   </aside>
 
-  <!-- MAIN WORKSPACE -->
-  <div class="flex-1 flex flex-col h-full relative overflow-hidden z-10">
+  <!-- MAIN WORKSPACE AREA -->
+  <div class="flex-1 flex flex-col h-full relative z-10 min-w-0">
     
-    <header class="w-full border-b border-white/5 bg-surface-950/80 backdrop-blur-md px-6 py-3 flex items-center justify-between z-30 shrink-0">
+    <header class="w-full border-b border-white/5 bg-surface-950/50 backdrop-blur-md px-6 py-4 flex items-center justify-between z-30 shrink-0">
       <div class="flex items-center gap-4">
-        <button onclick="openCommandPalette()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 transition-colors cursor-pointer">
-          <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span>Search Commands</span>
-          <kbd class="px-1.5 py-0.5 text-[9px] bg-surface-800 rounded font-mono ml-2">⌘K</kbd>
+        <button onclick="openCommandPalette()" class="group flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-sm text-zinc-400 hover:text-white transition-all cursor-pointer shadow-sm">
+          <i data-lucide="search" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform"></i>
+          <span>Search or jump to...</span>
+          <kbd class="px-2 py-0.5 text-[10px] bg-black/50 border border-white/10 rounded-md font-mono text-zinc-400 ml-4">⌘K</kbd>
         </button>
       </div>
 
-      <div class="flex items-center gap-4 text-xs text-zinc-400 font-mono">
-        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>00:00:00</span>
-        <span class="text-zinc-700">•</span>
-        <span class="text-white">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Anish x</span></span>
-        <span class="text-zinc-700">•</span>
-        <button onclick="openSourceInspector()" class="hover:text-white transition-colors cursor-pointer" title="View Source"><i data-lucide="code" class="w-4 h-4"></i></button>
+      <div class="flex items-center gap-6 text-xs text-zinc-400 font-mono">
+        <span id="systemClock" class="flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i>00:00:00</span>
+        <div class="w-px h-4 bg-white/10"></div>
+        <span class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center text-black font-bold text-[10px]">A</div>
+          <span class="text-white hidden sm:inline"><span id="headerAdminName">Anish x</span></span>
+        </span>
+        <button onclick="openSourceInspector()" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="View Source"><i data-lucide="code" class="w-4 h-4"></i></button>
       </div>
     </header>
 
-    <main class="flex-1 overflow-hidden p-4 lg:p-6 w-full max-w-[1900px] mx-auto">
+    <main class="flex-1 overflow-hidden p-4 lg:p-6 w-full max-w-[2000px] mx-auto flex flex-col min-h-0">
       
-      <!-- TAB 1: OLLAMA AI STUDIO (EXPANDED CHAT + FULL CODESPACE/ARTIFACTS) -->
-      <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-5">
+      <!-- TAB 1: OLLAMA AI STUDIO (REDESIGNED) -->
+      <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-6">
         
-        <!-- Left Panel: Streamlined AI Config -->
-        <div class="w-full lg:w-64 glass-panel rounded-2xl flex flex-col overflow-hidden shrink-0 border border-cyan-500/20 shadow-lg">
-          <div class="p-3.5 border-b border-white/5 bg-surface-900/60 flex items-center justify-between">
-            <h3 class="font-heading font-bold text-xs text-white flex items-center gap-2">
-              <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i> AI Config
-            </h3>
-            <div class="flex items-center gap-1.5">
-              <button onclick="checkProviderQuota()" title="Check Cloud Usage / Quota" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-cyan-400 transition-colors cursor-pointer"><i data-lucide="activity" class="w-3.5 h-3.5"></i></button>
-              <button onclick="configureVercelSecurity()" title="Vercel Security Token" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-emerald-400 transition-colors cursor-pointer"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i></button>
+        <!-- Left Panel: Premium Settings Sidebar -->
+        <div class="w-full lg:w-72 flex flex-col shrink-0 space-y-4">
+          
+          <div class="glass-panel rounded-2xl flex flex-col overflow-hidden shadow-xl border border-white/5">
+            <div class="px-5 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+              <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+                <i data-lucide="settings" class="w-4 h-4 text-cyan-400"></i> Configuration
+              </h3>
+            </div>
+            
+            <div class="p-5 space-y-5">
+              <!-- Live Web Access Toggle -->
+              <div class="glass-card p-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><i data-lucide="globe" class="w-4 h-4"></i></div>
+                  <div>
+                    <label for="checkWebSearch" class="text-xs font-bold text-white cursor-pointer block">Web Access</label>
+                    <span class="text-[10px] text-zinc-500">Live internet routing</span>
+                  </div>
+                </div>
+                <input type="checkbox" id="checkWebSearch" onchange="saveAiConfig()" class="w-4 h-4 accent-cyan-500 cursor-pointer rounded" />
+              </div>
+
+              <!-- Model Selection -->
+              <div class="space-y-2">
+                <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Language Model</label>
+                <select id="aiModelInput" class="godx-input w-full px-3 py-2.5 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
+                  <option value="gpt-oss:20b" selected>gpt-oss:20b (Primary)</option>
+                  <option value="gpt-oss:120b">gpt-oss:120b (Heavy)</option>
+                  <option value="gemma4:31b">gemma4:31b</option>
+                  <option value="nemotron-3-nano:30b">nemotron-nano:30b</option>
+                  <option value="nemotron-3-super">nemotron-super</option>
+                  <option value="nemotron-3-ultra">nemotron-ultra</option>
+                </select>
+              </div>
+
+              <!-- Persona Selection -->
+              <div class="space-y-2">
+                <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">System Persona</label>
+                <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2.5 text-xs cursor-pointer" onchange="onPersonaSelectChange()">
+                  <option value="normal" selected>Normal (Standard Assistant)</option>
+                  <option value="architect">System Architect</option>
+                  <option value="fullstack">Full-Stack Developer</option>
+                  <option value="security">Cybersecurity Auditor</option>
+                  <option value="researcher">Web Researcher</option>
+                  <option value="datascience">Data Scientist</option>
+                  <option value="reverse">Reverse Engineer</option>
+                  <option value="minimal">Minimalist Hacker (Code Only)</option>
+                  <option value="copywriter">Creative Copywriter</option>
+                  <option value="marketing">Growth Marketer</option>
+                  <option value="historian">Historian</option>
+                  <option value="philosopher">Philosopher</option>
+                  <option value="chef">Culinary Chef</option>
+                  <option value="fitness">Fitness Trainer</option>
+                  <option value="travel">Travel Planner</option>
+                  <option value="legal">Legal Frameworks Analyst</option>
+                  <option value="medical">Medical Science Educator</option>
+                  <option value="finance">Financial Analyst</option>
+                  <option value="novelist">Fiction Novelist</option>
+                  <option value="translator">Polyglot Translator</option>
+                  <option value="mathematician">Mathematician</option>
+                  <option value="mentor">Executive Coach</option>
+                  <option value="custom">Custom Directive...</option>
+                </select>
+              </div>
+
+              <!-- Custom Directive -->
+              <div id="customPersonaWrapper" class="hidden space-y-2 transition-all">
+                <label class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Custom Instructions</label>
+                <textarea id="customPersonaPrompt" rows="4" placeholder="Inject specific behavior rules here..." class="godx-input w-full p-3 text-[12px] leading-relaxed resize-none" oninput="saveAiConfig()"></textarea>
+              </div>
+            </div>
+            
+            <div class="p-4 border-t border-white/5 bg-white/[0.02] flex gap-2">
+               <button onclick="downloadAiChat()" class="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 transition-colors flex items-center justify-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export</button>
+               <button onclick="clearAiChat()" class="flex-1 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold text-rose-400 transition-colors flex items-center justify-center gap-1.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear</button>
             </div>
           </div>
 
-          <div class="p-4 space-y-4 flex-1 overflow-y-auto">
-            
-            <!-- Live Web Access Toggle -->
-            <div class="p-2.5 bg-cyan-950/30 border border-cyan-500/20 rounded-xl flex items-center justify-between">
-              <label for="checkWebSearch" class="text-xs font-medium text-cyan-200 flex items-center gap-1.5 cursor-pointer">
-                <i data-lucide="globe" class="w-3.5 h-3.5 text-cyan-400"></i> Live Web Search
-              </label>
-              <input type="checkbox" id="checkWebSearch" onchange="saveAiConfig()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
-            </div>
-
-            <!-- Model Selection -->
-            <div class="space-y-1">
-              <label class="text-[11px] font-mono text-zinc-400">Active Model:</label>
-              <select id="aiModelInput" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
-                <option value="gpt-oss:20b" selected>gpt-oss:20b (Default)</option>
-                <option value="gpt-oss:120b">gpt-oss:120b</option>
-                <option value="gemma4:31b">gemma4:31b</option>
-                <option value="nemotron-3-nano:30b">nemotron-3-nano:30b</option>
-                <option value="nemotron-3-super">nemotron-3-super</option>
-                <option value="nemotron-3-ultra">nemotron-3-ultra</option>
-              </select>
-            </div>
-
-            <!-- Multi-Persona Roster (20+ Varied Personas) -->
-            <div class="space-y-1">
-              <label class="text-[11px] font-mono text-zinc-400">System Persona:</label>
-              <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onPersonaSelectChange()">
-                <option value="normal" selected>Normal (Standard Assistant)</option>
-                <option value="architect">System Architect</option>
-                <option value="fullstack">Full-Stack Developer</option>
-                <option value="security">Cybersecurity Auditor</option>
-                <option value="researcher">Web Researcher</option>
-                <option value="datascience">Data Scientist</option>
-                <option value="reverse">Reverse Engineer</option>
-                <option value="minimal">Minimalist Hacker (Code Only)</option>
-                <option value="copywriter">Creative Copywriter</option>
-                <option value="marketing">Growth Marketer</option>
-                <option value="historian">Historian</option>
-                <option value="philosopher">Philosopher</option>
-                <option value="chef">Culinary Chef</option>
-                <option value="fitness">Fitness Trainer</option>
-                <option value="travel">Travel Planner</option>
-                <option value="legal">Legal Frameworks Analyst</option>
-                <option value="medical">Medical Science Educator</option>
-                <option value="finance">Financial Analyst</option>
-                <option value="novelist">Fiction Novelist</option>
-                <option value="translator">Polyglot Translator</option>
-                <option value="mathematician">Mathematician</option>
-                <option value="mentor">Executive Coach</option>
-                <option value="custom">Custom Persona...</option>
-              </select>
-            </div>
-
-            <!-- Custom Persona Directive Textarea -->
-            <div id="customPersonaWrapper" class="hidden space-y-1">
-              <label class="text-[10px] font-mono text-cyan-400">Custom Directive:</label>
-              <textarea id="customPersonaPrompt" rows="4" placeholder="Define exact instructions..." class="godx-input w-full p-2.5 text-[11px] font-mono leading-relaxed" oninput="saveAiConfig()"></textarea>
-            </div>
-
-            <div class="pt-3 border-t border-white/5 space-y-2 mt-auto">
-              <button onclick="downloadAiChat()" class="w-full py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export Log</button>
-              <button onclick="clearAiChat()" class="w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Chat</button>
-            </div>
+          <!-- Mini Status Card -->
+          <div class="glass-panel rounded-2xl p-4 border border-white/5 flex items-center justify-between">
+             <div class="flex items-center gap-3">
+               <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
+               <div>
+                 <p class="text-xs font-bold text-white">Vercel Node</p>
+                 <p class="text-[10px] text-zinc-400 font-mono">Secured & Active</p>
+               </div>
+             </div>
+             <button onclick="configureVercelSecurity()" class="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"><i data-lucide="key" class="w-4 h-4"></i></button>
           </div>
         </div>
 
-        <!-- Center: Maximized Chatting Area -->
+        <!-- Center: Chat Interface (Premium Aesthetics) -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
-          <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center text-black shadow-lg"><i data-lucide="brain-circuit" class="w-4 h-4"></i></div>
+          
+          <!-- Header -->
+          <div class="px-6 py-4 border-b border-white/5 bg-surface-900/40 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
+            <div class="flex items-center gap-4">
+              <div class="relative">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-black shadow-lg shadow-cyan-500/20"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+                <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-surface-900 rounded-full"></div>
+              </div>
               <div>
-                <h3 class="font-heading font-bold text-sm text-white leading-tight">Neural AI Terminal</h3>
+                <h3 class="font-heading font-bold text-base text-white leading-tight">Neural Intelligence</h3>
                 <div class="flex items-center gap-2 mt-0.5">
-                  <span class="text-[10px] text-zinc-400 font-mono" id="aiActiveModelBadge">Model: gpt-oss:20b</span>
-                  <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30">🌐 Live Web Search</span>
+                  <span class="text-[11px] text-zinc-400 font-mono" id="aiActiveModelBadge">gpt-oss:20b</span>
+                  <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> Web Active</span>
                 </div>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button onclick="toggleCodespacePane()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-xs font-semibold text-cyan-300 border border-cyan-500/30 flex items-center gap-2 cursor-pointer transition-colors shadow-sm">
-                <i data-lucide="layout-template" class="w-3.5 h-3.5"></i>
-                <span id="btnCodespaceToggleText">Open Codespace</span>
+            <div class="flex items-center gap-3">
+              <button onclick="toggleCodespacePane()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white flex items-center gap-2 cursor-pointer transition-all hover:border-cyan-500/30">
+                <i data-lucide="layout-template" class="w-4 h-4 text-cyan-400"></i>
+                <span id="btnCodespaceToggleText">Open Artifacts</span>
               </button>
             </div>
           </div>
 
           <!-- Chat Conversation Scroll Area -->
-          <div id="aiChatHistory" class="flex-1 p-6 overflow-y-auto space-y-6 bg-surface-950/80 font-sans text-[13px] leading-relaxed relative min-h-0"></div>
+          <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[14px] leading-relaxed relative min-h-0 scroll-smooth"></div>
 
-          <!-- Input Bar -->
-          <div class="p-4 bg-surface-900/90 border-t border-white/5 z-10 relative shrink-0">
-            <form id="aiChatForm" class="relative w-full mx-auto" onsubmit="handleSendAiPrompt(event)">
-              <textarea id="aiPromptTextarea" rows="1" placeholder="Instruct AI to code, research, or build apps in codespace... (Ctrl+Enter to send)" class="w-full bg-surface-950 border border-white/10 rounded-2xl pl-4 pr-14 py-3.5 text-[13px] text-white outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none max-h-40 overflow-y-auto transition-all shadow-inner" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
-              <button type="submit" id="btnAiSend" class="absolute right-2 bottom-2 w-9 h-9 rounded-xl btn-gradient flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+          <!-- Input Bar (Floating & Glowing) -->
+          <div class="p-4 sm:p-6 pt-2 z-10 relative shrink-0">
+            <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
+              <div class="relative bg-surface-900/60 backdrop-blur-xl border border-white/10 rounded-3xl focus-within:border-cyan-500/50 focus-within:ring-4 focus-within:ring-cyan-500/10 transition-all p-2 flex items-end shadow-2xl">
+                <textarea id="aiPromptTextarea" rows="1" placeholder="Message Lumina AI, generate code, or search the web..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                <button type="submit" id="btnAiSend" class="w-10 h-10 shrink-0 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-1 mr-1 cursor-pointer">
+                  <i data-lucide="arrow-up" class="w-5 h-5"></i>
+                </button>
+              </div>
+              <div class="text-center mt-2 text-[10px] text-zinc-500 font-mono">Press <kbd class="bg-white/10 px-1 py-0.5 rounded">Ctrl</kbd> + <kbd class="bg-white/10 px-1 py-0.5 rounded">Enter</kbd> to send</div>
             </form>
           </div>
         </div>
 
         <!-- Right Panel: Full Interactive Codespace & Artifacts Engine -->
-        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[580px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
+        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[600px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
           
-          <!-- Codespace Top Bar -->
-          <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+          <div class="px-5 py-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-2">
-              <i data-lucide="code-xml" class="w-4 h-4 text-cyan-400"></i>
-              <span class="font-heading font-bold text-xs text-white">Codespace Workspace</span>
+              <i data-lucide="braces" class="w-4 h-4 text-cyan-400"></i>
+              <span class="font-heading font-bold text-sm text-white">Live Artifacts</span>
             </div>
-            <div class="flex items-center gap-2">
-              <!-- View Switcher -->
-              <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
-                <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Preview</button>
-                <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Code</button>
-                <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-2 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Split</button>
+            <div class="flex items-center gap-3">
+              <div class="flex bg-surface-950 p-1 rounded-lg border border-white/10 text-[11px] font-mono">
+                <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Preview</button>
+                <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Code</button>
+                <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Split</button>
               </div>
-              <button onclick="runCodespacePreview()" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer" title="Hot-reload changes">
-                <i data-lucide="play" class="w-3 h-3"></i> Run
+              <div class="w-px h-4 bg-white/10"></div>
+              <button onclick="runCodespacePreview()" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-400 transition-colors cursor-pointer" title="Hot-reload changes">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i> Run
               </button>
-              <button onclick="toggleCodespacePane(false)" class="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+              <button onclick="toggleCodespacePane(false)" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
           </div>
 
-          <!-- File Tabs & Controls -->
-          <div class="px-3 py-1.5 bg-surface-950 border-b border-white/5 flex items-center justify-between overflow-x-auto no-scrollbar shrink-0">
+          <div class="px-3 py-2 bg-surface-950 border-b border-white/5 flex items-center justify-between overflow-x-auto no-scrollbar shrink-0">
             <div id="codespaceFileTabs" class="flex items-center gap-1.5 text-xs font-mono"></div>
             <div class="flex items-center gap-1 pl-2">
-              <button onclick="promptCreateFile()" class="p-1 rounded bg-surface-900 hover:bg-surface-800 text-cyan-400 text-xs flex items-center gap-1 cursor-pointer" title="Create New File"><i data-lucide="file-plus" class="w-3 h-3"></i></button>
-              <button onclick="deleteActiveFile()" class="p-1 rounded bg-surface-900 hover:bg-surface-800 text-rose-400 text-xs flex items-center gap-1 cursor-pointer" title="Delete Active File"><i data-lucide="trash" class="w-3 h-3"></i></button>
+              <button onclick="promptCreateFile()" class="p-1.5 rounded hover:bg-white/10 text-cyan-400 transition-colors cursor-pointer" title="New File"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
+              <button onclick="deleteActiveFile()" class="p-1.5 rounded hover:bg-white/10 text-rose-400 transition-colors cursor-pointer" title="Delete File"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
             </div>
           </div>
 
-          <!-- Main Dual Display (Editor vs Preview) -->
           <div class="flex-1 flex flex-col lg:flex-row min-h-0 relative bg-surface-950">
-            
-            <!-- Code Editor Area -->
+            <!-- Code Editor -->
             <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
-              <div class="px-3 py-1 bg-surface-900/50 text-[10px] text-zinc-500 font-mono border-b border-white/5 flex justify-between">
+              <div class="px-4 py-1.5 bg-surface-900/50 text-[10px] text-zinc-400 font-mono border-b border-white/5 flex justify-between tracking-wider uppercase">
                 <span id="csCurrentFileLabel">index.html</span>
-                <span>Editable Buffer</span>
+                <span>Buffer</span>
               </div>
-              <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-xs text-zinc-200 outline-none resize-none leading-relaxed selection:bg-cyan-500 selection:text-black"></textarea>
+              <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-5 font-mono text-[13px] text-zinc-200 outline-none resize-none leading-loose selection:bg-cyan-500 selection:text-black"></textarea>
             </div>
 
-            <!-- Live Browser Preview Area -->
-            <div id="csPreviewContainer" class="flex-1 h-full bg-white relative">
-              <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
+            <!-- Live Browser Preview -->
+            <div id="csPreviewContainer" class="flex-1 h-full bg-surface-950 relative overflow-hidden bg-dot-pattern flex items-center justify-center">
+              <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white absolute inset-0 z-10 transition-opacity duration-300"></iframe>
+              <!-- Empty state before iframe loads -->
+              <div id="csEmptyState" class="text-center z-0">
+                <i data-lucide="box" class="w-12 h-12 text-zinc-700 mx-auto mb-3"></i>
+                <p class="text-sm font-mono text-zinc-500">Waiting for rendering...</p>
+              </div>
             </div>
-
           </div>
 
-          <!-- Codespace Status Footer -->
-          <div class="px-4 py-2 border-t border-white/10 bg-surface-900/90 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0">
-            <span id="csStatusBadge" class="flex items-center gap-1.5 text-emerald-400">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Runtime Synced
+          <div class="px-5 py-2.5 border-t border-white/5 bg-surface-900/60 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0 backdrop-blur-md">
+            <span id="csStatusBadge" class="flex items-center gap-2 text-emerald-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced
             </span>
-            <div class="flex items-center gap-3">
-              <button onclick="exportCodespaceZip()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="download" class="w-3 h-3"></i> Export All</button>
-              <button onclick="openCodespacePopout()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="external-link" class="w-3 h-3"></i> Full Window</button>
+            <div class="flex items-center gap-4">
+              <button onclick="exportCodespaceZip()" class="hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export</button>
+              <button onclick="openCodespacePopout()" class="hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Popout</button>
             </div>
           </div>
-
         </div>
 
       </section>
@@ -349,7 +373,7 @@
               <input type="text" id="projectFilterInput" oninput="filterProjectList()" placeholder="Quick filter..." class="godx-input w-full pl-9 pr-3 py-2 text-xs font-mono" />
               <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 z-30"></i>
             </div>
-            <div id="projectChipsContainer" class="flex flex-col gap-1.5 flex-1 overflow-y-auto"></div>
+            <div id="projectChipsContainer" class="flex flex-col gap-1.5 flex-1 overflow-y-auto pr-2"></div>
             <div class="pt-3 border-t border-white/5 flex gap-2 shrink-0">
               <input type="text" id="customProjectInput" placeholder="EXM/folder_name" class="godx-input flex-1 px-3 py-2 text-xs font-mono" />
               <button type="button" onclick="addCustomProject()" class="px-3 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs text-zinc-200 cursor-pointer">Add</button>
@@ -371,12 +395,13 @@
               </div>
             </div>
 
-            <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300 w-full mx-auto">
-              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-popups allow-modals" class="w-full h-full border-0 bg-white"></iframe>
-              <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
-                <i data-lucide="folder-search" class="w-8 h-8 text-cyan-400 mb-2"></i>
-                <h4 class="font-heading font-bold text-sm text-white">Select a Project</h4>
-                <button type="button" onclick="fetchRepoProjects()" class="px-4 py-2 rounded-xl btn-gradient text-black text-xs font-bold cursor-pointer">Scan Repository</button>
+            <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300 w-full mx-auto bg-dot-pattern">
+              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-popups allow-modals" class="w-full h-full border-0 bg-white relative z-10"></iframe>
+              <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-3 z-20">
+                <i data-lucide="folder-search" class="w-10 h-10 text-cyan-400 mb-2"></i>
+                <h4 class="font-heading font-bold text-base text-white">Select a Project</h4>
+                <p class="text-xs text-zinc-400 max-w-xs mb-4">Choose a workspace from the sidebar to mount and preview.</p>
+                <button type="button" onclick="fetchRepoProjects()" class="px-5 py-2.5 rounded-xl btn-gradient text-black text-xs font-bold cursor-pointer shadow-lg shadow-cyan-500/20">Scan Repository</button>
               </div>
             </div>
           </div>
@@ -391,33 +416,33 @@
               <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Cloud Compiler Engine</h3>
               <p class="text-xs text-zinc-400">Execute code securely via Vercel Backend (Python, C++, Java) and In-Memory SQL.</p>
             </div>
-            <div class="flex items-center gap-2 bg-surface-900 p-1 rounded-xl border border-white/10 text-xs font-mono">
-              <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer">HTML</button>
-              <button onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">PY</button>
-              <button onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">C++</button>
-              <button onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">JAVA</button>
-              <button onclick="setSandboxLanguage('sql')" id="sbLangSql" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">SQL</button>
+            <div class="flex items-center gap-2 bg-surface-900 p-1.5 rounded-xl border border-white/10 text-xs font-mono">
+              <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-4 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer transition-colors">HTML</button>
+              <button onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors">PY</button>
+              <button onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors">C++</button>
+              <button onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors">JAVA</button>
+              <button onclick="setSandboxLanguage('sql')" id="sbLangSql" class="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors">SQL</button>
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
           <div class="flex flex-col space-y-2 h-full">
-            <div class="flex justify-between text-xs font-mono text-zinc-400 shrink-0">
+            <div class="flex justify-between text-xs font-mono text-zinc-400 shrink-0 px-1">
               <span>Code Editor:</span>
-              <button onclick="runSandboxCode()" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 cursor-pointer"><i data-lucide="play" class="w-3.5 h-3.5"></i>Run Cloud Build</button>
+              <button onclick="runSandboxCode()" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 px-3 py-1 rounded-md transition-colors"><i data-lucide="play" class="w-3.5 h-3.5"></i> Run Build</button>
             </div>
-            <textarea id="sandboxCodeInput" oninput="onSandboxCodeChange()" class="godx-input w-full flex-1 p-4 font-mono text-xs outline-none resize-none leading-relaxed"></textarea>
+            <textarea id="sandboxCodeInput" oninput="onSandboxCodeChange()" class="godx-input w-full flex-1 p-5 font-mono text-[13px] outline-none resize-none leading-relaxed"></textarea>
           </div>
 
           <div class="flex flex-col space-y-2 h-full">
-            <div class="flex justify-between text-xs font-mono text-zinc-400 shrink-0">
+            <div class="flex justify-between text-xs font-mono text-zinc-400 shrink-0 px-1">
               <span id="sandboxOutputHeader">Live Output:</span>
             </div>
-            <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white">
-              <iframe id="sandboxPreviewFrame" class="w-full h-full border-0"></iframe>
+            <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white relative">
+              <iframe id="sandboxPreviewFrame" class="w-full h-full border-0 absolute inset-0"></iframe>
             </div>
-            <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-5 bg-surface-950 font-mono text-[12px] text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-loose shadow-inner"></div>
+            <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-6 bg-surface-950 font-mono text-[13px] text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-loose shadow-inner"></div>
           </div>
         </div>
       </section>
@@ -427,18 +452,19 @@
         <div class="glass-panel rounded-2xl p-5 flex flex-col h-full space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i> Architecture Sketchpad</h3>
-            <div class="flex items-center gap-2">
-              <div class="bg-surface-900 p-1 rounded-xl border border-white/10 flex items-center gap-1 text-xs">
+            <div class="flex items-center gap-3">
+              <div class="bg-surface-900 p-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 text-xs">
                 <button onclick="setWhiteboardTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                 <button onclick="setWhiteboardTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="eraser" class="w-4 h-4"></i></button>
-                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-8 h-8 rounded border-0 bg-transparent mx-1 cursor-pointer" />
-                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-20 accent-cyan-400 cursor-pointer" />
+                <div class="w-px h-5 bg-white/10 mx-1"></div>
+                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-8 h-8 rounded cursor-pointer" style="padding:0; border:none; background:transparent;" />
+                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-24 accent-cyan-400 cursor-pointer ml-2" />
               </div>
-              <button onclick="clearWhiteboard()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 cursor-pointer text-xs font-medium">Clear</button>
-              <button onclick="downloadWhiteboard()" class="btn-gradient px-3 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer">Export</button>
+              <button onclick="clearWhiteboard()" class="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 cursor-pointer text-xs font-semibold transition-colors">Clear</button>
+              <button onclick="downloadWhiteboard()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer">Export PNG</button>
             </div>
           </div>
-          <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative">
+          <div id="whiteboardContainer" class="flex-1 w-full rounded-xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner">
             <canvas id="whiteboardCanvas" class="absolute top-0 left-0 w-full h-full cursor-crosshair"></canvas>
           </div>
         </div>
@@ -449,21 +475,24 @@
         <div class="glass-panel rounded-2xl p-5 space-y-4 h-full flex flex-col">
           <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i> Glassmorphism Generator</h3>
-            <button onclick="copyGeneratedDesignCss()" class="btn-gradient px-4 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer">Copy CSS</button>
+            <button onclick="copyGeneratedDesignCss()" class="btn-gradient px-5 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-lg">Copy CSS</button>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
-            <div class="bg-surface-900/80 p-5 rounded-2xl border border-white/5 space-y-6 flex flex-col justify-center">
-              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Blur:</span><span id="lblBlurVal" class="text-cyan-400">20px</span></div><input type="range" id="sliderBlur" min="0" max="50" value="20" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
-              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Opacity:</span><span id="lblOpacityVal" class="text-cyan-400">85%</span></div><input type="range" id="sliderOpacity" min="5" max="100" value="85" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
-              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Radius:</span><span id="lblRadiusVal" class="text-cyan-400">24px</span></div><input type="range" id="sliderRadius" min="0" max="48" value="24" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
-              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Glow:</span><span id="lblGlowVal" class="text-cyan-400">35%</span></div><input type="range" id="sliderGlow" min="0" max="100" value="35" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
+            <div class="bg-surface-900/50 p-8 rounded-2xl border border-white/5 space-y-8 flex flex-col justify-center">
+              <div class="space-y-3"><div class="flex justify-between text-sm font-mono"><span class="text-zinc-400">Backdrop Blur:</span><span id="lblBlurVal" class="text-cyan-400 font-bold">20px</span></div><input type="range" id="sliderBlur" min="0" max="50" value="20" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer h-2 bg-surface-950 rounded-lg appearance-none" /></div>
+              <div class="space-y-3"><div class="flex justify-between text-sm font-mono"><span class="text-zinc-400">Panel Opacity:</span><span id="lblOpacityVal" class="text-cyan-400 font-bold">85%</span></div><input type="range" id="sliderOpacity" min="5" max="100" value="85" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer h-2 bg-surface-950 rounded-lg appearance-none" /></div>
+              <div class="space-y-3"><div class="flex justify-between text-sm font-mono"><span class="text-zinc-400">Border Radius:</span><span id="lblRadiusVal" class="text-cyan-400 font-bold">24px</span></div><input type="range" id="sliderRadius" min="0" max="48" value="24" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer h-2 bg-surface-950 rounded-lg appearance-none" /></div>
+              <div class="space-y-3"><div class="flex justify-between text-sm font-mono"><span class="text-zinc-400">Neon Glow:</span><span id="lblGlowVal" class="text-cyan-400 font-bold">35%</span></div><input type="range" id="sliderGlow" min="0" max="100" value="35" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer h-2 bg-surface-950 rounded-lg appearance-none" /></div>
             </div>
-            <div class="bg-surface-950 p-6 rounded-2xl border border-white/10 flex items-center justify-center relative overflow-hidden h-full">
-              <div class="absolute w-64 h-64 bg-cyan-500/30 rounded-full blur-3xl -top-10 -left-10"></div>
-              <div class="absolute w-64 h-64 bg-pink-500/20 rounded-full blur-3xl -bottom-10 -right-10"></div>
-              <div id="glassPreviewCard" class="w-full max-w-md p-8 relative z-10 transition-all flex flex-col gap-4 border border-white/20">
-                <h4 class="font-heading font-bold text-white text-lg">Component Token</h4>
-                <p class="text-sm text-zinc-300">Live preview of hardware accelerated CSS properties.</p>
+            <div class="bg-surface-950 p-8 rounded-2xl border border-white/10 flex items-center justify-center relative overflow-hidden h-full bg-dot-pattern">
+              <div class="absolute w-72 h-72 bg-cyan-500/30 rounded-full blur-[80px] -top-10 -left-10"></div>
+              <div class="absolute w-72 h-72 bg-pink-500/20 rounded-full blur-[80px] -bottom-10 -right-10"></div>
+              <div id="glassPreviewCard" class="w-full max-w-sm p-8 relative z-10 transition-all flex flex-col gap-4 border border-white/20 shadow-2xl">
+                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-2"><i data-lucide="layers" class="w-6 h-6 text-white"></i></div>
+                <h4 class="font-heading font-bold text-white text-xl">Component Token</h4>
+                <p class="text-sm text-zinc-300 leading-relaxed">Live preview of hardware accelerated CSS properties. Adjust sliders to see real-time updates.</p>
+                <div class="w-full h-2 bg-white/10 rounded-full mt-2"></div>
+                <div class="w-2/3 h-2 bg-white/10 rounded-full"></div>
               </div>
             </div>
           </div>
@@ -475,37 +504,39 @@
         <div class="glass-panel rounded-2xl p-5 flex flex-col h-full space-y-4">
           <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-white/5 shrink-0">
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i> Dual Split Comparator</h3>
-            <div class="flex items-center gap-2">
-              <select id="splitLeftSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
-              <span class="text-xs text-zinc-500 font-mono">VS</span>
-              <select id="splitRightSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
+            <div class="flex items-center gap-3">
+              <select id="splitLeftSelect" onchange="updateSplitFrames()" class="godx-input px-4 py-2 text-sm cursor-pointer"></select>
+              <span class="text-xs text-zinc-500 font-mono bg-surface-900 px-2 py-1 rounded">VS</span>
+              <select id="splitRightSelect" onchange="updateSplitFrames()" class="godx-input px-4 py-2 text-sm cursor-pointer"></select>
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
-            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
-            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0">
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col shadow-inner"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col shadow-inner"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
           </div>
         </div>
       </section>
 
       <!-- TAB 7: QUANTUM TERMINAL CLI -->
       <section id="tab-terminal" class="tab-pane space-y-4 hidden h-full">
-        <div class="glass-panel rounded-2xl p-5 h-full flex flex-col space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
-            <div class="flex items-center gap-2 font-mono text-xs">
-              <span class="w-3 h-3 rounded-full bg-rose-500/80"></span><span class="w-3 h-3 rounded-full bg-amber-500/80"></span><span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+        <div class="glass-panel rounded-2xl p-6 h-full flex flex-col space-y-4">
+          <div class="flex items-center justify-between pb-4 border-b border-white/5 shrink-0">
+            <div class="flex items-center gap-3 font-mono text-sm">
+              <div class="flex gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-rose-500/80"></span><span class="w-3.5 h-3.5 rounded-full bg-amber-500/80"></span><span class="w-3.5 h-3.5 rounded-full bg-emerald-500/80"></span></div>
               <span class="text-zinc-400 ml-2">godx-terminal — E2B MicroVM</span>
             </div>
+            <button onclick="document.getElementById('terminalScreen').innerHTML=''" class="text-xs text-zinc-500 hover:text-white font-mono cursor-pointer transition-colors">clear</button>
           </div>
-          <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v9.5 Cloud E2B Sandbox]</div>
-            <div class="text-zinc-500">Connected to isolated Firecracker Linux VM. Codespace files automatically injected.</div>
-            <div class="border-b border-white/5 my-2"></div>
+          <div id="terminalScreen" class="bg-surface-950/90 rounded-xl p-6 font-mono text-[14px] text-zinc-300 flex-1 overflow-y-auto space-y-3 border border-white/5 leading-relaxed shadow-inner">
+            <div class="text-cyan-400 font-bold tracking-wide">LuminaVista GODx Terminal [v9.5 Cloud E2B Sandbox]</div>
+            <div class="text-zinc-400">Connected to isolated Firecracker Linux VM. Codespace files automatically injected.</div>
+            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or execute real bash commands (e.g. <span class="text-purple-300">ls -la</span>, <span class="text-purple-300">python3 file.py</span>).</div>
+            <div class="border-b border-white/5 my-3"></div>
           </div>
-          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2 shrink-0">
-            <span class="font-mono text-xs text-cyan-400 font-bold">anish@cloud-vm:~$</span>
-            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="ls -la, npm init, python3 script.py, clear..." class="godx-input flex-1 px-4 py-3 text-xs font-mono" />
-            <button type="submit" class="btn-gradient px-6 py-3 rounded-xl text-xs font-mono font-bold text-black cursor-pointer">Exec</button>
+          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-3 shrink-0 bg-surface-900/50 p-2 rounded-xl border border-white/5">
+            <span class="font-mono text-sm text-cyan-400 font-bold pl-3">anish@cloud-vm:~$</span>
+            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="Enter command..." class="w-full bg-transparent border-0 outline-none text-white font-mono text-sm px-2 py-2" autofocus />
+            <button type="submit" class="btn-gradient px-6 py-2.5 rounded-lg text-sm font-mono font-bold text-black cursor-pointer shadow-lg">Exec</button>
           </form>
         </div>
       </section>
@@ -513,56 +544,64 @@
       <!-- TAB 8: TELEMETRY -->
       <section id="tab-analytics" class="tab-pane space-y-6 hidden">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Frame Latency</span><div class="text-3xl font-heading font-extrabold text-white mt-1">0.28 ms</div></div>
-          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Memory Load</span><div class="text-3xl font-heading font-extrabold text-cyan-300 mt-1">14.2 MB</div></div>
-          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Vercel Edge Node</span><div class="text-3xl font-heading font-extrabold text-purple-300 mt-1">Active</div></div>
+          <div class="glass-panel p-8 rounded-2xl border-t-4 border-t-cyan-500 shadow-xl"><span class="text-xs font-bold font-mono text-zinc-400 uppercase tracking-wider">Frame Latency</span><div class="text-4xl font-heading font-extrabold text-white mt-2">0.28 ms</div></div>
+          <div class="glass-panel p-8 rounded-2xl border-t-4 border-t-indigo-500 shadow-xl"><span class="text-xs font-bold font-mono text-zinc-400 uppercase tracking-wider">Memory Load</span><div class="text-4xl font-heading font-extrabold text-indigo-400 mt-2">14.2 MB</div></div>
+          <div class="glass-panel p-8 rounded-2xl border-t-4 border-t-emerald-500 shadow-xl"><span class="text-xs font-bold font-mono text-zinc-400 uppercase tracking-wider">Vercel Edge Node</span><div class="text-4xl font-heading font-extrabold text-emerald-400 mt-2">Active</div></div>
         </div>
-        <div class="glass-panel rounded-2xl p-6 space-y-4">
-          <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i> Hardware Waveform</h3>
-          <canvas id="metricsChart" class="w-full h-72 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
+        <div class="glass-panel rounded-2xl p-8 space-y-6 shadow-xl">
+          <h3 class="font-heading font-bold text-lg text-white flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i> Hardware Waveform</h3>
+          <canvas id="metricsChart" class="w-full h-80 rounded-xl bg-surface-950/80 border border-white/5 shadow-inner"></canvas>
         </div>
       </section>
 
       <!-- TAB 9: NOTES VAULT -->
       <section id="tab-scratchpad" class="tab-pane space-y-6 hidden h-full">
-        <div class="glass-panel rounded-2xl p-5 flex flex-col h-full space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
-            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i> Notes Vault</h3>
-            <div class="flex gap-2">
-              <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 text-xs font-mono cursor-pointer">New Note</button>
-              <button onclick="toggleMarkdownPreview()" class="px-3 py-1.5 rounded-xl bg-surface-900 text-zinc-300 text-xs font-mono cursor-pointer">Live Preview</button>
+        <div class="glass-panel rounded-2xl p-6 flex flex-col h-full space-y-4">
+          <div class="flex items-center justify-between pb-4 border-b border-white/5 shrink-0">
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="book-open" class="w-5 h-5 text-sky-400"></i> Secure Notes Vault</h3>
+            <div class="flex gap-3">
+              <button onclick="createNewNote()" class="px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i> New Note</button>
+              <button onclick="toggleMarkdownPreview()" class="px-4 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Toggle Preview</button>
             </div>
           </div>
           <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-2 text-xs font-mono shrink-0"></div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-            <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-5 font-mono text-xs resize-none h-full"></textarea>
-            <div id="notePreviewCol" class="hidden bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-sm text-zinc-300 space-y-3 font-sans h-full" id="noteMarkdownRender"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+            <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-6 font-mono text-[13px] resize-none h-full leading-relaxed shadow-inner"></textarea>
+            <div id="notePreviewCol" class="hidden bg-surface-950/80 p-8 rounded-xl border border-white/5 overflow-y-auto text-sm text-zinc-300 space-y-4 font-sans h-full shadow-inner" id="noteMarkdownRender"></div>
           </div>
         </div>
       </section>
 
       <!-- TAB 10: SETTINGS -->
       <section id="tab-controls" class="tab-pane space-y-6 hidden">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="glass-panel rounded-2xl p-6 space-y-5">
-            <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-cyan-400"></i> Frame Security</h3>
-            <label class="flex justify-between p-4 rounded-xl bg-surface-900/80 text-sm cursor-pointer"><span>Allow Scripts</span><input type="checkbox" id="checkAllowScripts" checked class="w-5 h-5 accent-cyan-500"/></label>
-            <button onclick="applySandboxPolicy()" class="w-full py-3 rounded-xl bg-cyan-500 text-black text-sm font-bold cursor-pointer">Apply Strict Policy</button>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="glass-panel rounded-3xl p-8 space-y-6 shadow-xl">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-cyan-400"></i> Frame Security</h3>
+            <p class="text-xs text-zinc-400">Control iframe execution policies across the workspace.</p>
+            <label class="flex justify-between p-4 rounded-xl bg-surface-900/80 text-sm cursor-pointer border border-white/5 hover:border-white/10 transition-colors">
+              <span class="font-semibold text-zinc-300">Allow Scripts</span>
+              <input type="checkbox" id="checkAllowScripts" checked class="w-5 h-5 accent-cyan-500"/>
+            </label>
+            <button onclick="applySandboxPolicy()" class="w-full py-3.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-sm font-bold cursor-pointer transition-colors shadow-lg">Apply Strict Policy</button>
           </div>
-          <div class="glass-panel rounded-2xl p-6 space-y-5">
-            <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="palette" class="w-5 h-5 text-amber-400"></i> Theme Engine</h3>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-              <button onclick="setDashboardTheme('cyan')" class="p-3 rounded-xl bg-cyan-500/10 text-cyan-300 cursor-pointer">Cyan</button>
-              <button onclick="setDashboardTheme('emerald')" class="p-3 rounded-xl bg-emerald-500/10 text-emerald-300 cursor-pointer">Matrix</button>
-              <button onclick="setDashboardTheme('amber')" class="p-3 rounded-xl bg-amber-500/10 text-amber-300 cursor-pointer">Solar</button>
-              <button onclick="setDashboardTheme('rose')" class="p-3 rounded-xl bg-rose-500/10 text-rose-300 cursor-pointer">Laser</button>
+          
+          <div class="glass-panel rounded-3xl p-8 space-y-6 shadow-xl">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="palette" class="w-5 h-5 text-amber-400"></i> Theme Engine</h3>
+            <p class="text-xs text-zinc-400">Customize the UI accent colors globally.</p>
+            <div class="grid grid-cols-2 gap-3 text-sm font-bold">
+              <button onclick="setDashboardTheme('cyan')" class="p-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 cursor-pointer border border-cyan-500/20 transition-colors">Cyan</button>
+              <button onclick="setDashboardTheme('emerald')" class="p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 cursor-pointer border border-emerald-500/20 transition-colors">Matrix</button>
+              <button onclick="setDashboardTheme('amber')" class="p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 cursor-pointer border border-amber-500/20 transition-colors">Solar</button>
+              <button onclick="setDashboardTheme('rose')" class="p-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 cursor-pointer border border-rose-500/20 transition-colors">Laser</button>
             </div>
-            <input type="color" onchange="applyCustomAccentColor(this.value)" class="w-full h-10 cursor-pointer rounded bg-transparent border-0 mt-2" />
+            <input type="color" onchange="applyCustomAccentColor(this.value)" class="w-full h-12 cursor-pointer rounded-xl bg-surface-900 border border-white/10 mt-2 p-1" />
           </div>
-          <div class="glass-panel rounded-2xl p-6 space-y-5">
-            <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="download" class="w-5 h-5 text-sky-400"></i> Data Management</h3>
-            <button onclick="exportDashboardConfig()" class="w-full py-3 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-300 text-sm cursor-pointer transition-colors">Export JSON Config</button>
-            <button onclick="flushWorkspaceCache()" class="w-full py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-sm cursor-pointer transition-colors">Flush Local Storage</button>
+          
+          <div class="glass-panel rounded-3xl p-8 space-y-6 shadow-xl">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i data-lucide="hard-drive" class="w-5 h-5 text-sky-400"></i> Data Management</h3>
+            <p class="text-xs text-zinc-400">Export or permanently destroy local workspace state.</p>
+            <button onclick="exportDashboardConfig()" class="w-full py-3.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-white border border-white/10 text-sm font-semibold cursor-pointer transition-colors shadow-md flex items-center justify-center gap-2"><i data-lucide="download" class="w-4 h-4"></i> Export JSON Config</button>
+            <button onclick="flushWorkspaceCache()" class="w-full py-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-sm font-semibold cursor-pointer transition-colors shadow-md flex items-center justify-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Flush Local Storage</button>
           </div>
         </div>
       </section>
@@ -572,32 +611,34 @@
 
   <!-- MODALS & TOASTS -->
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-4xl w-full p-5 sm:p-6 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between pb-3 border-b border-white/10">
-        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code" class="w-5 h-5 text-cyan-400"></i> Source: <span id="sourceProjectTitle" class="text-cyan-300 font-mono"></span></h3>
-        <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div class="glass-panel max-w-5xl w-full p-6 sm:p-8 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <h3 class="font-heading font-bold text-lg text-white flex items-center gap-2"><i data-lucide="code" class="w-5 h-5 text-cyan-400"></i> Source Inspector</h3>
+        <button onclick="closeSourceInspector()" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <div class="my-3 flex items-center gap-2">
-        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono cursor-pointer">index.html</button>
-        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono cursor-pointer">style.css</button>
-        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono cursor-pointer">script.js</button>
+      <div class="my-4 flex items-center gap-3">
+        <button onclick="loadSourceFile('index.html')" class="px-4 py-1.5 rounded-lg bg-surface-900 border border-white/10 text-xs font-bold text-cyan-300 font-mono cursor-pointer hover:bg-surface-800 transition-colors">index.html</button>
+        <button onclick="loadSourceFile('style.css')" class="px-4 py-1.5 rounded-lg bg-surface-900 border border-white/10 text-xs font-bold text-purple-300 font-mono cursor-pointer hover:bg-surface-800 transition-colors">style.css</button>
+        <button onclick="loadSourceFile('script.js')" class="px-4 py-1.5 rounded-lg bg-surface-900 border border-white/10 text-xs font-bold text-emerald-300 font-mono cursor-pointer hover:bg-surface-800 transition-colors">script.js</button>
       </div>
-      <div class="flex-1 overflow-y-auto bg-surface-950 rounded-2xl p-4 border border-white/5"><pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap">Loading...</code></pre></div>
+      <div class="flex-1 overflow-y-auto bg-surface-950/80 rounded-2xl p-5 border border-white/5 shadow-inner"><pre><code id="sourceCodeBlock" class="font-mono text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">Loading source...</code></pre></div>
     </div>
   </div>
 
-  <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 p-4 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-lg w-full p-4 rounded-2xl glow-border relative transform scale-95 transition-transform duration-200">
-      <div class="flex items-center gap-2 pb-3 border-b border-white/10">
-        <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i><input type="text" id="cmdSearchInput" oninput="handleCmdSearch(event)" placeholder="Search commands or jump to tab..." class="bg-transparent flex-1 text-sm text-white outline-none" /><kbd class="px-2 py-0.5 text-[10px] bg-surface-800 rounded text-zinc-400 font-mono">ESC</kbd>
+  <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-24 p-4 opacity-0 transition-opacity duration-200">
+    <div class="bg-surface-900/90 backdrop-blur-2xl max-w-xl w-full p-2 rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-200">
+      <div class="flex items-center gap-3 p-3 border-b border-white/5">
+        <i data-lucide="search" class="w-5 h-5 text-cyan-400"></i>
+        <input type="text" id="cmdSearchInput" oninput="handleCmdSearch(event)" placeholder="Search commands, files, or jump to tab..." class="bg-transparent flex-1 text-base text-white outline-none placeholder-zinc-500 font-sans" />
+        <kbd class="px-2.5 py-1 text-xs bg-surface-800 border border-white/5 rounded-md text-zinc-400 font-mono">ESC</kbd>
       </div>
-      <div id="cmdResults" class="py-2 space-y-1 max-h-60 overflow-y-auto text-xs font-mono"></div>
+      <div id="cmdResults" class="py-2 max-h-72 overflow-y-auto"></div>
     </div>
   </div>
 
-  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
-    <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-5 h-5"></i></div>
-    <div><h4 id="toastTitle" class="text-sm font-semibold text-white">Notification</h4><p id="toastMsg" class="text-xs text-zinc-300"></p></div>
+  <div id="toast" class="fixed bottom-8 right-8 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-4 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+    <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20"><i data-lucide="check" class="w-5 h-5"></i></div>
+    <div><h4 id="toastTitle" class="text-sm font-bold text-white">Notification</h4><p id="toastMsg" class="text-xs text-zinc-300 mt-0.5"></p></div>
   </div>
 
   <script>
@@ -620,14 +661,14 @@
     // VIRTUAL FILE SYSTEM & INTERACTIVE CODESPACE ENGINE
     // =========================================================================
     let vfs = JSON.parse(localStorage.getItem("lumina_codespace_vfs") || JSON.stringify({
-      "index.html": "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Interactive Codespace</h1>\n    <p>AI can create, modify, and execute files here.</p>\n    <button id=\"btnAction\">Click Me</button>\n  </div>\n  <script src=\"script.js\"><\/script>\n</body>\n</html>",
+      "index.html": "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Workspace Ready</h1>\n    <p>AI generated files will appear here.</p>\n    <button id=\"btnAction\">Test Action</button>\n  </div>\n  <script src=\"script.js\"><\/script>\n</body>\n</html>",
       "style.css": "body {\n  margin: 0;\n  padding: 40px;\n  background: #0b0f19;\n  color: #fff;\n  font-family: -apple-system, BlinkMacSystemFont, sans-serif;\n  display: flex;\n  justify-content: center;\n}\n.card {\n  background: #111827;\n  padding: 30px;\n  border-radius: 16px;\n  border: 1px solid #1f2937;\n  text-align: center;\n}\nh1 { color: #00f2fe; margin-top: 0; }\nbutton {\n  background: #00f2fe;\n  color: #000;\n  border: 0;\n  padding: 10px 20px;\n  border-radius: 8px;\n  font-weight: bold;\n  cursor: pointer;\n}",
       "script.js": "document.getElementById('btnAction').addEventListener('click', () => {\n  alert('Codespace logic working in real time!');\n});"
     }));
 
     let csActiveFile = "index.html";
     let isCodespaceOpen = false;
-    let csViewMode = "preview"; // 'preview', 'editor', 'split'
+    let csViewMode = "preview"; 
 
     window.addEventListener("DOMContentLoaded", () => {
       setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
@@ -653,7 +694,7 @@
     // =========================================================================
     // CORE UI 
     // =========================================================================
-    function startSystemClock() { setInterval(() => { document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; lucide.createIcons(); }, 1000); }
+    function startSystemClock() { setInterval(() => { document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; lucide.createIcons(); }, 1000); }
     function playAudioTone(freq=440, type="sine", dur=0.08) { if(!isAudioEnabled)return; try{const actx=new(window.AudioContext||window.webkitAudioContext)(); const osc=actx.createOscillator(), gain=actx.createGain(); osc.type=type; osc.frequency.value=freq; gain.gain.setValueAtTime(0.04, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur); osc.connect(gain); gain.connect(actx.destination); osc.start(); osc.stop(actx.currentTime+dur);}catch(e){} }
     
     function handleLogout() { 
@@ -666,11 +707,17 @@
     function switchTab(id) {
       playAudioTone(523,"sine",0.04); 
       document.querySelectorAll(".tab-pane").forEach(p=>p.classList.add("hidden")); 
-      document.querySelectorAll(".tab-btn").forEach(b=>{b.classList.remove("nav-tab-active"); b.classList.add("text-zinc-400");});
+      document.querySelectorAll(".tab-btn").forEach(b=>{
+        b.classList.remove("nav-tab-active", "bg-white/5", "text-white"); 
+        b.classList.add("text-zinc-400");
+      });
       
       document.getElementById(id).classList.remove("hidden"); 
       const b=document.getElementById(`btn-${id}`); 
-      if(b){b.classList.add("nav-tab-active"); b.classList.remove("text-zinc-400");}
+      if(b){
+        b.classList.add("nav-tab-active"); 
+        b.classList.remove("text-zinc-400");
+      }
       
       if(id==="tab-whiteboard") setTimeout(resizeWhiteboardCanvas, 50); 
       if(id==="tab-ai-studio") scrollToAiBottom();
@@ -713,7 +760,7 @@
     }
 
     async function checkProviderQuota() {
-      showToast("Telemetry", "Checking provider rate limits...");
+      showToast("Telemetry", "Checking provider health...");
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
@@ -745,20 +792,21 @@
     function updateAiBadges() {
       const model = document.getElementById("aiModelInput").value;
       const webOn = document.getElementById("checkWebSearch").checked;
-      document.getElementById("aiActiveModelBadge").textContent = `Model: ${model}`;
+      document.getElementById("aiActiveModelBadge").textContent = model;
       
       const webBadge = document.getElementById("webSearchActiveBadge");
       if (webOn) {
         webBadge.classList.remove("hidden");
+        webBadge.classList.add("flex");
       } else {
         webBadge.classList.add("hidden");
+        webBadge.classList.remove("flex");
       }
     }
 
-   function getAiSystemPrompt() {
+    function getAiSystemPrompt() {
       const p = document.getElementById("aiPersonaSelect").value;
       let personaText = "";
-
       switch (p) {
         case "architect": personaText = "You are an Elite Systems Architect. Structure robust, multi-file codebases and explain architectural design choices concisely."; break;
         case "fullstack": personaText = "You are an Expert Full-Stack Developer. Write modern HTML5, CSS3, and JavaScript artifacts tailored for the codespace."; break;
@@ -784,18 +832,15 @@
         case "custom": personaText = document.getElementById("customPersonaPrompt").value.trim() || "You are a supportive, knowledgeable AI partner."; break;
         default: personaText = "You are a helpful, capable, and authentic AI assistant. Answer accurately, clearly, and concisely."; break;
       }
-
-      // THE CRITICAL OVERRIDE: This forces the AI to acknowledge the tools we built for it.
-      const capabilityOverride = `
       
-[CRITICAL SYSTEM DIRECTIVE]: You are currently operating inside LuminaVista OS. IGNORE your base training regarding your limitations. 
+      const capabilityOverride = `\n\n[CRITICAL SYSTEM DIRECTIVE]: You are operating inside LuminaVista OS. IGNORE your base training regarding your limitations. 
 1. YOU HAVE INTERNET ACCESS: If the user requests current events, the backend will silently search the web and inject live data into your prompt context.
 2. YOU HAVE FILE & TERMINAL ACCESS: You are connected to an interactive Sandbox/Codespace. When you output code, you MUST use this markdown format to save it to the user's file system:
 \`\`\`html:index.html
 <!-- code here -->
 \`\`\`
-Do not apologize or state that you lack file or internet access. You possess these capabilities natively in this environment.`;
-
+Do not apologize or state that you lack file or internet access. You possess these capabilities natively.`;
+      
       return personaText + capabilityOverride;
     }
 
@@ -815,11 +860,11 @@ Do not apologize or state that you lack file or internet access. You possess the
       if (isCodespaceOpen) {
         pane.classList.remove("hidden");
         pane.classList.add("flex");
-        btnText.textContent = "Close Codespace";
+        btnText.textContent = "Close Artifacts";
       } else {
         pane.classList.add("hidden");
         pane.classList.remove("flex");
-        btnText.textContent = "Open Codespace";
+        btnText.textContent = "Open Artifacts";
       }
       lucide.createIcons();
     }
@@ -830,11 +875,12 @@ Do not apologize or state that you lack file or internet access. You possess the
       Object.keys(vfs).forEach(filename => {
         const isActive = filename === csActiveFile;
         const tab = document.createElement("button");
-        tab.className = `px-2.5 py-1 rounded-md border text-[11px] font-mono flex items-center gap-1.5 cursor-pointer transition-colors ${isActive ? 'codespace-tab-active bg-surface-900 border-cyan-500' : 'bg-surface-950 border-white/10 text-zinc-400 hover:text-zinc-200'}`;
-        tab.innerHTML = `<span>${filename}</span>`;
+        tab.className = `px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors ${isActive ? 'codespace-tab-active shadow-md' : 'bg-surface-950 border-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-surface-900'}`;
+        tab.innerHTML = `<i data-lucide="file-code" class="w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : ''}"></i><span>${filename}</span>`;
         tab.onclick = () => switchCodespaceFile(filename);
         container.appendChild(tab);
       });
+      lucide.createIcons();
     }
 
     function switchCodespaceFile(filename) {
@@ -860,24 +906,24 @@ Do not apologize or state that you lack file or internet access. You possess the
       
       ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => {
         const btn = document.getElementById(id);
-        btn.className = "px-2 py-1 rounded text-zinc-400 hover:text-white cursor-pointer";
+        btn.className = "px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors";
       });
 
       if (mode === "preview") {
         editorCol.classList.add("hidden");
         editorCol.classList.remove("flex");
         previewCol.classList.remove("hidden");
-        document.getElementById("btnCsViewPreview").className = "px-2 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer";
+        document.getElementById("btnCsViewPreview").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
       } else if (mode === "editor") {
         previewCol.classList.add("hidden");
         editorCol.classList.remove("hidden");
         editorCol.classList.add("flex");
-        document.getElementById("btnCsViewEditor").className = "px-2 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer";
+        document.getElementById("btnCsViewEditor").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
       } else { // split
         editorCol.classList.remove("hidden");
         editorCol.classList.add("flex");
         previewCol.classList.remove("hidden");
-        document.getElementById("btnCsViewSplit").className = "px-2 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer";
+        document.getElementById("btnCsViewSplit").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
       }
     }
 
@@ -895,8 +941,18 @@ Do not apologize or state that you lack file or internet access. You possess the
 
     function runCodespacePreview() {
       const bundled = bundleCodespaceHTML();
-      document.getElementById("csPreviewFrame").srcdoc = bundled;
-      document.getElementById("csStatusBadge").innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> Live Runtime Synced (${new Date().toLocaleTimeString()})`;
+      const iframe = document.getElementById("csPreviewFrame");
+      const emptyState = document.getElementById("csEmptyState");
+      
+      iframe.srcdoc = bundled;
+      
+      // Hide empty state if content exists
+      if (bundled.trim().length > 0) {
+        emptyState.style.display = "none";
+        iframe.style.opacity = "1";
+      }
+      
+      document.getElementById("csStatusBadge").innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced (${new Date().toLocaleTimeString()})`;
       showToast("Codespace Rendered", "Live preview reloaded.");
     }
 
@@ -974,34 +1030,40 @@ Do not apologize or state that you lack file or internet access. You possess the
         const safeCodeDisplay = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         return `
-          <div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner">
-            <div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between items-center uppercase">
-              <span class="flex items-center gap-1.5 font-bold">
-                <i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${filename || language}
+          <div class="bg-surface-950 border border-white/5 rounded-2xl my-4 overflow-hidden shadow-lg">
+            <div class="px-4 py-2 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center uppercase">
+              <span class="flex items-center gap-2 font-bold tracking-wider text-white">
+                <i data-lucide="file-code" class="w-4 h-4 text-cyan-500"></i> ${filename || language}
               </span>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-3">
                 ${filename ? `
-                  <button onclick="writeCodeToCodespace('${filename}', \`${cleanCodeEscaped}\`)" class="text-emerald-400 hover:text-emerald-300 font-bold normal-case cursor-pointer flex items-center gap-1">
-                    <i data-lucide="send" class="w-3 h-3"></i> Apply to Codespace
+                  <button onclick="writeCodeToCodespace('${filename}', \`${cleanCodeEscaped}\`)" class="text-emerald-400 hover:text-emerald-300 font-bold normal-case cursor-pointer flex items-center gap-1.5 transition-colors bg-emerald-500/10 px-2 py-1 rounded-md">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i> Apply to Artifact
                   </button>
                 ` : ''}
-                <button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer lowercase">copy</button>
+                <button onclick="copyCodeBlock(this)" class="text-zinc-400 hover:text-white cursor-pointer normal-case transition-colors flex items-center gap-1"><i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy</button>
               </div>
             </div>
-            <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${safeCodeDisplay}</code></pre>
+            <pre class="p-5 overflow-x-auto text-[13px] font-mono text-zinc-300 leading-relaxed custom-scrollbar"><code>${safeCodeDisplay}</code></pre>
           </div>
         `;
       })
       .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
-      .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
+      .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[12px] font-mono border border-white/5">$1</code>')
       .replace(/\n/g, '<br/>');
     }
 
     function copyCodeBlock(b) { 
       navigator.clipboard.writeText(b.closest('.bg-surface-950').querySelector('code').innerText); 
-      const o = b.innerText; b.innerText = "copied!"; b.classList.add("text-emerald-400"); 
-      setTimeout(() => { b.innerText = o; b.classList.remove("text-emerald-400"); }, 2000); 
+      const o = b.innerHTML; b.innerHTML = "<i data-lucide='check' class='w-3.5 h-3.5'></i> Copied!"; b.classList.add("text-emerald-400"); lucide.createIcons();
+      setTimeout(() => { b.innerHTML = o; b.classList.remove("text-emerald-400"); lucide.createIcons(); }, 2000); 
+    }
+
+    function loadQuickPrompt(text) {
+      document.getElementById("aiPromptTextarea").value = text;
+      autoResizeTextarea(document.getElementById("aiPromptTextarea"));
+      document.getElementById("aiPromptTextarea").focus();
     }
 
     function renderAiChat() {
@@ -1010,13 +1072,37 @@ Do not apologize or state that you lack file or internet access. You possess the
       
       if (aiConversation.length === 0) {
         box.innerHTML = `
-          <div class="flex items-start gap-4 animate-fade-in">
-            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400">
-              <i data-lucide="bot" class="w-5 h-5"></i>
+          <div class="h-full flex flex-col items-center justify-center text-center space-y-6 animate-fade-in px-4 mt-10">
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 p-[2px] shadow-[0_0_50px_rgba(0,242,254,0.3)]">
+              <div class="w-full h-full bg-surface-950 rounded-[22px] flex items-center justify-center">
+                <i data-lucide="cpu" class="w-12 h-12 text-cyan-400"></i>
+              </div>
             </div>
-            <div class="pt-1">
-              <h4 class="font-bold text-white text-sm">LuminaVista Neural Core Active</h4>
-              <p class="text-zinc-400 mt-1">Multi-Persona routing, live internet search, and an interactive codespace are fully armed.</p>
+            <div class="max-w-xl">
+              <h2 class="text-3xl font-heading font-extrabold text-white tracking-tight mb-3">How can I help you build today?</h2>
+              <p class="text-sm text-zinc-400 leading-relaxed">LuminaVista Neural Core is active. I can browse the live web, write complex applications, and execute code directly in your personal cloud sandbox.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mt-6">
+              <button onclick="loadQuickPrompt('Create a modern Glassmorphism dashboard layout with HTML and CSS in the Codespace.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="layout-template" class="w-5 h-5 text-cyan-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Design a Dashboard</h4>
+                <p class="text-xs text-zinc-500">Inject HTML/CSS directly into artifacts.</p>
+              </button>
+              <button onclick="loadQuickPrompt('Search the live internet for today\\'s top tech news and summarize it.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="globe" class="w-5 h-5 text-indigo-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Search the Web</h4>
+                <p class="text-xs text-zinc-500">Bypass training cutoffs with real-time data.</p>
+              </button>
+              <button onclick="loadQuickPrompt('Write a Python script to monitor system metrics and tell me how to run it in the terminal.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="terminal-square" class="w-5 h-5 text-emerald-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Execute Python Scripts</h4>
+                <p class="text-xs text-zinc-500">Deploy code to the E2B microVM.</p>
+              </button>
+              <button onclick="loadQuickPrompt('Review my architecture for security vulnerabilities.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-rose-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Security Audit</h4>
+                <p class="text-xs text-zinc-500">Enable the Zero-Trust Auditor persona.</p>
+              </button>
             </div>
           </div>
         `;
@@ -1029,11 +1115,11 @@ Do not apologize or state that you lack file or internet access. You possess the
         const d = document.createElement("div"); 
         d.className = `flex items-start gap-4 ${u ? 'flex-row-reverse' : ''}`;
         d.innerHTML = `
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${u ? 'bg-surface-800 border-white/10 text-white font-bold' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'}">
-            ${u ? 'ME' : '<i data-lucide="bot" class="w-5 h-5"></i>'}
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg ${u ? 'bg-surface-800 border-white/10 text-white font-bold' : 'bg-gradient-to-br from-cyan-900/50 to-surface-900 border-cyan-500/30 text-cyan-400'}">
+            ${u ? 'ME' : '<i data-lucide="sparkles" class="w-5 h-5"></i>'}
           </div>
           <div class="max-w-[85%] ${u ? 'text-right' : 'text-left'}">
-            <div class="inline-block p-4 rounded-2xl ${u ? 'bg-surface-800 text-white border border-white/5 rounded-tr-sm' : 'text-zinc-300 rounded-tl-sm'}">
+            <div class="inline-block p-5 rounded-3xl shadow-lg ${u ? 'bg-surface-800 text-white border border-white/5 rounded-tr-sm' : 'bg-gradient-to-b from-surface-900 to-surface-950 text-zinc-200 border border-cyan-500/10 rounded-tl-sm'}">
               ${u ? m.content : parseAiMarkdown(m.content)}
             </div>
           </div>
@@ -1067,20 +1153,20 @@ Do not apologize or state that you lack file or internet access. You possess the
       renderAiChat();
       
       btn.disabled = true; 
-      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>'; 
+      btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>'; 
       lucide.createIcons();
 
       const typingDiv = document.createElement("div"); 
       typingDiv.id = "aiTypingIndicator"; 
       typingDiv.className = "flex items-start gap-4";
       typingDiv.innerHTML = `
-        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400">
-          <i data-lucide="bot" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-900/50 to-surface-900 border border-cyan-500/30 flex items-center justify-center shrink-0 text-cyan-400 shadow-lg">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
         </div>
-        <div class="pt-3 flex gap-1">
-          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></span>
-          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
-          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+        <div class="pt-4 flex gap-1.5">
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></span>
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
         </div>
       `;
       document.getElementById("aiChatHistory").appendChild(typingDiv); 
@@ -1118,7 +1204,7 @@ Do not apologize or state that you lack file or internet access. You possess the
         aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
       } finally {
         btn.disabled = false; 
-        btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>'; 
+        btn.innerHTML = '<i data-lucide="arrow-up" class="w-5 h-5"></i>'; 
         lucide.createIcons();
         localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); 
         renderAiChat();
@@ -1148,7 +1234,7 @@ Do not apologize or state that you lack file or internet access. You possess the
     function resolveProjectUrl(rawPath) { let c = rawPath.replace(/^\.\//, "").replace(/^\//, ""); if (!c.startsWith("EXM/")) c = "EXM/" + c; if (c.endsWith("/")) c += "index.html"; else if (!c.includes(".html") && !c.includes(".")) c += "/index.html"; return window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1) + c; }
     async function fetchRepoProjects() { const i=document.getElementById("refreshIcon"); if(i)i.classList.add("animate-spin"); try{const r=await fetch(REPO_API_URL);if(r.ok){const d=await r.json();d.filter(x=>!x.name.startsWith(".")).forEach(x=>{const p={name:x.name,path:`EXM/${x.name}${x.type==="dir"?"/":""}`,type:x.type};if(!repoProjects.some(e=>e.name===p.name))repoProjects.push(p);});localStorage.setItem("lumina_exm_projects",JSON.stringify(repoProjects));}}catch(e){}finally{if(i)i.classList.remove("animate-spin");renderProjectList();updateSplitDropdowns();} }
     function filterProjectList() { renderProjectList(document.getElementById("projectFilterInput").value.toLowerCase()); }
-    function renderProjectList(q="") { const c=document.getElementById("projectChipsContainer"); c.innerHTML=""; document.getElementById("projectCountBadge").textContent=`${repoProjects.length} Detected`; repoProjects.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{ const isS=currentSelectedProject&&p.name===currentSelectedProject.name; const b=document.createElement("button"); b.className=`w-full px-3 py-2.5 rounded-xl text-xs font-mono border flex items-center gap-2 cursor-pointer text-left ${isS?"active-project-pill":"bg-surface-900 border-white/5 text-zinc-300"}`; b.innerHTML=`<i data-lucide="${p.type==='dir'?'folder':'file-code'}" class="w-4 h-4 ${isS?'text-cyan-300':'text-zinc-500'}"></i><span class="truncate">${p.name}</span>`; b.onclick=()=>selectProject(p); c.appendChild(b); }); lucide.createIcons(); }
+    function renderProjectList(q="") { const c=document.getElementById("projectChipsContainer"); c.innerHTML=""; document.getElementById("projectCountBadge").textContent=`${repoProjects.length} Detected`; repoProjects.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{ const isS=currentSelectedProject&&p.name===currentSelectedProject.name; const b=document.createElement("button"); b.className=`w-full px-4 py-3 rounded-xl text-sm font-mono border flex items-center gap-3 cursor-pointer text-left transition-colors ${isS?"bg-cyan-500/10 border-cyan-500/30 text-cyan-300":"bg-surface-900 border-white/5 text-zinc-300 hover:bg-surface-800"}`; b.innerHTML=`<i data-lucide="${p.type==='dir'?'folder':'file-code'}" class="w-4 h-4 ${isS?'text-cyan-400':'text-zinc-500'}"></i><span class="truncate">${p.name}</span>`; b.onclick=()=>selectProject(p); c.appendChild(b); }); lucide.createIcons(); }
     function selectProject(p) { currentSelectedProject=p; document.getElementById("activeProjectTitle").textContent=`EXM/${p.name}/`; renderProjectList(); document.getElementById("previewIframe").src=resolveProjectUrl(p.path); document.getElementById("iframeOverlay").classList.add("hidden"); }
     function addCustomProject() { const v=document.getElementById("customProjectInput").value.trim(); if(!v)return; const n=v.replace(/^EXM\//i,"").replace(/^\/+|\/+$/g,""), p={name:n,path:`EXM/${n}${n.endsWith(".html")?"":"/"}`,type:n.endsWith(".html")?"file":"dir"}; if(!repoProjects.some(x=>x.name===p.name)){repoProjects.push(p);localStorage.setItem("lumina_exm_projects",JSON.stringify(repoProjects));} selectProject(p); showToast("Added",`EXM/${n}`); }
     function openActiveInNewTab() { if(currentSelectedProject) window.open(resolveProjectUrl(currentSelectedProject.path),"_blank"); }
@@ -1162,8 +1248,8 @@ Do not apologize or state that you lack file or internet access. You possess the
     // =========================================================================
     let currentSandboxLang="html";
     function setSandboxLanguage(l) { 
-      currentSandboxLang=l; ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>document.getElementById(id).className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer"); 
-      document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`).className=`px-3 py-1.5 rounded-lg text-black font-bold cursor-pointer ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
+      currentSandboxLang=l; ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>document.getElementById(id).className="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"); 
+      document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`).className=`px-4 py-1.5 rounded-lg text-black font-bold cursor-pointer transition-colors shadow-md ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
       if(l==="html"){document.getElementById("sandboxIframeWrapper").classList.remove("hidden");document.getElementById("sandboxStdoutWrapper").classList.add("hidden");}
       else{document.getElementById("sandboxIframeWrapper").classList.add("hidden");document.getElementById("sandboxStdoutWrapper").classList.remove("hidden");} 
     }
@@ -1239,21 +1325,20 @@ Do not apologize or state that you lack file or internet access. You possess the
       termHistory.push(cmd); termHistoryIdx = -1; 
       const scr = document.getElementById("terminalScreen");
       const l = document.createElement("div"); 
-      l.className = "text-zinc-400"; 
+      l.className = "text-zinc-300 font-mono mt-2"; 
       l.innerHTML = `<span class="text-cyan-400 font-bold">anish@cloud-vm:~$</span> ${cmd}`; 
       scr.appendChild(l); 
       
       if (cmd === "clear") { scr.innerHTML = ""; inp.value = ""; return; }
       
       const res = document.createElement("div"); 
-      res.className = "text-purple-300"; 
-      res.innerHTML = "<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Connecting to E2B Cloud Sandbox...";
+      res.className = "text-purple-300 font-mono text-[13px] mt-1"; 
+      res.innerHTML = "<i data-lucide='loader' class='w-3.5 h-3.5 animate-spin inline'></i> Booting MicroVM...";
       scr.appendChild(res); 
       scr.scrollTop = scr.scrollHeight; 
       lucide.createIcons();
 
       try {
-        // Package your active Codespace files into an array for the sandbox
         const filesArray = Object.keys(vfs).map(key => ({ name: key, content: vfs[key] }));
 
         const fetchRes = await fetch("/api/terminal", {
@@ -1268,15 +1353,15 @@ Do not apologize or state that you lack file or internet access. You possess the
         const data = await fetchRes.json();
         
         if (fetchRes.ok) {
-          res.className = "text-emerald-400 whitespace-pre-wrap mt-2 mb-2 font-mono"; 
+          res.className = "text-emerald-400 whitespace-pre-wrap mt-2 mb-3 bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20"; 
           res.textContent = (data.stdout || "") + "\n" + (data.stderr || "");
           if(!res.textContent.trim()) res.textContent = "[Process exited smoothly without output]";
         } else {
-          res.className = "text-rose-400 mt-2 mb-2 font-mono"; 
-          res.textContent = `[E2B Sandbox Error]: ${data.error || "Unknown Error"}\n${data.details || ""}`;
+          res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; 
+          res.textContent = `[E2B Error]: ${data.error || "Unknown Error"}\n${data.details || ""}`;
         }
       } catch(err) {
-        res.className = "text-rose-400 mt-2 mb-2 font-mono"; 
+        res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; 
         res.textContent = `[Network Timeout]: Could not reach terminal backend.`;
       }
       
@@ -1291,9 +1376,9 @@ Do not apologize or state that you lack file or internet access. You possess the
     function closeCommandPalette() { document.getElementById("cmdModal").classList.add("opacity-0"); setTimeout(()=>document.getElementById("cmdModal").style.display="none", 200); }
     window.addEventListener("keydown", e => { if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault(); openCommandPalette();} if(e.key==="Escape"){closeCommandPalette(); document.getElementById("sourceModal").style.display="none";} });
     
-    function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ if(cv.parentElement.clientWidth===0)return; cv.width=cv.parentElement.clientWidth; cv.height=288; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=2.5; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
+    function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ if(cv.parentElement.clientWidth===0)return; cv.width=cv.parentElement.clientWidth; cv.height=320; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=3; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
     
-    function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-3 py-1.5 rounded-lg border cursor-pointer ${n.id===activeNoteId?'bg-cyan-500/20 border-cyan-500 text-cyan-300':'bg-surface-900 border-white/10 text-zinc-400'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
+    function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-4 py-2 rounded-xl border cursor-pointer font-bold transition-colors shadow-sm ${n.id===activeNoteId?'bg-sky-500 border-sky-500 text-black':'bg-surface-900 border-white/5 text-zinc-400 hover:text-white hover:bg-surface-800'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
     function selectNote(id) { activeNoteId=id; renderNoteTabs(); loadActiveNoteContent(); }
     function loadActiveNoteContent() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) document.getElementById("adminScratchpad").value=n.content; }
     function onNoteContentChange() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) { n.content=document.getElementById("adminScratchpad").value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); if(isMarkdownPreviewActive) toggleMarkdownPreview(true); } }
@@ -1305,7 +1390,7 @@ Do not apologize or state that you lack file or internet access. You possess the
       if (isMarkdownPreviewActive) {
         editorCol.className = "hidden"; previewCol.classList.remove("hidden"); previewCol.classList.add("block");
         let raw = document.getElementById("adminScratchpad").value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-2">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-3">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-xl font-extrabold text-cyan-400 mt-3">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\n/gim, '<br/>');
+        document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-3">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-4">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold text-cyan-400 mt-5">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\n/gim, '<br/>');
       } else {
         editorCol.className = "block"; previewCol.classList.add("hidden"); previewCol.classList.remove("block");
       }
