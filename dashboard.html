@@ -20,7 +20,8 @@
         extend: {
           fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
           colors: { surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' } },
-          animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+          animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' },
+          transitionProperty: { 'width': 'width' }
         }
       }
     }
@@ -55,8 +56,11 @@
 
     .bg-dot-pattern { background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px); background-size: 20px 20px; }
     
-    /* Smooth height transitions for textareas */
-    textarea { transition: border-color 0.2s, box-shadow 0.2s; }
+    .sidebar-collapsed .nav-text { display: none; }
+    .sidebar-collapsed { width: 80px !important; min-width: 80px !important; resize: none !important; }
+    .resize-handle { resize: horizontal; overflow: hidden; min-width: 200px; max-width: 400px; }
+
+    .file-explorer-item:hover .file-actions { opacity: 1; }
   </style>
 </head>
 <body class="flex h-screen font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
@@ -66,61 +70,65 @@
   <div class="fixed top-[-20%] left-[10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0"></div>
   <div class="fixed bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[180px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 2s;"></div>
 
-  <!-- FIXED LEFT SIDEBAR -->
-  <aside class="w-64 border-r border-white/5 bg-surface-950/80 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0">
-    <div class="p-6 border-b border-white/5 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_20px_rgba(0,242,254,0.3)]">
+  <!-- DYNAMIC LEFT SIDEBAR -->
+  <aside id="appSidebar" class="w-64 border-r border-white/5 bg-surface-950/80 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0 resize-handle transition-width duration-300">
+    <button onclick="toggleSidebar()" class="absolute -right-3 top-6 w-6 h-6 bg-surface-800 rounded-full border border-white/10 flex items-center justify-center z-50 text-zinc-400 hover:text-white cursor-pointer shadow-lg">
+      <i data-lucide="chevron-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
+    </button>
+
+    <div class="p-5 border-b border-white/5 flex items-center gap-3 overflow-hidden">
+      <div class="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_20px_rgba(0,242,254,0.3)]">
         GX
       </div>
-      <div>
+      <div class="nav-text whitespace-nowrap">
         <h1 class="font-heading font-bold text-lg text-white tracking-tight leading-none">LuminaVista</h1>
-        <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v9.5</p>
+        <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS</p>
       </div>
     </div>
 
-    <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
-      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
-        <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i><span>AI Studio</span>
+    <nav class="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 space-y-1.5">
+      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
+        <i data-lucide="sparkles" class="w-5 h-5 shrink-0 text-cyan-400"></i><span class="nav-text whitespace-nowrap">ai-llm</span>
       </button>
-      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="folder-tree" class="w-4 h-4"></i><span>Projects</span>
+      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="folder-tree" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Projects</span>
       </button>
-      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="code-2" class="w-4 h-4"></i><span>Compilers</span>
+      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="code-2" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Compilers</span>
       </button>
-      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="pen-tool" class="w-4 h-4"></i><span>Whiteboard</span>
+      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="pen-tool" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Whiteboard</span>
       </button>
-      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="palette" class="w-4 h-4"></i><span>UI Design</span>
+      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="palette" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">UI Design</span>
       </button>
-      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="columns" class="w-4 h-4"></i><span>Split View</span>
+      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="columns" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Split View</span>
       </button>
-      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="terminal" class="w-4 h-4"></i><span>Terminal</span>
+      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="terminal" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Terminal</span>
       </button>
-      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="activity" class="w-4 h-4"></i><span>Telemetry</span>
+      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="activity" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Telemetry</span>
       </button>
-      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="book-open" class="w-4 h-4"></i><span>Notes Vault</span>
+      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="book-open" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Notes Vault</span>
       </button>
-      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="settings-2" class="w-4 h-4"></i><span>Settings</span>
+      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="settings-2" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Settings</span>
       </button>
     </nav>
     
-    <div class="p-5 border-t border-white/5 bg-surface-900/20">
+    <div class="p-4 border-t border-white/5 bg-surface-900/20 overflow-hidden">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="relative flex h-2.5 w-2.5">
+          <div class="relative flex h-2.5 w-2.5 shrink-0">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </div>
-          <span class="font-mono text-[11px] text-zinc-400">Edge Protected</span>
+          <span class="font-mono text-[11px] text-zinc-400 nav-text">Protected</span>
         </div>
-        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 cursor-pointer transition-colors" title="Secure Logout">
+        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 cursor-pointer transition-colors shrink-0" title="Secure Logout">
           <i data-lucide="power" class="w-4 h-4"></i>
         </button>
       </div>
@@ -152,102 +160,10 @@
 
     <main class="flex-1 overflow-hidden p-4 lg:p-6 w-full max-w-[2000px] mx-auto flex flex-col min-h-0">
       
-      <!-- TAB 1: OLLAMA AI STUDIO (REDESIGNED) -->
+      <!-- TAB 1: AI STUDIO (ai-llm) -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-6">
         
-        <!-- Left Panel: Premium Settings Sidebar -->
-        <div class="w-full lg:w-72 flex flex-col shrink-0 space-y-4">
-          
-          <div class="glass-panel rounded-2xl flex flex-col overflow-hidden shadow-xl border border-white/5">
-            <div class="px-5 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-              <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-                <i data-lucide="settings" class="w-4 h-4 text-cyan-400"></i> Configuration
-              </h3>
-            </div>
-            
-            <div class="p-5 space-y-5">
-              <!-- Live Web Access Toggle -->
-              <div class="glass-card p-3 flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><i data-lucide="globe" class="w-4 h-4"></i></div>
-                  <div>
-                    <label for="checkWebSearch" class="text-xs font-bold text-white cursor-pointer block">Web Access</label>
-                    <span class="text-[10px] text-zinc-500">Live internet routing</span>
-                  </div>
-                </div>
-                <input type="checkbox" id="checkWebSearch" onchange="saveAiConfig()" class="w-4 h-4 accent-cyan-500 cursor-pointer rounded" />
-              </div>
-
-              <!-- Model Selection -->
-              <div class="space-y-2">
-                <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Language Model</label>
-                <select id="aiModelInput" class="godx-input w-full px-3 py-2.5 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
-                  <option value="gpt-oss:20b" selected>gpt-oss:20b (Primary)</option>
-                  <option value="gpt-oss:120b">gpt-oss:120b (Heavy)</option>
-                  <option value="gemma4:31b">gemma4:31b</option>
-                  <option value="nemotron-3-nano:30b">nemotron-nano:30b</option>
-                  <option value="nemotron-3-super">nemotron-super</option>
-                  <option value="nemotron-3-ultra">nemotron-ultra</option>
-                </select>
-              </div>
-
-              <!-- Persona Selection -->
-              <div class="space-y-2">
-                <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">System Persona</label>
-                <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2.5 text-xs cursor-pointer" onchange="onPersonaSelectChange()">
-                  <option value="normal" selected>Normal (Standard Assistant)</option>
-                  <option value="architect">System Architect</option>
-                  <option value="fullstack">Full-Stack Developer</option>
-                  <option value="security">Cybersecurity Auditor</option>
-                  <option value="researcher">Web Researcher</option>
-                  <option value="datascience">Data Scientist</option>
-                  <option value="reverse">Reverse Engineer</option>
-                  <option value="minimal">Minimalist Hacker (Code Only)</option>
-                  <option value="copywriter">Creative Copywriter</option>
-                  <option value="marketing">Growth Marketer</option>
-                  <option value="historian">Historian</option>
-                  <option value="philosopher">Philosopher</option>
-                  <option value="chef">Culinary Chef</option>
-                  <option value="fitness">Fitness Trainer</option>
-                  <option value="travel">Travel Planner</option>
-                  <option value="legal">Legal Frameworks Analyst</option>
-                  <option value="medical">Medical Science Educator</option>
-                  <option value="finance">Financial Analyst</option>
-                  <option value="novelist">Fiction Novelist</option>
-                  <option value="translator">Polyglot Translator</option>
-                  <option value="mathematician">Mathematician</option>
-                  <option value="mentor">Executive Coach</option>
-                  <option value="custom">Custom Directive...</option>
-                </select>
-              </div>
-
-              <!-- Custom Directive -->
-              <div id="customPersonaWrapper" class="hidden space-y-2 transition-all">
-                <label class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Custom Instructions</label>
-                <textarea id="customPersonaPrompt" rows="4" placeholder="Inject specific behavior rules here..." class="godx-input w-full p-3 text-[12px] leading-relaxed resize-none" oninput="saveAiConfig()"></textarea>
-              </div>
-            </div>
-            
-            <div class="p-4 border-t border-white/5 bg-white/[0.02] flex gap-2">
-               <button onclick="downloadAiChat()" class="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 transition-colors flex items-center justify-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export</button>
-               <button onclick="clearAiChat()" class="flex-1 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold text-rose-400 transition-colors flex items-center justify-center gap-1.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear</button>
-            </div>
-          </div>
-
-          <!-- Mini Status Card -->
-          <div class="glass-panel rounded-2xl p-4 border border-white/5 flex items-center justify-between">
-             <div class="flex items-center gap-3">
-               <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
-               <div>
-                 <p class="text-xs font-bold text-white">Vercel Node</p>
-                 <p class="text-[10px] text-zinc-400 font-mono">Secured & Active</p>
-               </div>
-             </div>
-             <button onclick="configureVercelSecurity()" class="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"><i data-lucide="key" class="w-4 h-4"></i></button>
-          </div>
-        </div>
-
-        <!-- Center: Chat Interface (Premium Aesthetics) -->
+        <!-- Center: Chat Interface (ai-llm) -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
           <!-- Header -->
@@ -258,7 +174,7 @@
                 <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-surface-900 rounded-full"></div>
               </div>
               <div>
-                <h3 class="font-heading font-bold text-base text-white leading-tight">Neural Intelligence</h3>
+                <h3 class="font-heading font-bold text-base text-white leading-tight">ai-llm</h3>
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-[11px] text-zinc-400 font-mono" id="aiActiveModelBadge">gpt-oss:20b</span>
                   <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> Web Active</span>
@@ -266,9 +182,13 @@
               </div>
             </div>
             <div class="flex items-center gap-3">
-              <button onclick="toggleCodespacePane()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white flex items-center gap-2 cursor-pointer transition-all hover:border-cyan-500/30">
-                <i data-lucide="layout-template" class="w-4 h-4 text-cyan-400"></i>
-                <span id="btnCodespaceToggleText">Open Artifacts</span>
+              <button onclick="openAiConfigModal()" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-zinc-300 flex items-center gap-2 cursor-pointer transition-all">
+                <i data-lucide="settings" class="w-4 h-4 text-cyan-400"></i>
+                <span class="hidden sm:inline">Configuration</span>
+              </button>
+              <button onclick="toggleCodespacePane()" class="px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-2 cursor-pointer transition-all shadow-sm">
+                <i data-lucide="layout-template" class="w-4 h-4"></i>
+                <span id="btnCodespaceToggleText" class="hidden sm:inline">Open Workspace</span>
               </button>
             </div>
           </div>
@@ -280,7 +200,7 @@
           <div class="p-4 sm:p-6 pt-2 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
               <div class="relative bg-surface-900/60 backdrop-blur-xl border border-white/10 rounded-3xl focus-within:border-cyan-500/50 focus-within:ring-4 focus-within:ring-cyan-500/10 transition-all p-2 flex items-end shadow-2xl">
-                <textarea id="aiPromptTextarea" rows="1" placeholder="Message Lumina AI, generate code, or search the web..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                <textarea id="aiPromptTextarea" rows="1" placeholder="Message ai-llm, build artifacts, or analyze logic..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
                 <button type="submit" id="btnAiSend" class="w-10 h-10 shrink-0 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-1 mr-1 cursor-pointer">
                   <i data-lucide="arrow-up" class="w-5 h-5"></i>
                 </button>
@@ -290,13 +210,13 @@
           </div>
         </div>
 
-        <!-- Right Panel: Full Interactive Codespace & Artifacts Engine -->
-        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[600px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
+        <!-- Right Panel: Advanced Artifacts / Codespace File Explorer -->
+        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[650px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
           
-          <div class="px-5 py-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+          <div class="px-4 py-3 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-2">
               <i data-lucide="braces" class="w-4 h-4 text-cyan-400"></i>
-              <span class="font-heading font-bold text-sm text-white">Live Artifacts</span>
+              <span class="font-heading font-bold text-sm text-white">Project Artifacts</span>
             </div>
             <div class="flex items-center gap-3">
               <div class="flex bg-surface-950 p-1 rounded-lg border border-white/10 text-[11px] font-mono">
@@ -312,38 +232,49 @@
             </div>
           </div>
 
-          <div class="px-3 py-2 bg-surface-950 border-b border-white/5 flex items-center justify-between overflow-x-auto no-scrollbar shrink-0">
-            <div id="codespaceFileTabs" class="flex items-center gap-1.5 text-xs font-mono"></div>
-            <div class="flex items-center gap-1 pl-2">
-              <button onclick="promptCreateFile()" class="p-1.5 rounded hover:bg-white/10 text-cyan-400 transition-colors cursor-pointer" title="New File"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
-              <button onclick="deleteActiveFile()" class="p-1.5 rounded hover:bg-white/10 text-rose-400 transition-colors cursor-pointer" title="Delete File"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
-            </div>
-          </div>
-
-          <div class="flex-1 flex flex-col lg:flex-row min-h-0 relative bg-surface-950">
-            <!-- Code Editor -->
-            <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
-              <div class="px-4 py-1.5 bg-surface-900/50 text-[10px] text-zinc-400 font-mono border-b border-white/5 flex justify-between tracking-wider uppercase">
-                <span id="csCurrentFileLabel">index.html</span>
-                <span>Buffer</span>
+          <!-- Integrated File Explorer & Editor Split -->
+          <div class="flex-1 flex min-h-0 relative bg-surface-950">
+            
+            <!-- Sidebar: File Explorer Tree -->
+            <div class="w-48 bg-surface-950 border-r border-white/5 flex flex-col h-full shrink-0">
+              <div class="px-3 py-2 flex items-center justify-between border-b border-white/5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                <span>Explorer</span>
+                <div class="flex gap-1">
+                  <button onclick="promptCreateFile()" class="hover:text-cyan-400 cursor-pointer"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
+                </div>
               </div>
-              <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-5 font-mono text-[13px] text-zinc-200 outline-none resize-none leading-loose selection:bg-cyan-500 selection:text-black"></textarea>
-            </div>
-
-            <!-- Live Browser Preview -->
-            <div id="csPreviewContainer" class="flex-1 h-full bg-surface-950 relative overflow-hidden bg-dot-pattern flex items-center justify-center">
-              <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white absolute inset-0 z-10 transition-opacity duration-300"></iframe>
-              <!-- Empty state before iframe loads -->
-              <div id="csEmptyState" class="text-center z-0">
-                <i data-lucide="box" class="w-12 h-12 text-zinc-700 mx-auto mb-3"></i>
-                <p class="text-sm font-mono text-zinc-500">Waiting for rendering...</p>
+              <div id="codespaceExplorerTree" class="flex-1 overflow-y-auto p-2 space-y-0.5">
+                <!-- Dynamically populated file tree -->
               </div>
             </div>
+
+            <!-- Main Panel: Dual Display (Editor vs Preview) -->
+            <div class="flex-1 flex flex-col lg:flex-row h-full relative">
+              <!-- Code Editor -->
+              <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
+                <div class="px-4 py-1.5 bg-surface-900/50 text-[10px] text-zinc-400 font-mono border-b border-white/5 flex justify-between tracking-wider uppercase">
+                  <span id="csCurrentFileLabel">index.html</span>
+                  <span class="text-cyan-400">Buffer Active</span>
+                </div>
+                <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-5 font-mono text-[13px] text-zinc-200 outline-none resize-none leading-loose selection:bg-cyan-500 selection:text-black"></textarea>
+              </div>
+
+              <!-- Live Browser Preview -->
+              <div id="csPreviewContainer" class="flex-1 h-full bg-surface-950 relative overflow-hidden bg-dot-pattern flex items-center justify-center">
+                <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white absolute inset-0 z-10 transition-opacity duration-300"></iframe>
+                <div id="csEmptyState" class="text-center z-0">
+                  <i data-lucide="box" class="w-12 h-12 text-zinc-700 mx-auto mb-3"></i>
+                  <p class="text-sm font-mono text-zinc-500">Waiting for artifact render...</p>
+                </div>
+              </div>
+            </div>
+
           </div>
 
+          <!-- Codespace Status Footer -->
           <div class="px-5 py-2.5 border-t border-white/5 bg-surface-900/60 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0 backdrop-blur-md">
             <span id="csStatusBadge" class="flex items-center gap-2 text-emerald-400">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced Workspace
             </span>
             <div class="flex items-center gap-4">
               <button onclick="exportCodespaceZip()" class="hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export</button>
@@ -414,7 +345,7 @@
           <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div>
               <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Cloud Compiler Engine</h3>
-              <p class="text-xs text-zinc-400">Execute code securely via Vercel Backend (Python, C++, Java) and In-Memory SQL.</p>
+              <p class="text-xs text-zinc-400">Execute code securely via Vercel Backend API (Python, C++, Java) and In-Memory SQL.</p>
             </div>
             <div class="flex items-center gap-2 bg-surface-900 p-1.5 rounded-xl border border-white/10 text-xs font-mono">
               <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-4 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer transition-colors">HTML</button>
@@ -455,10 +386,12 @@
             <div class="flex items-center gap-3">
               <div class="bg-surface-900 p-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 text-xs">
                 <button onclick="setWhiteboardTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                <button onclick="setWhiteboardTool('rect')" id="wbToolRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="square" class="w-4 h-4"></i></button>
+                <button onclick="setWhiteboardTool('circle')" id="wbToolCircle" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="circle" class="w-4 h-4"></i></button>
                 <button onclick="setWhiteboardTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="eraser" class="w-4 h-4"></i></button>
                 <div class="w-px h-5 bg-white/10 mx-1"></div>
-                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-8 h-8 rounded cursor-pointer" style="padding:0; border:none; background:transparent;" />
-                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-24 accent-cyan-400 cursor-pointer ml-2" />
+                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-8 h-8 rounded cursor-pointer" style="padding:0; border:none; background:transparent;" title="Stroke Color" />
+                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-24 accent-cyan-400 cursor-pointer ml-2" title="Stroke Size" />
               </div>
               <button onclick="clearWhiteboard()" class="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 cursor-pointer text-xs font-semibold transition-colors">Clear</button>
               <button onclick="downloadWhiteboard()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer">Export PNG</button>
@@ -528,7 +461,7 @@
             <button onclick="document.getElementById('terminalScreen').innerHTML=''" class="text-xs text-zinc-500 hover:text-white font-mono cursor-pointer transition-colors">clear</button>
           </div>
           <div id="terminalScreen" class="bg-surface-950/90 rounded-xl p-6 font-mono text-[14px] text-zinc-300 flex-1 overflow-y-auto space-y-3 border border-white/5 leading-relaxed shadow-inner">
-            <div class="text-cyan-400 font-bold tracking-wide">LuminaVista GODx Terminal [v9.5 Cloud E2B Sandbox]</div>
+            <div class="text-cyan-400 font-bold tracking-wide">LuminaVista GODx Terminal [v9.5 Cloud Sandbox]</div>
             <div class="text-zinc-400">Connected to isolated Firecracker Linux VM. Codespace files automatically injected.</div>
             <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or execute real bash commands (e.g. <span class="text-purple-300">ls -la</span>, <span class="text-purple-300">python3 file.py</span>).</div>
             <div class="border-b border-white/5 my-3"></div>
@@ -564,7 +497,25 @@
               <button onclick="toggleMarkdownPreview()" class="px-4 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Toggle Preview</button>
             </div>
           </div>
+          
           <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-2 text-xs font-mono shrink-0"></div>
+          
+          <!-- Markdown Toolbar -->
+          <div id="noteToolbar" class="flex items-center gap-2 bg-surface-900/50 p-2 rounded-lg border border-white/5 shrink-0 text-zinc-400">
+            <button onclick="insertNoteMarkdown('**', '**')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Bold"><i data-lucide="bold" class="w-4 h-4"></i></button>
+            <button onclick="insertNoteMarkdown('*', '*')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Italic"><i data-lucide="italic" class="w-4 h-4"></i></button>
+            <div class="w-px h-4 bg-white/10 mx-1"></div>
+            <button onclick="insertNoteMarkdown('# ', '')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Heading 1"><i data-lucide="heading-1" class="w-4 h-4"></i></button>
+            <button onclick="insertNoteMarkdown('## ', '')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Heading 2"><i data-lucide="heading-2" class="w-4 h-4"></i></button>
+            <div class="w-px h-4 bg-white/10 mx-1"></div>
+            <button onclick="insertNoteMarkdown('- ', '')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Bullet List"><i data-lucide="list" class="w-4 h-4"></i></button>
+            <button onclick="insertNoteMarkdown('1. ', '')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Numbered List"><i data-lucide="list-ordered" class="w-4 h-4"></i></button>
+            <div class="w-px h-4 bg-white/10 mx-1"></div>
+            <button onclick="insertNoteMarkdown('`', '`')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Inline Code"><i data-lucide="code" class="w-4 h-4"></i></button>
+            <button onclick="insertNoteMarkdown('```\n', '\n```')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4"></i></button>
+            <button onclick="insertNoteMarkdown('[Link Text](', ')')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer" title="Link"><i data-lucide="link" class="w-4 h-4"></i></button>
+          </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
             <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-6 font-mono text-[13px] resize-none h-full leading-relaxed shadow-inner"></textarea>
             <div id="notePreviewCol" class="hidden bg-surface-950/80 p-8 rounded-xl border border-white/5 overflow-y-auto text-sm text-zinc-300 space-y-4 font-sans h-full shadow-inner" id="noteMarkdownRender"></div>
@@ -609,7 +560,79 @@
     </main>
   </div>
 
-  <!-- MODALS & TOASTS -->
+  <!-- MODALS & POP-UPS -->
+  
+  <!-- AI Config Modal (Replacing permanent sidebar panel) -->
+  <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,242,254,0.15)] transform scale-95 transition-transform duration-200 flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <h3 class="font-heading font-bold text-lg text-white flex items-center gap-2"><i data-lucide="sliders" class="w-5 h-5 text-cyan-400"></i> AI Config</h3>
+        <button onclick="closeAiConfigModal()" class="p-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div class="py-5 space-y-5">
+        <!-- Live Web Access Toggle -->
+        <div class="p-3 bg-cyan-950/30 border border-cyan-500/20 rounded-xl flex items-center justify-between">
+          <label for="checkWebSearchModal" class="text-sm font-medium text-cyan-200 flex items-center gap-2 cursor-pointer">
+            <i data-lucide="globe" class="w-4 h-4 text-cyan-400"></i> Live Web Search
+          </label>
+          <input type="checkbox" id="checkWebSearchModal" onchange="syncWebSearchFromModal()" class="w-5 h-5 accent-cyan-400 cursor-pointer rounded" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-mono text-zinc-400">Active Model:</label>
+          <select id="aiModelInputModal" class="godx-input w-full px-4 py-3 text-sm font-mono cursor-pointer" onchange="syncModelFromModal()">
+            <option value="gpt-oss:20b">gpt-oss:20b (Default)</option>
+            <option value="gpt-oss:120b">gpt-oss:120b</option>
+            <option value="gemma4:31b">gemma4:31b</option>
+            <option value="nemotron-3-nano:30b">nemotron-3-nano</option>
+            <option value="nemotron-3-super">nemotron-3-super</option>
+            <option value="nemotron-3-ultra">nemotron-3-ultra</option>
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-mono text-zinc-400">System Persona:</label>
+          <select id="aiPersonaSelectModal" class="godx-input w-full px-4 py-3 text-sm cursor-pointer" onchange="syncPersonaFromModal()">
+            <option value="normal">Normal (Standard Assistant)</option>
+            <option value="architect">System Architect</option>
+            <option value="fullstack">Full-Stack Developer</option>
+            <option value="security">Cybersecurity Auditor</option>
+            <option value="researcher">Web Researcher</option>
+            <option value="datascience">Data Scientist</option>
+            <option value="reverse">Reverse Engineer</option>
+            <option value="minimal">Minimalist Hacker (Code Only)</option>
+            <option value="copywriter">Creative Copywriter</option>
+            <option value="marketing">Growth Marketer</option>
+            <option value="historian">Historian</option>
+            <option value="philosopher">Philosopher</option>
+            <option value="chef">Culinary Chef</option>
+            <option value="fitness">Fitness Trainer</option>
+            <option value="travel">Travel Planner</option>
+            <option value="legal">Legal Frameworks Analyst</option>
+            <option value="medical">Medical Science Educator</option>
+            <option value="finance">Financial Analyst</option>
+            <option value="novelist">Fiction Novelist</option>
+            <option value="translator">Polyglot Translator</option>
+            <option value="mathematician">Mathematician</option>
+            <option value="mentor">Executive Coach</option>
+            <option value="custom">Custom Persona...</option>
+          </select>
+        </div>
+
+        <div id="customPersonaWrapperModal" class="hidden space-y-1.5">
+          <label class="text-xs font-mono text-cyan-400">Custom Directive:</label>
+          <textarea id="customPersonaPromptModal" rows="3" placeholder="Define exact instructions..." class="godx-input w-full p-3 text-xs font-mono leading-relaxed" oninput="syncPersonaFromModal()"></textarea>
+        </div>
+      </div>
+      
+      <div class="pt-4 border-t border-white/10 flex gap-3 mt-auto">
+        <button onclick="downloadAiChat()" class="flex-1 py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
+        <button onclick="clearAiChat(); closeAiConfigModal();" class="flex-1 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i> Clear</button>
+      </div>
+    </div>
+  </div>
+
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-5xl w-full p-6 sm:p-8 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-4 border-b border-white/10">
@@ -655,7 +678,9 @@
     let activeNoteId = vaultNotes[0].id;
     let isMarkdownPreviewActive = false;
     let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
+    let wbSnapshot = null; // Used for shape drawing
     let termHistory = [], termHistoryIdx = -1;
+    let isSidebarCollapsed = false;
 
     // =========================================================================
     // VIRTUAL FILE SYSTEM & INTERACTIVE CODESPACE ENGINE
@@ -680,7 +705,10 @@
       initMetricsChart();
       renderNoteTabs();
       loadActiveNoteContent();
-      runSandboxCode();
+      
+      // Auto-init compiler tab explicitly
+      setSandboxLanguage("html");
+      
       initAmbientParticles();
       initWhiteboard();
       updateDesignPreview();
@@ -692,7 +720,7 @@
     });
 
     // =========================================================================
-    // CORE UI 
+    // CORE UI & SIDEBAR
     // =========================================================================
     function startSystemClock() { setInterval(() => { document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; lucide.createIcons(); }, 1000); }
     function playAudioTone(freq=440, type="sine", dur=0.08) { if(!isAudioEnabled)return; try{const actx=new(window.AudioContext||window.webkitAudioContext)(); const osc=actx.createOscillator(), gain=actx.createGain(); osc.type=type; osc.frequency.value=freq; gain.gain.setValueAtTime(0.04, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur); osc.connect(gain); gain.connect(actx.destination); osc.start(); osc.stop(actx.currentTime+dur);}catch(e){} }
@@ -702,6 +730,25 @@
       playAudioTone(330,"sine",0.1); 
       fetch("/api/logout", {method:"POST"}).catch(()=>{});
       window.location.href = "index.html"; 
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById("appSidebar");
+      const icon = document.getElementById("sidebarToggleIcon");
+      isSidebarCollapsed = !isSidebarCollapsed;
+      if (isSidebarCollapsed) {
+        sb.classList.add("sidebar-collapsed");
+        icon.setAttribute("data-lucide", "chevron-right");
+      } else {
+        sb.classList.remove("sidebar-collapsed");
+        sb.style.width = "16rem"; // Reset to default w-64
+        icon.setAttribute("data-lucide", "chevron-left");
+      }
+      lucide.createIcons();
+      // Allow flex layouts to reflow
+      setTimeout(() => {
+        if(!document.getElementById("tab-whiteboard").classList.contains("hidden")) resizeWhiteboardCanvas();
+      }, 350);
     }
 
     function switchTab(id) {
@@ -727,71 +774,65 @@
     function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
 
     // =========================================================================
-    // OLLAMA AI STUDIO: CONFIG, PERSONAS, WEB SEARCH
+    // OLLAMA AI STUDIO: POP-UP CONFIG & WEB SEARCH
     // =========================================================================
-    function loadAiConfig() { 
-      const savedPersona = localStorage.getItem("lumina_ai_persona") || "normal";
-      document.getElementById("aiPersonaSelect").value = savedPersona;
-      document.getElementById("customPersonaPrompt").value = localStorage.getItem("lumina_custom_persona_prompt") || "";
-      onPersonaSelectChange();
-
-      document.getElementById("aiModelInput").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b"; 
-      document.getElementById("checkWebSearch").checked = localStorage.getItem("lumina_web_search") === "true";
+    function openAiConfigModal() {
+      const modal = document.getElementById("aiConfigModal");
+      modal.style.display = "flex";
+      // Ensure values are synced before showing
+      document.getElementById("aiModelInputModal").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
+      document.getElementById("aiPersonaSelectModal").value = localStorage.getItem("lumina_ai_persona") || "normal";
+      document.getElementById("checkWebSearchModal").checked = localStorage.getItem("lumina_web_search") === "true";
+      document.getElementById("customPersonaPromptModal").value = localStorage.getItem("lumina_custom_persona_prompt") || "";
       
+      if(document.getElementById("aiPersonaSelectModal").value === "custom") {
+        document.getElementById("customPersonaWrapperModal").classList.remove("hidden");
+      } else {
+        document.getElementById("customPersonaWrapperModal").classList.add("hidden");
+      }
+
+      setTimeout(()=>modal.classList.remove("opacity-0"), 10);
+    }
+    
+    function closeAiConfigModal() {
+      const modal = document.getElementById("aiConfigModal");
+      modal.classList.add("opacity-0");
+      setTimeout(()=>modal.style.display="none", 200);
+    }
+
+    function syncWebSearchFromModal() {
+      const val = document.getElementById("checkWebSearchModal").checked;
+      localStorage.setItem("lumina_web_search", val);
+      updateAiBadges();
+    }
+    function syncModelFromModal() {
+      const val = document.getElementById("aiModelInputModal").value;
+      localStorage.setItem("lumina_ai_model", val);
+      updateAiBadges();
+    }
+    function syncPersonaFromModal() {
+      const p = document.getElementById("aiPersonaSelectModal").value;
+      localStorage.setItem("lumina_ai_persona", p);
+      if(p==="custom") {
+        document.getElementById("customPersonaWrapperModal").classList.remove("hidden");
+        localStorage.setItem("lumina_custom_persona_prompt", document.getElementById("customPersonaPromptModal").value);
+      } else {
+        document.getElementById("customPersonaWrapperModal").classList.add("hidden");
+      }
+    }
+
+    function loadAiConfig() { 
       updateAiBadges();
     }
 
     function saveAiConfig() { 
-      localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); 
-      localStorage.setItem("lumina_custom_persona_prompt", document.getElementById("customPersonaPrompt").value);
-      localStorage.setItem("lumina_ai_model", document.getElementById("aiModelInput").value);
-      localStorage.setItem("lumina_web_search", document.getElementById("checkWebSearch").checked);
-      
+      // Fallback for direct triggers if needed, but primarily driven by modal now
       updateAiBadges();
     }
 
-    function configureVercelSecurity() {
-      const currentToken = localStorage.getItem("lumina_vercel_auth") || "";
-      const val = prompt("Enter Vercel Security Auth Token (Optional header pass-through):\nLeave empty to clear.", currentToken);
-      if (val !== null) {
-        localStorage.setItem("lumina_vercel_auth", val.trim());
-        showToast("Vercel Security", val.trim() ? "Auth Token Stored" : "Auth Token Cleared");
-      }
-    }
-
-    async function checkProviderQuota() {
-      showToast("Telemetry", "Checking provider health...");
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: "Status ping", messages: [{ role: "user", content: "ping" }] })
-        });
-        if (res.ok) {
-          alert("Ollama Cloud Gateway Status: Active\nHTTP 200: Quota OK, ready for generation.");
-        } else {
-          const d = await res.json();
-          alert(`Gateway Limit Notice:\nStatus ${res.status}: ${d.error || 'Check endpoint configuration'}`);
-        }
-      } catch (e) {
-        alert("Telemetry unreachable: " + e.message);
-      }
-    }
-
-    function onPersonaSelectChange() {
-      const p = document.getElementById("aiPersonaSelect").value;
-      const customWrapper = document.getElementById("customPersonaWrapper");
-      if (p === "custom") {
-        customWrapper.classList.remove("hidden");
-      } else {
-        customWrapper.classList.add("hidden");
-      }
-      saveAiConfig();
-    }
-
     function updateAiBadges() {
-      const model = document.getElementById("aiModelInput").value;
-      const webOn = document.getElementById("checkWebSearch").checked;
+      const model = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
+      const webOn = localStorage.getItem("lumina_web_search") === "true";
       document.getElementById("aiActiveModelBadge").textContent = model;
       
       const webBadge = document.getElementById("webSearchActiveBadge");
@@ -805,7 +846,7 @@
     }
 
     function getAiSystemPrompt() {
-      const p = document.getElementById("aiPersonaSelect").value;
+      const p = localStorage.getItem("lumina_ai_persona") || "normal";
       let personaText = "";
       switch (p) {
         case "architect": personaText = "You are an Elite Systems Architect. Structure robust, multi-file codebases and explain architectural design choices concisely."; break;
@@ -829,7 +870,7 @@
         case "translator": personaText = "You are a Universal Translator. Accurately translate idioms, tone, and cultural subtleties across languages."; break;
         case "mathematician": personaText = "You are a Mathematician. Break down proofs and mathematical formulas step-by-step with rigorous logic."; break;
         case "mentor": personaText = "You are an Executive Leadership Mentor. Offer high-impact, grounded perspective on career, strategy, and focus."; break;
-        case "custom": personaText = document.getElementById("customPersonaPrompt").value.trim() || "You are a supportive, knowledgeable AI partner."; break;
+        case "custom": personaText = (localStorage.getItem("lumina_custom_persona_prompt") || "").trim() || "You are a supportive, knowledgeable AI partner."; break;
         default: personaText = "You are a helpful, capable, and authentic AI assistant. Answer accurately, clearly, and concisely."; break;
       }
       
@@ -845,7 +886,7 @@ Do not apologize or state that you lack file or internet access. You possess the
     }
 
     // =========================================================================
-    // CODESPACE WORKSPACE LOGIC (Artifacts, Editing, Bundling)
+    // ADVANCED CODESPACE FILE EXPLORER & ARTIFACTS
     // =========================================================================
     function toggleCodespacePane(forceOpen = null) {
       const pane = document.getElementById("aiCodespaceColumn");
@@ -860,25 +901,43 @@ Do not apologize or state that you lack file or internet access. You possess the
       if (isCodespaceOpen) {
         pane.classList.remove("hidden");
         pane.classList.add("flex");
-        btnText.textContent = "Close Artifacts";
+        if(btnText) btnText.textContent = "Close Artifacts";
       } else {
         pane.classList.add("hidden");
         pane.classList.remove("flex");
-        btnText.textContent = "Open Artifacts";
+        if(btnText) btnText.textContent = "Open Artifacts";
       }
       lucide.createIcons();
     }
 
+    function getFileIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      if(ext === 'html') return '<i data-lucide="file-code" class="w-4 h-4 text-orange-400"></i>';
+      if(ext === 'css') return '<i data-lucide="file-code" class="w-4 h-4 text-blue-400"></i>';
+      if(ext === 'js') return '<i data-lucide="file-json" class="w-4 h-4 text-yellow-400"></i>';
+      if(ext === 'py') return '<i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400"></i>';
+      return '<i data-lucide="file" class="w-4 h-4 text-zinc-400"></i>';
+    }
+
     function renderCodespaceFileTabs() {
-      const container = document.getElementById("codespaceFileTabs");
-      container.innerHTML = "";
+      // Render Vertical Explorer
+      const tree = document.getElementById("codespaceExplorerTree");
+      tree.innerHTML = "";
       Object.keys(vfs).forEach(filename => {
         const isActive = filename === csActiveFile;
-        const tab = document.createElement("button");
-        tab.className = `px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors ${isActive ? 'codespace-tab-active shadow-md' : 'bg-surface-950 border-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-surface-900'}`;
-        tab.innerHTML = `<i data-lucide="file-code" class="w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : ''}"></i><span>${filename}</span>`;
-        tab.onclick = () => switchCodespaceFile(filename);
-        container.appendChild(tab);
+        const item = document.createElement("div");
+        item.className = `file-explorer-item group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors text-[11px] font-mono ${isActive ? 'bg-cyan-500/10 text-cyan-300' : 'text-zinc-400 hover:bg-surface-900 hover:text-zinc-200'}`;
+        
+        item.innerHTML = `
+          <div class="flex items-center gap-2 overflow-hidden" onclick="switchCodespaceFile('${filename}')">
+            ${getFileIcon(filename)}
+            <span class="truncate">${filename}</span>
+          </div>
+          <div class="file-actions opacity-0 transition-opacity flex items-center gap-1">
+            <button onclick="event.stopPropagation(); deleteSpecificFile('${filename}')" class="p-1 hover:text-rose-400 rounded"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+          </div>
+        `;
+        tree.appendChild(item);
       });
       lucide.createIcons();
     }
@@ -946,7 +1005,6 @@ Do not apologize or state that you lack file or internet access. You possess the
       
       iframe.srcdoc = bundled;
       
-      // Hide empty state if content exists
       if (bundled.trim().length > 0) {
         emptyState.style.display = "none";
         iframe.style.opacity = "1";
@@ -971,15 +1029,18 @@ Do not apologize or state that you lack file or internet access. You possess the
       }
     }
 
-    function deleteActiveFile() {
-      if (csActiveFile === "index.html") return alert("Cannot delete root entry index.html");
-      if (confirm(`Delete ${csActiveFile} from workspace?`)) {
-        delete vfs[csActiveFile];
+    function deleteSpecificFile(filename) {
+      if (filename === "index.html") return alert("Cannot delete root entry index.html");
+      if (confirm(`Delete ${filename} from workspace?`)) {
+        delete vfs[filename];
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-        switchCodespaceFile("index.html");
-        showToast("File Deleted", csActiveFile);
+        if(csActiveFile === filename) switchCodespaceFile("index.html");
+        else renderCodespaceFileTabs();
+        showToast("File Deleted", filename);
       }
     }
+    // Backward compatibility for old UI button if any
+    function deleteActiveFile() { deleteSpecificFile(csActiveFile); }
 
     function openCodespacePopout() {
       const bundled = bundleCodespaceHTML();
@@ -1079,8 +1140,8 @@ Do not apologize or state that you lack file or internet access. You possess the
               </div>
             </div>
             <div class="max-w-xl">
-              <h2 class="text-3xl font-heading font-extrabold text-white tracking-tight mb-3">How can I help you build today?</h2>
-              <p class="text-sm text-zinc-400 leading-relaxed">LuminaVista Neural Core is active. I can browse the live web, write complex applications, and execute code directly in your personal cloud sandbox.</p>
+              <h2 class="text-3xl font-heading font-extrabold text-white tracking-tight mb-3">Welcome to ai-llm</h2>
+              <p class="text-sm text-zinc-400 leading-relaxed">Neural Core active. I can browse the live web, write complex applications, and execute code directly in your codespace.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mt-6">
               <button onclick="loadQuickPrompt('Create a modern Glassmorphism dashboard layout with HTML and CSS in the Codespace.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
@@ -1096,7 +1157,7 @@ Do not apologize or state that you lack file or internet access. You possess the
               <button onclick="loadQuickPrompt('Write a Python script to monitor system metrics and tell me how to run it in the terminal.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
                 <i data-lucide="terminal-square" class="w-5 h-5 text-emerald-400 mb-2 group-hover:scale-110 transition-transform"></i>
                 <h4 class="text-sm font-bold text-white mb-1">Execute Python Scripts</h4>
-                <p class="text-xs text-zinc-500">Deploy code to the E2B microVM.</p>
+                <p class="text-xs text-zinc-500">Deploy code to the microVM.</p>
               </button>
               <button onclick="loadQuickPrompt('Review my architecture for security vulnerabilities.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
                 <i data-lucide="shield-alert" class="w-5 h-5 text-rose-400 mb-2 group-hover:scale-110 transition-transform"></i>
@@ -1174,7 +1235,7 @@ Do not apologize or state that you lack file or internet access. You possess the
       lucide.createIcons();
 
       try {
-        const isWebSearchOn = document.getElementById("checkWebSearch").checked;
+        const isWebSearchOn = localStorage.getItem("lumina_web_search") === "true";
 
         const res = await fetch("/api/chat", {
           method: "POST", 
@@ -1184,7 +1245,7 @@ Do not apologize or state that you lack file or internet access. You possess the
           },
           body: JSON.stringify({ 
             prompt, 
-            requestedModel: document.getElementById("aiModelInput").value,
+            requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
             webSearch: isWebSearchOn,
             messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation] 
           })
@@ -1248,12 +1309,35 @@ Do not apologize or state that you lack file or internet access. You possess the
     // =========================================================================
     let currentSandboxLang="html";
     function setSandboxLanguage(l) { 
-      currentSandboxLang=l; ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>document.getElementById(id).className="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"); 
-      document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`).className=`px-4 py-1.5 rounded-lg text-black font-bold cursor-pointer transition-colors shadow-md ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
-      if(l==="html"){document.getElementById("sandboxIframeWrapper").classList.remove("hidden");document.getElementById("sandboxStdoutWrapper").classList.add("hidden");}
-      else{document.getElementById("sandboxIframeWrapper").classList.add("hidden");document.getElementById("sandboxStdoutWrapper").classList.remove("hidden");} 
+      currentSandboxLang=l; 
+      ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>{
+        const el = document.getElementById(id);
+        el.className="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"; 
+      });
+      const act = document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`);
+      act.className=`px-4 py-1.5 rounded-lg text-black font-bold cursor-pointer transition-colors shadow-md ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
+      
+      const iframeWrap = document.getElementById("sandboxIframeWrapper");
+      const stdoutWrap = document.getElementById("sandboxStdoutWrapper");
+      
+      // Absolute visibility reset
+      if(l === "html") {
+        iframeWrap.classList.remove("hidden");
+        stdoutWrap.classList.add("hidden");
+      } else {
+        iframeWrap.classList.add("hidden");
+        stdoutWrap.classList.remove("hidden");
+      } 
     }
-    function onSandboxCodeChange() { const c=document.getElementById("sandboxCodeInput").value; if(c.includes("SELECT ") || c.includes("FROM ")) setSandboxLanguage("sql"); else if(c.includes("#include")) setSandboxLanguage("cpp"); else if(c.includes("public class")) setSandboxLanguage("java"); else if(c.includes("def ")) setSandboxLanguage("python"); else if(c.includes("<html")) setSandboxLanguage("html"); }
+    
+    function onSandboxCodeChange() { 
+      const c=document.getElementById("sandboxCodeInput").value; 
+      if(c.includes("SELECT ") || c.includes("FROM ")) setSandboxLanguage("sql"); 
+      else if(c.includes("#include")) setSandboxLanguage("cpp"); 
+      else if(c.includes("public class")) setSandboxLanguage("java"); 
+      else if(c.includes("def ")) setSandboxLanguage("python"); 
+      else if(c.includes("<html")) setSandboxLanguage("html"); 
+    }
     
     async function runSandboxCode() { 
       const c = document.getElementById("sandboxCodeInput").value;
@@ -1265,6 +1349,7 @@ Do not apologize or state that you lack file or internet access. You possess the
         return;
       } 
       
+      out.classList.remove("hidden");
       out.innerHTML = `<i data-lucide='loader' class='w-4 h-4 animate-spin inline'></i> Routing to Vercel Execution Engine...`;
       lucide.createIcons();
 
@@ -1291,7 +1376,7 @@ Do not apologize or state that you lack file or internet access. You possess the
     }
 
     // =========================================================================
-    // WHITEBOARD & UI DESIGN
+    // WHITEBOARD (WITH SHAPE TOOLS)
     // =========================================================================
     function resizeWhiteboardCanvas() { 
       const cv=document.getElementById("whiteboardCanvas"); 
@@ -1302,8 +1387,64 @@ Do not apologize or state that you lack file or internet access. You possess the
       ctx.lineCap="round"; ctx.lineJoin="round"; 
       try{ctx.putImageData(t,0,0);}catch(e){} 
     }
-    function initWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); if(!cv)return; const ctx=cv.getContext("2d"); resizeWhiteboardCanvas(); window.addEventListener("resize", resizeWhiteboardCanvas); cv.addEventListener("mousedown", e=>{isDrawing=true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY);}); cv.addEventListener("mousemove", e=>{if(!isDrawing)return; ctx.strokeStyle=wbCurrentTool==="eraser"?"#030712":wbCurrentColor; ctx.lineWidth=wbCurrentSize; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();}); cv.addEventListener("mouseup", ()=>isDrawing=false); cv.addEventListener("mouseleave", ()=>isDrawing=false); }
-    function setWhiteboardTool(t) { wbCurrentTool=t; document.getElementById("wbToolPen").className=t==="pen"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; document.getElementById("wbToolEraser").className=t==="eraser"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; }
+    
+    let startX, startY;
+    function initWhiteboard() { 
+      const cv=document.getElementById("whiteboardCanvas"); 
+      if(!cv)return; 
+      const ctx=cv.getContext("2d"); 
+      resizeWhiteboardCanvas(); 
+      window.addEventListener("resize", resizeWhiteboardCanvas); 
+      
+      cv.addEventListener("mousedown", e=>{
+        isDrawing=true; 
+        startX = e.offsetX;
+        startY = e.offsetY;
+        wbSnapshot = ctx.getImageData(0, 0, cv.width, cv.height);
+        if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') {
+          ctx.beginPath(); 
+          ctx.moveTo(e.offsetX, e.offsetY);
+        }
+      }); 
+      
+      cv.addEventListener("mousemove", e=>{
+        if(!isDrawing)return; 
+        ctx.strokeStyle = wbCurrentTool==="eraser" ? "#030712" : wbCurrentColor; 
+        ctx.lineWidth = wbCurrentSize; 
+        
+        if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') {
+          ctx.lineTo(e.offsetX, e.offsetY); 
+          ctx.stroke();
+        } else if (wbCurrentTool === 'rect') {
+          ctx.putImageData(wbSnapshot, 0, 0);
+          ctx.beginPath();
+          ctx.rect(startX, startY, e.offsetX - startX, e.offsetY - startY);
+          ctx.stroke();
+        } else if (wbCurrentTool === 'circle') {
+          ctx.putImageData(wbSnapshot, 0, 0);
+          ctx.beginPath();
+          const radius = Math.sqrt(Math.pow(e.offsetX - startX, 2) + Math.pow(e.offsetY - startY, 2));
+          ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+      }); 
+      
+      cv.addEventListener("mouseup", ()=>isDrawing=false); 
+      cv.addEventListener("mouseleave", ()=>isDrawing=false); 
+    }
+
+    function setWhiteboardTool(t) { 
+      wbCurrentTool=t; 
+      ["wbToolPen", "wbToolRect", "wbToolCircle", "wbToolEraser"].forEach(id => {
+        document.getElementById(id).className = "p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer";
+      });
+      let activeId = "wbToolPen";
+      if(t === "rect") activeId = "wbToolRect";
+      if(t === "circle") activeId = "wbToolCircle";
+      if(t === "eraser") activeId = "wbToolEraser";
+      document.getElementById(activeId).className = "p-2 rounded-lg bg-cyan-500 text-black cursor-pointer shadow-md"; 
+    }
+    
     function updateWbColor(c) { wbCurrentColor=c; } function updateWbSize(s) { wbCurrentSize=s; }
     function clearWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); cv.getContext("2d").clearRect(0,0,cv.width,cv.height); }
     function downloadWhiteboard() { const a=document.createElement("a"); a.download=`sketch_${Date.now()}.png`; a.href=document.getElementById("whiteboardCanvas").toDataURL(); a.click(); }
@@ -1312,7 +1453,7 @@ Do not apologize or state that you lack file or internet access. You possess the
     function copyGeneratedDesignCss() { navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); showToast("Copied","CSS class ready."); }
 
     // =========================================================================
-    // TERMINAL (INTEGRATED WITH E2B CLOUD SANDBOX & CODESPACE FILES)
+    // TERMINAL (E2B INTEGRATED)
     // =========================================================================
     function handleTerminalKeyDown(e) { if(e.key==="ArrowUp"){e.preventDefault(); if(termHistory.length>0&&termHistoryIdx>0){termHistoryIdx--; e.target.value=termHistory[termHistoryIdx];}else if(termHistory.length>0&&termHistoryIdx===-1){termHistoryIdx=termHistory.length-1; e.target.value=termHistory[termHistoryIdx];}}else if(e.key==="ArrowDown"){e.preventDefault(); if(termHistoryIdx>=0&&termHistoryIdx<termHistory.length-1){termHistoryIdx++; e.target.value=termHistory[termHistoryIdx];}else{termHistoryIdx=-1; e.target.value="";}} }
     
@@ -1384,13 +1525,31 @@ Do not apologize or state that you lack file or internet access. You possess the
     function onNoteContentChange() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) { n.content=document.getElementById("adminScratchpad").value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); if(isMarkdownPreviewActive) toggleMarkdownPreview(true); } }
     function createNewNote() { const id="n_"+Date.now(); vaultNotes.push({id, title:`Note ${vaultNotes.length+1}`, content:"# New Note"}); activeNoteId=id; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); renderNoteTabs(); loadActiveNoteContent(); }
     
+    // Notes Formatting Injector
+    function insertNoteMarkdown(prefix, suffix) {
+      const textarea = document.getElementById("adminScratchpad");
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const selected = text.substring(start, end);
+      
+      const newText = text.substring(0, start) + prefix + selected + suffix + text.substring(end);
+      textarea.value = newText;
+      
+      textarea.selectionStart = start + prefix.length;
+      textarea.selectionEnd = end + prefix.length;
+      textarea.focus();
+      
+      onNoteContentChange();
+    }
+
     function toggleMarkdownPreview(forceRender=false) {
       if(!forceRender) isMarkdownPreviewActive = !isMarkdownPreviewActive;
       const editorCol = document.getElementById("adminScratchpad").parentElement, previewCol = document.getElementById("notePreviewCol");
       if (isMarkdownPreviewActive) {
         editorCol.className = "hidden"; previewCol.classList.remove("hidden"); previewCol.classList.add("block");
         let raw = document.getElementById("adminScratchpad").value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-3">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-4">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold text-cyan-400 mt-5">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\n/gim, '<br/>');
+        document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-3">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-4">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold text-cyan-400 mt-5">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\*(.*?)\*/gim, '<em class="italic text-zinc-300">$1</em>').replace(/`(.*?)`/gim, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>').replace(/\n/gim, '<br/>');
       } else {
         editorCol.className = "block"; previewCol.classList.add("hidden"); previewCol.classList.remove("block");
       }
