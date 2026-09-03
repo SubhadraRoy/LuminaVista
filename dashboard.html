@@ -1,10 +1,10 @@
+<!-- dashboard.html -->
 <!DOCTYPE html>
 <html lang="en" class="dark" data-theme="cyan">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <!-- SECURITY: Strict Content Security Policy (CSP) -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; object-src 'none';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   
@@ -69,7 +69,7 @@
   <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0"></div>
   <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 3s;"></div>
 
-  <!-- LEFT SIDEBAR NAVIGATION -->
+  <!-- FIXED LEFT SIDEBAR -->
   <aside class="w-64 border-r border-white/5 bg-surface-950/90 backdrop-blur-xl flex flex-col h-full z-40 relative shrink-0">
     <div class="p-5 border-b border-white/5 flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md">
@@ -77,7 +77,7 @@
       </div>
       <div>
         <h1 class="font-heading font-bold text-base text-white tracking-tight leading-tight">LuminaVista</h1>
-        <p class="text-[10px] text-zinc-400 font-mono">v8.0 Cloud Secured</p>
+        <p class="text-[10px] text-zinc-400 font-mono">v8.5 Workspace</p>
       </div>
     </div>
 
@@ -148,65 +148,109 @@
       </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-4 lg:p-6 w-full max-w-[1600px] mx-auto min-h-0">
+    <main class="flex-1 overflow-hidden p-4 lg:p-6 w-full max-w-[1800px] mx-auto">
       
-      <!-- TAB 1: ONLINE OLLAMA AI STUDIO -->
+      <!-- TAB 1: OLLAMA AI STUDIO (WITH IN-CHAT INTEGRATED LIVE SANDBOX) -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-6">
-        <div class="w-full lg:w-80 glass-panel rounded-2xl flex flex-col overflow-hidden shrink-0 border border-cyan-500/20 shadow-lg">
+        
+        <!-- Left Panel: Compact AI Config & System Personas -->
+        <div class="w-full lg:w-60 glass-panel rounded-2xl flex flex-col overflow-hidden shrink-0 border border-cyan-500/20 shadow-lg">
           <div class="p-4 border-b border-white/5 bg-surface-900/60 flex items-center justify-between">
-            <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2"><i data-lucide="server" class="w-4 h-4 text-emerald-400"></i> Vercel Security</h3>
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+            <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i> AI Config
+            </h3>
+            <div class="flex gap-2">
+              <button onclick="checkProviderQuota()" title="Check Quota" class="p-1 rounded bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"><i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i></button>
+              <button onclick="promptVercelAuth()" title="Set Vercel Security Token" class="p-1 rounded bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"><i data-lucide="shield" class="w-3.5 h-3.5"></i></button>
+            </div>
           </div>
 
-          <div class="p-5 space-y-5 flex-1 overflow-y-auto">
-            <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-              <p class="text-[11px] text-emerald-300 leading-relaxed font-mono">API Keys securely isolated on backend.</p>
-            </div>
+          <div class="p-4 space-y-5 flex-1 overflow-y-auto">
             
-            <div class="space-y-1.5 mt-3">
-              <label class="text-[11px] font-mono text-zinc-400">Vercel Auth Token (Optional):</label>
-              <div class="relative">
-                <input type="password" id="vercelAuthInput" placeholder="Enter secure token..." class="godx-input w-full pl-3 pr-8 py-2 text-xs font-mono" onchange="saveAiConfig()" />
-                <button type="button" onclick="toggleVercelAuthVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer z-30"><i data-lucide="eye" id="vercelAuthIcon" class="w-3.5 h-3.5"></i></button>
+            <!-- Live Web Access Switch -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="checkWebSearch" class="text-xs font-semibold text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="globe" class="w-3.5 h-3.5 text-cyan-400"></i> Web Access
+                </label>
+                <input type="checkbox" id="checkWebSearch" onchange="saveAiConfig()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
               </div>
             </div>
 
+            <!-- Model Selection -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono text-zinc-400">Active Model Configuration:</label>
+              <label class="text-[11px] font-mono text-zinc-500">Active Model:</label>
               <select id="aiModelInput" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
-                <option value="gpt-oss:20b" selected>gpt-oss:20b (Preferred)</option>
+                <option value="gpt-oss:20b" selected>gpt-oss:20b</option>
                 <option value="gpt-oss:120b">gpt-oss:120b</option>
                 <option value="gemma4:31b">gemma4:31b</option>
-                <option value="nemotron-3-nano:30b">nemotron-3-nano:30b</option>
+                <option value="nemotron-3-nano:30b">nemotron-3-nano</option>
                 <option value="nemotron-3-super">nemotron-3-super</option>
                 <option value="nemotron-3-ultra">nemotron-3-ultra</option>
               </select>
             </div>
 
+            <!-- Multi-Persona Roster (20+ Personas) -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono text-zinc-400">System Persona:</label>
-              <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="saveAiConfig()">
-                <option value="architect">GODx Supreme Architect</option>
-                <option value="minimal">Concise Hacker (Raw Code)</option>
-                <option value="security">Cybersecurity Vault Auditor</option>
+              <label class="text-[11px] font-mono text-zinc-500">System Persona:</label>
+              <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onPersonaSelectChange()">
+                <option value="default">Normal (Default Assistant)</option>
+                <option value="architect">System Architect</option>
+                <option value="fullstack">Full-Stack Developer</option>
+                <option value="security">Security Auditor</option>
+                <option value="researcher">Web Researcher</option>
+                <option value="datascience">Data Scientist</option>
+                <option value="reverse">Reverse Engineer</option>
+                <option value="minimal">Minimalist Hacker (Code Only)</option>
+                <option value="writer">Pro Copywriter</option>
+                <option value="marketing">Marketing Strategist</option>
+                <option value="historian">Historian</option>
+                <option value="philosopher">Philosopher</option>
+                <option value="chef">Master Chef</option>
+                <option value="fitness">Fitness Coach</option>
+                <option value="travel">Travel Guide</option>
+                <option value="legal">Simulated Legal Advisor</option>
+                <option value="medical">Simulated Medical Consultant</option>
+                <option value="finance">Financial Analyst</option>
+                <option value="storyteller">Storyteller / Author</option>
+                <option value="translator">Universal Translator</option>
+                <option value="math">Mathematician</option>
+                <option value="coach">Life Coach</option>
+                <option value="custom">Custom Persona...</option>
               </select>
             </div>
 
+            <!-- Custom Persona Prompt Textarea -->
+            <div id="customPersonaWrapper" class="hidden space-y-1.5">
+              <label class="text-[10px] font-mono text-cyan-400">Custom Directive:</label>
+              <textarea id="customPersonaPrompt" rows="4" placeholder="Define custom behavior..." class="godx-input w-full p-2.5 text-[11px] font-mono leading-relaxed" oninput="saveAiConfig()"></textarea>
+            </div>
+
             <div class="pt-4 border-t border-white/5 space-y-2 mt-auto">
-              <button onclick="downloadAiChat()" class="w-full py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export Thread</button>
-              <button onclick="clearAiChat()" class="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Memory</button>
+              <button onclick="downloadAiChat()" class="w-full py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export Thread</button>
+              <button onclick="clearAiChat()" class="w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Memory</button>
             </div>
           </div>
         </div>
 
-        <div class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl min-h-[500px]">
+        <!-- Center: Expanded Chatting Area -->
+        <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center text-black shadow-lg"><i data-lucide="brain-circuit" class="w-4 h-4"></i></div>
               <div>
-                <h3 class="font-heading font-bold text-sm text-white leading-tight">Neural AI Workspace</h3>
-                <p class="text-[10px] text-zinc-400 font-mono" id="aiActiveModelBadge">Model: gpt-oss:20b</p>
+                <h3 class="font-heading font-bold text-sm text-white leading-tight">Neural Workspace</h3>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-[10px] text-zinc-400 font-mono" id="aiActiveModelBadge">Model: gpt-oss:20b</span>
+                  <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30">🌐 Web Active</span>
+                </div>
               </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleAiSandboxSplit()" class="px-3 py-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-xs font-medium text-zinc-300 hover:text-white border border-white/10 flex items-center gap-2 cursor-pointer transition-colors">
+                <i data-lucide="layout" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Toggle Artifacts</span>
+              </button>
             </div>
           </div>
 
@@ -214,11 +258,35 @@
 
           <div class="p-4 bg-surface-900/90 border-t border-white/5 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative w-full mx-auto" onsubmit="handleSendAiPrompt(event)">
-              <textarea id="aiPromptTextarea" rows="1" placeholder="Message AI through Secure Vercel Backend (Ctrl+Enter to send)..." class="w-full bg-surface-950 border border-white/10 rounded-2xl pl-4 pr-14 py-3.5 text-[13px] text-white outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none max-h-40 overflow-y-auto transition-all shadow-inner" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+              <textarea id="aiPromptTextarea" rows="1" placeholder="Message AI with personas & web search (Ctrl+Enter to send)..." class="w-full bg-surface-950 border border-white/10 rounded-2xl pl-4 pr-14 py-3.5 text-[13px] text-white outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none max-h-40 overflow-y-auto transition-all shadow-inner" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
               <button type="submit" id="btnAiSend" class="absolute right-2 bottom-2 w-9 h-9 rounded-xl btn-gradient flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
             </form>
           </div>
         </div>
+
+        <!-- Right Panel: Integrated In-Chat Live Sandbox (Hidden by default, toggleable) -->
+        <div id="aiSandboxColumn" class="hidden w-full lg:w-[500px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-emerald-500/20 shadow-2xl shrink-0 transition-all duration-300 h-full">
+          <div class="px-4 py-3 border-b border-white/5 bg-surface-900/80 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2">
+              <i data-lucide="play-circle" class="w-4 h-4 text-emerald-400"></i>
+              <span class="font-heading font-bold text-xs text-white">Live Artifact Sandbox</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="clearAiSandbox()" class="p-1.5 rounded-lg text-zinc-400 hover:text-white" title="Clear Sandbox"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+              <button onclick="toggleAiSandboxSplit(false)" class="p-1.5 rounded-lg text-zinc-400 hover:text-white" title="Close Panel"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+
+          <div class="flex-1 bg-white relative overflow-hidden">
+            <iframe id="aiSandboxIframe" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
+          </div>
+
+          <div class="p-3 border-t border-white/5 bg-surface-950 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0">
+            <span id="aiSandboxStatus">Sandbox Ready</span>
+            <button onclick="openAiSandboxNewTab()" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="external-link" class="w-3 h-3"></i> Open Tab</button>
+          </div>
+        </div>
+
       </section>
 
       <!-- TAB 2: EXM PROJECTS & LIVE VIEWPORT -->
@@ -354,7 +422,7 @@
               <div class="absolute w-64 h-64 bg-pink-500/20 rounded-full blur-3xl -bottom-10 -right-10"></div>
               <div id="glassPreviewCard" class="w-full max-w-md p-8 relative z-10 transition-all flex flex-col gap-4 border border-white/20">
                 <h4 class="font-heading font-bold text-white text-lg">Component Token</h4>
-                <p class="text-sm text-zinc-300">Live preview of hardware accelerated CSS properties. Adjust sliders to see real-time updates.</p>
+                <p class="text-sm text-zinc-300">Live preview of hardware accelerated CSS properties.</p>
               </div>
             </div>
           </div>
@@ -389,7 +457,7 @@
             </div>
           </div>
           <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v8.0]</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v8.5]</div>
             <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Vercel Backend.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
@@ -494,9 +562,6 @@
   <script>
     lucide.createIcons();
 
-    // =========================================================================
-    // GLOBAL STATE 
-    // =========================================================================
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
 
     let repoProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]");
@@ -509,12 +574,11 @@
     let isMarkdownPreviewActive = false;
     let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
     let termHistory = [], termHistoryIdx = -1;
+    let isAiSandboxOpen = false;
+    let lastArtifactHtml = "";
 
     window.addEventListener("DOMContentLoaded", () => {
       setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
-      
-      // Removed local hash check. This file should be protected by middleware in a real setup.
-      // Assuming access means authorized for this file.
       document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
 
       loadAiConfig();
@@ -539,12 +603,10 @@
     function handleLogout() { 
       sessionStorage.clear(); 
       playAudioTone(330,"sine",0.1); 
-      // Vercel backend logout call would go here to clear KV IP
       fetch("/api/logout", {method:"POST"}).catch(()=>{});
       window.location.href = "index.html"; 
     }
 
-    // CANVAS LIFECYCLE FIX: Resize triggers when tab unhides
     function switchTab(id) {
       playAudioTone(523,"sine",0.04); 
       document.querySelectorAll(".tab-pane").forEach(p=>p.classList.add("hidden")); 
@@ -562,91 +624,295 @@
     function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
 
     // =========================================================================
-    // VERCEL AI STUDIO ENGINE 
+    // OLLAMA AI STUDIO: PERSONAS, LIVE SANDBOX, & WEB ACCESS
     // =========================================================================
     function loadAiConfig() { 
-      document.getElementById("aiPersonaSelect").value = localStorage.getItem("lumina_ai_persona") || "architect"; 
+      const savedPersona = localStorage.getItem("lumina_ai_persona") || "default";
+      document.getElementById("aiPersonaSelect").value = savedPersona;
+      document.getElementById("customPersonaPrompt").value = localStorage.getItem("lumina_custom_persona_prompt") || "";
+      onPersonaSelectChange();
+
       document.getElementById("aiModelInput").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b"; 
-      document.getElementById("vercelAuthInput").value = localStorage.getItem("lumina_vercel_auth") || "";
-      document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
+      document.getElementById("checkWebSearch").checked = localStorage.getItem("lumina_web_search") === "true";
+      
+      updateAiBadges();
     }
+
     function saveAiConfig() { 
       localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); 
+      localStorage.setItem("lumina_custom_persona_prompt", document.getElementById("customPersonaPrompt").value);
       localStorage.setItem("lumina_ai_model", document.getElementById("aiModelInput").value);
-      localStorage.setItem("lumina_vercel_auth", document.getElementById("vercelAuthInput").value.trim());
-      document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
+      localStorage.setItem("lumina_web_search", document.getElementById("checkWebSearch").checked);
+      
+      updateAiBadges();
     }
-    function toggleVercelAuthVisibility() {
-      const input = document.getElementById("vercelAuthInput");
-      input.type = input.type === "password" ? "text" : "password";
-      document.getElementById("vercelAuthIcon").setAttribute("data-lucide", input.type === "password" ? "eye" : "eye-off");
-      lucide.createIcons();
+
+    function promptVercelAuth() {
+      const currentToken = localStorage.getItem("lumina_vercel_auth") || "";
+      const input = prompt("Enter Vercel Security Auth Token to access backend AI capabilities:\n(Leave blank if unauthenticated)", currentToken);
+      if (input !== null) {
+        localStorage.setItem("lumina_vercel_auth", input.trim());
+        showToast("Token Saved", "Backend auth updated.");
+      }
+    }
+
+    async function checkProviderQuota() {
+      showToast("Quota Check", "Checking limits...");
+      // For general users: most APIs don't expose quotas natively without provider-specific endpoint.
+      // E.g., OpenRouter has an endpoint we can test.
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/auth/key", {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${localStorage.getItem("lumina_vercel_auth") || ""}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const limit = data.data?.limit || "Unlimited";
+          const usage = data.data?.usage || "0";
+          alert(`API Quota Info (OpenRouter):\nLimit: ${limit}\nUsage: ${usage}`);
+        } else {
+          alert("Quota check is only available if connected directly to OpenRouter, or API key missing.");
+        }
+      } catch (e) {
+        alert("Unable to fetch quota. Provider might not support public limit checks.");
+      }
+    }
+
+    function onPersonaSelectChange() {
+      const p = document.getElementById("aiPersonaSelect").value;
+      const customWrapper = document.getElementById("customPersonaWrapper");
+      if (p === "custom") {
+        customWrapper.classList.remove("hidden");
+      } else {
+        customWrapper.classList.add("hidden");
+      }
+      saveAiConfig();
+    }
+
+    function updateAiBadges() {
+      const model = document.getElementById("aiModelInput").value;
+      const webOn = document.getElementById("checkWebSearch").checked;
+      document.getElementById("aiActiveModelBadge").textContent = `Model: ${model}`;
+      
+      const webBadge = document.getElementById("webSearchActiveBadge");
+      if (webOn) {
+        webBadge.classList.remove("hidden");
+      } else {
+        webBadge.classList.add("hidden");
+      }
     }
 
     function getAiSystemPrompt() {
       const p = document.getElementById("aiPersonaSelect").value;
-      if (p === "minimal") return "You are an expert coder. Respond ONLY with raw code snippets. No markdown fluff.";
-      if (p === "security") return "You are an ethical Vault Auditor. Scrutinize architecture inputs for security vulnerabilities.";
-      return "You are the GODx LuminaVista Supreme Architect. Provide expert, clear formatting, and elite architectural designs using Markdown.";
+      switch (p) {
+        case "architect": return "You are an Elite Systems Architect. Deliver robust, secure, production-grade code adhering to modern standards.";
+        case "fullstack": return "You are an Expert Full-Stack Developer. Write clean HTML, CSS, and JS components.";
+        case "security": return "You are a Zero-Trust Cybersecurity Auditor. Uncover vulnerabilities and mandate hardened security.";
+        case "researcher": return "You are a Web Researcher. Synthesize facts, structure key findings analytically, and cross-reference information.";
+        case "datascience": return "You are a Data Scientist. Master numerical analysis, algorithms, machine learning pipelines, and data structures.";
+        case "reverse": return "You are a Reverse Engineer and Exploit Analyst. Scrutinize assembly, memory allocation, and low-level protocols.";
+        case "minimal": return "You are a Minimalist Hacker. Output ONLY functional, raw code blocks. Do not include introductory or concluding conversational prose.";
+        case "writer": return "You are a Professional Copywriter. Create engaging, high-conversion text that captures audience attention.";
+        case "marketing": return "You are a Marketing Strategist. Formulate go-to-market plans, SEO optimizations, and brand positioning.";
+        case "historian": return "You are a Master Historian. Provide accurate, context-rich historical facts with nuanced perspectives.";
+        case "philosopher": return "You are a Philosopher. Analyze concepts critically, exploring ethics, logic, and existential theories.";
+        case "chef": return "You are a Master Chef. Provide detailed recipes, flavor profiles, and culinary techniques.";
+        case "fitness": return "You are a Fitness Coach. Provide structured workout plans and nutritional guidelines based on science.";
+        case "travel": return "You are a Travel Guide. Suggest itineraries, cultural insights, and logistical advice for travelers.";
+        case "legal": return "You are a Simulated Legal Advisor. Provide general legal frameworks and definitions. Always state you are not a licensed attorney.";
+        case "medical": return "You are a Simulated Medical Consultant. Provide biological and medical facts. Always state you are not a doctor and cannot diagnose.";
+        case "finance": return "You are a Financial Analyst. Evaluate market trends, investment strategies, and economic principles.";
+        case "storyteller": return "You are an Author and Storyteller. Craft vivid, imaginative narratives with strong character development.";
+        case "translator": return "You are a Universal Translator. accurately translate text while preserving cultural nuance and tone.";
+        case "math": return "You are a Mathematician. Solve complex equations step-by-step and explain theories clearly.";
+        case "coach": return "You are a Life Coach. Offer motivational, actionable advice to help users achieve their goals.";
+        case "custom": return document.getElementById("customPersonaPrompt").value.trim() || "You are an AI collaborator. Deliver clear, accurate, and structured insights.";
+        default: return "You are a helpful, normal AI assistant. Be friendly, accurate, and concise.";
+      }
     }
 
-    // ANTI-XSS DOM SANITIZER
+    // Markdown Parser with Artifact "Run in Sandbox" Detection
     function parseAiMarkdown(t) {
       if(!t) return "";
       let safeText = t.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
       return safeText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-                return `<div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner"><div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between uppercase"><span>${lang||'Code'}</span><button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer">Copy</button></div><pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${code}</code></pre></div>`;
-              })
-              .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
-              .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
-              .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
-              .replace(/\n/g, '<br/>');
+        const l = (lang || '').toLowerCase();
+        const isRunnable = l === 'html' || l === 'javascript' || l === 'js' || l === 'svg';
+        
+        // Escape code for onclick parameter
+        const cleanCode = code.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        
+        return `
+          <div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner">
+            <div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between items-center uppercase">
+              <span>${lang || 'Code'}</span>
+              <div class="flex items-center gap-2">
+                ${isRunnable ? `<button onclick="sendCodeToAiSandbox(\`${cleanCode}\`)" class="text-emerald-400 hover:text-emerald-300 font-bold normal-case cursor-pointer flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Run in Sandbox</button>` : ''}
+                <button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer lowercase">copy</button>
+              </div>
+            </div>
+            <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${code}</code></pre>
+          </div>
+        `;
+      })
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
+      .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
+      .replace(/\n/g, '<br/>');
     }
 
-    function copyCodeBlock(b) { navigator.clipboard.writeText(b.parentElement.nextElementSibling.innerText); const o=b.innerText; b.innerText="Copied!"; b.classList.add("text-emerald-400"); setTimeout(()=>{b.innerText=o; b.classList.remove("text-emerald-400");},2000); }
+    function copyCodeBlock(b) { 
+      navigator.clipboard.writeText(b.closest('.bg-surface-950').querySelector('code').innerText); 
+      const o = b.innerText; b.innerText = "copied!"; b.classList.add("text-emerald-400"); 
+      setTimeout(() => { b.innerText = o; b.classList.remove("text-emerald-400"); }, 2000); 
+    }
+
+    // In-Chat Sandbox Split Controls
+    function toggleAiSandboxSplit(forceOpen = null) {
+      const sandboxCol = document.getElementById("aiSandboxColumn");
+      
+      if (forceOpen !== null) {
+        isAiSandboxOpen = forceOpen;
+      } else {
+        isAiSandboxOpen = !isAiSandboxOpen;
+      }
+
+      if (isAiSandboxOpen) {
+        sandboxCol.classList.remove("hidden");
+        sandboxCol.classList.add("flex");
+      } else {
+        sandboxCol.classList.add("hidden");
+        sandboxCol.classList.remove("flex");
+      }
+      lucide.createIcons();
+    }
+
+    function sendCodeToAiSandbox(rawEscapedCode) {
+      // Decode HTML entities
+      const doc = new DOMParser().parseFromString(rawEscapedCode, 'text/html');
+      const decodedCode = doc.body.textContent || "";
+      
+      toggleAiSandboxSplit(true);
+      
+      let htmlToRender = decodedCode;
+      if (!decodedCode.includes("<html") && !decodedCode.includes("<body")) {
+        htmlToRender = `<!DOCTYPE html><html><head><style>body{font-family:sans-serif;padding:20px;color:#111;background:#fff;}</style></head><body>${decodedCode}</body></html>`;
+      }
+      
+      lastArtifactHtml = htmlToRender;
+      document.getElementById("aiSandboxIframe").srcdoc = htmlToRender;
+      document.getElementById("aiSandboxStatus").textContent = "Artifact Rendered";
+      showToast("Sandbox Executed", "Code dispatched to in-chat preview.");
+    }
+
+    function clearAiSandbox() {
+      document.getElementById("aiSandboxIframe").srcdoc = "";
+      document.getElementById("aiSandboxStatus").textContent = "Sandbox Cleared";
+    }
+
+    function openAiSandboxNewTab() {
+      if (!lastArtifactHtml) return showToast("Empty", "No sandbox code to open.");
+      const blob = new Blob([lastArtifactHtml], { type: "text/html" });
+      window.open(URL.createObjectURL(blob), "_blank");
+    }
 
     function renderAiChat() {
-      const box = document.getElementById("aiChatHistory"); box.innerHTML = "";
+      const box = document.getElementById("aiChatHistory"); 
+      box.innerHTML = "";
+      
       if (aiConversation.length === 0) {
-        box.innerHTML = `<div class="flex items-start gap-4 animate-fade-in"><div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400"><i data-lucide="bot" class="w-5 h-5"></i></div><div class="pt-1"><h4 class="font-bold text-white text-sm">Vercel Backend Ready</h4><p class="text-zinc-400 mt-1">Chat requests are securely routed to <code class="text-cyan-400">/api/chat</code>.</p></div></div>`;
-        lucide.createIcons(); return;
+        box.innerHTML = `
+          <div class="flex items-start gap-4 animate-fade-in">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400">
+              <i data-lucide="bot" class="w-5 h-5"></i>
+            </div>
+            <div class="pt-1">
+              <h4 class="font-bold text-white text-sm">LuminaVista Neural Core Ready</h4>
+              <p class="text-zinc-400 mt-1">Multi-Persona routing active. Live web search and in-chat sandbox ready.</p>
+            </div>
+          </div>
+        `;
+        lucide.createIcons(); 
+        return;
       }
+
       aiConversation.forEach(m => {
-        const u=m.role==="user", d=document.createElement("div"); d.className=`flex items-start gap-4 ${u?'flex-row-reverse':''}`;
-        d.innerHTML = `<div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${u?'bg-surface-800 border-white/10 text-white font-bold':'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'}">${u?'ME':'<i data-lucide="bot" class="w-5 h-5"></i>'}</div><div class="max-w-[85%] ${u?'text-right':'text-left'}"><div class="inline-block p-4 rounded-2xl ${u?'bg-surface-800 text-white border border-white/5 rounded-tr-sm':'text-zinc-300 rounded-tl-sm'}">${u?m.content:parseAiMarkdown(m.content)}</div></div>`;
+        const u = m.role === "user";
+        const d = document.createElement("div"); 
+        d.className = `flex items-start gap-4 ${u ? 'flex-row-reverse' : ''}`;
+        d.innerHTML = `
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${u ? 'bg-surface-800 border-white/10 text-white font-bold' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'}">
+            ${u ? 'ME' : '<i data-lucide="bot" class="w-5 h-5"></i>'}
+          </div>
+          <div class="max-w-[85%] ${u ? 'text-right' : 'text-left'}">
+            <div class="inline-block p-4 rounded-2xl ${u ? 'bg-surface-800 text-white border border-white/5 rounded-tr-sm' : 'text-zinc-300 rounded-tl-sm'}">
+              ${u ? m.content : parseAiMarkdown(m.content)}
+            </div>
+          </div>
+        `;
         box.appendChild(d);
       });
-      lucide.createIcons(); scrollToAiBottom();
+      lucide.createIcons(); 
+      scrollToAiBottom();
     }
 
-    function scrollToAiBottom() { const b=document.getElementById("aiChatHistory"); b.scrollTop=b.scrollHeight; }
-    function autoResizeTextarea(e) { e.style.height="auto"; e.style.height=(e.scrollHeight)+"px"; }
+    function scrollToAiBottom() { 
+      const b = document.getElementById("aiChatHistory"); 
+      b.scrollTop = b.scrollHeight; 
+    }
+    
+    function autoResizeTextarea(e) { 
+      e.style.height = "auto"; 
+      e.style.height = (e.scrollHeight) + "px"; 
+    }
 
     async function handleSendAiPrompt(e) {
       if (e) e.preventDefault();
-      const inp = document.getElementById("aiPromptTextarea"), prompt = inp.value.trim(), btn = document.getElementById("btnAiSend");
+      const inp = document.getElementById("aiPromptTextarea");
+      const prompt = inp.value.trim();
+      const btn = document.getElementById("btnAiSend");
       if (!prompt) return;
 
       aiConversation.push({ role: "user", content: prompt });
-      inp.value = ""; inp.style.height = "auto"; renderAiChat();
-      btn.disabled = true; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>'; lucide.createIcons();
+      inp.value = ""; 
+      inp.style.height = "auto"; 
+      renderAiChat();
+      
+      btn.disabled = true; 
+      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>'; 
+      lucide.createIcons();
 
-      const typingDiv = document.createElement("div"); typingDiv.id = "aiTypingIndicator"; typingDiv.className = "flex items-start gap-4";
-      typingDiv.innerHTML = `<div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400"><i data-lucide="bot" class="w-5 h-5"></i></div><div class="pt-3 flex gap-1"><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span></div>`;
-      document.getElementById("aiChatHistory").appendChild(typingDiv); scrollToAiBottom(); lucide.createIcons();
+      const typingDiv = document.createElement("div"); 
+      typingDiv.id = "aiTypingIndicator"; 
+      typingDiv.className = "flex items-start gap-4";
+      typingDiv.innerHTML = `
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400">
+          <i data-lucide="bot" class="w-5 h-5"></i>
+        </div>
+        <div class="pt-3 flex gap-1">
+          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></span>
+          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+          <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+        </div>
+      `;
+      document.getElementById("aiChatHistory").appendChild(typingDiv); 
+      scrollToAiBottom(); 
+      lucide.createIcons();
 
       try {
-        const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
-        const reqHeaders = { "Content-Type": "application/json" };
-        if (vercelAuth) {
-          reqHeaders["X-Vercel-Auth"] = vercelAuth;
-        }
+        const isWebSearchOn = document.getElementById("checkWebSearch").checked;
 
         const res = await fetch("/api/chat", {
-          method: "POST", headers: reqHeaders,
+          method: "POST", 
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
+          },
           body: JSON.stringify({ 
-            prompt: prompt, 
+            prompt, 
             requestedModel: document.getElementById("aiModelInput").value,
+            webSearch: isWebSearchOn,
             messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation] 
           })
         });
@@ -655,32 +921,38 @@
         const data = await res.json();
         
         if (res.ok) {
-          const txt = data.choices?.[0]?.message?.content || data.message?.content || data.response || "No valid response.";
+          const txt = data.choices?.[0]?.message?.content || data.message?.content || data.response || "Execution complete.";
           aiConversation.push({ role: "assistant", content: txt });
         } else {
           aiConversation.push({ role: "assistant", content: `**[Vercel Backend Error]:** ${data.error || res.statusText}\n${data.details || ""}` });
         }
       } catch (err) {
         document.getElementById("aiTypingIndicator")?.remove();
-        if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-          aiConversation.push({ 
-            role: "assistant", 
-            content: `**[Connection Exception]: Failed to fetch.**\n\nYour browser blocked the request or the server is unreachable. If you are running locally without Vercel CLI, \`/api/chat\` won't exist.\n\n**To fix this:**\n1. Ensure your code is fully deployed to Vercel.\n2. Ensure \`OLLAMA_ENDPOINT\` and \`OLLAMA_API_KEY\` are correctly set in your Vercel Environment Variables.` 
-          });
-        } else {
-          aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
-        }
+        aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
       } finally {
-        btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>'; lucide.createIcons();
-        localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); renderAiChat();
+        btn.disabled = false; 
+        btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>'; 
+        lucide.createIcons();
+        localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); 
+        renderAiChat();
       }
     }
 
-    function clearAiChat() { aiConversation = []; localStorage.removeItem("lumina_ai_history"); renderAiChat(); showToast("Cleared", "Conversation memory reset."); }
+    function clearAiChat() { 
+      aiConversation = []; 
+      localStorage.removeItem("lumina_ai_history"); 
+      renderAiChat(); 
+      showToast("Cleared", "Conversation memory reset."); 
+    }
+    
     function downloadAiChat() {
-      if(aiConversation.length===0) return showToast("Empty", "No chat to export.");
-      let txt = "=== GODx Neural Thread ===\n\n"; aiConversation.forEach(m => txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`);
-      const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain"})); a.download=`Neural_Thread_${Date.now()}.txt`; a.click();
+      if(aiConversation.length === 0) return showToast("Empty", "No chat to export.");
+      let txt = "=== GODx Neural Thread ===\n\n"; 
+      aiConversation.forEach(m => txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`);
+      const a = document.createElement("a"); 
+      a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain" })); 
+      a.download = `Neural_Thread_${Date.now()}.txt`; 
+      a.click();
     }
 
     // =========================================================================
@@ -724,13 +996,12 @@
       lucide.createIcons();
 
       try {
-        const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
-        const reqHeaders = { "Content-Type": "application/json" };
-        if (vercelAuth) reqHeaders["X-Vercel-Auth"] = vercelAuth;
-
         const res = await fetch("/api/compile", {
           method: "POST",
-          headers: reqHeaders,
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
+          },
           body: JSON.stringify({ language: currentSandboxLang, code: c })
         });
         const data = await res.json();
@@ -792,15 +1063,16 @@
             res.className="text-purple-300"; res.innerHTML="<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Querying Vercel Backend...";
             scr.appendChild(res); scr.scrollTop=scr.scrollHeight; lucide.createIcons();
             try {
-              const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
-              const reqHeaders = { "Content-Type": "application/json" };
-              if (vercelAuth) reqHeaders["X-Vercel-Auth"] = vercelAuth;
-
               const fetchRes = await fetch("/api/chat", {
-                method: "POST", headers: reqHeaders,
+                method: "POST", 
+                headers: { 
+                  "Content-Type": "application/json",
+                  "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
+                },
                 body: JSON.stringify({ 
                   prompt: arg, 
                   requestedModel: document.getElementById("aiModelInput") ? document.getElementById("aiModelInput").value : "gpt-oss:20b",
+                  webSearch: document.getElementById("checkWebSearch").checked,
                   messages: [{ role: "system", content: "You are a helpful CLI AI. Keep responses brief." }] 
                 })
               });
@@ -829,7 +1101,7 @@
     function closeCommandPalette() { document.getElementById("cmdModal").classList.add("opacity-0"); setTimeout(()=>document.getElementById("cmdModal").style.display="none", 200); }
     window.addEventListener("keydown", e => { if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault(); openCommandPalette();} if(e.key==="Escape"){closeCommandPalette(); document.getElementById("sourceModal").style.display="none";} });
     
-    function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ if(cv.parentElement.clientWidth===0)return; cv.width=cv.parentElement.clientWidth; cv.height=224; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=2.5; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
+    function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ if(cv.parentElement.clientWidth===0)return; cv.width=cv.parentElement.clientWidth; cv.height=288; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=2.5; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
     
     function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-3 py-1.5 rounded-lg border cursor-pointer ${n.id===activeNoteId?'bg-cyan-500/20 border-cyan-500 text-cyan-300':'bg-surface-900 border-white/10 text-zinc-400'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
     function selectNote(id) { activeNoteId=id; renderNoteTabs(); loadActiveNoteContent(); }
