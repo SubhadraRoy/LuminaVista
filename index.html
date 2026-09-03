@@ -2,47 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>LuminaVista OS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuminaVista Security Node</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    body { background-color: #030712; color: white; }
-    .glass-panel { background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); }
-    .godx-input { background-color: #0f172a; color: white; border: 1px solid rgba(255,255,255,0.18); outline: none; border-radius: 12px; }
-    .godx-input:focus { border-color: #00f2fe; box-shadow: 0 0 0 3px rgba(0,242,254,0.25); }
-    .btn { background: linear-gradient(135deg, #00f2fe, #00c6ff); }
+    body { background-color: #030712; color: white; overflow: hidden; font-family: monospace; }
+    .glass { background: rgba(11, 15, 25, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
+    input { background: #0f172a; border: 1px solid rgba(255,255,255,0.2); outline: none; transition: 0.3s; }
+    input:focus { border-color: #00f2fe; box-shadow: 0 0 10px rgba(0,242,254,0.3); }
+    .btn { background: linear-gradient(135deg, #00f2fe, #00c6ff); color: black; font-weight: bold; cursor: pointer; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center relative overflow-hidden">
-  <canvas id="ambient" class="absolute inset-0 pointer-events-none"></canvas>
-  <div class="relative z-10 w-full max-w-md px-4 text-center">
-    <div class="inline-block px-3 py-1 mb-6 rounded-full border border-white/10 bg-black/50 text-xs text-zinc-400">Upstash Secured Gateway</div>
-    <form class="glass-panel p-8 rounded-3xl" onsubmit="login(event)">
-      <h3 class="font-bold text-lg mb-6">Enter Master Key</h3>
-      <input type="password" id="pass" class="godx-input w-full px-4 py-3 text-sm mb-4" placeholder="••••••••" required>
-      <div id="err" class="text-rose-400 text-xs hidden mb-4">Access Denied</div>
-      <button id="btn" class="btn text-black font-bold w-full py-3 rounded-xl">Unlock Dashboard</button>
+<body class="flex items-center justify-center min-h-screen relative">
+  <div class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none"></div>
+
+  <div class="w-full max-w-sm px-6 relative z-10 text-center">
+    <div class="inline-block px-3 py-1 mb-6 rounded-full border border-white/10 bg-black text-xs text-zinc-400">Upstash Vercel Backend Link: Active</div>
+    
+    <form class="glass p-8" onsubmit="submitForm(event)">
+      <h3 class="text-xl mb-2 font-bold font-sans">System Gateway</h3>
+      <p class="text-xs text-zinc-400 mb-6 font-sans">Cookie-based validation.</p>
+      
+      <input type="password" id="pass" class="w-full px-4 py-3 text-sm mb-4 rounded-xl text-center" placeholder="Master Key..." required>
+      <div id="err" class="text-rose-400 text-xs hidden mb-4 bg-rose-500/10 p-2 rounded border border-rose-500/20">Access Denied</div>
+      
+      <button id="btn" type="submit" class="btn w-full py-3 rounded-xl font-sans transition-all active:scale-95">Unlock Environment</button>
     </form>
   </div>
-  <script>
-    lucide.createIcons();
-    // Simple canvas particles
-    const ctx = document.getElementById('ambient').getContext('2d');
-    let p=[], w, h;
-    function resize(){ w=ctx.canvas.width=window.innerWidth; h=ctx.canvas.height=window.innerHeight; }
-    window.onresize=resize; resize();
-    for(let i=0;i<30;i++) p.push({x:Math.random()*w, y:Math.random()*h, v:(Math.random()-.5)});
-    function draw(){
-      ctx.clearRect(0,0,w,h);
-      p.forEach(i=>{ i.x+=i.v; i.y+=i.v; if(i.x>w)i.x=0; if(i.y>h)i.y=0; ctx.beginPath(); ctx.arc(i.x,i.y,1,0,6); ctx.fillStyle="#00f2fe"; ctx.fill(); });
-      requestAnimationFrame(draw);
-    } draw();
 
-    async function login(e) {
-      e.preventDefault(); document.getElementById('btn').textContent = "Verifying..."; document.getElementById('err').classList.add("hidden");
-      const res = await fetch("/api/auth", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ password: document.getElementById('pass').value }) });
-      if(res.ok) window.location.href = "/dashboard.html";
-      else { document.getElementById('err').classList.remove("hidden"); document.getElementById('btn').textContent = "Unlock Dashboard"; document.getElementById('pass').value=""; }
+  <script>
+    async function submitForm(e) {
+      e.preventDefault();
+      const b = document.getElementById('btn'), err = document.getElementById('err'), p = document.getElementById('pass');
+      b.textContent = "Verifying Request..."; b.disabled = true; err.classList.add("hidden");
+
+      try {
+        const res = await fetch("/api/auth", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ password: p.value }) });
+        const d = await res.json();
+        
+        if (res.ok && d.success) {
+          b.textContent = "Granted. Booting workspace...";
+          setTimeout(() => window.location.href = "/dashboard.html", 500);
+        } else {
+          err.textContent = d.error || "Credentials invalid.";
+          err.classList.remove("hidden"); b.disabled = false; b.textContent = "Unlock Environment"; p.value = ""; p.focus();
+        }
+      } catch (ex) {
+        err.textContent = "Network Error: Could not reach Vercel API.";
+        err.classList.remove("hidden"); b.disabled = false; b.textContent = "Unlock Environment";
+      }
     }
   </script>
 </body>
