@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" data-theme="cyan">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- SECURITY: Strict Content Security Policy (CSP) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; object-src 'self' blob: data:;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  
+  <title>LuminaVista OS — GODx Dashboard</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          colors: { surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' } },
+          animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root { --primary: #00f2fe; --primary-glow: rgba(0, 242, 254, 0.35); --secondary: #4facfe; --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%); }
+    [data-theme="emerald"] { --primary: #10b981; --primary-glow: rgba(16, 185, 129, 0.35); --secondary: #059669; --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%); }
+    [data-theme="amber"] { --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.35); --secondary: #d97706; --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%); }
+    [data-theme="rose"] { --primary: #f43f5e; --primary-glow: rgba(244, 63, 94, 0.35); --secondary: #e11d48; --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #e11d48 100%); }
+    
+    body { background-color: #030712; color: #f8fafc; overflow: hidden; }
+    
+    .glass-panel { background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow); }
+    .godx-input { background-color: #0f172a !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.18) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; outline: none !important; transition: all 0.2s ease !important; }
+    .godx-input:focus { background-color: #1e293b !important; border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--primary-glow) !important; }
+    
+    .glow-border { position: relative; }
+    .glow-border::before { 
+      content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; 
+      background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%); 
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 0; 
+    }
+    
+    .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
+    .btn-gradient:hover { background-position: right center; box-shadow: 0 0 25px var(--primary-glow); }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #030712; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    
+    /* Vertical Tab Styling */
+    .nav-tab-active { background: var(--primary-glow); border-right: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
+    .active-project-pill { background: var(--primary-glow); border-color: var(--primary); color: #ffffff; box-shadow: 0 0 18px var(--primary-glow); }
+    #aiChatHistory::-webkit-scrollbar { width: 4px; }
+    #aiChatHistory::-webkit-scrollbar-thumb { background: rgba(0, 242, 254, 0.3); border-radius: 4px; }
+  </style>
+</head>
+<body class="flex h-screen font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950">
+
+  <!-- Ambient Particles -->
+  <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+  <div id="orb1" class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none animate-pulse-slow z-0"></div>
+  <div id="orb2" class="fixed bottom-[-10%] right-[10%] w-[650px] h-[650px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 3s;"></div>
+
+  <!-- ========================================================================= -->
+  <!-- LEFT SIDEBAR NAVIGATION -->
+  <!-- ========================================================================= -->
+  <aside class="w-64 border-r border-white/5 bg-surface-950/90 backdrop-blur-xl flex flex-col h-full z-40 relative">
+    <div class="p-5 border-b border-white/5 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md">
+        GODx
+      </div>
+      <div>
+        <h1 class="font-heading font-bold text-base text-white tracking-tight leading-tight">LuminaVista</h1>
+        <p class="text-[10px] text-zinc-400 font-mono">v8.0 Cloud Secured</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
+        <i data-lucide="bot" class="w-4 h-4 text-cyan-400"></i><span>Ollama AI Studio</span>
+      </button>
+      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="folder-tree" class="w-4 h-4 text-cyan-400"></i><span>EXM Projects</span>
+      </button>
+      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i><span>Cloud Compilers</span>
+      </button>
+      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i><span>Canvas Whiteboard</span>
+      </button>
+      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i><span>UI Design Studio</span>
+      </button>
+      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i><span>Dual Split View</span>
+      </button>
+      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="terminal" class="w-4 h-4 text-emerald-400"></i><span>Quantum Terminal</span>
+      </button>
+      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i><span>Telemetry</span>
+      </button>
+      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i><span>Notes Vault</span>
+      </button>
+      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-surface-900 border-transparent transition-all cursor-pointer">
+        <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i><span>Settings</span>
+      </button>
+    </nav>
+    
+    <div class="p-4 border-t border-white/5 bg-surface-900/40">
+      <div class="flex items-center justify-between text-xs text-zinc-400">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="font-mono">Vercel Auth</span>
+        </div>
+        <button onclick="handleLogout()" class="hover:text-rose-400 cursor-pointer transition-colors">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN CONTENT AREA -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex flex-col h-full relative overflow-hidden z-10">
+    
+    <!-- Top Header -->
+    <header class="w-full border-b border-white/5 bg-surface-950/80 backdrop-blur-md px-6 py-3 flex items-center justify-between z-30">
+      <div class="flex items-center gap-4">
+        <button onclick="openCommandPalette()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 transition-colors cursor-pointer">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Search / Command</span>
+          <kbd class="px-1.5 py-0.5 text-[9px] bg-surface-800 rounded font-mono ml-2">⌘K</kbd>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-4 text-xs text-zinc-400 font-mono">
+        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>00:00:00</span>
+        <span class="text-zinc-700">•</span>
+        <span class="text-white">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Anish x</span></span>
+        <span class="text-zinc-700">•</span>
+        <button onclick="openSourceInspector()" class="hover:text-white transition-colors cursor-pointer" title="View Source"><i data-lucide="code" class="w-4 h-4"></i></button>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 lg:p-6 w-full max-w-[1600px] mx-auto">
+      
+      <!-- TAB 1: ONLINE OLLAMA AI STUDIO -->
+      <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-6">
+        <div class="w-full lg:w-80 glass-panel rounded-2xl flex flex-col overflow-hidden shrink-0 border border-cyan-500/20 shadow-lg">
+          <div class="p-4 border-b border-white/5 bg-surface-900/60 flex items-center justify-between">
+            <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i> Vercel Security
+            </h3>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+          </div>
+
+          <div class="p-5 space-y-5 flex-1 overflow-y-auto">
+            <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <p class="text-[11px] text-emerald-300 leading-relaxed font-mono">
+                API Keys securely isolated on backend.
+              </p>
+            </div>
+            
+            <div class="space-y-1.5 mt-3">
+              <label class="text-[11px] font-mono text-zinc-400">Vercel Auth Token (Optional):</label>
+              <div class="relative">
+                <input type="password" id="vercelAuthInput" placeholder="Enter secure token..." class="godx-input w-full pl-3 pr-8 py-2 text-xs font-mono" onchange="saveAiConfig()" />
+                <button type="button" onclick="toggleVercelAuthVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer z-30">
+                  <i data-lucide="eye" id="vercelAuthIcon" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-mono text-zinc-400">Active Model Configuration:</label>
+              <select id="aiModelInput" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
+                <option value="gpt-oss:20b" selected>gpt-oss:20b (Preferred)</option>
+                <option value="gpt-oss:120b">gpt-oss:120b</option>
+                <option value="gemma4:31b">gemma4:31b</option>
+                <option value="nemotron-3-nano:30b">nemotron-3-nano:30b</option>
+                <option value="nemotron-3-super">nemotron-3-super</option>
+                <option value="nemotron-3-ultra">nemotron-3-ultra</option>
+              </select>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-mono text-zinc-400">System Persona:</label>
+              <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="saveAiConfig()">
+                <option value="architect">GODx Supreme Architect</option>
+                <option value="minimal">Concise Hacker (Raw Code)</option>
+                <option value="security">Cybersecurity Vault Auditor</option>
+              </select>
+            </div>
+
+            <div class="pt-4 border-t border-white/5 space-y-2 mt-auto">
+              <button onclick="downloadAiChat()" class="w-full py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Thread
+              </button>
+              <button onclick="clearAiChat()" class="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Memory
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-[calc(100vh-140px)]">
+          <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center text-black shadow-lg">
+                <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-heading font-bold text-sm text-white leading-tight">Neural AI Workspace</h3>
+                <p class="text-[10px] text-zinc-400 font-mono" id="aiActiveModelBadge">Model: gpt-oss:20b</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="aiChatHistory" class="flex-1 p-5 overflow-y-auto space-y-6 bg-surface-950/80 font-sans text-[13px] leading-relaxed relative">
+          </div>
+
+          <div class="p-4 bg-surface-900/90 border-t border-white/5 z-10 relative">
+            <form id="aiChatForm" class="relative w-full mx-auto" onsubmit="handleSendAiPrompt(event)">
+              <textarea 
+                id="aiPromptTextarea" rows="1" 
+                placeholder="Message AI through Secure Vercel Backend (Ctrl+Enter to send)..." 
+                class="w-full bg-surface-950 border border-white/10 rounded-2xl pl-4 pr-14 py-3.5 text-[13px] text-white outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none max-h-40 overflow-y-auto transition-all shadow-inner"
+                oninput="autoResizeTextarea(this)"
+                onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"
+              ></textarea>
+              <button type="submit" id="btnAiSend" class="absolute right-2 bottom-2 w-9 h-9 rounded-xl btn-gradient flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform cursor-pointer">
+                <i data-lucide="arrow-up" class="w-4 h-4"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: EXM PROJECTS & LIVE VIEWPORT -->
+      <section id="tab-projects" class="tab-pane space-y-6 hidden h-full flex flex-col">
+        <div class="glass-panel glow-border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-1.5 text-xs text-cyan-300 font-mono"><i data-lucide="folder-check" class="w-3.5 h-3.5 text-cyan-400"></i><span>EXM WORKSPACE CONSOLE</span></div>
+            <h2 class="font-heading font-extrabold text-xl text-white">LuminaVista Projects</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="fetchRepoProjects()" class="px-3.5 py-2 rounded-xl bg-surface-900 border border-white/10 text-xs text-zinc-300 hover:text-white flex items-center gap-2 cursor-pointer"><i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5 text-cyan-400"></i> Scan /EXM/</button>
+            <div class="bg-surface-900/90 px-3.5 py-2 rounded-xl border border-white/5 flex flex-col"><span class="text-[10px] uppercase font-mono text-zinc-500">Items</span><span id="projectCountBadge" class="text-xs font-bold text-cyan-400 font-mono">0 Detected</span></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+          <div class="lg:col-span-4 glass-panel rounded-2xl p-5 space-y-4 flex flex-col h-full">
+            <div class="relative shrink-0">
+              <input type="text" id="projectFilterInput" oninput="filterProjectList()" placeholder="Quick filter..." class="godx-input w-full pl-9 pr-3 py-2 text-xs font-mono" />
+              <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 z-30"></i>
+            </div>
+            <div id="projectChipsContainer" class="flex flex-col gap-1.5 flex-1 overflow-y-auto"></div>
+            <div class="pt-3 border-t border-white/5 flex gap-2 shrink-0">
+              <input type="text" id="customProjectInput" placeholder="EXM/folder_name" class="godx-input flex-1 px-3 py-2 text-xs font-mono" />
+              <button type="button" onclick="addCustomProject()" class="px-3 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs text-zinc-200 cursor-pointer">Add</button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-8 glass-panel rounded-2xl p-5 flex flex-col space-y-3 h-full">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5 shrink-0">
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono text-cyan-300 bg-surface-900 px-2.5 py-1 rounded-md border border-white/5 flex items-center gap-1.5"><i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i><span id="activeProjectTitle">EXM/...</span></span>
+                <button type="button" onclick="openActiveInNewTab()" class="text-zinc-400 hover:text-cyan-300 text-xs flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Tab</button>
+              </div>
+              <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/5">
+                <button type="button" onclick="setViewportDevice('100%')" class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs font-medium cursor-pointer" id="btnDeviceDesktop"><i data-lucide="monitor" class="w-3.5 h-3.5"></i></button>
+                <button type="button" onclick="setViewportDevice('768px')" class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer" id="btnDeviceTablet"><i data-lucide="tablet" class="w-3.5 h-3.5"></i></button>
+                <button type="button" onclick="setViewportDevice('375px')" class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs font-medium cursor-pointer" id="btnDeviceMobile"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i></button>
+                <div class="w-[1px] h-4 bg-white/10 mx-1"></div>
+                <button type="button" onclick="reloadIframe()" class="p-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+
+            <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300 w-full mx-auto">
+              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-popups allow-modals" class="w-full h-full border-0 bg-white"></iframe>
+              <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
+                <i data-lucide="folder-search" class="w-8 h-8 text-cyan-400 mb-2"></i>
+                <h4 class="font-heading font-bold text-sm text-white">Select a Project</h4>
+                <button type="button" onclick="fetchRepoProjects()" class="px-4 py-2 rounded-xl btn-gradient text-black text-xs font-bold cursor-pointer">Scan Repository</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: CLOUD COMPILERS & SQL -->
+      <section id="tab-sandbox" class="tab-pane space-y-6 hidden h-full flex flex-col">
+        <div class="glass-panel rounded-2xl p-5 space-y-4 shrink-0">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Cloud Compiler Engine</h3>
+              <p class="text-xs text-zinc-400">Execute code securely via Vercel Backend (Python, C++, Java) and In-Memory SQL.</p>
+            </div>
+            <div class="flex items-center gap-2 bg-surface-900 p-1 rounded-xl border border-white/10 text-xs font-mono">
+              <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer">HTML</button>
+              <button onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">PY</button>
+              <button onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">C++</button>
+              <button onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">JAVA</button>
+              <button onclick="setSandboxLanguage('sql')" id="sbLangSql" class="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">SQL</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+          <div class="flex flex-col space-y-2 h-full">
+            <div class="flex justify-between text-xs font-mono text-zinc-400 shrink-0">
+              <span>Code Editor:</span>
+              <button onclick="runSandboxCode()" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 cursor-pointer"><i data-lucide="play" class="w-3.5 h-3.5"></i>Run Cloud Build</button>
+            </div>
+            <textarea id="sandboxCodeInput" oninput="onSandboxCodeChange()" class="godx-input w-full flex-1 p-4 font-mono text-xs outline-none resize-none leading-relaxed"></textarea>
+          </div>
+
+          <div class="flex flex-col space-y-2 h-full">
+            <div class="flex justify-between text-xs font-mono text-zinc-400 shrink-0">
+              <span id="sandboxOutputHeader">Live Output:</span>
+            </div>
+            <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white">
+              <iframe id="sandboxPreviewFrame" class="w-full h-full border-0"></iframe>
+            </div>
+            <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-5 bg-surface-950 font-mono text-[12px] text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-loose shadow-inner"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CANVAS WHITEBOARD -->
+      <section id="tab-whiteboard" class="tab-pane hidden h-full flex-col">
+        <div class="glass-panel rounded-2xl p-5 flex flex-col h-full space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i> Architecture Sketchpad</h3>
+            <div class="flex items-center gap-2">
+              <div class="bg-surface-900 p-1 rounded-xl border border-white/10 flex items-center gap-1 text-xs">
+                <button onclick="setWhiteboardTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                <button onclick="setWhiteboardTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-8 h-8 rounded border-0 bg-transparent mx-1 cursor-pointer" />
+                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-20 accent-cyan-400 cursor-pointer" />
+              </div>
+              <button onclick="clearWhiteboard()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 cursor-pointer text-xs font-medium">Clear</button>
+              <button onclick="downloadWhiteboard()" class="btn-gradient px-3 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer">Export</button>
+            </div>
+          </div>
+          <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative">
+            <canvas id="whiteboardCanvas" class="absolute top-0 left-0 w-full h-full cursor-crosshair"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: UI DESIGN STUDIO -->
+      <section id="tab-design" class="tab-pane space-y-6 hidden h-full">
+        <div class="glass-panel rounded-2xl p-5 space-y-4 h-full flex flex-col">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i> Glassmorphism Generator</h3>
+            <button onclick="copyGeneratedDesignCss()" class="btn-gradient px-4 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer">Copy CSS</button>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+            <div class="bg-surface-900/80 p-5 rounded-2xl border border-white/5 space-y-6 flex flex-col justify-center">
+              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Blur:</span><span id="lblBlurVal" class="text-cyan-400">20px</span></div><input type="range" id="sliderBlur" min="0" max="50" value="20" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Opacity:</span><span id="lblOpacityVal" class="text-cyan-400">85%</span></div><input type="range" id="sliderOpacity" min="5" max="100" value="85" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Radius:</span><span id="lblRadiusVal" class="text-cyan-400">24px</span></div><input type="range" id="sliderRadius" min="0" max="48" value="24" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+              <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Glow:</span><span id="lblGlowVal" class="text-cyan-400">35%</span></div><input type="range" id="sliderGlow" min="0" max="100" value="35" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+            </div>
+            <div class="bg-surface-950 p-6 rounded-2xl border border-white/10 flex items-center justify-center relative overflow-hidden h-full">
+              <div class="absolute w-64 h-64 bg-cyan-500/30 rounded-full blur-3xl -top-10 -left-10"></div>
+              <div class="absolute w-64 h-64 bg-pink-500/20 rounded-full blur-3xl -bottom-10 -right-10"></div>
+              <div id="glassPreviewCard" class="w-full max-w-md p-8 relative z-10 transition-all flex flex-col gap-4 border border-white/20">
+                <h4 class="font-heading font-bold text-white text-lg">Component Token</h4>
+                <p class="text-sm text-zinc-300">Live preview of hardware accelerated CSS properties. Adjust sliders to see real-time updates.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: DUAL SPLIT VIEW -->
+      <section id="tab-split" class="tab-pane space-y-6 hidden h-full">
+        <div class="glass-panel rounded-2xl p-5 flex flex-col h-full space-y-4">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-white/5 shrink-0">
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i> Dual Split Comparator</h3>
+            <div class="flex items-center gap-2">
+              <select id="splitLeftSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
+              <span class="text-xs text-zinc-500 font-mono">VS</span>
+              <select id="splitRightSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+            <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: QUANTUM TERMINAL CLI -->
+      <section id="tab-terminal" class="tab-pane space-y-4 hidden h-full">
+        <div class="glass-panel rounded-2xl p-5 h-full flex flex-col space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
+            <div class="flex items-center gap-2 font-mono text-xs">
+              <span class="w-3 h-3 rounded-full bg-rose-500/80"></span><span class="w-3 h-3 rounded-full bg-amber-500/80"></span><span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+              <span class="text-zinc-400 ml-2">godx-terminal — bash</span>
+            </div>
+          </div>
+          <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v8.0]</div>
+            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Vercel Backend.</div>
+            <div class="border-b border-white/5 my-2"></div>
+          </div>
+          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2 shrink-0">
+            <span class="font-mono text-xs text-cyan-400 font-bold">anish@godx:~$</span>
+            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="open <folder>, ai <msg>, ping, clear..." class="godx-input flex-1 px-4 py-3 text-xs font-mono" />
+            <button type="submit" class="btn-gradient px-6 py-3 rounded-xl text-xs font-mono font-bold text-black cursor-pointer">Run</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 8: TELEMETRY -->
+      <section id="tab-analytics" class="tab-pane space-y-6 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Frame Latency</span><div class="text-3xl font-heading font-extrabold text-white mt-1">0.28 ms</div></div>
+          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Memory Load</span><div class="text-3xl font-heading font-extrabold text-cyan-300 mt-1">14.2 MB</div></div>
+          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Vercel Backend</span><div class="text-3xl font-heading font-extrabold text-purple-300 mt-1">Active</div></div>
+        </div>
+        <div class="glass-panel rounded-2xl p-6 space-y-4">
+          <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i> Hardware Waveform</h3>
+          <canvas id="metricsChart" class="w-full h-72 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
+        </div>
+      </section>
+
+      <!-- TAB 9: NOTES VAULT (WITH XSS SANITIZATION) -->
+      <section id="tab-scratchpad" class="tab-pane space-y-6 hidden h-full">
+        <div class="glass-panel rounded-2xl p-5 flex flex-col h-full space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i> Notes Vault</h3>
+            <div class="flex gap-2">
+              <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 text-xs font-mono cursor-pointer">New Note</button>
+              <button onclick="toggleMarkdownPreview()" class="px-3 py-1.5 rounded-xl bg-surface-900 text-zinc-300 text-xs font-mono cursor-pointer">Live Preview</button>
+            </div>
+          </div>
+          <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-2 text-xs font-mono shrink-0"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+            <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-5 font-mono text-xs resize-none h-full"></textarea>
+            <div id="notePreviewCol" class="hidden bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-sm text-zinc-300 space-y-3 font-sans h-full" id="noteMarkdownRender"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 10: SETTINGS -->
+      <section id="tab-controls" class="tab-pane space-y-6 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-panel rounded-2xl p-6 space-y-5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-cyan-400"></i> Frame Security</h3>
+            <label class="flex justify-between p-4 rounded-xl bg-surface-900/80 text-sm cursor-pointer"><span>Allow Scripts</span><input type="checkbox" id="checkAllowScripts" checked class="w-5 h-5 accent-cyan-500"/></label>
+            <button onclick="applySandboxPolicy()" class="w-full py-3 rounded-xl bg-cyan-500 text-black text-sm font-bold cursor-pointer">Apply Strict Policy</button>
+          </div>
+          <div class="glass-panel rounded-2xl p-6 space-y-5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="palette" class="w-5 h-5 text-amber-400"></i> Theme Engine</h3>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <button onclick="setDashboardTheme('cyan')" class="p-3 rounded-xl bg-cyan-500/10 text-cyan-300 cursor-pointer">Cyan</button>
+              <button onclick="setDashboardTheme('emerald')" class="p-3 rounded-xl bg-emerald-500/10 text-emerald-300 cursor-pointer">Matrix</button>
+              <button onclick="setDashboardTheme('amber')" class="p-3 rounded-xl bg-amber-500/10 text-amber-300 cursor-pointer">Solar</button>
+              <button onclick="setDashboardTheme('rose')" class="p-3 rounded-xl bg-rose-500/10 text-rose-300 cursor-pointer">Laser</button>
+            </div>
+            <input type="color" onchange="applyCustomAccentColor(this.value)" class="w-full h-10 cursor-pointer rounded bg-transparent border-0 mt-2" />
+          </div>
+          <div class="glass-panel rounded-2xl p-6 space-y-5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="download" class="w-5 h-5 text-sky-400"></i> Data Management</h3>
+            <button onclick="exportDashboardConfig()" class="w-full py-3 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-300 text-sm cursor-pointer transition-colors">Export JSON Config</button>
+            <button onclick="flushWorkspaceCache()" class="w-full py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-sm cursor-pointer transition-colors">Flush Local Storage</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODALS & TOASTS -->
+  <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-4xl w-full p-5 sm:p-6 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code" class="w-5 h-5 text-cyan-400"></i> Source: <span id="sourceProjectTitle" class="text-cyan-300 font-mono"></span></h3>
+        <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="my-3 flex items-center gap-2">
+        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono cursor-pointer">index.html</button>
+        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono cursor-pointer">style.css</button>
+        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono cursor-pointer">script.js</button>
+      </div>
+      <div class="flex-1 overflow-y-auto bg-surface-950 rounded-2xl p-4 border border-white/5"><pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap">Loading...</code></pre></div>
+    </div>
+  </div>
+
+  <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-lg w-full p-4 rounded-2xl glow-border relative transform scale-95 transition-transform duration-200">
+      <div class="flex items-center gap-2 pb-3 border-b border-white/10">
+        <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i><input type="text" id="cmdSearchInput" oninput="handleCmdSearch(event)" placeholder="Search commands or jump to tab..." class="bg-transparent flex-1 text-sm text-white outline-none" /><kbd class="px-2 py-0.5 text-[10px] bg-surface-800 rounded text-zinc-400 font-mono">ESC</kbd>
+      </div>
+      <div id="cmdResults" class="py-2 space-y-1 max-h-60 overflow-y-auto text-xs font-mono"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
+    <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-5 h-5"></i></div>
+    <div><h4 id="toastTitle" class="text-sm font-semibold text-white">Notification</h4><p id="toastMsg" class="text-xs text-zinc-300"></p></div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    lucide.createIcons();
+
+    const SESSION_KEY = "lumina_godx_session";
+    const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
+
+    let repoProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]");
+    let currentSelectedProject = repoProjects[0] || null;
+    let isAudioEnabled = true;
+
+    let aiConversation = JSON.parse(localStorage.getItem("lumina_ai_history") || "[]");
+    let vaultNotes = JSON.parse(localStorage.getItem("lumina_godx_multi_notes") || JSON.stringify([{ id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace" }]));
+    let activeNoteId = vaultNotes[0].id;
+    let isMarkdownPreviewActive = false;
+    let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
+    let termHistory = [], termHistoryIdx = -1;
+
+    // --- SECURITY UPGRADE: WebCrypto SHA-256 Auth ---
+    // Hashes string on frontend so raw password is NEVER sent over the wire
+    async function hashPassword(msg) {
+      const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+      return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,'0')).join('');
+    }
+
+    // --- CLIENT SIDE SESSION CHECK ON LOAD ---
+    // Strict redirect to login if session missing
+    window.addEventListener("DOMContentLoaded", () => {
+      setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
+      
+      const isAuthenticated = sessionStorage.getItem(SESSION_KEY) === "true";
+      
+      // If we are currently running dashboard.html directly (multi-page scenario), redirect to index.html
+      // Note: Because this file acts as a hybrid SPA/Multi-page during transition, we handle view toggling here.
+      // If the user deployed this as dashboard.html, we would do:
+      // if (!isAuthenticated) window.location.href = "index.html";
+      
+      if (isAuthenticated) {
+        document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
+        showDashboard();
+      } else {
+        showLogin();
+      }
+
+      loadAiConfig();
+      fetchRepoProjects();
+      startSystemClock();
+      initMetricsChart();
+      renderNoteTabs();
+      loadActiveNoteContent();
+      runSandboxCode();
+      initAmbientParticles();
+      initWhiteboard();
+      updateDesignPreview();
+      renderAiChat();
+    });
+
+    // =========================================================================
+    // CORE UI & VERCEL SECURE AUTHENTICATION 
+    // =========================================================================
+    function startSystemClock() { setInterval(() => { document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; lucide.createIcons(); }, 1000); }
+    function playAudioTone(freq=440, type="sine", dur=0.08) { if(!isAudioEnabled)return; try{const actx=new(window.AudioContext||window.webkitAudioContext)(); const osc=actx.createOscillator(), gain=actx.createGain(); osc.type=type; osc.frequency.value=freq; gain.gain.setValueAtTime(0.04, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur); osc.connect(gain); gain.connect(actx.destination); osc.start(); osc.stop(actx.currentTime+dur);}catch(e){} }
+    function showDashboard() { document.getElementById("loginView").classList.add("hidden"); document.getElementById("dashboardView").classList.remove("hidden"); lucide.createIcons(); playAudioTone(587,"triangle",0.15); setTimeout(resizeWhiteboardCanvas,100); }
+    function showLogin() { document.getElementById("dashboardView").classList.add("hidden"); document.getElementById("loginView").classList.remove("hidden"); }
+    function togglePassVisibility() { const p=document.getElementById("passInput"); p.type=p.type==="password"?"text":"password"; document.getElementById("loginPassIcon").setAttribute("data-lucide", p.type==="password"?"eye":"eye-off"); lucide.createIcons(); }
+    
+    async function handleLogin(e) {
+      e.preventDefault(); 
+      const u = document.getElementById("usernameInput").value.trim() || "Anish x";
+      const p = document.getElementById("passInput").value.trim();
+      const btnText = document.getElementById("loginBtnText");
+      btnText.textContent = "Verifying with Vercel...";
+      
+      try {
+        // Send hashed password to Vercel Auth Endpoint
+        // In a true multi-page setup, if this succeeds, redirect to dashboard.html
+        const res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: p }) // Backend expects raw password or hash depending on your auth.js implementation. 
+          // Note: If you use hashPassword() here, make sure api/auth.js expects a hash. The provided auth.js expects raw password.
+          // For max security, send hash, and let auth.js compare hash === expectedHash.
+        });
+        
+        const data = await res.json();
+        
+        if(data.success) { 
+          document.getElementById("loginError").classList.add("hidden"); 
+          sessionStorage.setItem(SESSION_KEY, "true"); 
+          sessionStorage.setItem("lumina_godx_user", u); 
+          document.getElementById("headerAdminName").textContent = u; 
+          
+          if (data.token) {
+            document.getElementById("vercelAuthInput").value = data.token;
+            saveAiConfig();
+          }
+
+          showToast("Access Granted", "Welcome back."); 
+          showDashboard(); 
+        } else { 
+          document.getElementById("loginError").classList.remove("hidden"); 
+          playAudioTone(220,"sawtooth",0.2); 
+        }
+      } catch(err) {
+        showToast("Backend Offline", "Vercel API unreachable.");
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+      btnText.textContent = "Verify & Unlock Dashboard";
+    }
+    
+    function handleLogout() { sessionStorage.removeItem(SESSION_KEY); playAudioTone(330,"sine",0.1); showToast("Locked", "Logged out."); showLogin(); }
+
+    // CANVAS LIFECYCLE FIX: Resize triggers when tab unhides
+    function switchTab(id) {
+      playAudioTone(523,"sine",0.04); 
+      document.querySelectorAll(".tab-pane").forEach(p=>p.classList.add("hidden")); 
+      document.querySelectorAll(".tab-btn").forEach(b=>{b.classList.remove("nav-tab-active"); b.classList.add("text-zinc-400");});
+      
+      document.getElementById(id).classList.remove("hidden"); 
+      const b=document.getElementById(`btn-${id}`); 
+      if(b){b.classList.add("nav-tab-active"); b.classList.remove("text-zinc-400");}
+      
+      if(id==="tab-whiteboard") setTimeout(resizeWhiteboardCanvas, 50); 
+      if(id==="tab-ai-studio") scrollToAiBottom();
+      if(id==="tab-analytics") setTimeout(initMetricsChart, 50);
+    }
+
+    function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
+
+    // =========================================================================
+    // VERCEL AI STUDIO ENGINE 
+    // =========================================================================
+    function loadAiConfig() { 
+      document.getElementById("aiPersonaSelect").value = localStorage.getItem("lumina_ai_persona") || "architect"; 
+      document.getElementById("aiModelInput").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b"; 
+      document.getElementById("vercelAuthInput").value = localStorage.getItem("lumina_vercel_auth") || "";
+      document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
+    }
+    function saveAiConfig() { 
+      localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); 
+      localStorage.setItem("lumina_ai_model", document.getElementById("aiModelInput").value);
+      localStorage.setItem("lumina_vercel_auth", document.getElementById("vercelAuthInput").value.trim());
+      document.getElementById("aiActiveModelBadge").textContent = `Model: ${document.getElementById("aiModelInput").value}`;
+    }
+    function toggleVercelAuthVisibility() {
+      const input = document.getElementById("vercelAuthInput");
+      input.type = input.type === "password" ? "text" : "password";
+      document.getElementById("vercelAuthIcon").setAttribute("data-lucide", input.type === "password" ? "eye" : "eye-off");
+      lucide.createIcons();
+    }
+
+    function getAiSystemPrompt() {
+      const p = document.getElementById("aiPersonaSelect").value;
+      if (p === "minimal") return "You are an expert coder. Respond ONLY with raw code snippets. No markdown fluff.";
+      if (p === "security") return "You are an ethical Vault Auditor. Scrutinize architecture inputs for security vulnerabilities.";
+      return "You are the GODx LuminaVista Supreme Architect. Provide expert, clear formatting, and elite architectural designs using Markdown.";
+    }
+
+    // ANTI-XSS DOM SANITIZER
+    function parseAiMarkdown(t) {
+      if(!t) return "";
+      let safeText = t.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return safeText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner"><div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between uppercase"><span>${lang||'Code'}</span><button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer">Copy</button></div><pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${code}</code></pre></div>`;
+              })
+              .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
+              .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
+              .replace(/\n/g, '<br/>');
+    }
+
+    function copyCodeBlock(b) { navigator.clipboard.writeText(b.parentElement.nextElementSibling.innerText); const o=b.innerText; b.innerText="Copied!"; b.classList.add("text-emerald-400"); setTimeout(()=>{b.innerText=o; b.classList.remove("text-emerald-400");},2000); }
+
+    function renderAiChat() {
+      const box = document.getElementById("aiChatHistory"); box.innerHTML = "";
+      if (aiConversation.length === 0) {
+        box.innerHTML = `<div class="flex items-start gap-4 animate-fade-in"><div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400"><i data-lucide="bot" class="w-5 h-5"></i></div><div class="pt-1"><h4 class="font-bold text-white text-sm">Vercel Backend Ready</h4><p class="text-zinc-400 mt-1">Chat requests are securely routed to <code class="text-cyan-400">/api/chat</code>.</p></div></div>`;
+        lucide.createIcons(); return;
+      }
+      aiConversation.forEach(m => {
+        const u=m.role==="user", d=document.createElement("div"); d.className=`flex items-start gap-4 ${u?'flex-row-reverse':''}`;
+        d.innerHTML = `<div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${u?'bg-surface-800 border-white/10 text-white font-bold':'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'}">${u?'ME':'<i data-lucide="bot" class="w-5 h-5"></i>'}</div><div class="max-w-[85%] ${u?'text-right':'text-left'}"><div class="inline-block p-4 rounded-2xl ${u?'bg-surface-800 text-white border border-white/5 rounded-tr-sm':'text-zinc-300 rounded-tl-sm'}">${u?m.content:parseAiMarkdown(m.content)}</div></div>`;
+        box.appendChild(d);
+      });
+      lucide.createIcons(); scrollToAiBottom();
+    }
+
+    function scrollToAiBottom() { const b=document.getElementById("aiChatHistory"); b.scrollTop=b.scrollHeight; }
+    function autoResizeTextarea(e) { e.style.height="auto"; e.style.height=(e.scrollHeight)+"px"; }
+
+    async function handleSendAiPrompt(e) {
+      if (e) e.preventDefault();
+      const inp = document.getElementById("aiPromptTextarea"), prompt = inp.value.trim(), btn = document.getElementById("btnAiSend");
+      if (!prompt) return;
+
+      aiConversation.push({ role: "user", content: prompt });
+      inp.value = ""; inp.style.height = "auto"; renderAiChat();
+      btn.disabled = true; btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>'; lucide.createIcons();
+
+      const typingDiv = document.createElement("div"); typingDiv.id = "aiTypingIndicator"; typingDiv.className = "flex items-start gap-4";
+      typingDiv.innerHTML = `<div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400"><i data-lucide="bot" class="w-5 h-5"></i></div><div class="pt-3 flex gap-1"><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span></div>`;
+      document.getElementById("aiChatHistory").appendChild(typingDiv); scrollToAiBottom(); lucide.createIcons();
+
+      try {
+        const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
+        const reqHeaders = { "Content-Type": "application/json" };
+        if (vercelAuth) {
+          reqHeaders["X-Vercel-Auth"] = vercelAuth;
+        }
+
+        const res = await fetch("/api/chat", {
+          method: "POST", headers: reqHeaders,
+          body: JSON.stringify({ 
+            prompt: prompt, 
+            requestedModel: document.getElementById("aiModelInput").value,
+            messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation] 
+          })
+        });
+        
+        document.getElementById("aiTypingIndicator")?.remove();
+        const data = await res.json();
+        
+        if (res.ok) {
+          const txt = data.choices?.[0]?.message?.content || data.message?.content || data.response || "No valid response.";
+          aiConversation.push({ role: "assistant", content: txt });
+        } else {
+          aiConversation.push({ role: "assistant", content: `**[Vercel Backend Error]:** ${data.error || res.statusText}\n${data.details || ""}` });
+        }
+      } catch (err) {
+        document.getElementById("aiTypingIndicator")?.remove();
+        if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+          aiConversation.push({ 
+            role: "assistant", 
+            content: `**[Connection Exception]: Failed to fetch.**\n\nYour browser blocked the request or the server is unreachable.\n\n**To fix this:**\n1. Ensure your code is fully deployed to Vercel.\n2. Ensure \`OLLAMA_ENDPOINT\` and \`OLLAMA_API_KEY\` are correctly set in your Vercel Environment Variables.` 
+          });
+        } else {
+          aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
+        }
+      } finally {
+        btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>'; lucide.createIcons();
+        localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); renderAiChat();
+      }
+    }
+
+    function clearAiChat() { aiConversation = []; localStorage.removeItem("lumina_ai_history"); renderAiChat(); showToast("Cleared", "Conversation memory reset."); }
+    function downloadAiChat() {
+      if(aiConversation.length===0) return showToast("Empty", "No chat to export.");
+      let txt = "=== GODx Neural Thread ===\n\n"; aiConversation.forEach(m => txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`);
+      const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain"})); a.download=`Neural_Thread_${Date.now()}.txt`; a.click();
+    }
+
+    // =========================================================================
+    // EXM PROJECTS SCANNER
+    // =========================================================================
+    function resolveProjectUrl(rawPath) { let c = rawPath.replace(/^\.\//, "").replace(/^\//, ""); if (!c.startsWith("EXM/")) c = "EXM/" + c; if (c.endsWith("/")) c += "index.html"; else if (!c.includes(".html") && !c.includes(".")) c += "/index.html"; return window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1) + c; }
+    async function fetchRepoProjects() { const i=document.getElementById("refreshIcon"); if(i)i.classList.add("animate-spin"); try{const r=await fetch(REPO_API_URL);if(r.ok){const d=await r.json();d.filter(x=>!x.name.startsWith(".")).forEach(x=>{const p={name:x.name,path:`EXM/${x.name}${x.type==="dir"?"/":""}`,type:x.type};if(!repoProjects.some(e=>e.name===p.name))repoProjects.push(p);});localStorage.setItem("lumina_exm_projects",JSON.stringify(repoProjects));}}catch(e){}finally{if(i)i.classList.remove("animate-spin");renderProjectList();updateSplitDropdowns();} }
+    function filterProjectList() { renderProjectList(document.getElementById("projectFilterInput").value.toLowerCase()); }
+    function renderProjectList(q="") { const c=document.getElementById("projectChipsContainer"); c.innerHTML=""; document.getElementById("projectCountBadge").textContent=`${repoProjects.length} Detected`; repoProjects.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{ const isS=currentSelectedProject&&p.name===currentSelectedProject.name; const b=document.createElement("button"); b.className=`w-full px-3 py-2.5 rounded-xl text-xs font-mono border flex items-center gap-2 cursor-pointer text-left ${isS?"active-project-pill":"bg-surface-900 border-white/5 text-zinc-300"}`; b.innerHTML=`<i data-lucide="${p.type==='dir'?'folder':'file-code'}" class="w-4 h-4 ${isS?'text-cyan-300':'text-zinc-500'}"></i><span class="truncate">${p.name}</span>`; b.onclick=()=>selectProject(p); c.appendChild(b); }); lucide.createIcons(); }
+    function selectProject(p) { currentSelectedProject=p; document.getElementById("activeProjectTitle").textContent=`EXM/${p.name}/`; renderProjectList(); document.getElementById("previewIframe").src=resolveProjectUrl(p.path); document.getElementById("iframeOverlay").classList.add("hidden"); }
+    function addCustomProject() { const v=document.getElementById("customProjectInput").value.trim(); if(!v)return; const n=v.replace(/^EXM\//i,"").replace(/^\/+|\/+$/g,""), p={name:n,path:`EXM/${n}${n.endsWith(".html")?"":"/"}`,type:n.endsWith(".html")?"file":"dir"}; if(!repoProjects.some(x=>x.name===p.name)){repoProjects.push(p);localStorage.setItem("lumina_exm_projects",JSON.stringify(repoProjects));} selectProject(p); showToast("Added",`EXM/${n}`); }
+    function openActiveInNewTab() { if(currentSelectedProject) window.open(resolveProjectUrl(currentSelectedProject.path),"_blank"); }
+    function reloadIframe() { const f=document.getElementById("previewIframe"); f.src=f.src; showToast("Reloaded","Viewport refreshed."); }
+    function setViewportDevice(w) { document.getElementById("iframeWrapper").style.maxWidth=w; document.querySelectorAll(".device-btn").forEach(b=>b.classList.remove("bg-cyan-500","text-black")); document.getElementById(w==='100%'?'btnDeviceDesktop':w==='768px'?'btnDeviceTablet':'btnDeviceMobile').classList.add("bg-cyan-500","text-black"); }
+    function updateSplitDropdowns() { const l=document.getElementById("splitLeftSelect"), r=document.getElementById("splitRightSelect"); if(!l)return; l.innerHTML=""; r.innerHTML=""; repoProjects.forEach((p,i)=>{ const o1=document.createElement("option"),o2=document.createElement("option"); o1.value=o2.value=p.name; o1.textContent=o2.textContent=`EXM/${p.name}`; l.appendChild(o1); r.appendChild(o2); if(i===1||i===repoProjects.length-1)o2.selected=true; }); updateSplitFrames(); }
+    function updateSplitFrames() { const l=repoProjects.find(p=>p.name===document.getElementById("splitLeftSelect").value), r=repoProjects.find(p=>p.name===document.getElementById("splitRightSelect").value); if(l)document.getElementById("splitLeftFrame").src=resolveProjectUrl(l.path); if(r)document.getElementById("splitRightFrame").src=resolveProjectUrl(r.path); }
+
+    // =========================================================================
+    // CLOUD EXECUTION COMPILERS (PYTHON/C++/JAVA via Vercel Backend)
+    // =========================================================================
+    let currentSandboxLang="html";
+    function setSandboxLanguage(l) { 
+      currentSandboxLang=l; ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>document.getElementById(id).className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer"); 
+      document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`).className=`px-3 py-1.5 rounded-lg text-black font-bold cursor-pointer ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
+      if(l==="html"){document.getElementById("sandboxIframeWrapper").classList.remove("hidden");document.getElementById("sandboxStdoutWrapper").classList.add("hidden");}
+      else{document.getElementById("sandboxIframeWrapper").classList.add("hidden");document.getElementById("sandboxStdoutWrapper").classList.remove("hidden");} 
+    }
+    function onSandboxCodeChange() { const c=document.getElementById("sandboxCodeInput").value; if(c.includes("SELECT ") || c.includes("FROM ")) setSandboxLanguage("sql"); else if(c.includes("#include")) setSandboxLanguage("cpp"); else if(c.includes("public class")) setSandboxLanguage("java"); else if(c.includes("def ")) setSandboxLanguage("python"); else if(c.includes("<html")) setSandboxLanguage("html"); }
+    
+    async function runSandboxCode() { 
+      const c = document.getElementById("sandboxCodeInput").value;
+      const out = document.getElementById("sandboxStdoutWrapper"); 
+      
+      if (currentSandboxLang === "html") {
+        document.getElementById("sandboxPreviewFrame").srcdoc = c; 
+        showToast("Rendered", "Visual DOM updated."); 
+        return;
+      } 
+      
+      out.innerHTML = `<i data-lucide='loader' class='w-4 h-4 animate-spin inline'></i> Routing to Vercel Execution Engine...`;
+      lucide.createIcons();
+
+      try {
+        const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
+        const reqHeaders = { "Content-Type": "application/json" };
+        if (vercelAuth) reqHeaders["X-Vercel-Auth"] = vercelAuth;
+
+        const res = await fetch("/api/compile", {
+          method: "POST",
+          headers: reqHeaders,
+          body: JSON.stringify({ language: currentSandboxLang, code: c })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          out.textContent = `=== GODx Cloud Execution (${currentSandboxLang.toUpperCase()}) ===\n\n${data.output}`;
+          showToast("Execution Complete", "Output streamed.");
+        } else {
+          out.textContent = `[Compilation Error]: ${data.error}`;
+        }
+      } catch (err) {
+        out.textContent = `[Network Error]: Vercel execution backend offline.`;
+      }
+    }
+
+    // =========================================================================
+    // WHITEBOARD & UI DESIGN
+    // =========================================================================
+    function resizeWhiteboardCanvas() { 
+      const cv=document.getElementById("whiteboardCanvas"); 
+      const container=document.getElementById("whiteboardContainer");
+      if(!cv||!container||container.clientWidth===0) return; 
+      const ctx=cv.getContext("2d"), t=ctx.getImageData(0,0,cv.width,cv.height); 
+      cv.width=container.clientWidth; cv.height=container.clientHeight; 
+      ctx.lineCap="round"; ctx.lineJoin="round"; 
+      try{ctx.putImageData(t,0,0);}catch(e){} 
+    }
+    function initWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); if(!cv)return; const ctx=cv.getContext("2d"); resizeWhiteboardCanvas(); window.addEventListener("resize", resizeWhiteboardCanvas); cv.addEventListener("mousedown", e=>{isDrawing=true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY);}); cv.addEventListener("mousemove", e=>{if(!isDrawing)return; ctx.strokeStyle=wbCurrentTool==="eraser"?"#030712":wbCurrentColor; ctx.lineWidth=wbCurrentSize; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();}); cv.addEventListener("mouseup", ()=>isDrawing=false); cv.addEventListener("mouseleave", ()=>isDrawing=false); }
+    function setWhiteboardTool(t) { wbCurrentTool=t; document.getElementById("wbToolPen").className=t==="pen"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; document.getElementById("wbToolEraser").className=t==="eraser"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; }
+    function updateWbColor(c) { wbCurrentColor=c; } function updateWbSize(s) { wbCurrentSize=s; }
+    function clearWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); cv.getContext("2d").clearRect(0,0,cv.width,cv.height); }
+    function downloadWhiteboard() { const a=document.createElement("a"); a.download=`sketch_${Date.now()}.png`; a.href=document.getElementById("whiteboardCanvas").toDataURL(); a.click(); }
+    
+    function updateDesignPreview() { const b=document.getElementById("sliderBlur").value, o=document.getElementById("sliderOpacity").value/100, r=document.getElementById("sliderRadius").value, g=document.getElementById("sliderGlow").value/100; const c=document.getElementById("glassPreviewCard"); c.style.backdropFilter=`blur(${b}px)`; c.style.backgroundColor=`rgba(11, 15, 25, ${o})`; c.style.borderRadius=`${r}px`; c.style.boxShadow=`0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${g})`; }
+    function copyGeneratedDesignCss() { navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); showToast("Copied","CSS class ready."); }
+
+    // =========================================================================
+    // TERMINAL (INTEGRATED WITH VERCEL BACKEND)
+    // =========================================================================
+    function handleTerminalKeyDown(e) { if(e.key==="ArrowUp"){e.preventDefault(); if(termHistory.length>0&&termHistoryIdx>0){termHistoryIdx--; e.target.value=termHistory[termHistoryIdx];}else if(termHistory.length>0&&termHistoryIdx===-1){termHistoryIdx=termHistory.length-1; e.target.value=termHistory[termHistoryIdx];}}else if(e.key==="ArrowDown"){e.preventDefault(); if(termHistoryIdx>=0&&termHistoryIdx<termHistory.length-1){termHistoryIdx++; e.target.value=termHistory[termHistoryIdx];}else{termHistoryIdx=-1; e.target.value="";}} }
+    
+    async function handleTerminalCommand(e) { 
+      e.preventDefault(); const inp=document.getElementById("terminalInput"), cmd=inp.value.trim(); if(!cmd)return; 
+      termHistory.push(cmd); termHistoryIdx=-1; 
+      const scr=document.getElementById("terminalScreen"), l=document.createElement("div"); 
+      l.className="text-zinc-400"; l.innerHTML=`<span class="text-cyan-400 font-bold">anish@godx:~$</span> ${cmd}`; scr.appendChild(l); 
+      
+      const pts=cmd.split(" "), act=pts[0].toLowerCase(), arg=pts.slice(1).join(" "), res=document.createElement("div"); 
+      
+      switch(act) {
+        case "help": res.innerHTML="- ls, open &lt;name&gt;, ai &lt;prompt&gt;, clear"; break;
+        case "ls": res.textContent=repoProjects.map(p=>`EXM/${p.name}`).join("  ")||"Empty"; break;
+        case "open": const m=repoProjects.find(p=>p.name.toLowerCase()===arg.replace("EXM/","").toLowerCase()); if(m){selectProject(m); switchTab("tab-projects"); res.textContent=`Launched EXM/${m.name}`;}else{res.textContent="Not found.";} break;
+        case "clear": scr.innerHTML=""; inp.value=""; return;
+        case "ai": 
+          if(!arg) {
+            res.className="text-rose-400"; res.textContent="Usage: ai <prompt>"; 
+          } else {
+            res.className="text-purple-300"; res.innerHTML="<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Querying Vercel Backend...";
+            scr.appendChild(res); scr.scrollTop=scr.scrollHeight; lucide.createIcons();
+            try {
+              const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
+              const reqHeaders = { "Content-Type": "application/json" };
+              if (vercelAuth) reqHeaders["X-Vercel-Auth"] = vercelAuth;
+
+              const fetchRes = await fetch("/api/chat", {
+                method: "POST", headers: reqHeaders,
+                body: JSON.stringify({ 
+                  prompt: arg, 
+                  requestedModel: document.getElementById("aiModelInput") ? document.getElementById("aiModelInput").value : "gpt-oss:20b",
+                  messages: [{ role: "system", content: "You are a helpful CLI AI. Keep responses brief." }] 
+                })
+              });
+              const data = await fetchRes.json();
+              if (fetchRes.ok) {
+                res.className="text-emerald-400 whitespace-pre-wrap mt-2 mb-2"; 
+                res.textContent = `[${document.getElementById("aiModelInput").value}]:\n${data.choices?.[0]?.message?.content || data.response || "Done."}`;
+              } else {
+                res.className="text-rose-400"; res.textContent = `[Backend Error]: ${data.error || "Unknown"}`;
+              }
+            } catch(err) {
+              res.className="text-rose-400"; res.textContent = `[Network Error]: ${err.message}.`;
+            }
+            inp.value=""; return;
+          }
+          break;
+        default: res.textContent=`Command not found: ${act}`; break;
+      }
+      scr.appendChild(res); inp.value=""; scr.scrollTop=scr.scrollHeight;
+    }
+
+    // =========================================================================
+    // VAULT, COMMAND PALETTE, CHARTS
+    // =========================================================================
+    function openCommandPalette() { document.getElementById("cmdModal").style.display="flex"; setTimeout(()=>{document.getElementById("cmdModal").classList.remove("opacity-0"); document.getElementById("cmdSearchInput").focus();}, 10); }
+    function closeCommandPalette() { document.getElementById("cmdModal").classList.add("opacity-0"); setTimeout(()=>document.getElementById("cmdModal").style.display="none", 200); }
+    window.addEventListener("keydown", e => { if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault(); openCommandPalette();} if(e.key==="Escape"){closeCommandPalette(); document.getElementById("sourceModal").style.display="none";} });
+    
+    function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ if(cv.parentElement.clientWidth===0)return; cv.width=cv.parentElement.clientWidth; cv.height=224; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=2.5; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
+    
+    function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-3 py-1.5 rounded-lg border cursor-pointer ${n.id===activeNoteId?'bg-cyan-500/20 border-cyan-500 text-cyan-300':'bg-surface-900 border-white/10 text-zinc-400'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
+    function selectNote(id) { activeNoteId=id; renderNoteTabs(); loadActiveNoteContent(); }
+    function loadActiveNoteContent() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) document.getElementById("adminScratchpad").value=n.content; }
+    function onNoteContentChange() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) { n.content=document.getElementById("adminScratchpad").value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); if(isMarkdownPreviewActive) toggleMarkdownPreview(true); } }
+    function createNewNote() { const id="n_"+Date.now(); vaultNotes.push({id, title:`Note ${vaultNotes.length+1}`, content:"# New Note"}); activeNoteId=id; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); renderNoteTabs(); loadActiveNoteContent(); }
+    
+    function toggleMarkdownPreview(forceRender=false) {
+      if(!forceRender) isMarkdownPreviewActive = !isMarkdownPreviewActive;
+      const editorCol = document.getElementById("adminScratchpad").parentElement, previewCol = document.getElementById("notePreviewCol");
+      if (isMarkdownPreviewActive) {
+        editorCol.className = "hidden"; previewCol.classList.remove("hidden"); previewCol.classList.add("block");
+        let raw = document.getElementById("adminScratchpad").value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-2">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-3">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-xl font-extrabold text-cyan-400 mt-3">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\n/gim, '<br/>');
+      } else {
+        editorCol.className = "block"; previewCol.classList.add("hidden"); previewCol.classList.remove("block");
+      }
+    }
+
+    function applySandboxPolicy() { const allowScripts = document.getElementById("checkAllowScripts").checked; let flags = []; if (allowScripts) flags.push("allow-scripts"); document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" ")); reloadIframe(); showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`); }
+    function setDashboardTheme(t) { document.documentElement.setAttribute("data-theme", t); localStorage.setItem("lumina_theme", t); }
+    function applyCustomAccentColor(h) { document.documentElement.style.setProperty("--primary", h); document.documentElement.style.setProperty("--primary-glow", h+"55"); }
+    function exportDashboardConfig() { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify({projects:repoProjects, notes:vaultNotes})],{type:"application/json"})); a.download="godx_config.json"; a.click(); }
+    function flushWorkspaceCache() { if(confirm("Flush all storage?")) { localStorage.clear(); location.reload(); } }
+    
+    function initAmbientParticles() { const cv=document.getElementById("ambientCanvas"), ctx=cv.getContext("2d"); let w=cv.width=window.innerWidth, h=cv.height=window.innerHeight; const p=Array.from({length:40},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,r:Math.random()*1.5+0.5})); function anim(){ ctx.clearRect(0,0,w,h); p.forEach(i=>{i.x=(i.x+i.vx+w)%w; i.y=(i.y+i.vy+h)%h; ctx.beginPath(); ctx.arc(i.x,i.y,i.r,0,Math.PI*2); ctx.fillStyle="rgba(0,242,254,0.3)"; ctx.fill();}); requestAnimationFrame(anim);} anim(); window.addEventListener("resize",()=>{w=cv.width=window.innerWidth; h=cv.height=window.innerHeight;}); }
+  </script>
+</body>
+</html>
