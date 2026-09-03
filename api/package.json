@@ -1,0 +1,8 @@
+{
+  "name": "luminavista-os",
+  "version": "8.5.0",
+  "dependencies": {
+    "@upstash/redis": "^1.28.0",
+    "cookie": "^0.6.0"
+  }
+}
