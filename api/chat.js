@@ -1,64 +1,37 @@
 import { Redis } from '@upstash/redis';
+import { Sandbox } from '@e2b/code-interpreter';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 export const maxDuration = 60;
 
-// Multi-Source Web Search Engine (Resilient to Vercel IP blocks)
+// Initialize Cloudflare R2 Storage securely on the backend
+const s3 = process.env.R2_ENDPOINT ? new S3Client({
+  region: "auto",
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+}) : null;
+
 async function performWebSearch(query) {
-  const cleanQuery = query.replace(/[^\w\s-]/gi, ' ').trim().slice(0, 100);
-  if (!cleanQuery) return null;
-
-  const results = [];
-
-  // 1. Check for premium search API keys if configured in Vercel
-  if (process.env.TAVILY_API_KEY) {
-    try {
-      const res = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ api_key: process.env.TAVILY_API_KEY, query: cleanQuery, max_results: 4 })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        data.results?.forEach(r => results.push(`- **${r.title}**: ${r.content} (${r.url})`));
-        if (results.length > 0) return results.join("\n\n");
-      }
-    } catch (e) {
-      console.warn("Tavily search failed, falling back to public providers.");
-    }
-  }
-
-  // 2. Free Public Engine A: DuckDuckGo Instant Answer API
   try {
-    const ddgRes = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQuery)}&format=json&no_html=1&skip_disambig=1`);
-    if (ddgRes.ok) {
-      const ddgData = await ddgRes.json();
-      if (ddgData.AbstractText) {
-        results.push(`- **Overview**: ${ddgData.AbstractText} (Source:${ddgData.AbstractURL || 'DuckDuckGo'})`);
-      }
-      ddgData.RelatedTopics?.slice(0, 3).forEach(topic => {
-        if (topic.Text) results.push(`- ${topic.Text} (${topic.FirstURL || ''})`);
-      });
+    const cleanQuery = query.replace(/[^\w\s-]/gi, ' ').trim().slice(0, 100);
+    if (!cleanQuery) return null;
+    const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(cleanQuery)}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const snippets = [];
+    const snippetRegex = /<a class="result__snippet[^>]*>([\s\S]*?)<\/a>/gi;
+    let match;
+    while ((match = snippetRegex.exec(html)) !== null && snippets.length < 5) {
+      const text = match[1].replace(/<[^>]+>/g, '').trim();
+      if (text) snippets.push(`- ${text}`);
     }
-  } catch (e) {
-    console.warn("DuckDuckGo API call failed:", e.message);
-  }
-
-  // 3. Free Public Engine B: Wikipedia Search & Summary API
-  try {
-    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&utf8=&format=json&origin=*`);
-    if (wikiRes.ok) {
-      const wikiData = await wikiRes.json();
-      const hits = wikiData.query?.search?.slice(0, 3) || [];
-      hits.forEach(hit => {
-        const cleanSnippet = hit.snippet.replace(/<[^>]+>/g, '').trim();
-        results.push(`- **${hit.title}**: ${cleanSnippet} (https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title)})`);
-      });
-    }
-  } catch (e) {
-    console.warn("Wikipedia API call failed:", e.message);
-  }
-
-  return results.length > 0 ? results.join("\n\n") : null;
+    return snippets.length > 0 ? snippets.join('\n\n') : null;
+  } catch (err) { return null; }
 }
 
 export default async function handler(req, res) {
@@ -68,129 +41,108 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vercel-Auth');
     return res.status(200).end();
   }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-
-  if (!url || !url.startsWith('http')) {
-    return res.status(500).json({ error: 'Vercel Redis configuration missing.' });
-  }
-
-  if (JSON.stringify(req.body || {}).length > 40000) {
-    return res.status(413).json({ error: 'Context too large. Clear chat memory.' });
-  }
+  if (!url || !url.startsWith('http')) return res.status(500).json({ error: 'Redis configuration missing.' });
 
   try {
     const redis = new Redis({ url, token });
-    const cookieHeader = req.headers.cookie || '';
-    const match = cookieHeader.match(/godx_session=([^;]+)/);
+    const match = (req.headers.cookie || '').match(/godx_session=([^;]+)/);
     const sessionToken = match ? match[1] : null;
 
     if (!sessionToken || !(await redis.get(`session:${sessionToken}`))) {
-      return res.status(401).json({ error: 'Session Expired. Please log in again.' });
+      return res.status(401).json({ error: 'Session Expired.' });
     }
-
-    // Refresh active session TTL (20 minutes)
     await redis.expire(`session:${sessionToken}`, 1200);
 
-    const { messages, prompt, requestedModel, webSearch } = req.body;
+    const { messages, prompt, requestedModel, webSearch, enableAgent } = req.body;
     const aiEndpoint = process.env.OLLAMA_ENDPOINT;
     const aiKey = process.env.OLLAMA_API_KEY || '';
     const activeModel = requestedModel || process.env.OLLAMA_MODEL || "gpt-oss:20b";
 
-    if (!aiEndpoint || !aiEndpoint.startsWith('http')) {
-      return res.status(500).json({ error: 'Missing Vercel AI Config: OLLAMA_ENDPOINT is empty or invalid.' });
+    if (!aiEndpoint) return res.status(500).json({ error: 'OLLAMA_ENDPOINT missing.' });
+
+    let formattedMessages = Array.isArray(messages) && messages.length > 0 ? [...messages] : [{ role: 'user', content: prompt }];
+
+    // Inject Autonomous Agent System Prompt if enabled
+    if (enableAgent && process.env.E2B_API_KEY) {
+      const agentDirective = `\n\n[AUTONOMOUS CLOUD AGENT ACTIVATED]\nYou have root access to an isolated Linux Virtual Machine and persistent Cloudflare R2 storage.\n1. To execute a bash terminal command, format exactly like this:\n<execute_terminal>npm install express</execute_terminal>\n2. To save a file permanently to the cloud, format exactly like this:\n<save_file path="server.js">const express = require('express');</save_file>\nYou may execute code, read directories, and build full applications.`;
+      if (formattedMessages[0]?.role === 'system') formattedMessages[0].content += agentDirective;
+      else formattedMessages.unshift({ role: 'system', content: agentDirective });
     }
 
-    let formattedMessages = Array.isArray(messages) && messages.length > 0
-      ? [...messages]
-      : [{ role: 'user', content: prompt || 'Hello' }];
-
-    // Inject Codespace format directive into system prompt
-    const codespaceDirective = `\n\n[CODESPACE WORKSPACE RULES]:\nYou have full access to an integrated interactive codespace/sandbox. When you write code for this workspace, specify the target filename in your markdown code fence using the format:\n\`\`\`html:index.html\n\`\`\`css:style.css\n\`\`\`javascript:script.js\nor start the code block with a comment like // filename: app.js. The client will automatically compile and render your files.`;
-
-    if (formattedMessages[0]?.role === 'system') {
-      formattedMessages[0].content += codespaceDirective;
-    } else {
-      formattedMessages.unshift({ role: 'system', content: codespaceDirective });
-    }
-
-    // Real-Time Internet Search
-    let searchResultsSummary = null;
     if (webSearch) {
       const lastUserMsg = [...formattedMessages].reverse().find(m => m.role === 'user');
       const searchQuery = lastUserMsg ? lastUserMsg.content : prompt;
-      
       if (searchQuery) {
-        searchResultsSummary = await performWebSearch(searchQuery);
-        if (searchResultsSummary) {
-          const webContext = `\n\n[REAL-TIME LIVE INTERNET DATA]:\n${searchResultsSummary}\n\nInstructions: Use this verified internet search context to provide an accurate, current response.`;
-          formattedMessages[0].content += webContext;
-        }
+        const results = await performWebSearch(searchQuery);
+        if (results) formattedMessages[0].content += `\n\n[WEB SEARCH RESULTS]:\n${results}`;
       }
     }
 
     const isNativeOllama = aiEndpoint.includes('/api/chat') || aiEndpoint.includes('/api/generate');
-
-    const payload = isNativeOllama
-      ? {
-          model: activeModel,
-          messages: formattedMessages,
-          stream: false
-        }
-      : {
-          model: activeModel,
-          messages: formattedMessages,
-          temperature: 0.7,
-          stream: false
-        };
-
-    const headers = { 'Content-Type': 'application/json' };
-    if (aiKey) {
-      headers['Authorization'] = `Bearer ${aiKey}`;
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000);
+    const payload = {
+      model: activeModel,
+      messages: formattedMessages,
+      stream: false,
+      ...(isNativeOllama ? {} : { temperature: 0.7 })
+    };
 
     const aiRes = await fetch(aiEndpoint, {
       method: "POST",
-      headers,
+      headers: { 'Content-Type': 'application/json', ...(aiKey && { 'Authorization': `Bearer ${aiKey}` }) },
       body: JSON.stringify(payload),
-      signal: controller.signal
     });
 
-    clearTimeout(timeout);
+    if (!aiRes.ok) return res.status(aiRes.status).json({ error: `Upstream HTTP ${aiRes.status}`, details: await aiRes.text() });
+    
+    let data = await aiRes.json();
+    let aiResponseText = data.choices?.[0]?.message?.content || data.message?.content || "";
 
-    if (!aiRes.ok) {
-      const errTxt = await aiRes.text();
-      console.error(`UPSTREAM ERROR (${aiRes.status}):`, errTxt);
-      return res.status(aiRes.status).json({
-        error: `Upstream Provider Returned HTTP ${aiRes.status}`,
-        details: errTxt
-      });
+    // INTERCEPT: Cloudflare R2 File Saving
+    if (s3 && aiResponseText.includes('<save_file')) {
+      const fileRegex = /<save_file path="([^"]+)">([\s\S]*?)<\/save_file>/g;
+      let match;
+      while ((match = fileRegex.exec(aiResponseText)) !== null) {
+        const filePath = match[1];
+        const fileContent = match[2];
+        try {
+          await s3.send(new PutObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: filePath, Body: fileContent }));
+          aiResponseText += `\n\n*[System: Successfully persisted \`${filePath}\` to Cloud Storage.]*`;
+        } catch (err) {
+          aiResponseText += `\n\n*[System: Failed to save \`${filePath}\` to Cloud. Check R2 buckets.]*`;
+        }
+      }
     }
 
-    const data = await aiRes.json();
-    if (searchResultsSummary) {
-      data._webSearchAttached = true;
+    // INTERCEPT: E2B Terminal Execution
+    if (process.env.E2B_API_KEY && aiResponseText.includes('<execute_terminal>')) {
+      const termRegex = /<execute_terminal>([\s\S]*?)<\/execute_terminal>/g;
+      let match;
+      while ((match = termRegex.exec(aiResponseText)) !== null) {
+        const command = match[1];
+        try {
+          const sandbox = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
+          const result = await sandbox.commands.run(command);
+          const output = result.stdout || result.stderr || "Command executed successfully (no output).";
+          aiResponseText += `\n\n**Terminal Output:**\n\`\`\`bash\n${output}\n\`\`\``;
+          await sandbox.kill();
+        } catch (err) {
+          aiResponseText += `\n\n**Terminal Error:**\n\`\`\`bash\n${err.message}\n\`\`\``;
+        }
+      }
     }
+
+    // Reconstruct payload to send back modified text
+    if (data.choices) data.choices[0].message.content = aiResponseText;
+    else if (data.message) data.message.content = aiResponseText;
+
     return res.status(200).json(data);
 
   } catch (error) {
-    console.error("CRITICAL AI ROUTE ERROR:", error);
-    
-    if (error.name === 'AbortError') {
-      return res.status(504).json({ error: 'Gateway Timeout: Upstream AI exceeded 55s limit.' });
-    }
-
-    return res.status(502).json({
-      error: 'Gateway / Connection Failure',
-      details: error.message
-    });
+    console.error("AI ROUTE ERROR:", error);
+    return res.status(502).json({ error: 'Gateway Connection Failure', details: error.message });
   }
 }

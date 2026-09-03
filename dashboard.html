@@ -77,7 +77,7 @@
       </div>
       <div>
         <h1 class="font-heading font-bold text-base text-white tracking-tight leading-tight">LuminaVista</h1>
-        <p class="text-[10px] text-zinc-400 font-mono">v9.0 Cloud Studio</p>
+        <p class="text-[10px] text-zinc-400 font-mono">v9.5 Cloud Studio</p>
       </div>
     </div>
 
@@ -153,15 +153,15 @@
       <!-- TAB 1: OLLAMA AI STUDIO (EXPANDED CHAT + FULL CODESPACE/ARTIFACTS) -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-5">
         
-        <!-- Left Panel: Streamlined AI Config (Persona & Model Bar) -->
+        <!-- Left Panel: Streamlined AI Config -->
         <div class="w-full lg:w-64 glass-panel rounded-2xl flex flex-col overflow-hidden shrink-0 border border-cyan-500/20 shadow-lg">
           <div class="p-3.5 border-b border-white/5 bg-surface-900/60 flex items-center justify-between">
             <h3 class="font-heading font-bold text-xs text-white flex items-center gap-2">
-              <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i> Persona & Engine
+              <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i> AI Config
             </h3>
             <div class="flex items-center gap-1.5">
               <button onclick="checkProviderQuota()" title="Check Cloud Usage / Quota" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-cyan-400 transition-colors cursor-pointer"><i data-lucide="activity" class="w-3.5 h-3.5"></i></button>
-              <button onclick="configureVercelSecurity()" title="Vercel Backend Key" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-emerald-400 transition-colors cursor-pointer"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i></button>
+              <button onclick="configureVercelSecurity()" title="Vercel Security Token" class="p-1.5 rounded-lg bg-surface-850 hover:bg-surface-800 text-emerald-400 transition-colors cursor-pointer"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i></button>
             </div>
           </div>
 
@@ -188,7 +188,7 @@
               </select>
             </div>
 
-            <!-- Multi-Persona Roster (Over 20 Varied Personas) -->
+            <!-- Multi-Persona Roster (20+ Varied Personas) -->
             <div class="space-y-1">
               <label class="text-[11px] font-mono text-zinc-400">System Persona:</label>
               <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onPersonaSelectChange()">
@@ -258,13 +258,13 @@
           <!-- Input Bar -->
           <div class="p-4 bg-surface-900/90 border-t border-white/5 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative w-full mx-auto" onsubmit="handleSendAiPrompt(event)">
-              <textarea id="aiPromptTextarea" rows="1" placeholder="Instruct AI to code, research, build apps in codespace... (Ctrl+Enter to send)" class="w-full bg-surface-950 border border-white/10 rounded-2xl pl-4 pr-14 py-3.5 text-[13px] text-white outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none max-h-40 overflow-y-auto transition-all shadow-inner" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+              <textarea id="aiPromptTextarea" rows="1" placeholder="Instruct AI to code, research, or build apps in codespace... (Ctrl+Enter to send)" class="w-full bg-surface-950 border border-white/10 rounded-2xl pl-4 pr-14 py-3.5 text-[13px] text-white outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 resize-none max-h-40 overflow-y-auto transition-all shadow-inner" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
               <button type="submit" id="btnAiSend" class="absolute right-2 bottom-2 w-9 h-9 rounded-xl btn-gradient flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
             </form>
           </div>
         </div>
 
-        <!-- Right Panel: Full Interactive Codespace & Artifacts Engine (Claude Code Style) -->
+        <!-- Right Panel: Full Interactive Codespace & Artifacts Engine -->
         <div id="aiCodespaceColumn" class="hidden w-full lg:w-[580px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
           
           <!-- Codespace Top Bar -->
@@ -494,18 +494,18 @@
           <div class="flex items-center justify-between pb-3 border-b border-white/5 shrink-0">
             <div class="flex items-center gap-2 font-mono text-xs">
               <span class="w-3 h-3 rounded-full bg-rose-500/80"></span><span class="w-3 h-3 rounded-full bg-amber-500/80"></span><span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
-              <span class="text-zinc-400 ml-2">godx-terminal — bash</span>
+              <span class="text-zinc-400 ml-2">godx-terminal — E2B MicroVM</span>
             </div>
           </div>
           <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v9.0]</div>
-            <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Vercel Backend.</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v9.5 Cloud E2B Sandbox]</div>
+            <div class="text-zinc-500">Connected to isolated Firecracker Linux VM. Codespace files automatically injected.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
           <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2 shrink-0">
-            <span class="font-mono text-xs text-cyan-400 font-bold">anish@godx:~$</span>
-            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="open <folder>, ai <msg>, ping, clear..." class="godx-input flex-1 px-4 py-3 text-xs font-mono" />
-            <button type="submit" class="btn-gradient px-6 py-3 rounded-xl text-xs font-mono font-bold text-black cursor-pointer">Run</button>
+            <span class="font-mono text-xs text-cyan-400 font-bold">anish@cloud-vm:~$</span>
+            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="ls -la, npm init, python3 script.py, clear..." class="godx-input flex-1 px-4 py-3 text-xs font-mono" />
+            <button type="submit" class="btn-gradient px-6 py-3 rounded-xl text-xs font-mono font-bold text-black cursor-pointer">Exec</button>
           </form>
         </div>
       </section>
@@ -515,7 +515,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Frame Latency</span><div class="text-3xl font-heading font-extrabold text-white mt-1">0.28 ms</div></div>
           <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Memory Load</span><div class="text-3xl font-heading font-extrabold text-cyan-300 mt-1">14.2 MB</div></div>
-          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Vercel Backend</span><div class="text-3xl font-heading font-extrabold text-purple-300 mt-1">Active</div></div>
+          <div class="glass-panel p-6 rounded-2xl"><span class="text-[11px] font-mono text-zinc-400">Vercel Edge Node</span><div class="text-3xl font-heading font-extrabold text-purple-300 mt-1">Active</div></div>
         </div>
         <div class="glass-panel rounded-2xl p-6 space-y-4">
           <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i> Hardware Waveform</h3>
@@ -617,7 +617,7 @@
     let termHistory = [], termHistoryIdx = -1;
 
     // =========================================================================
-    // VIRTUAL FILE SYSTEM & INTERACTIVE CODESPACE ENGINE (CLAUDE CODE STYLE)
+    // VIRTUAL FILE SYSTEM & INTERACTIVE CODESPACE ENGINE
     // =========================================================================
     let vfs = JSON.parse(localStorage.getItem("lumina_codespace_vfs") || JSON.stringify({
       "index.html": "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Interactive Codespace</h1>\n    <p>AI can create, modify, and execute files here.</p>\n    <button id=\"btnAction\">Click Me</button>\n  </div>\n  <script src=\"script.js\"><\/script>\n</body>\n</html>",
@@ -680,7 +680,7 @@
     function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
 
     // =========================================================================
-    // OLLAMA AI STUDIO: CONFIG, PERSONAS, WEB SEARCH & CODESPACE INTEGRATION
+    // OLLAMA AI STUDIO: CONFIG, PERSONAS, WEB SEARCH
     // =========================================================================
     function loadAiConfig() { 
       const savedPersona = localStorage.getItem("lumina_ai_persona") || "normal";
@@ -715,7 +715,6 @@
     async function checkProviderQuota() {
       showToast("Telemetry", "Checking provider rate limits...");
       try {
-        // Query tags or active models on the configured endpoint to assess health and usage
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -870,16 +869,12 @@
     function bundleCodespaceHTML() {
       let mainHtml = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
       
-      // Inject CSS
       if (vfs["style.css"]) {
         mainHtml = mainHtml.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
       }
-      
-      // Inject JS
       if (vfs["script.js"]) {
         mainHtml = mainHtml.replace("</body>", `<script>\n${vfs["script.js"]}\n<\/script></body>`);
       }
-
       return mainHtml;
     }
 
@@ -906,9 +901,7 @@
     }
 
     function deleteActiveFile() {
-      if (csActiveFile === "index.html") {
-        return alert("Cannot delete root entry index.html");
-      }
+      if (csActiveFile === "index.html") return alert("Cannot delete root entry index.html");
       if (confirm(`Delete ${csActiveFile} from workspace?`)) {
         delete vfs[csActiveFile];
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
@@ -932,7 +925,6 @@
       showToast("Workspace Exported", "Downloaded JSON project bundle.");
     }
 
-    // AI Auto-Write Integration into Codespace
     function writeCodeToCodespace(filename, code) {
       vfs[filename] = code;
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
@@ -947,21 +939,16 @@
     function parseAiMarkdown(t) {
       if(!t) return "";
 
-      // Look for code blocks with filename tags: ```language:filename.ext or comments inside
       return t.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, lang1, file1, lang2, code) => {
         let language = lang1 || lang2 || "text";
         let filename = file1 || "";
 
-        // Check if code has header comment like // filename: app.js
         if (!filename) {
           const firstLine = code.split('\n')[0];
           const nameMatch = firstLine.match(/(?:\/\/|<!--|#)\s*filename:\s*([a-zA-Z0-9._-]+)/i);
-          if (nameMatch) {
-            filename = nameMatch[1];
-          }
+          if (nameMatch) filename = nameMatch[1];
         }
 
-        // Auto-assign logical defaults if suitable
         if (!filename) {
           if (language === 'html') filename = 'index.html';
           else if (language === 'css') filename = 'style.css';
@@ -1224,59 +1211,62 @@
     function copyGeneratedDesignCss() { navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); showToast("Copied","CSS class ready."); }
 
     // =========================================================================
-    // TERMINAL (INTEGRATED WITH VERCEL BACKEND)
+    // TERMINAL (INTEGRATED WITH E2B CLOUD SANDBOX & CODESPACE FILES)
     // =========================================================================
     function handleTerminalKeyDown(e) { if(e.key==="ArrowUp"){e.preventDefault(); if(termHistory.length>0&&termHistoryIdx>0){termHistoryIdx--; e.target.value=termHistory[termHistoryIdx];}else if(termHistory.length>0&&termHistoryIdx===-1){termHistoryIdx=termHistory.length-1; e.target.value=termHistory[termHistoryIdx];}}else if(e.key==="ArrowDown"){e.preventDefault(); if(termHistoryIdx>=0&&termHistoryIdx<termHistory.length-1){termHistoryIdx++; e.target.value=termHistory[termHistoryIdx];}else{termHistoryIdx=-1; e.target.value="";}} }
     
     async function handleTerminalCommand(e) { 
-      e.preventDefault(); const inp=document.getElementById("terminalInput"), cmd=inp.value.trim(); if(!cmd)return; 
-      termHistory.push(cmd); termHistoryIdx=-1; 
-      const scr=document.getElementById("terminalScreen"), l=document.createElement("div"); 
-      l.className="text-zinc-400"; l.innerHTML=`<span class="text-cyan-400 font-bold">anish@godx:~$</span> ${cmd}`; scr.appendChild(l); 
+      e.preventDefault(); 
+      const inp = document.getElementById("terminalInput");
+      const cmd = inp.value.trim(); 
+      if(!cmd) return; 
       
-      const pts=cmd.split(" "), act=pts[0].toLowerCase(), arg=pts.slice(1).join(" "), res=document.createElement("div"); 
+      termHistory.push(cmd); termHistoryIdx = -1; 
+      const scr = document.getElementById("terminalScreen");
+      const l = document.createElement("div"); 
+      l.className = "text-zinc-400"; 
+      l.innerHTML = `<span class="text-cyan-400 font-bold">anish@cloud-vm:~$</span> ${cmd}`; 
+      scr.appendChild(l); 
       
-      switch(act) {
-        case "help": res.innerHTML="- ls, open &lt;name&gt;, ai &lt;prompt&gt;, clear"; break;
-        case "ls": res.textContent=repoProjects.map(p=>`EXM/${p.name}`).join("  ")||"Empty"; break;
-        case "open": const m=repoProjects.find(p=>p.name.toLowerCase()===arg.replace("EXM/","").toLowerCase()); if(m){selectProject(m); switchTab("tab-projects"); res.textContent=`Launched EXM/${m.name}`;}else{res.textContent="Not found.";} break;
-        case "clear": scr.innerHTML=""; inp.value=""; return;
-        case "ai": 
-          if(!arg) {
-            res.className="text-rose-400"; res.textContent="Usage: ai <prompt>"; 
-          } else {
-            res.className="text-purple-300"; res.innerHTML="<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Querying Vercel Backend...";
-            scr.appendChild(res); scr.scrollTop=scr.scrollHeight; lucide.createIcons();
-            try {
-              const fetchRes = await fetch("/api/chat", {
-                method: "POST", 
-                headers: { 
-                  "Content-Type": "application/json",
-                  "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
-                },
-                body: JSON.stringify({ 
-                  prompt: arg, 
-                  requestedModel: document.getElementById("aiModelInput") ? document.getElementById("aiModelInput").value : "gpt-oss:20b",
-                  webSearch: document.getElementById("checkWebSearch").checked,
-                  messages: [{ role: "system", content: "You are a helpful CLI AI. Keep responses brief." }] 
-                })
-              });
-              const data = await fetchRes.json();
-              if (fetchRes.ok) {
-                res.className="text-emerald-400 whitespace-pre-wrap mt-2 mb-2"; 
-                res.textContent = `[${document.getElementById("aiModelInput").value}]:\n${data.choices?.[0]?.message?.content || data.response || "Done."}`;
-              } else {
-                res.className="text-rose-400"; res.textContent = `[Backend Error]: ${data.error || "Unknown"}`;
-              }
-            } catch(err) {
-              res.className="text-rose-400"; res.textContent = `[Network Error]: ${err.message}.`;
-            }
-            inp.value=""; return;
-          }
-          break;
-        default: res.textContent=`Command not found: ${act}`; break;
+      if (cmd === "clear") { scr.innerHTML = ""; inp.value = ""; return; }
+      
+      const res = document.createElement("div"); 
+      res.className = "text-purple-300"; 
+      res.innerHTML = "<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Connecting to E2B Cloud Sandbox...";
+      scr.appendChild(res); 
+      scr.scrollTop = scr.scrollHeight; 
+      lucide.createIcons();
+
+      try {
+        // Package your active Codespace files into an array for the sandbox
+        const filesArray = Object.keys(vfs).map(key => ({ name: key, content: vfs[key] }));
+
+        const fetchRes = await fetch("/api/terminal", {
+          method: "POST", 
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
+          },
+          body: JSON.stringify({ command: cmd, files: filesArray })
+        });
+        
+        const data = await fetchRes.json();
+        
+        if (fetchRes.ok) {
+          res.className = "text-emerald-400 whitespace-pre-wrap mt-2 mb-2 font-mono"; 
+          res.textContent = (data.stdout || "") + "\n" + (data.stderr || "");
+          if(!res.textContent.trim()) res.textContent = "[Process exited smoothly without output]";
+        } else {
+          res.className = "text-rose-400 mt-2 mb-2 font-mono"; 
+          res.textContent = `[E2B Sandbox Error]: ${data.error || "Unknown Error"}\n${data.details || ""}`;
+        }
+      } catch(err) {
+        res.className = "text-rose-400 mt-2 mb-2 font-mono"; 
+        res.textContent = `[Network Timeout]: Could not reach terminal backend.`;
       }
-      scr.appendChild(res); inp.value=""; scr.scrollTop=scr.scrollHeight;
+      
+      inp.value = ""; 
+      scr.scrollTop = scr.scrollHeight;
     }
 
     // =========================================================================
