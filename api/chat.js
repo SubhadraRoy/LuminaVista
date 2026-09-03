@@ -1,38 +1,64 @@
-// api/chat.js
 import { Redis } from '@upstash/redis';
 
 export const maxDuration = 60;
 
-// Lightweight zero-dependency Web Search scraper
+// Multi-Source Web Search Engine (Resilient to Vercel IP blocks)
 async function performWebSearch(query) {
-  try {
-    const cleanQuery = query.replace(/[^\w\s-]/gi, ' ').trim().slice(0, 100);
-    if (!cleanQuery) return null;
+  const cleanQuery = query.replace(/[^\w\s-]/gi, ' ').trim().slice(0, 100);
+  if (!cleanQuery) return null;
 
-    const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(cleanQuery)}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9'
+  const results = [];
+
+  // 1. Check for premium search API keys if configured in Vercel
+  if (process.env.TAVILY_API_KEY) {
+    try {
+      const res = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: process.env.TAVILY_API_KEY, query: cleanQuery, max_results: 4 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        data.results?.forEach(r => results.push(`- **${r.title}**: ${r.content} (${r.url})`));
+        if (results.length > 0) return results.join("\n\n");
       }
-    });
-
-    if (!res.ok) return null;
-    const html = await res.text();
-
-    const snippets = [];
-    const snippetRegex = /<a class="result__snippet[^>]*>([\s\S]*?)<\/a>/gi;
-    let match;
-    while ((match = snippetRegex.exec(html)) !== null && snippets.length < 5) {
-      const text = match[1].replace(/<[^>]+>/g, '').trim();
-      if (text) snippets.push(`- ${text}`);
+    } catch (e) {
+      console.warn("Tavily search failed, falling back to public providers.");
     }
-
-    return snippets.length > 0 ? snippets.join('\n\n') : null;
-  } catch (err) {
-    console.error("Web Search Resolver Error:", err.message);
-    return null;
   }
+
+  // 2. Free Public Engine A: DuckDuckGo Instant Answer API
+  try {
+    const ddgRes = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQuery)}&format=json&no_html=1&skip_disambig=1`);
+    if (ddgRes.ok) {
+      const ddgData = await ddgRes.json();
+      if (ddgData.AbstractText) {
+        results.push(`- **Overview**: ${ddgData.AbstractText} (Source:${ddgData.AbstractURL || 'DuckDuckGo'})`);
+      }
+      ddgData.RelatedTopics?.slice(0, 3).forEach(topic => {
+        if (topic.Text) results.push(`- ${topic.Text} (${topic.FirstURL || ''})`);
+      });
+    }
+  } catch (e) {
+    console.warn("DuckDuckGo API call failed:", e.message);
+  }
+
+  // 3. Free Public Engine B: Wikipedia Search & Summary API
+  try {
+    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&utf8=&format=json&origin=*`);
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json();
+      const hits = wikiData.query?.search?.slice(0, 3) || [];
+      hits.forEach(hit => {
+        const cleanSnippet = hit.snippet.replace(/<[^>]+>/g, '').trim();
+        results.push(`- **${hit.title}**: ${cleanSnippet} (https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title)})`);
+      });
+    }
+  } catch (e) {
+    console.warn("Wikipedia API call failed:", e.message);
+  }
+
+  return results.length > 0 ? results.join("\n\n") : null;
 }
 
 export default async function handler(req, res) {
@@ -84,21 +110,26 @@ export default async function handler(req, res) {
       ? [...messages]
       : [{ role: 'user', content: prompt || 'Hello' }];
 
-    // Internet Search Protocol
+    // Inject Codespace format directive into system prompt
+    const codespaceDirective = `\n\n[CODESPACE WORKSPACE RULES]:\nYou have full access to an integrated interactive codespace/sandbox. When you write code for this workspace, specify the target filename in your markdown code fence using the format:\n\`\`\`html:index.html\n\`\`\`css:style.css\n\`\`\`javascript:script.js\nor start the code block with a comment like // filename: app.js. The client will automatically compile and render your files.`;
+
+    if (formattedMessages[0]?.role === 'system') {
+      formattedMessages[0].content += codespaceDirective;
+    } else {
+      formattedMessages.unshift({ role: 'system', content: codespaceDirective });
+    }
+
+    // Real-Time Internet Search
+    let searchResultsSummary = null;
     if (webSearch) {
       const lastUserMsg = [...formattedMessages].reverse().find(m => m.role === 'user');
       const searchQuery = lastUserMsg ? lastUserMsg.content : prompt;
       
       if (searchQuery) {
-        const searchResults = await performWebSearch(searchQuery);
-        if (searchResults) {
-          const webContextPrompt = `\n\n[REAL-TIME LIVE INTERNET SEARCH RESULTS]:\n${searchResults}\n\nInstructions: Use the real-time search data above to provide factual, up-to-date answers to the user's query. Incorporate this context naturally without announcing that you performed a search.`;
-          
-          if (formattedMessages[0]?.role === 'system') {
-            formattedMessages[0].content += webContextPrompt;
-          } else {
-            formattedMessages.unshift({ role: 'system', content: webContextPrompt });
-          }
+        searchResultsSummary = await performWebSearch(searchQuery);
+        if (searchResultsSummary) {
+          const webContext = `\n\n[REAL-TIME LIVE INTERNET DATA]:\n${searchResultsSummary}\n\nInstructions: Use this verified internet search context to provide an accurate, current response.`;
+          formattedMessages[0].content += webContext;
         }
       }
     }
@@ -145,6 +176,9 @@ export default async function handler(req, res) {
     }
 
     const data = await aiRes.json();
+    if (searchResultsSummary) {
+      data._webSearchAttached = true;
+    }
     return res.status(200).json(data);
 
   } catch (error) {
