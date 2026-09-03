@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <!-- SECURITY: Strict Content Security Policy (CSP) -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; object-src 'self' blob: data:;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   
@@ -38,8 +37,19 @@
     .glass-panel { background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.8), 0 0 35px -10px var(--primary-glow); }
     .godx-input { background-color: #0f172a !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.18) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; line-height: 1.25rem !important; outline: none !important; transition: all 0.2s ease !important; }
     .godx-input:focus { background-color: #1e293b !important; border-color: var(--primary) !important; box-shadow: 0 0 0 3px var(--primary-glow) !important; }
+    
+    /* LINTER MASK FIXES */
     .glow-border { position: relative; }
-    .glow-border::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 0; }
+    .glow-border::before { 
+      content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; 
+      background: linear-gradient(135deg, var(--primary), rgba(168, 85, 247, 0.3), transparent 70%); 
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); 
+      -webkit-mask-composite: xor; 
+      mask-composite: exclude; 
+      pointer-events: none; z-index: 0; 
+    }
+    
     .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
     .btn-gradient:hover { background-position: right center; box-shadow: 0 0 25px var(--primary-glow); }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -77,7 +87,7 @@
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-base shadow-lg shadow-cyan-500/25 tracking-wider">GODx</div>
           <div>
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">Anish x <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] border border-cyan-500/30 uppercase font-mono font-semibold">Root Admin</span></h3>
-            <p class="text-xs text-zinc-400">LuminaVista Portal Access</p>
+            <p class="text-xs text-zinc-400">Vercel Auth Protection Enabled</p>
           </div>
         </div>
 
@@ -97,11 +107,11 @@
               <input type="password" id="passInput" required placeholder="••••••••••••" class="godx-input w-full pl-10 pr-12 py-3" />
               <button type="button" onclick="togglePassVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-cyan-300 z-30"><i data-lucide="eye" id="loginPassIcon" class="w-4 h-4"></i></button>
             </div>
-            <p id="loginError" class="hidden text-[11px] text-rose-400 mt-1.5 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Access Denied.</p>
+            <p id="loginError" class="hidden text-[11px] text-rose-400 mt-1.5 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Verification Failed. Access Denied by Vercel.</p>
           </div>
 
           <button type="submit" id="loginSubmitBtn" class="btn-gradient w-full py-3 px-4 rounded-xl text-sm font-semibold text-black flex items-center justify-center gap-2 shadow-lg mt-4 cursor-pointer">
-            <span id="loginBtnText">Unlock Dashboard</span><i data-lucide="arrow-right" id="loginBtnIcon" class="w-4 h-4"></i>
+            <span id="loginBtnText">Verify & Unlock Dashboard</span><i data-lucide="arrow-right" id="loginBtnIcon" class="w-4 h-4"></i>
           </button>
         </form>
       </div>
@@ -114,7 +124,7 @@
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-md">GODx</div>
         <div>
-          <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight flex items-center gap-2">LuminaVista OS <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">v6.0-Sec</span></h1>
+          <h1 class="font-heading font-bold text-base sm:text-lg text-white tracking-tight flex items-center gap-2">LuminaVista OS <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">v7.0-Cloud</span></h1>
           <p class="text-[11px] text-zinc-400">Admin: <span class="text-zinc-200" id="headerAdminName">Anish x</span></p>
         </div>
       </div>
@@ -122,11 +132,12 @@
       <div class="hidden lg:flex items-center gap-4 bg-surface-900/80 px-4 py-1.5 rounded-full border border-white/5 text-xs text-zinc-400 font-mono">
         <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>00:00:00</span>
         <span class="text-zinc-700">•</span>
-        <span class="flex items-center gap-1.5 text-emerald-400"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> EXM Host Active</span>
+        <span class="flex items-center gap-1.5 text-emerald-400"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Vercel Gateway Active</span>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-2.5">
         <button onclick="openSourceInspector()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 flex items-center gap-1.5"><i data-lucide="code" class="w-3.5 h-3.5 text-cyan-400"></i> Source</button>
+        <button onclick="openCommandPalette()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 flex items-center gap-1.5"><i data-lucide="command" class="w-3.5 h-3.5 text-cyan-400"></i> Palette <kbd class="px-1.5 py-0.5 text-[10px] bg-surface-800 rounded font-mono">⌘K</kbd></button>
         <button onclick="handleLogout()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 flex items-center gap-1.5"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit</button>
       </div>
     </header>
@@ -141,7 +152,7 @@
           <i data-lucide="folder-tree" class="w-4 h-4 text-cyan-400"></i><span>EXM Projects</span>
         </button>
         <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 shrink-0 cursor-pointer">
-          <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i><span>Interactive Sandbox</span>
+          <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i><span>Cloud Compilers & SQL</span>
         </button>
         <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border border-transparent text-zinc-400 hover:text-zinc-200 shrink-0 cursor-pointer">
           <i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i><span>Canvas Whiteboard</span>
@@ -183,12 +194,12 @@
           <div class="p-5 space-y-5 flex-1 overflow-y-auto">
             <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <p class="text-[11px] text-emerald-300 leading-relaxed font-mono">
-                API Keys isolated on backend. Enter your Vercel Security Token below to authenticate.
+                API Keys isolated securely. Verify your Vercel Access Token below.
               </p>
             </div>
             
             <div class="space-y-1.5 mt-3">
-              <label class="text-[11px] font-mono text-zinc-400">Vercel Auth Key (Optional):</label>
+              <label class="text-[11px] font-mono text-zinc-400">Vercel Auth Token (Optional):</label>
               <div class="relative">
                 <input type="password" id="vercelAuthInput" placeholder="Enter secure token..." class="godx-input w-full pl-3 pr-8 py-2 text-xs font-mono" onchange="saveAiConfig()" />
                 <button type="button" onclick="toggleVercelAuthVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer z-30">
@@ -309,7 +320,7 @@
             </div>
 
             <div id="iframeWrapper" class="flex-1 relative rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300 w-full mx-auto">
-              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-popups allow-modals" class="w-full h-full border-0 bg-white"></iframe>
+              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin" class="w-full h-full border-0 bg-white"></iframe>
               <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-3">
                 <i data-lucide="folder-search" class="w-8 h-8 text-cyan-400 mb-2"></i>
                 <h4 class="font-heading font-bold text-sm text-white">Select a Project</h4>
@@ -320,13 +331,13 @@
         </div>
       </section>
 
-      <!-- TAB 3: MULTI-LANGUAGE COMPILERS & SQL -->
+      <!-- TAB 3: CLOUD COMPILERS & SQL -->
       <section id="tab-sandbox" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-white/5">
             <div>
-              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Local Parsers & SQL Engine</h3>
-              <p class="text-xs text-zinc-400">Run HTML/JS, simulated Python/C++/Java stdout, and in-memory SQL queries.</p>
+              <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Cloud Compiler Engine</h3>
+              <p class="text-xs text-zinc-400">Execute code via Vercel Backend (Python, C++, Java) and In-Memory SQL.</p>
             </div>
             <div class="flex items-center gap-2 bg-surface-900 p-1 rounded-xl border border-white/10 text-xs font-mono">
               <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer">HTML</button>
@@ -341,7 +352,7 @@
             <div class="flex flex-col space-y-2">
               <div class="flex justify-between text-xs font-mono text-zinc-400">
                 <span>Code Editor:</span>
-                <button onclick="runSandboxCode()" class="text-emerald-400 hover:text-emerald-300 font-bold"><i data-lucide="play" class="w-3.5 h-3.5 inline mr-1"></i>Run</button>
+                <button onclick="runSandboxCode()" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 cursor-pointer"><i data-lucide="play" class="w-3.5 h-3.5"></i>Run</button>
               </div>
               <textarea id="sandboxCodeInput" oninput="onSandboxCodeChange()" class="godx-input w-full flex-1 p-4 font-mono text-xs outline-none resize-none leading-relaxed"></textarea>
             </div>
@@ -353,7 +364,7 @@
               <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white">
                 <iframe id="sandboxPreviewFrame" class="w-full h-full border-0"></iframe>
               </div>
-              <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-5 bg-surface-950 font-mono text-[11px] text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-loose"></div>
+              <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-5 bg-surface-950 font-mono text-[11px] text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-loose shadow-inner"></div>
             </div>
           </div>
         </div>
@@ -434,7 +445,7 @@
             </div>
           </div>
           <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 min-h-[400px] max-h-[500px] overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
-            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v6.0-Sec]</div>
+            <div class="text-cyan-400 font-bold">LuminaVista GODx Terminal [v6.0]</div>
             <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or <span class="text-purple-300 font-bold">ai &lt;prompt&gt;</span> to prompt Vercel Backend.</div>
             <div class="border-b border-white/5 my-2"></div>
           </div>
@@ -459,14 +470,14 @@
         </div>
       </section>
 
-      <!-- TAB 9: NOTES VAULT (WITH XSS SANITIZATION) -->
+      <!-- TAB 9: NOTES VAULT -->
       <section id="tab-scratchpad" class="tab-pane space-y-6 hidden">
         <div class="glass-panel rounded-2xl p-5 space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-white/5">
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i> Notes Vault</h3>
             <div class="flex gap-2">
-              <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 text-xs font-mono">New Note</button>
-              <button onclick="toggleMarkdownPreview()" class="px-3 py-1.5 rounded-xl bg-surface-900 text-zinc-300 text-xs font-mono">Live Preview</button>
+              <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 text-xs font-mono cursor-pointer">New Note</button>
+              <button onclick="toggleMarkdownPreview()" class="px-3 py-1.5 rounded-xl bg-surface-900 text-zinc-300 text-xs font-mono cursor-pointer">Live Preview</button>
             </div>
           </div>
           <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-2 text-xs font-mono"></div>
@@ -483,22 +494,22 @@
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-cyan-400"></i> Frame Security</h3>
             <label class="flex justify-between p-3 rounded-xl bg-surface-900/80 text-xs cursor-pointer"><span>Allow Scripts</span><input type="checkbox" id="checkAllowScripts" checked class="w-4 h-4 accent-cyan-500"/></label>
-            <button onclick="applySandboxPolicy()" class="w-full py-2 rounded-xl bg-cyan-500 text-black text-xs font-bold">Apply Strict Policy</button>
+            <button onclick="applySandboxPolicy()" class="w-full py-2 rounded-xl bg-cyan-500 text-black text-xs font-bold cursor-pointer">Apply Strict Policy</button>
           </div>
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4 text-amber-400"></i> Theme Engine</h3>
             <div class="grid grid-cols-2 gap-2 text-xs">
-              <button onclick="setDashboardTheme('cyan')" class="p-2 rounded-xl bg-cyan-500/10 text-cyan-300">Cyan</button>
-              <button onclick="setDashboardTheme('emerald')" class="p-2 rounded-xl bg-emerald-500/10 text-emerald-300">Matrix</button>
-              <button onclick="setDashboardTheme('amber')" class="p-2 rounded-xl bg-amber-500/10 text-amber-300">Solar</button>
-              <button onclick="setDashboardTheme('rose')" class="p-2 rounded-xl bg-rose-500/10 text-rose-300">Laser</button>
+              <button onclick="setDashboardTheme('cyan')" class="p-2 rounded-xl bg-cyan-500/10 text-cyan-300 cursor-pointer">Cyan</button>
+              <button onclick="setDashboardTheme('emerald')" class="p-2 rounded-xl bg-emerald-500/10 text-emerald-300 cursor-pointer">Matrix</button>
+              <button onclick="setDashboardTheme('amber')" class="p-2 rounded-xl bg-amber-500/10 text-amber-300 cursor-pointer">Solar</button>
+              <button onclick="setDashboardTheme('rose')" class="p-2 rounded-xl bg-rose-500/10 text-rose-300 cursor-pointer">Laser</button>
             </div>
             <input type="color" onchange="applyCustomAccentColor(this.value)" class="w-full h-8 cursor-pointer rounded bg-transparent border-0" />
           </div>
           <div class="glass-panel rounded-2xl p-5 space-y-4">
             <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="download" class="w-4 h-4 text-sky-400"></i> Data Management</h3>
-            <button onclick="exportDashboardConfig()" class="w-full py-2 rounded-xl bg-surface-850 text-zinc-300 text-xs">Export JSON</button>
-            <button onclick="flushWorkspaceCache()" class="w-full py-2 rounded-xl bg-rose-500/10 text-rose-300 text-xs">Flush Storage</button>
+            <button onclick="exportDashboardConfig()" class="w-full py-2 rounded-xl bg-surface-850 text-zinc-300 text-xs cursor-pointer">Export JSON</button>
+            <button onclick="flushWorkspaceCache()" class="w-full py-2 rounded-xl bg-rose-500/10 text-rose-300 text-xs cursor-pointer">Flush Storage</button>
           </div>
         </div>
       </section>
@@ -519,9 +530,9 @@
         <button onclick="closeSourceInspector()" class="p-1.5 rounded-lg bg-surface-850 text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="my-3 flex items-center gap-2">
-        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono">index.html</button>
-        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono">style.css</button>
-        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono">script.js</button>
+        <button onclick="loadSourceFile('index.html')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-cyan-300 font-mono cursor-pointer">index.html</button>
+        <button onclick="loadSourceFile('style.css')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-purple-300 font-mono cursor-pointer">style.css</button>
+        <button onclick="loadSourceFile('script.js')" class="px-3 py-1 rounded-lg bg-surface-900 border border-white/10 text-xs text-emerald-300 font-mono cursor-pointer">script.js</button>
       </div>
       <div class="flex-1 overflow-y-auto bg-surface-950 rounded-2xl p-4 border border-white/5"><pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap">Loading...</code></pre></div>
     </div>
@@ -558,14 +569,7 @@
     let activeNoteId = vaultNotes[0].id;
     let isMarkdownPreviewActive = false;
     let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
-    
     let termHistory = [], termHistoryIdx = -1;
-
-    // --- SECURITY UPGRADE: WebCrypto SHA-256 Auth ---
-    async function hashPassword(msg) {
-      const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-      return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,'0')).join('');
-    }
 
     window.addEventListener("DOMContentLoaded", () => {
       setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
@@ -588,7 +592,7 @@
     });
 
     // =========================================================================
-    // CORE UI
+    // CORE UI & AUTHENTICATION (VERCEL BACKEND SHA-256)
     // =========================================================================
     function startSystemClock() { setInterval(() => { document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; lucide.createIcons(); }, 1000); }
     function playAudioTone(freq=440, type="sine", dur=0.08) { if(!isAudioEnabled)return; try{const actx=new(window.AudioContext||window.webkitAudioContext)(); const osc=actx.createOscillator(), gain=actx.createGain(); osc.type=type; osc.frequency.value=freq; gain.gain.setValueAtTime(0.04, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur); osc.connect(gain); gain.connect(actx.destination); osc.start(); osc.stop(actx.currentTime+dur);}catch(e){} }
@@ -598,25 +602,37 @@
     
     async function handleLogin(e) {
       e.preventDefault(); 
-      const u=document.getElementById("usernameInput").value.trim()||"Anish x";
-      const p=document.getElementById("passInput").value.trim();
-      document.getElementById("loginBtnText").textContent="Authenticating...";
+      const u = document.getElementById("usernameInput").value.trim() || "Anish x";
+      const p = document.getElementById("passInput").value.trim();
+      document.getElementById("loginBtnText").textContent = "Verifying with Vercel...";
       
-      const inputHash = await hashPassword(p);
-      const expectedHash = await hashPassword(atob("eHBzQGFkbWlu")); // Safely hashes "xps@admin" at runtime
-
-      setTimeout(() => { 
-        document.getElementById("loginBtnText").textContent="Unlock Dashboard"; 
-        if(inputHash === expectedHash) { 
+      try {
+        const res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: p })
+        });
+        
+        const data = await res.json();
+        
+        if(data.success) { 
           document.getElementById("loginError").classList.add("hidden"); 
-          sessionStorage.setItem(SESSION_KEY,"true"); sessionStorage.setItem("lumina_godx_user",u); 
-          document.getElementById("headerAdminName").textContent=u; 
-          showToast("Access Granted", "Welcome back."); showDashboard(); 
+          sessionStorage.setItem(SESSION_KEY, "true"); 
+          sessionStorage.setItem("lumina_godx_user", u); 
+          document.getElementById("headerAdminName").textContent = u; 
+          showToast("Access Granted", "Welcome back."); 
+          showDashboard(); 
         } else { 
-          document.getElementById("loginError").classList.remove("hidden"); playAudioTone(220,"sawtooth",0.2); 
-        } 
-      }, 300);
+          document.getElementById("loginError").classList.remove("hidden"); 
+          playAudioTone(220,"sawtooth",0.2); 
+        }
+      } catch(err) {
+        showToast("Backend Offline", "Vercel API unreachable.");
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+      document.getElementById("loginBtnText").textContent = "Unlock Dashboard";
     }
+    
     function handleLogout() { sessionStorage.removeItem(SESSION_KEY); playAudioTone(330,"sine",0.1); showToast("Locked", "Logged out."); showLogin(); }
 
     function switchTab(id) {
@@ -627,7 +643,7 @@
     function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
 
     // =========================================================================
-    // VERCEL AI STUDIO ENGINE 
+    // VERCEL AI STUDIO ENGINE
     // =========================================================================
     function loadAiConfig() { 
       document.getElementById("aiPersonaSelect").value = localStorage.getItem("lumina_ai_persona") || "architect"; 
@@ -657,9 +673,7 @@
 
     function parseAiMarkdown(t) {
       if(!t) return "";
-      // SECURITY: Sanitize < and > out of standard text to prevent HTML injection XSS
       let safeText = t.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      
       return safeText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
                 return `<div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-inner"><div class="px-4 py-1.5 bg-surface-900 border-b border-white/10 text-[10px] text-cyan-400 font-mono flex justify-between uppercase"><span>${lang||'Code'}</span><button onclick="copyCodeBlock(this)" class="hover:text-white cursor-pointer">Copy</button></div><pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${code}</code></pre></div>`;
               })
@@ -704,19 +718,17 @@
       try {
         const vercelAuth = document.getElementById("vercelAuthInput").value.trim();
         const reqHeaders = { "Content-Type": "application/json" };
-        if (vercelAuth) {
-          reqHeaders["X-Vercel-Auth"] = vercelAuth;
-        }
+        if (vercelAuth) reqHeaders["X-Vercel-Auth"] = vercelAuth;
 
         const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: reqHeaders,
+          method: "POST", headers: reqHeaders,
           body: JSON.stringify({ 
             prompt: prompt, 
             requestedModel: document.getElementById("aiModelInput").value,
             messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation] 
           })
         });
+        
         document.getElementById("aiTypingIndicator")?.remove();
         const data = await res.json();
         
@@ -728,14 +740,7 @@
         }
       } catch (err) {
         document.getElementById("aiTypingIndicator")?.remove();
-        if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
-          aiConversation.push({ 
-            role: "assistant", 
-            content: `**[Connection Exception]: Failed to fetch.**\n\nYour browser blocked the request or the server is unreachable.\n\n**To fix this:**\n1. Ensure your code is fully deployed to Vercel.\n2. Ensure \`OLLAMA_ENDPOINT\` and \`OLLAMA_API_KEY\` are correctly set in your Vercel Environment Variables.` 
-          });
-        } else {
-          aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
-        }
+        aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
       } finally {
         btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>'; lucide.createIcons();
         localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); renderAiChat();
@@ -743,11 +748,9 @@
     }
 
     function clearAiChat() { aiConversation = []; localStorage.removeItem("lumina_ai_history"); renderAiChat(); showToast("Cleared", "Conversation memory reset."); }
-    
     function downloadAiChat() {
       if(aiConversation.length===0) return showToast("Empty", "No chat to export.");
-      let txt = "=== GODx Neural Thread ===\n\n";
-      aiConversation.forEach(m => txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`);
+      let txt = "=== GODx Neural Thread ===\n\n"; aiConversation.forEach(m => txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`);
       const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"text/plain"})); a.download=`Neural_Thread_${Date.now()}.txt`; a.click();
     }
 
@@ -767,19 +770,55 @@
     function updateSplitFrames() { const l=repoProjects.find(p=>p.name===document.getElementById("splitLeftSelect").value), r=repoProjects.find(p=>p.name===document.getElementById("splitRightSelect").value); if(l)document.getElementById("splitLeftFrame").src=resolveProjectUrl(l.path); if(r)document.getElementById("splitRightFrame").src=resolveProjectUrl(r.path); }
 
     // =========================================================================
-    // LOCAL COMPILERS
+    // CLOUD EXECUTION COMPILERS (PYTHON/C++/JAVA via Vercel)
     // =========================================================================
     let currentSandboxLang="html";
-    function setSandboxLanguage(l) { currentSandboxLang=l; ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>document.getElementById(id).className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer"); document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`).className=`px-3 py-1.5 rounded-lg text-black font-bold cursor-pointer ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; if(l==="html"){document.getElementById("sandboxIframeWrapper").classList.remove("hidden");document.getElementById("sandboxStdoutWrapper").classList.add("hidden");}else{document.getElementById("sandboxIframeWrapper").classList.add("hidden");document.getElementById("sandboxStdoutWrapper").classList.remove("hidden");} }
+    function setSandboxLanguage(l) { 
+      currentSandboxLang=l; ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>document.getElementById(id).className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer"); 
+      document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`).className=`px-3 py-1.5 rounded-lg text-black font-bold cursor-pointer ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
+      if(l==="html"){document.getElementById("sandboxIframeWrapper").classList.remove("hidden");document.getElementById("sandboxStdoutWrapper").classList.add("hidden");}
+      else{document.getElementById("sandboxIframeWrapper").classList.add("hidden");document.getElementById("sandboxStdoutWrapper").classList.remove("hidden");} 
+    }
     function onSandboxCodeChange() { const c=document.getElementById("sandboxCodeInput").value; if(c.includes("SELECT ") || c.includes("FROM ")) setSandboxLanguage("sql"); else if(c.includes("#include")) setSandboxLanguage("cpp"); else if(c.includes("public class")) setSandboxLanguage("java"); else if(c.includes("def ")) setSandboxLanguage("python"); else if(c.includes("<html")) setSandboxLanguage("html"); }
-    function runSandboxCode() { const c=document.getElementById("sandboxCodeInput").value, out=document.getElementById("sandboxStdoutWrapper"); if(currentSandboxLang==="html") document.getElementById("sandboxPreviewFrame").srcdoc=c; else if(currentSandboxLang==="sql") out.textContent=`=== GODx SQL ===\n${c}\n\n| ID | STATUS |\n|----|--------|\n| 1  | ACTIVE |`; else out.textContent="Execution finished with exit code 0."; }
+    
+    async function runSandboxCode() { 
+      const c = document.getElementById("sandboxCodeInput").value;
+      const out = document.getElementById("sandboxStdoutWrapper"); 
+      
+      if (currentSandboxLang === "html") {
+        document.getElementById("sandboxPreviewFrame").srcdoc = c; 
+        showToast("Rendered", "Visual DOM updated."); 
+        return;
+      } 
+      
+      out.innerHTML = `<i data-lucide='loader' class='w-4 h-4 animate-spin inline'></i> Routing to Vercel Execution Engine...`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch("/api/compile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: currentSandboxLang, code: c })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          out.textContent = `=== GODx Cloud Execution (${currentSandboxLang.toUpperCase()}) ===\n\n${data.output}`;
+          showToast("Execution Complete", "Output streamed.");
+        } else {
+          out.textContent = `[Compilation Error]: ${data.error}`;
+        }
+      } catch (err) {
+        out.textContent = `[Network Error]: Vercel execution backend offline.`;
+      }
+    }
 
     // =========================================================================
     // WHITEBOARD & UI DESIGN
     // =========================================================================
     function resizeWhiteboardCanvas() { const cv=document.getElementById("whiteboardCanvas"); if(!cv||!cv.parentElement)return; const ctx=cv.getContext("2d"), t=ctx.getImageData(0,0,cv.width,cv.height); cv.width=cv.parentElement.clientWidth; cv.height=cv.parentElement.clientHeight; ctx.lineCap="round"; ctx.lineJoin="round"; try{ctx.putImageData(t,0,0);}catch(e){} }
     function initWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); if(!cv)return; const ctx=cv.getContext("2d"); resizeWhiteboardCanvas(); window.addEventListener("resize", resizeWhiteboardCanvas); cv.addEventListener("mousedown", e=>{isDrawing=true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY);}); cv.addEventListener("mousemove", e=>{if(!isDrawing)return; ctx.strokeStyle=wbCurrentTool==="eraser"?"#030712":wbCurrentColor; ctx.lineWidth=wbCurrentSize; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();}); cv.addEventListener("mouseup", ()=>isDrawing=false); cv.addEventListener("mouseleave", ()=>isDrawing=false); }
-    function setWhiteboardTool(t) { wbCurrentTool=t; document.getElementById("wbToolPen").className=t==="pen"?"p-2 rounded-lg bg-cyan-500 text-black":"p-2 rounded-lg text-zinc-400 hover:text-white"; document.getElementById("wbToolEraser").className=t==="eraser"?"p-2 rounded-lg bg-cyan-500 text-black":"p-2 rounded-lg text-zinc-400 hover:text-white"; }
+    function setWhiteboardTool(t) { wbCurrentTool=t; document.getElementById("wbToolPen").className=t==="pen"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; document.getElementById("wbToolEraser").className=t==="eraser"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; }
     function updateWbColor(c) { wbCurrentColor=c; } function updateWbSize(s) { wbCurrentSize=s; }
     function clearWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); cv.getContext("2d").clearRect(0,0,cv.width,cv.height); }
     function downloadWhiteboard() { const a=document.createElement("a"); a.download=`sketch_${Date.now()}.png`; a.href=document.getElementById("whiteboardCanvas").toDataURL(); a.click(); }
@@ -833,7 +872,7 @@
             } catch(err) {
               res.className="text-rose-400"; res.textContent = `[Network Error]: ${err.message}.`;
             }
-            inp.value=""; return; // Skip standard append since async handled it
+            inp.value=""; return;
           }
           break;
         default: res.textContent=`Command not found: ${act}`; break;
@@ -842,15 +881,14 @@
     }
 
     // =========================================================================
-    // VAULT, COMMAND PALETTE, SETTINGS, CHARTS
+    // VAULT, COMMAND PALETTE, CHARTS
     // =========================================================================
     function openCommandPalette() { document.getElementById("cmdModal").style.display="flex"; setTimeout(()=>{document.getElementById("cmdModal").classList.remove("opacity-0"); document.getElementById("cmdSearchInput").focus();}, 10); }
     function closeCommandPalette() { document.getElementById("cmdModal").classList.add("opacity-0"); setTimeout(()=>document.getElementById("cmdModal").style.display="none", 200); }
     window.addEventListener("keydown", e => { if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault(); openCommandPalette();} if(e.key==="Escape"){closeCommandPalette(); document.getElementById("sourceModal").style.display="none";} });
     function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ cv.width=cv.parentElement.clientWidth; cv.height=180; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=2.5; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
     
-    // SECURITY: XSS Sanitization for Scratchpad Preview
-    function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-3 py-1.5 rounded-lg border ${n.id===activeNoteId?'bg-cyan-500/20 border-cyan-500 text-cyan-300':'bg-surface-900 border-white/10 text-zinc-400'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
+    function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-3 py-1.5 rounded-lg border cursor-pointer ${n.id===activeNoteId?'bg-cyan-500/20 border-cyan-500 text-cyan-300':'bg-surface-900 border-white/10 text-zinc-400'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
     function selectNote(id) { activeNoteId=id; renderNoteTabs(); loadActiveNoteContent(); }
     function loadActiveNoteContent() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) document.getElementById("adminScratchpad").value=n.content; }
     function onNoteContentChange() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) { n.content=document.getElementById("adminScratchpad").value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); if(isMarkdownPreviewActive) toggleMarkdownPreview(true); } }
@@ -858,31 +896,17 @@
     
     function toggleMarkdownPreview(forceRender=false) {
       if(!forceRender) isMarkdownPreviewActive = !isMarkdownPreviewActive;
-      const editorCol = document.getElementById("noteEditorCol");
-      const previewCol = document.getElementById("notePreviewCol");
+      const editorCol = document.getElementById("noteEditorCol"), previewCol = document.getElementById("notePreviewCol");
       if (isMarkdownPreviewActive) {
-        editorCol.className = "lg:col-span-6 flex flex-col h-full transition-all";
-        previewCol.classList.remove("hidden");
-        // Apply Safe Parsing
-        let raw = document.getElementById("adminScratchpad").value;
-        raw = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        editorCol.className = "lg:col-span-6 flex flex-col h-full transition-all"; previewCol.classList.remove("hidden");
+        let raw = document.getElementById("adminScratchpad").value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-2">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-3">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-xl font-extrabold text-cyan-400 mt-3">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\n/gim, '<br/>');
       } else {
-        editorCol.className = "lg:col-span-12 flex flex-col h-full transition-all";
-        previewCol.classList.add("hidden");
+        editorCol.className = "lg:col-span-12 flex flex-col h-full transition-all"; previewCol.classList.add("hidden");
       }
     }
 
-    function applySandboxPolicy() {
-      const allowScripts = document.getElementById("checkAllowScripts").checked;
-      let flags = [];
-      if (allowScripts) flags.push("allow-scripts");
-      // SECURITY: iframe top-navigation is heavily blocked to prevent hijacking
-      document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" "));
-      reloadIframe();
-      showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`);
-    }
-
+    function applySandboxPolicy() { const allowScripts = document.getElementById("checkAllowScripts").checked; let flags = []; if (allowScripts) flags.push("allow-scripts"); document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" ")); reloadIframe(); showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`); }
     function setDashboardTheme(t) { document.documentElement.setAttribute("data-theme", t); localStorage.setItem("lumina_theme", t); }
     function applyCustomAccentColor(h) { document.documentElement.style.setProperty("--primary", h); document.documentElement.style.setProperty("--primary-glow", h+"55"); }
     function exportDashboardConfig() { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify({projects:repoProjects, notes:vaultNotes})],{type:"application/json"})); a.download="godx_config.json"; a.click(); }
