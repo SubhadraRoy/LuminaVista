@@ -47,7 +47,6 @@
     
     .nav-tab-active { background: linear-gradient(90deg, rgba(0,242,254,0.1) 0%, transparent 100%); border-left: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
     
-    /* Adjustable Sidebar Core */
     #appSidebar { resize: horizontal; overflow: hidden; min-width: 76px; max-width: 450px; }
     .sidebar-collapsed { width: 76px !important; min-width: 76px !important; resize: none !important; }
     .sidebar-collapsed .nav-text { display: none; }
@@ -63,7 +62,7 @@
   <div class="fixed bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[180px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 2s;"></div>
 
   <!-- ADJUSTABLE LEFT SIDEBAR -->
-  <aside id="appSidebar" class="w-64 border-r border-white/5 bg-surface-950/80 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0 transition-width duration-300">
+  <aside id="appSidebar" class="w-64 border-r border-white/5 bg-surface-950/80 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0 transition-[width] duration-300">
     <button onclick="toggleSidebar()" class="absolute -right-3 top-6 w-6 h-6 bg-surface-800 rounded-full border border-white/10 flex items-center justify-center z-50 text-zinc-400 hover:text-white cursor-pointer shadow-lg">
       <i data-lucide="chevron-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
     </button>
@@ -189,7 +188,7 @@
           <div class="p-4 sm:p-6 pt-2 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative max-w-4xl mx-auto">
               <div class="relative bg-surface-900/60 backdrop-blur-xl border border-white/10 rounded-3xl focus-within:border-cyan-500/50 focus-within:ring-4 focus-within:ring-cyan-500/10 transition-all p-2 flex items-end shadow-2xl">
-                <textarea id="aiPromptTextarea" rows="1" placeholder="Instruct the autonomous agent to build, execute, or search..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)"></textarea>
+                <textarea id="aiPromptTextarea" rows="1" placeholder="Instruct the autonomous agent to build, execute, or search..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
                 <button type="submit" id="btnAiSend" class="w-10 h-10 shrink-0 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-1 mr-1 cursor-pointer">
                   <i data-lucide="arrow-up" class="w-5 h-5"></i>
                 </button>
@@ -495,7 +494,7 @@
             <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="1. " data-suffix="" title="Numbered List"><i data-lucide="list-ordered" class="w-4 h-4 pointer-events-none"></i></button>
             <div class="w-px h-4 bg-white/10 mx-1"></div>
             <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="`" data-suffix="`" title="Inline Code"><i data-lucide="code" class="w-4 h-4 pointer-events-none"></i></button>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="```[NEWLINE]" data-suffix="[NEWLINE]```" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4 pointer-events-none"></i></button>
+            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="```\n" data-suffix="\n```" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4 pointer-events-none"></i></button>
             <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="[Link Text](" data-suffix=")" title="Link"><i data-lucide="link" class="w-4 h-4 pointer-events-none"></i></button>
           </div>
 
@@ -543,7 +542,108 @@
     </main>
   </div>
 
-  <!-- CORE JAVASCRIPT ENGINE -->
+  <!-- MODALS & POP-UPS -->
+  <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,242,254,0.15)] transform scale-95 transition-transform duration-200 flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <h3 class="font-heading font-bold text-lg text-white flex items-center gap-2"><i data-lucide="sliders" class="w-5 h-5 text-cyan-400"></i> AI Config</h3>
+        <button onclick="closeAiConfigModal()" class="p-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div class="py-5 space-y-5">
+        <div class="p-3 bg-cyan-950/30 border border-cyan-500/20 rounded-xl flex items-center justify-between">
+          <label for="checkWebSearchModal" class="text-sm font-medium text-cyan-200 flex items-center gap-2 cursor-pointer">
+            <i data-lucide="globe" class="w-4 h-4 text-cyan-400"></i> Live Web Search
+          </label>
+          <input type="checkbox" id="checkWebSearchModal" onchange="syncWebSearchFromModal()" class="w-5 h-5 accent-cyan-400 cursor-pointer rounded" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-mono text-zinc-400">Active Model:</label>
+          <select id="aiModelInputModal" class="godx-input w-full px-4 py-3 text-sm font-mono cursor-pointer" onchange="syncModelFromModal()">
+            <option value="gpt-oss:20b">gpt-oss:20b (Default)</option>
+            <option value="gpt-oss:120b">gpt-oss:120b</option>
+            <option value="gemma4:31b">gemma4:31b</option>
+            <option value="nemotron-3-nano:30b">nemotron-3-nano</option>
+            <option value="nemotron-3-super">nemotron-3-super</option>
+            <option value="nemotron-3-ultra">nemotron-3-ultra</option>
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-mono text-zinc-400">System Persona:</label>
+          <select id="aiPersonaSelectModal" class="godx-input w-full px-4 py-3 text-sm cursor-pointer" onchange="syncPersonaFromModal()">
+            <option value="normal">Normal (Standard Assistant)</option>
+            <option value="architect">System Architect</option>
+            <option value="fullstack">Full-Stack Developer</option>
+            <option value="security">Cybersecurity Auditor</option>
+            <option value="researcher">Web Researcher</option>
+            <option value="datascience">Data Scientist</option>
+            <option value="reverse">Reverse Engineer</option>
+            <option value="minimal">Minimalist Hacker (Code Only)</option>
+            <option value="copywriter">Creative Copywriter</option>
+            <option value="marketing">Growth Marketer</option>
+            <option value="historian">Historian</option>
+            <option value="philosopher">Philosopher</option>
+            <option value="chef">Culinary Chef</option>
+            <option value="fitness">Fitness Trainer</option>
+            <option value="travel">Travel Planner</option>
+            <option value="legal">Legal Frameworks Analyst</option>
+            <option value="medical">Medical Science Educator</option>
+            <option value="finance">Financial Analyst</option>
+            <option value="novelist">Fiction Novelist</option>
+            <option value="translator">Polyglot Translator</option>
+            <option value="mathematician">Mathematician</option>
+            <option value="mentor">Executive Coach</option>
+            <option value="custom">Custom Persona...</option>
+          </select>
+        </div>
+
+        <div id="customPersonaWrapperModal" class="hidden space-y-1.5">
+          <label class="text-xs font-mono text-cyan-400">Custom Directive:</label>
+          <textarea id="customPersonaPromptModal" rows="3" placeholder="Define exact instructions..." class="godx-input w-full p-3 text-xs font-mono leading-relaxed" oninput="syncPersonaFromModal()"></textarea>
+        </div>
+      </div>
+      
+      <div class="pt-4 border-t border-white/10 flex gap-3 mt-auto">
+        <button onclick="downloadAiChat()" class="flex-1 py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
+        <button onclick="clearAiChat(); closeAiConfigModal();" class="flex-1 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i> Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-5xl w-full p-6 sm:p-8 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <h3 class="font-heading font-bold text-lg text-white flex items-center gap-2"><i data-lucide="code" class="w-5 h-5 text-cyan-400"></i> Source Inspector</h3>
+        <button onclick="closeSourceInspector()" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="my-4 flex items-center gap-3">
+        <button onclick="loadSourceFile('index.html')" class="px-4 py-1.5 rounded-lg bg-surface-900 border border-white/10 text-xs font-bold text-cyan-300 font-mono cursor-pointer hover:bg-surface-800 transition-colors">index.html</button>
+        <button onclick="loadSourceFile('style.css')" class="px-4 py-1.5 rounded-lg bg-surface-900 border border-white/10 text-xs font-bold text-purple-300 font-mono cursor-pointer hover:bg-surface-800 transition-colors">style.css</button>
+        <button onclick="loadSourceFile('script.js')" class="px-4 py-1.5 rounded-lg bg-surface-900 border border-white/10 text-xs font-bold text-emerald-300 font-mono cursor-pointer hover:bg-surface-800 transition-colors">script.js</button>
+      </div>
+      <div class="flex-1 overflow-y-auto bg-surface-950/80 rounded-2xl p-5 border border-white/5 shadow-inner"><pre><code id="sourceCodeBlock" class="font-mono text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">Loading source...</code></pre></div>
+    </div>
+  </div>
+
+  <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-24 p-4 opacity-0 transition-opacity duration-200">
+    <div class="bg-surface-900/90 backdrop-blur-2xl max-w-xl w-full p-2 rounded-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-95 transition-transform duration-200">
+      <div class="flex items-center gap-3 p-3 border-b border-white/5">
+        <i data-lucide="search" class="w-5 h-5 text-cyan-400"></i>
+        <input type="text" id="cmdSearchInput" oninput="handleCmdSearch(event)" placeholder="Search commands, files, or jump to tab..." class="bg-transparent flex-1 text-base text-white outline-none placeholder-zinc-500 font-sans" />
+        <kbd class="px-2.5 py-1 text-xs bg-surface-800 border border-white/5 rounded-md text-zinc-400 font-mono">ESC</kbd>
+      </div>
+      <div id="cmdResults" class="py-2 max-h-72 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-8 right-8 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-4 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+    <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20"><i data-lucide="check" class="w-5 h-5"></i></div>
+    <div><h4 id="toastTitle" class="text-sm font-bold text-white">Notification</h4><p id="toastMsg" class="text-xs text-zinc-300 mt-0.5"></p></div>
+  </div>
+
+  <!-- CORE SCRIPTS -->
   <script>
     // Initialize base dependencies
     lucide.createIcons();
@@ -574,7 +674,7 @@
     let termHistory = [], termHistoryIdx = -1;
     let isSidebarCollapsed = false;
 
-    // Secure Data Injection Handlers (Base64 wrapper avoids all HTML syntax collisions)
+    // Secure Data Injection Handlers
     function encodeBase64Safe(text) {
         const bytes = new TextEncoder().encode(text);
         const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
@@ -604,7 +704,7 @@
     let isCodespaceOpen = false;
     let csViewMode = "preview"; 
 
-    // DOM Readiness Check & Initializer
+    // DOM Readiness Check
     window.addEventListener("DOMContentLoaded", () => {
       setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
       document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
@@ -628,20 +728,25 @@
       runCodespacePreview();
 
       // Form Observers
-      document.getElementById('aiChatForm').addEventListener('submit', handleSendAiPrompt);
-      document.getElementById('userTerminalForm').addEventListener('submit', handleTerminalCommand);
-      document.getElementById('terminalInput').addEventListener('keydown', handleTerminalKeyDown);
+      const chatForm = document.getElementById('aiChatForm');
+      if (chatForm) chatForm.addEventListener('submit', handleSendAiPrompt);
+      const terminalForm = document.getElementById('userTerminalForm');
+      if (terminalForm) terminalForm.addEventListener('submit', handleTerminalCommand);
+      const terminalInput = document.getElementById('terminalInput');
+      if (terminalInput) terminalInput.addEventListener('keydown', handleTerminalKeyDown);
     });
 
-    // GLOBAL EVENT DELEGATOR (Zero Inline 'onclick' errors)
+    // GLOBAL EVENT DELEGATOR
     document.addEventListener('click', (e) => {
       const qpBtn = e.target.closest('.quick-prompt-btn');
       if (qpBtn) {
         const text = decodeBase64Safe(qpBtn.getAttribute('data-prompt'));
         const textarea = document.getElementById("aiPromptTextarea");
-        textarea.value = text;
-        autoResizeTextarea(textarea);
-        textarea.focus();
+        if(textarea) {
+            textarea.value = text;
+            autoResizeTextarea(textarea);
+            textarea.focus();
+        }
         return;
       }
       
@@ -1019,8 +1124,10 @@ The system will immediately intercept this tag, run the command in a secure Linu
           scr.scrollTop = scr.scrollHeight;
         }
         
-        box.innerHTML += `<div id="autoExecLoader" class="flex items-center gap-2 text-xs text-purple-400 font-mono mt-3"><i data-lucide='loader' class='w-3.5 h-3.5 animate-spin'></i> Running terminal command...</div>`;
-        box.scrollTop = box.scrollHeight;
+        if(box) {
+            box.innerHTML += `<div id="autoExecLoader" class="flex items-center gap-2 text-xs text-purple-400 font-mono mt-3"><i data-lucide='loader' class='w-3.5 h-3.5 animate-spin'></i> Running terminal command...</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
         lucide.createIcons();
 
         try {
@@ -1060,14 +1167,189 @@ The system will immediately intercept this tag, run the command in a secure Linu
       }
     };
 
-    // Chat UI Engine
+    function toggleCodespacePane(forceOpen = null) {
+      const pane = document.getElementById("aiCodespaceColumn");
+      const btnText = document.getElementById("btnCodespaceToggleText");
+      
+      if (forceOpen !== null) { isCodespaceOpen = forceOpen; } 
+      else { isCodespaceOpen = !isCodespaceOpen; }
+
+      if (isCodespaceOpen) {
+        pane.classList.remove("hidden");
+        pane.classList.add("flex");
+        if(btnText) btnText.textContent = "Close Workspace";
+      } else {
+        pane.classList.add("hidden");
+        pane.classList.remove("flex");
+        if(btnText) btnText.textContent = "Open Workspace";
+      }
+      lucide.createIcons();
+    }
+
+    function getFileIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      if(ext === 'html') return '<i data-lucide="file-code" class="w-4 h-4 text-orange-400 pointer-events-none"></i>';
+      if(ext === 'css') return '<i data-lucide="file-code" class="w-4 h-4 text-blue-400 pointer-events-none"></i>';
+      if(ext === 'js') return '<i data-lucide="file-json" class="w-4 h-4 text-yellow-400 pointer-events-none"></i>';
+      if(ext === 'py') return '<i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400 pointer-events-none"></i>';
+      return '<i data-lucide="file" class="w-4 h-4 text-zinc-400 pointer-events-none"></i>';
+    }
+
+    function renderCodespaceFileTabs() {
+      const tree = document.getElementById("codespaceExplorerTree");
+      if(!tree) return;
+      tree.innerHTML = "";
+      Object.keys(vfs).forEach(filename => {
+        const isActive = filename === csActiveFile;
+        const item = document.createElement("div");
+        item.className = `file-explorer-item group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors text-[12px] font-mono ${isActive ? 'bg-cyan-500/10 text-cyan-300 font-bold' : 'text-zinc-400 hover:bg-surface-900 hover:text-zinc-200'}`;
+        
+        item.innerHTML = `
+          <div class="flex items-center gap-2 overflow-hidden flex-1 file-selector" data-filename="${filename}">
+            ${getFileIcon(filename)}
+            <span class="truncate pointer-events-none">${filename}</span>
+          </div>
+          <div class="file-actions opacity-0 transition-opacity flex items-center gap-1 shrink-0">
+            <button class="file-delete-btn p-1 hover:text-rose-400 rounded transition-colors" data-filename="${filename}"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
+          </div>
+        `;
+        tree.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function switchCodespaceFile(filename) {
+      csActiveFile = filename;
+      const lbl = document.getElementById("csCurrentFileLabel");
+      if(lbl) lbl.textContent = filename;
+      loadCodespaceEditor();
+      renderCodespaceFileTabs();
+    }
+
+    function loadCodespaceEditor() {
+      const editor = document.getElementById("csCodeEditor");
+      if(editor) editor.value = vfs[csActiveFile] || "";
+    }
+
+    function onEditorContentChange() {
+      const editor = document.getElementById("csCodeEditor");
+      if(editor) {
+        vfs[csActiveFile] = editor.value;
+        localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+      }
+    }
+
+    function setCodespaceView(mode) {
+      csViewMode = mode;
+      const editorCol = document.getElementById("csEditorContainer");
+      const previewCol = document.getElementById("csPreviewContainer");
+      
+      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => {
+        const btn = document.getElementById(id);
+        if(btn) btn.className = "px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors";
+      });
+
+      if (mode === "preview") {
+        if(editorCol) { editorCol.classList.add("hidden"); editorCol.classList.remove("flex"); }
+        if(previewCol) previewCol.classList.remove("hidden");
+        const btn = document.getElementById("btnCsViewPreview");
+        if(btn) btn.className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      } else if (mode === "editor") {
+        if(previewCol) previewCol.classList.add("hidden");
+        if(editorCol) { editorCol.classList.remove("hidden"); editorCol.classList.add("flex"); }
+        const btn = document.getElementById("btnCsViewEditor");
+        if(btn) btn.className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      } else { 
+        if(editorCol) { editorCol.classList.remove("hidden"); editorCol.classList.add("flex"); }
+        if(previewCol) previewCol.classList.remove("hidden");
+        const btn = document.getElementById("btnCsViewSplit");
+        if(btn) btn.className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      }
+    }
+
+    function bundleCodespaceHTML() {
+      let mainHtml = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
+      if (vfs["style.css"]) mainHtml = mainHtml.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
+      if (vfs["script.js"]) mainHtml = mainHtml.replace("</body>", `<script>\n${vfs["script.js"]}\n<` + `/script></body>`);
+      return mainHtml;
+    }
+
+    function runCodespacePreview() {
+      const bundled = bundleCodespaceHTML();
+      const iframe = document.getElementById("csPreviewFrame");
+      const emptyState = document.getElementById("csEmptyState");
+      
+      if(iframe) iframe.srcdoc = bundled;
+      
+      if (bundled.trim().length > 0 && emptyState && iframe) {
+        emptyState.style.display = "none";
+        iframe.style.opacity = "1";
+      }
+      
+      const badge = document.getElementById("csStatusBadge");
+      if(badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced (${new Date().toLocaleTimeString()})`;
+      showToast("Codespace Rendered", "Live preview reloaded.");
+    }
+
+    function promptCreateFile() {
+      const name = prompt("Enter new filename (e.g., app.js, layout.html, styles.css):");
+      if (name && name.trim()) {
+        const cleanName = name.trim();
+        if (!vfs[cleanName]) {
+          vfs[cleanName] = `// File: ${cleanName}\n`;
+          localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+          switchCodespaceFile(cleanName);
+          showToast("File Created", cleanName);
+        } else {
+          switchCodespaceFile(cleanName);
+        }
+      }
+    }
+
+    function deleteSpecificFile(filename) {
+      if (filename === "index.html") return alert("Cannot delete root entry index.html");
+      if (confirm(`Delete ${filename} from workspace?`)) {
+        delete vfs[filename];
+        localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+        if(csActiveFile === filename) switchCodespaceFile("index.html");
+        else renderCodespaceFileTabs();
+        showToast("File Deleted", filename);
+      }
+    }
+
+    function openCodespacePopout() {
+      const bundled = bundleCodespaceHTML();
+      const blob = new Blob([bundled], { type: "text/html" });
+      window.open(URL.createObjectURL(blob), "_blank");
+    }
+
+    function exportCodespaceZip() {
+      let exportBlob = new Blob([JSON.stringify(vfs, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(exportBlob);
+      a.download = `codespace_workspace_${Date.now()}.json`;
+      a.click();
+      showToast("Workspace Exported", "Downloaded JSON project bundle.");
+    }
+
+    function writeCodeToCodespace(filename, b64Code) {
+      const decodedCode = decodeBase64Safe(b64Code);
+      vfs[filename] = decodedCode;
+      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+      renderCodespaceFileTabs();
+      switchCodespaceFile(filename);
+      toggleCodespacePane(true);
+      runCodespacePreview();
+      showToast("Artifact Injected", `Updated ${filename} in Codespace.`);
+    }
+
     function parseAiMarkdown(t) {
       if(!t) return "";
 
       let safeText = t.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
       safeText = safeText.replace(/&lt;execute&gt;([\s\S]*?)&lt;\/execute&gt;/g, (match, cmd) => {
-        return `<div class="my-3 p-3 bg-indigo-900/30 border border-indigo-500/30 rounded-xl flex items-center gap-3"><i data-lucide="terminal-square" class="w-5 h-5 text-indigo-400"></i><div><p class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider">Autonomous Command Triggered</p><code class="text-sm text-indigo-100 font-mono">${cmd}</code></div></div>`;
+        return `<div class="my-3 p-3 bg-indigo-900/30 border border-indigo-500/30 rounded-xl flex items-center gap-3"><i data-lucide="terminal-square" class="w-5 h-5 text-indigo-400"></i><div><p class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider">Autonomous Execution Triggered</p><code class="text-sm text-indigo-100 font-mono">${cmd}</code></div></div>`;
       });
 
       return safeText.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, lang1, file1, lang2, code) => {
@@ -1118,6 +1400,7 @@ The system will immediately intercept this tag, run the command in a secure Linu
 
     function renderAiChat() {
       const box = document.getElementById("aiChatHistory"); 
+      if(!box) return;
       box.innerHTML = "";
       
       if (aiConversation.length === 0) {
@@ -1190,7 +1473,7 @@ The system will immediately intercept this tag, run the command in a secure Linu
 
     function scrollToAiBottom() { 
       const b = document.getElementById("aiChatHistory"); 
-      b.scrollTop = b.scrollHeight; 
+      if(b) b.scrollTop = b.scrollHeight; 
     }
     
     function autoResizeTextarea(e) { 
@@ -1202,10 +1485,10 @@ The system will immediately intercept this tag, run the command in a secure Linu
       if (e) e.preventDefault();
       
       const inp = document.getElementById("aiPromptTextarea");
-      const prompt = hiddenPromptText || inp.value.trim();
+      const prompt = hiddenPromptText || (inp ? inp.value.trim() : "");
       if (!prompt) return;
 
-      if(!hiddenPromptText) {
+      if(!hiddenPromptText && inp) {
         inp.value = ""; 
         inp.style.height = "auto"; 
       }
@@ -1214,9 +1497,11 @@ The system will immediately intercept this tag, run the command in a secure Linu
       renderAiChat();
       
       const btn = document.getElementById("btnAiSend");
-      btn.disabled = true; 
-      btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>'; 
-      lucide.createIcons();
+      if(btn) {
+        btn.disabled = true; 
+        btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>'; 
+        lucide.createIcons();
+      }
 
       const typingDiv = document.createElement("div"); 
       typingDiv.id = "aiTypingIndicator"; 
@@ -1231,9 +1516,12 @@ The system will immediately intercept this tag, run the command in a secure Linu
           <span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
         </div>
       `;
-      document.getElementById("aiChatHistory").appendChild(typingDiv); 
-      scrollToAiBottom(); 
-      lucide.createIcons();
+      const historyBox = document.getElementById("aiChatHistory");
+      if(historyBox) {
+        historyBox.appendChild(typingDiv); 
+        scrollToAiBottom(); 
+        lucide.createIcons();
+      }
 
       try {
         const isWebSearchOn = localStorage.getItem("lumina_web_search") === "true";
@@ -1269,182 +1557,17 @@ The system will immediately intercept this tag, run the command in a secure Linu
         if(loaderDiv) loaderDiv.remove();
         aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
       } finally {
-        btn.disabled = false; 
-        btn.innerHTML = '<i data-lucide="arrow-up" class="w-5 h-5"></i>'; 
+        if(btn) {
+          btn.disabled = false; 
+          btn.innerHTML = '<i data-lucide="arrow-up" class="w-5 h-5"></i>'; 
+        }
         lucide.createIcons();
         localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); 
         renderAiChat();
       }
     }
 
-    // Codespace Interactivity 
-    function toggleCodespacePane(forceOpen = null) {
-      const pane = document.getElementById("aiCodespaceColumn");
-      const btnText = document.getElementById("btnCodespaceToggleText");
-      
-      if (forceOpen !== null) { isCodespaceOpen = forceOpen; } 
-      else { isCodespaceOpen = !isCodespaceOpen; }
-
-      if (isCodespaceOpen) {
-        pane.classList.remove("hidden");
-        pane.classList.add("flex");
-        if(btnText) btnText.textContent = "Close Workspace";
-      } else {
-        pane.classList.add("hidden");
-        pane.classList.remove("flex");
-        if(btnText) btnText.textContent = "Open Workspace";
-      }
-      lucide.createIcons();
-    }
-
-    function getFileIcon(filename) {
-      const ext = filename.split('.').pop().toLowerCase();
-      if(ext === 'html') return '<i data-lucide="file-code" class="w-4 h-4 text-orange-400 pointer-events-none"></i>';
-      if(ext === 'css') return '<i data-lucide="file-code" class="w-4 h-4 text-blue-400 pointer-events-none"></i>';
-      if(ext === 'js') return '<i data-lucide="file-json" class="w-4 h-4 text-yellow-400 pointer-events-none"></i>';
-      if(ext === 'py') return '<i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400 pointer-events-none"></i>';
-      return '<i data-lucide="file" class="w-4 h-4 text-zinc-400 pointer-events-none"></i>';
-    }
-
-    function renderCodespaceFileTabs() {
-      const tree = document.getElementById("codespaceExplorerTree");
-      tree.innerHTML = "";
-      Object.keys(vfs).forEach(filename => {
-        const isActive = filename === csActiveFile;
-        const item = document.createElement("div");
-        item.className = `file-explorer-item group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors text-[12px] font-mono ${isActive ? 'bg-cyan-500/10 text-cyan-300 font-bold' : 'text-zinc-400 hover:bg-surface-900 hover:text-zinc-200'}`;
-        
-        item.innerHTML = `
-          <div class="flex items-center gap-2 overflow-hidden flex-1 file-selector" data-filename="${filename}">
-            ${getFileIcon(filename)}
-            <span class="truncate pointer-events-none">${filename}</span>
-          </div>
-          <div class="file-actions opacity-0 transition-opacity flex items-center gap-1 shrink-0">
-            <button class="file-delete-btn p-1 hover:text-rose-400 rounded transition-colors" data-filename="${filename}"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
-          </div>
-        `;
-        tree.appendChild(item);
-      });
-      lucide.createIcons();
-    }
-
-    function switchCodespaceFile(filename) {
-      csActiveFile = filename;
-      document.getElementById("csCurrentFileLabel").textContent = filename;
-      loadCodespaceEditor();
-      renderCodespaceFileTabs();
-    }
-
-    function loadCodespaceEditor() {
-      document.getElementById("csCodeEditor").value = vfs[csActiveFile] || "";
-    }
-
-    function onEditorContentChange() {
-      vfs[csActiveFile] = document.getElementById("csCodeEditor").value;
-      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-    }
-
-    function setCodespaceView(mode) {
-      csViewMode = mode;
-      const editorCol = document.getElementById("csEditorContainer");
-      const previewCol = document.getElementById("csPreviewContainer");
-      
-      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => {
-        const btn = document.getElementById(id);
-        if(btn) btn.className = "px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors";
-      });
-
-      if (mode === "preview") {
-        editorCol.classList.add("hidden"); editorCol.classList.remove("flex");
-        previewCol.classList.remove("hidden");
-        document.getElementById("btnCsViewPreview").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
-      } else if (mode === "editor") {
-        previewCol.classList.add("hidden");
-        editorCol.classList.remove("hidden"); editorCol.classList.add("flex");
-        document.getElementById("btnCsViewEditor").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
-      } else { 
-        editorCol.classList.remove("hidden"); editorCol.classList.add("flex");
-        previewCol.classList.remove("hidden");
-        document.getElementById("btnCsViewSplit").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
-      }
-    }
-
-    function bundleCodespaceHTML() {
-      let mainHtml = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
-      if (vfs["style.css"]) mainHtml = mainHtml.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
-      if (vfs["script.js"]) mainHtml = mainHtml.replace("</body>", `<script>\n${vfs["script.js"]}\n<` + `/script></body>`);
-      return mainHtml;
-    }
-
-    function runCodespacePreview() {
-      const bundled = bundleCodespaceHTML();
-      const iframe = document.getElementById("csPreviewFrame");
-      const emptyState = document.getElementById("csEmptyState");
-      
-      iframe.srcdoc = bundled;
-      
-      if (bundled.trim().length > 0) {
-        emptyState.style.display = "none";
-        iframe.style.opacity = "1";
-      }
-      
-      document.getElementById("csStatusBadge").innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced (${new Date().toLocaleTimeString()})`;
-      showToast("Codespace Rendered", "Live preview reloaded.");
-    }
-
-    function promptCreateFile() {
-      const name = prompt("Enter new filename (e.g., app.js, layout.html, styles.css):");
-      if (name && name.trim()) {
-        const cleanName = name.trim();
-        if (!vfs[cleanName]) {
-          vfs[cleanName] = `// File: ${cleanName}\n`;
-          localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-          switchCodespaceFile(cleanName);
-          showToast("File Created", cleanName);
-        } else {
-          switchCodespaceFile(cleanName);
-        }
-      }
-    }
-
-    function deleteSpecificFile(filename) {
-      if (filename === "index.html") return alert("Cannot delete root entry index.html");
-      if (confirm(`Delete ${filename} from workspace?`)) {
-        delete vfs[filename];
-        localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-        if(csActiveFile === filename) switchCodespaceFile("index.html");
-        else renderCodespaceFileTabs();
-        showToast("File Deleted", filename);
-      }
-    }
-
-    function openCodespacePopout() {
-      const bundled = bundleCodespaceHTML();
-      const blob = new Blob([bundled], { type: "text/html" });
-      window.open(URL.createObjectURL(blob), "_blank");
-    }
-
-    function exportCodespaceZip() {
-      let exportBlob = new Blob([JSON.stringify(vfs, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(exportBlob);
-      a.download = `codespace_workspace_${Date.now()}.json`;
-      a.click();
-      showToast("Workspace Exported", "Downloaded JSON project bundle.");
-    }
-
-    function writeCodeToCodespace(filename, b64Code) {
-      const decodedCode = decodeBase64Safe(b64Code);
-      vfs[filename] = decodedCode;
-      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-      renderCodespaceFileTabs();
-      switchCodespaceFile(filename);
-      toggleCodespacePane(true);
-      runCodespacePreview();
-      showToast("Artifact Injected", `Updated ${filename} in Codespace.`);
-    }
-
-    // EXM Projects Console
+    // Console & Repo Handlers
     function resolveProjectUrl(rawPath) { 
       let c = rawPath.replace(/^\.\//, "").replace(/^\//, ""); 
       if (!c.startsWith("EXM/")) c = "EXM/" + c; 
@@ -1478,8 +1601,11 @@ The system will immediately intercept this tag, run the command in a secure Linu
     
     function renderProjectList(q="") { 
       const c = document.getElementById("projectChipsContainer"); 
+      if(!c) return;
       c.innerHTML = ""; 
-      document.getElementById("projectCountBadge").textContent = `${repoProjects.length} Detected`; 
+      const badge = document.getElementById("projectCountBadge");
+      if(badge) badge.textContent = `${repoProjects.length} Detected`; 
+      
       repoProjects.filter(p => p.name.toLowerCase().includes(q)).forEach(p => { 
         const isS = currentSelectedProject && p.name === currentSelectedProject.name; 
         const b = document.createElement("button"); 
@@ -1493,14 +1619,19 @@ The system will immediately intercept this tag, run the command in a secure Linu
     
     function selectProject(p) { 
       currentSelectedProject = p; 
-      document.getElementById("activeProjectTitle").textContent = `EXM/${p.name}/`; 
+      const title = document.getElementById("activeProjectTitle");
+      if(title) title.textContent = `EXM/${p.name}/`; 
       renderProjectList(); 
-      document.getElementById("previewIframe").src = resolveProjectUrl(p.path); 
-      document.getElementById("iframeOverlay").classList.add("hidden"); 
+      const iframe = document.getElementById("previewIframe");
+      if(iframe) iframe.src = resolveProjectUrl(p.path); 
+      const overlay = document.getElementById("iframeOverlay");
+      if(overlay) overlay.classList.add("hidden"); 
     }
     
     function addCustomProject() { 
-      const v = document.getElementById("customProjectInput").value.trim(); 
+      const inp = document.getElementById("customProjectInput");
+      if(!inp) return;
+      const v = inp.value.trim(); 
       if(!v) return; 
       const n = v.replace(/^EXM\//i,"").replace(/^\/+|\/+$/g,"");
       const p = { name: n, path: `EXM/${n}${n.endsWith(".html")?"":"/"}`, type: n.endsWith(".html") ? "file" : "dir" }; 
@@ -1513,17 +1644,23 @@ The system will immediately intercept this tag, run the command in a secure Linu
     }
     
     function openActiveInNewTab() { if(currentSelectedProject) window.open(resolveProjectUrl(currentSelectedProject.path), "_blank"); }
-    function reloadIframe() { const f = document.getElementById("previewIframe"); f.src = f.src; showToast("Reloaded", "Viewport refreshed."); }
+    function reloadIframe() { 
+        const f = document.getElementById("previewIframe"); 
+        if(f) f.src = f.src; 
+        showToast("Reloaded", "Viewport refreshed."); 
+    }
     function setViewportDevice(w) { 
-      document.getElementById("iframeWrapper").style.maxWidth = w; 
+      const wrap = document.getElementById("iframeWrapper");
+      if(wrap) wrap.style.maxWidth = w; 
       document.querySelectorAll(".device-btn").forEach(b => b.classList.remove("bg-cyan-500", "text-black")); 
-      document.getElementById(w === '100%' ? 'btnDeviceDesktop' : w === '768px' ? 'btnDeviceTablet' : 'btnDeviceMobile').classList.add("bg-cyan-500", "text-black"); 
+      const targetBtn = document.getElementById(w === '100%' ? 'btnDeviceDesktop' : w === '768px' ? 'btnDeviceTablet' : 'btnDeviceMobile');
+      if(targetBtn) targetBtn.classList.add("bg-cyan-500", "text-black"); 
     }
     
     function updateSplitDropdowns() { 
       const l = document.getElementById("splitLeftSelect");
       const r = document.getElementById("splitRightSelect"); 
-      if(!l) return; 
+      if(!l || !r) return; 
       l.innerHTML = ""; 
       r.innerHTML = ""; 
       repoProjects.forEach((p, i) => { 
@@ -1536,334 +1673,15 @@ The system will immediately intercept this tag, run the command in a secure Linu
     }
     
     function updateSplitFrames() { 
-      const l = repoProjects.find(p => p.name === document.getElementById("splitLeftSelect").value);
-      const r = repoProjects.find(p => p.name === document.getElementById("splitRightSelect").value); 
-      if(l) document.getElementById("splitLeftFrame").src = resolveProjectUrl(l.path); 
-      if(r) document.getElementById("splitRightFrame").src = resolveProjectUrl(r.path); 
-    }
-
-    // Cloud Compilers
-    function setSandboxLanguage(l) { 
-      currentSandboxLang = l; 
-      ["sbLangHtml", "sbLangPy", "sbLangCpp", "sbLangJava", "sbLangSql"].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.className = "px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"; 
-      });
-      const act = document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`);
-      if(act) act.className = `px-4 py-1.5 rounded-lg text-black font-bold cursor-pointer transition-colors shadow-md ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
-      
-      const iframeWrap = document.getElementById("sandboxIframeWrapper");
-      const stdoutWrap = document.getElementById("sandboxStdoutWrapper");
-      
-      if(l === "html") {
-        iframeWrap.classList.remove("hidden"); iframeWrap.classList.add("flex");
-        stdoutWrap.classList.add("hidden"); stdoutWrap.classList.remove("block");
-      } else {
-        iframeWrap.classList.add("hidden"); iframeWrap.classList.remove("flex");
-        stdoutWrap.classList.remove("hidden"); stdoutWrap.classList.add("block");
-      } 
-    }
-    
-    function onSandboxCodeChange() { 
-      const c = document.getElementById("sandboxCodeInput").value; 
-      if(c.includes("SELECT ") || c.includes("FROM ")) setSandboxLanguage("sql"); 
-      else if(c.includes("#include")) setSandboxLanguage("cpp"); 
-      else if(c.includes("public class")) setSandboxLanguage("java"); 
-      else if(c.includes("def ")) setSandboxLanguage("python"); 
-      else if(c.includes("<html")) setSandboxLanguage("html"); 
-    }
-    
-    async function runSandboxCode() { 
-      const c = document.getElementById("sandboxCodeInput").value;
-      const out = document.getElementById("sandboxStdoutWrapper"); 
-      
-      if (currentSandboxLang === "html") {
-        document.getElementById("sandboxPreviewFrame").srcdoc = c; 
-        showToast("Rendered", "Visual DOM updated."); 
-        return;
-      } 
-      
-      out.classList.remove("hidden");
-      out.classList.add("block");
-      out.innerHTML = `<i data-lucide='loader' class='w-4 h-4 animate-spin inline'></i> Routing to Vercel Execution Engine...`;
-      lucide.createIcons();
-
-      try {
-        const res = await fetch("/api/compile", {
-          method: "POST", headers: { "Content-Type": "application/json", "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || "" },
-          body: JSON.stringify({ language: currentSandboxLang, code: c })
-        });
-        const data = await res.json();
-        
-        if (res.ok) {
-          out.textContent = `=== GODx Cloud Execution (${currentSandboxLang.toUpperCase()}) ===\n\n${data.output}`;
-          showToast("Execution Complete", "Output streamed.");
-        } else {
-          out.textContent = `[Compilation Error]: ${data.error}`;
-        }
-      } catch (err) { out.textContent = `[Network Error]: Vercel execution backend offline.`; }
-    }
-
-    // Whiteboard Engine
-    function resizeWhiteboardCanvas() { 
-      const cv = document.getElementById("whiteboardCanvas"); 
-      const container = document.getElementById("whiteboardContainer");
-      if(!cv || !container || container.clientWidth === 0) return; 
-      const ctx = cv.getContext("2d");
-      const t = ctx.getImageData(0, 0, cv.width, cv.height); 
-      cv.width = container.clientWidth; cv.height = container.clientHeight; 
-      ctx.lineCap = "round"; ctx.lineJoin = "round"; 
-      try { ctx.putImageData(t, 0, 0); } catch(e) {} 
-    }
-    
-    function initWhiteboard() { 
-      const cv = document.getElementById("whiteboardCanvas"); 
-      if(!cv) return; 
-      const ctx = cv.getContext("2d"); 
-      resizeWhiteboardCanvas(); 
-      window.addEventListener("resize", resizeWhiteboardCanvas); 
-      
-      cv.addEventListener("mousedown", e => {
-        isDrawing = true; startX = e.offsetX; startY = e.offsetY;
-        wbSnapshot = ctx.getImageData(0, 0, cv.width, cv.height);
-        if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') { ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); }
-      }); 
-      
-      cv.addEventListener("mousemove", e => {
-        if(!isDrawing) return; 
-        ctx.strokeStyle = wbCurrentTool === "eraser" ? "#030712" : wbCurrentColor; 
-        ctx.lineWidth = wbCurrentSize; 
-        
-        if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') {
-          ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();
-        } else if (wbCurrentTool === 'rect') {
-          ctx.putImageData(wbSnapshot, 0, 0); ctx.beginPath(); ctx.rect(startX, startY, e.offsetX - startX, e.offsetY - startY); ctx.stroke();
-        } else if (wbCurrentTool === 'circle') {
-          ctx.putImageData(wbSnapshot, 0, 0); ctx.beginPath();
-          const radius = Math.sqrt(Math.pow(e.offsetX - startX, 2) + Math.pow(e.offsetY - startY, 2));
-          ctx.arc(startX, startY, radius, 0, 2 * Math.PI); ctx.stroke();
-        }
-      }); 
-      
-      cv.addEventListener("mouseup", () => isDrawing = false); 
-      cv.addEventListener("mouseleave", () => isDrawing = false); 
-    }
-
-    function setWhiteboardTool(t) { 
-      wbCurrentTool = t; 
-      ["wbToolPen", "wbToolRect", "wbToolCircle", "wbToolEraser"].forEach(id => {
-        document.getElementById(id).className = "p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors";
-      });
-      let activeId = "wbToolPen";
-      if(t === "rect") activeId = "wbToolRect";
-      if(t === "circle") activeId = "wbToolCircle";
-      if(t === "eraser") activeId = "wbToolEraser";
-      document.getElementById(activeId).className = "p-2 rounded-lg bg-cyan-500 text-black cursor-pointer shadow-md transition-colors"; 
-    }
-    
-    function updateWbColor(c) { wbCurrentColor = c; } 
-    function updateWbSize(s) { wbCurrentSize = s; }
-    function clearWhiteboard() { document.getElementById("whiteboardCanvas").getContext("2d").clearRect(0, 0, document.getElementById("whiteboardCanvas").width, document.getElementById("whiteboardCanvas").height); }
-    function downloadWhiteboard() { 
-      const a = document.createElement("a"); 
-      a.download = `sketch_${Date.now()}.png`; 
-      a.href = document.getElementById("whiteboardCanvas").toDataURL(); 
-      a.click(); 
-    }
-    
-    function updateDesignPreview() { 
-      const b = document.getElementById("sliderBlur").value;
-      const o = document.getElementById("sliderOpacity").value/100;
-      const r = document.getElementById("sliderRadius").value;
-      const g = document.getElementById("sliderGlow").value/100; 
-      const c = document.getElementById("glassPreviewCard"); 
-      c.style.backdropFilter = `blur(${b}px)`; 
-      c.style.backgroundColor = `rgba(11, 15, 25, ${o})`; 
-      c.style.borderRadius = `${r}px`; 
-      c.style.boxShadow = `0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${g})`; 
-    }
-    
-    function copyGeneratedDesignCss() { 
-      navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); 
-      showToast("Copied", "CSS class ready."); 
-    }
-
-    // Terminal Commands
-    function handleTerminalKeyDown(e) { 
-      if(e.key === "ArrowUp") {
-        e.preventDefault(); 
-        if(termHistory.length > 0 && termHistoryIdx > 0) {
-          termHistoryIdx--; e.target.value = termHistory[termHistoryIdx];
-        } else if(termHistory.length > 0 && termHistoryIdx === -1) {
-          termHistoryIdx = termHistory.length - 1; e.target.value = termHistory[termHistoryIdx];
-        }
-      } else if(e.key === "ArrowDown") {
-        e.preventDefault(); 
-        if(termHistoryIdx >= 0 && termHistoryIdx < termHistory.length - 1) {
-          termHistoryIdx++; e.target.value = termHistory[termHistoryIdx];
-        } else {
-          termHistoryIdx = -1; e.target.value = "";
-        }
-      } 
-    }
-    
-    async function handleTerminalCommand(e) { 
-      e.preventDefault(); 
-      const inp = document.getElementById("terminalInput");
-      const cmd = inp.value.trim(); 
-      if(!cmd) return; 
-      
-      termHistory.push(cmd); termHistoryIdx = -1; 
-      const scr = document.getElementById("terminalScreen");
-      const l = document.createElement("div"); 
-      l.className = "text-zinc-300 font-mono mt-2"; 
-      l.innerHTML = `<span class="text-cyan-400 font-bold">anish@cloud-vm:~$</span> ${cmd}`; 
-      scr.appendChild(l); 
-      
-      if (cmd === "clear") { scr.innerHTML = ""; inp.value = ""; return; }
-      
-      const res = document.createElement("div"); 
-      res.className = "text-purple-300 font-mono text-[13px] mt-1"; 
-      res.innerHTML = "<i data-lucide='loader' class='w-3.5 h-3.5 animate-spin inline'></i> Booting MicroVM...";
-      scr.appendChild(res); 
-      scr.scrollTop = scr.scrollHeight; 
-      lucide.createIcons();
-
-      try {
-        const filesArray = Object.keys(vfs).map(key => ({ name: key, content: vfs[key] }));
-        const fetchRes = await fetch("/api/terminal", {
-          method: "POST", headers: { "Content-Type": "application/json", "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || "" },
-          body: JSON.stringify({ command: cmd, files: filesArray })
-        });
-        const data = await fetchRes.json();
-        
-        if (fetchRes.ok) {
-          res.className = "text-emerald-400 whitespace-pre-wrap mt-2 mb-3 bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20"; 
-          res.textContent = (data.stdout || "") + "\n" + (data.stderr || "");
-          if(!res.textContent.trim()) res.textContent = "[Process exited smoothly without output]";
-        } else {
-          res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; 
-          res.textContent = `[E2B Error]: ${data.error || "Unknown Error"}\n${data.details || ""}`;
-        }
-      } catch(err) {
-        res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; 
-        res.textContent = `[Network Timeout]: Could not reach terminal backend.`;
-      }
-      inp.value = ""; scr.scrollTop = scr.scrollHeight;
-    }
-
-    // Vault & Control Data Management
-    function renderNoteTabs() { 
-      const c = document.getElementById("noteTabsContainer"); 
-      c.innerHTML = ""; 
-      vaultNotes.forEach(n => { 
-        const b = document.createElement("button"); 
-        b.className = `px-4 py-2 rounded-xl border cursor-pointer font-bold transition-colors shadow-sm ${n.id === activeNoteId ? 'bg-sky-500 border-sky-500 text-black' : 'bg-surface-900 border-white/5 text-zinc-400 hover:text-white hover:bg-surface-800'}`; 
-        b.textContent = n.title; 
-        b.onclick = () => selectNote(n.id); 
-        c.appendChild(b); 
-      }); 
-    }
-    
-    function selectNote(id) { activeNoteId = id; renderNoteTabs(); loadActiveNoteContent(); }
-    function loadActiveNoteContent() { const n = vaultNotes.find(x => x.id === activeNoteId); if(n) document.getElementById("adminScratchpad").value = n.content; }
-    function onNoteContentChange() { 
-      const n = vaultNotes.find(x => x.id === activeNoteId); 
-      if(n) { 
-        n.content = document.getElementById("adminScratchpad").value; 
-        localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); 
-        if(isMarkdownPreviewActive) toggleMarkdownPreview(true); 
-      } 
-    }
-    
-    function createNewNote() { 
-      const id = "n_" + Date.now(); 
-      vaultNotes.push({ id, title: `Note ${vaultNotes.length+1}`, content: "# New Note" }); 
-      activeNoteId = id; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); 
-      renderNoteTabs(); loadActiveNoteContent(); 
-    }
-    
-    function insertNoteMarkdown(prefixToken, suffixToken) {
-      const textarea = document.getElementById("adminScratchpad");
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
-      const selected = text.substring(start, end);
-      
-      const parsedPrefix = prefixToken.replace(/\\n/g, '\n');
-      const parsedSuffix = suffixToken.replace(/\\n/g, '\n');
-
-      const newText = text.substring(0, start) + parsedPrefix + selected + parsedSuffix + text.substring(end);
-      textarea.value = newText;
-      textarea.selectionStart = start + parsedPrefix.length;
-      textarea.selectionEnd = end + parsedPrefix.length;
-      textarea.focus();
-      onNoteContentChange();
-    }
-
-    function toggleMarkdownPreview(forceRender = false) {
-      if(!forceRender) isMarkdownPreviewActive = !isMarkdownPreviewActive;
-      const editorCol = document.getElementById("adminScratchpad").parentElement;
-      const previewCol = document.getElementById("notePreviewCol");
-      if (isMarkdownPreviewActive) {
-        editorCol.classList.add("hidden"); 
-        previewCol.classList.remove("hidden"); previewCol.classList.add("block");
-        let raw = document.getElementById("adminScratchpad").value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        document.getElementById("noteMarkdownRender").innerHTML = raw
-          .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-3">$1</h3>')
-          .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-4">$1</h2>')
-          .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold text-cyan-400 mt-5">$1</h1>')
-          .replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>')
-          .replace(/\*(.*?)\*/gim, '<em class="italic text-zinc-300">$1</em>')
-          .replace(/`(.*?)`/gim, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
-          .replace(/\n/gim, '<br/>');
-      } else {
-        editorCol.classList.remove("hidden"); editorCol.classList.add("block");
-        previewCol.classList.add("hidden"); previewCol.classList.remove("block");
-      }
-    }
-
-    function applySandboxPolicy() { 
-      const allowScripts = document.getElementById("checkAllowScripts").checked; 
-      let flags = []; 
-      if (allowScripts) flags.push("allow-scripts"); 
-      document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" ")); 
-      reloadIframe(); 
-      showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`); 
-    }
-    
-    function setDashboardTheme(t) { document.documentElement.setAttribute("data-theme", t); localStorage.setItem("lumina_theme", t); }
-    function applyCustomAccentColor(h) { document.documentElement.style.setProperty("--primary", h); document.documentElement.style.setProperty("--primary-glow", h+"55"); }
-    function exportDashboardConfig() { 
-      const a = document.createElement("a"); 
-      a.href = URL.createObjectURL(new Blob([JSON.stringify({projects: repoProjects, notes: vaultNotes})], {type: "application/json"})); 
-      a.download = "godx_config.json"; a.click(); 
-    }
-    function flushWorkspaceCache() { if(confirm("Flush all storage?")) { localStorage.clear(); location.reload(); } }
-    
-    function initAmbientParticles() { 
-      const cv = document.getElementById("ambientCanvas");
-      const ctx = cv.getContext("2d"); 
-      let w = cv.width = window.innerWidth;
-      let h = cv.height = window.innerHeight; 
-      const p = Array.from({length: 40}, () => ({
-        x: Math.random() * w, y: Math.random() * h, 
-        vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, 
-        r: Math.random() * 1.5 + 0.5
-      })); 
-      
-      function anim() { 
-        ctx.clearRect(0, 0, w, h); 
-        p.forEach(i => {
-          i.x = (i.x + i.vx + w) % w; i.y = (i.y + i.vy + h) % h; 
-          ctx.beginPath(); ctx.arc(i.x, i.y, i.r, 0, Math.PI * 2); 
-          ctx.fillStyle = "rgba(0,242,254,0.3)"; ctx.fill();
-        }); 
-        requestAnimationFrame(anim);
-      } 
-      anim(); 
-      
-      window.addEventListener("resize", () => { w = cv.width = window.innerWidth; h = cv.height = window.innerHeight; }); 
+      const lSelect = document.getElementById("splitLeftSelect");
+      const rSelect = document.getElementById("splitRightSelect");
+      if(!lSelect || !rSelect) return;
+      const l = repoProjects.find(p => p.name === lSelect.value);
+      const r = repoProjects.find(p => p.name === rSelect.value); 
+      const lFrame = document.getElementById("splitLeftFrame");
+      const rFrame = document.getElementById("splitRightFrame");
+      if(l && lFrame) lFrame.src = resolveProjectUrl(l.path); 
+      if(r && rFrame) rFrame.src = resolveProjectUrl(r.path); 
     }
   </script>
 </body>
