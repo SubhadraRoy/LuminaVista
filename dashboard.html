@@ -47,6 +47,7 @@
     
     .nav-tab-active { background: linear-gradient(90deg, rgba(0,242,254,0.1) 0%, transparent 100%); border-left: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
     
+    /* Adjustable Sidebar Core */
     #appSidebar { resize: horizontal; overflow: hidden; min-width: 76px; max-width: 450px; }
     .sidebar-collapsed { width: 76px !important; min-width: 76px !important; resize: none !important; }
     .sidebar-collapsed .nav-text { display: none; }
@@ -186,9 +187,9 @@
           <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[14px] leading-relaxed relative min-h-0 scroll-smooth"></div>
 
           <div class="p-4 sm:p-6 pt-2 z-10 relative shrink-0">
-            <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
+            <form id="aiChatForm" class="relative max-w-4xl mx-auto">
               <div class="relative bg-surface-900/60 backdrop-blur-xl border border-white/10 rounded-3xl focus-within:border-cyan-500/50 focus-within:ring-4 focus-within:ring-cyan-500/10 transition-all p-2 flex items-end shadow-2xl">
-                <textarea id="aiPromptTextarea" rows="1" placeholder="Instruct the autonomous agent to build, execute, or search..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                <textarea id="aiPromptTextarea" rows="1" placeholder="Instruct the autonomous agent to build, execute, or search..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)"></textarea>
                 <button type="submit" id="btnAiSend" class="w-10 h-10 shrink-0 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-1 mr-1 cursor-pointer">
                   <i data-lucide="arrow-up" class="w-5 h-5"></i>
                 </button>
@@ -448,9 +449,9 @@
             <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or execute real bash commands (e.g. <span class="text-purple-300">ls -la</span>, <span class="text-purple-300">python3 file.py</span>).</div>
             <div class="border-b border-white/5 my-3"></div>
           </div>
-          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-3 shrink-0 bg-surface-900/50 p-2 rounded-xl border border-white/5">
+          <form id="userTerminalForm" class="flex items-center gap-3 shrink-0 bg-surface-900/50 p-2 rounded-xl border border-white/5">
             <span class="font-mono text-sm text-cyan-400 font-bold pl-3">anish@cloud-vm:~$</span>
-            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="Enter command..." class="w-full bg-transparent border-0 outline-none text-white font-mono text-sm px-2 py-2" autofocus />
+            <input type="text" id="terminalInput" autocomplete="off" placeholder="Enter command..." class="w-full bg-transparent border-0 outline-none text-white font-mono text-sm px-2 py-2" autofocus />
             <button type="submit" class="btn-gradient px-6 py-2.5 rounded-lg text-sm font-mono font-bold text-black cursor-pointer shadow-lg">Exec</button>
           </form>
         </div>
@@ -494,7 +495,7 @@
             <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="1. " data-suffix="" title="Numbered List"><i data-lucide="list-ordered" class="w-4 h-4 pointer-events-none"></i></button>
             <div class="w-px h-4 bg-white/10 mx-1"></div>
             <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="`" data-suffix="`" title="Inline Code"><i data-lucide="code" class="w-4 h-4 pointer-events-none"></i></button>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="```\n" data-suffix="\n```" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4 pointer-events-none"></i></button>
+            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="```[NEWLINE]" data-suffix="[NEWLINE]```" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4 pointer-events-none"></i></button>
             <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="[Link Text](" data-suffix=")" title="Link"><i data-lucide="link" class="w-4 h-4 pointer-events-none"></i></button>
           </div>
 
@@ -542,12 +543,14 @@
     </main>
   </div>
 
-  <!-- CORE SCRIPTS -->
+  <!-- CORE JAVASCRIPT ENGINE -->
   <script>
+    // Initialize base dependencies
     lucide.createIcons();
 
+    // Environment & State Variables
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
-
+    
     let repoProjects = [];
     try { repoProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]"); } catch(e) {}
     
@@ -571,7 +574,7 @@
     let termHistory = [], termHistoryIdx = -1;
     let isSidebarCollapsed = false;
 
-    // Secure Text Encoder for multi-line AI strings
+    // Secure Data Injection Handlers (Base64 wrapper avoids all HTML syntax collisions)
     function encodeBase64Safe(text) {
         const bytes = new TextEncoder().encode(text);
         const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
@@ -584,20 +587,53 @@
         return new TextDecoder().decode(bytes);
     }
 
+    // Default Virtual File System Boilerplate
+    const defaultHTML = "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Workspace Ready</h1>\n    <p>AI generated files will appear here.</p>\n    <button id=\"btnAction\">Test Action</button>\n  </div>\n  <script src=\"script.js\"><" + "/script>\n</body>\n</html>";
+    const defaultCSS = "body {\n  margin: 0;\n  padding: 40px;\n  background: #0b0f19;\n  color: #fff;\n  font-family: -apple-system, BlinkMacSystemFont, sans-serif;\n  display: flex;\n  justify-content: center;\n}\n.card {\n  background: #111827;\n  padding: 30px;\n  border-radius: 16px;\n  border: 1px solid #1f2937;\n  text-align: center;\n}\nh1 { color: #00f2fe; margin-top: 0; }\nbutton {\n  background: #00f2fe;\n  color: #000;\n  border: 0;\n  padding: 10px 20px;\n  border-radius: 8px;\n  font-weight: bold;\n  cursor: pointer;\n}";
+    const defaultJS = "document.getElementById('btnAction').addEventListener('click', () => {\n  alert('Codespace logic working in real time!');\n});";
+
     let vfs = {};
     try {
-      vfs = JSON.parse(localStorage.getItem("lumina_codespace_vfs") || JSON.stringify({
-        "index.html": "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Workspace Ready</h1>\n    <p>AI generated files will appear here.</p>\n    <button id=\"btnAction\">Test Action</button>\n  </div>\n  <script src=\"script.js\"><" + "/script>\n</body>\n</html>",
-        "style.css": "body {\n  margin: 0;\n  padding: 40px;\n  background: #0b0f19;\n  color: #fff;\n  font-family: -apple-system, BlinkMacSystemFont, sans-serif;\n  display: flex;\n  justify-content: center;\n}\n.card {\n  background: #111827;\n  padding: 30px;\n  border-radius: 16px;\n  border: 1px solid #1f2937;\n  text-align: center;\n}\nh1 { color: #00f2fe; margin-top: 0; }\nbutton {\n  background: #00f2fe;\n  color: #000;\n  border: 0;\n  padding: 10px 20px;\n  border-radius: 8px;\n  font-weight: bold;\n  cursor: pointer;\n}",
-        "script.js": "document.getElementById('btnAction').addEventListener('click', () => {\n  alert('Codespace logic working in real time!');\n});"
-      }));
-    } catch(e) {}
+      vfs = JSON.parse(localStorage.getItem("lumina_codespace_vfs"));
+      if(!vfs || Object.keys(vfs).length === 0) throw new Error("Empty VFS");
+    } catch(e) {
+      vfs = { "index.html": defaultHTML, "style.css": defaultCSS, "script.js": defaultJS };
+    }
 
     let csActiveFile = "index.html";
     let isCodespaceOpen = false;
     let csViewMode = "preview"; 
 
-    // THE MASTER EVENT DELEGATOR - ZERO INLINE ONCLICK ERRORS
+    // DOM Readiness Check & Initializer
+    window.addEventListener("DOMContentLoaded", () => {
+      setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
+      document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
+
+      loadAiConfig();
+      fetchRepoProjects();
+      startSystemClock();
+      initMetricsChart();
+      renderNoteTabs();
+      loadActiveNoteContent();
+      
+      setSandboxLanguage("html");
+      
+      initAmbientParticles();
+      initWhiteboard();
+      updateDesignPreview();
+      renderAiChat();
+      
+      renderCodespaceFileTabs();
+      loadCodespaceEditor();
+      runCodespacePreview();
+
+      // Form Observers
+      document.getElementById('aiChatForm').addEventListener('submit', handleSendAiPrompt);
+      document.getElementById('userTerminalForm').addEventListener('submit', handleTerminalCommand);
+      document.getElementById('terminalInput').addEventListener('keydown', handleTerminalKeyDown);
+    });
+
+    // GLOBAL EVENT DELEGATOR (Zero Inline 'onclick' errors)
     document.addEventListener('click', (e) => {
       const qpBtn = e.target.closest('.quick-prompt-btn');
       if (qpBtn) {
@@ -623,7 +659,7 @@
         const code = decodeBase64Safe(b64Code);
         navigator.clipboard.writeText(code);
         const originalHTML = copyBtn.innerHTML;
-        copyBtn.innerHTML = "<i data-lucide='check' class='w-3.5 h-3.5'></i> Copied!";
+        copyBtn.innerHTML = "<i data-lucide='check' class='w-3.5 h-3.5 pointer-events-none'></i> Copied!";
         copyBtn.classList.add("text-emerald-400");
         lucide.createIcons();
         setTimeout(() => {
@@ -649,34 +685,25 @@
         if (action === 'toggle-preview') toggleMarkdownPreview();
         return;
       }
+
+      const fileSelector = e.target.closest('.file-selector');
+      if (fileSelector) {
+        switchCodespaceFile(fileSelector.getAttribute('data-filename'));
+        return;
+      }
+
+      const fileDelete = e.target.closest('.file-delete-btn');
+      if (fileDelete) {
+        deleteSpecificFile(fileDelete.getAttribute('data-filename'));
+        return;
+      }
     });
 
-    window.addEventListener("DOMContentLoaded", () => {
-      setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
-      document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
-
-      loadAiConfig();
-      fetchRepoProjects();
-      startSystemClock();
-      initMetricsChart();
-      renderNoteTabs();
-      loadActiveNoteContent();
-      
-      setSandboxLanguage("html");
-      
-      initAmbientParticles();
-      initWhiteboard();
-      updateDesignPreview();
-      renderAiChat();
-      
-      renderCodespaceFileTabs();
-      loadCodespaceEditor();
-      runCodespacePreview();
-    });
-
+    // Audio & Telemetry Handlers
     function startSystemClock() { 
       setInterval(() => { 
-        document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; 
+        const c = document.getElementById("systemClock");
+        if(c) c.innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; 
         lucide.createIcons(); 
       }, 1000); 
     }
@@ -705,6 +732,7 @@
       window.location.href = "index.html"; 
     }
 
+    // View Routing
     function toggleSidebar() {
       const sb = document.getElementById("appSidebar");
       const icon = document.getElementById("sidebarToggleIcon");
@@ -731,7 +759,8 @@
         b.classList.add("text-zinc-400");
       });
       
-      document.getElementById(id).classList.remove("hidden"); 
+      const target = document.getElementById(id);
+      if(target) target.classList.remove("hidden"); 
       const b = document.getElementById(`btn-${id}`); 
       if(b) {
         b.classList.add("nav-tab-active"); 
@@ -767,11 +796,8 @@
 
     function loadSourceFile(file) {
       const block = document.getElementById("sourceCodeBlock");
-      if(vfs && vfs[file]) {
-        block.textContent = vfs[file];
-      } else {
-        block.textContent = `// ${file} not found in workspace buffer.`;
-      }
+      if(vfs && vfs[file]) block.textContent = vfs[file];
+      else block.textContent = `// ${file} not found in workspace buffer.`;
     }
 
     function handleCmdSearch(e) {
@@ -793,6 +819,34 @@
       ).join('');
     }
 
+    function openCommandPalette() { 
+      const modal = document.getElementById("cmdModal");
+      modal.style.display = "flex"; 
+      setTimeout(() => {
+        modal.classList.remove("opacity-0"); 
+        document.getElementById("cmdSearchInput").focus();
+      }, 10); 
+    }
+    
+    function closeCommandPalette() { 
+      const modal = document.getElementById("cmdModal");
+      modal.classList.add("opacity-0"); 
+      setTimeout(() => modal.style.display = "none", 200); 
+    }
+    
+    window.addEventListener("keydown", e => { 
+      if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault(); 
+        openCommandPalette();
+      } 
+      if(e.key === "Escape") {
+        closeCommandPalette(); 
+        const sm = document.getElementById("sourceModal");
+        if(sm) sm.style.display = "none";
+      } 
+    });
+
+    // AI Configuration Engine
     function openAiConfigModal() {
       const modal = document.getElementById("aiConfigModal");
       modal.style.display = "flex";
@@ -841,14 +895,17 @@
     function updateAiBadges() {
       const model = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
       const webOn = localStorage.getItem("lumina_web_search") === "true";
-      document.getElementById("aiActiveModelBadge").textContent = model;
+      const mb = document.getElementById("aiActiveModelBadge");
+      if(mb) mb.textContent = model;
       const webBadge = document.getElementById("webSearchActiveBadge");
-      if (webOn) {
-        webBadge.classList.remove("hidden");
-        webBadge.classList.add("flex");
-      } else {
-        webBadge.classList.add("hidden");
-        webBadge.classList.remove("flex");
+      if (webBadge) {
+        if (webOn) {
+          webBadge.classList.remove("hidden");
+          webBadge.classList.add("flex");
+        } else {
+          webBadge.classList.add("hidden");
+          webBadge.classList.remove("flex");
+        }
       }
     }
 
@@ -882,21 +939,23 @@
       }
       
       const capabilityOverride = `\n\n[AUTONOMOUS AGENT PROTOCOL]
-You are an autonomous AI operating inside LuminaVista Cloud OS.
-1. FILE SYSTEM: To save/deploy files, you MUST use exactly this syntax:
+You are operating inside LuminaVista Cloud OS. You have FULL AUTONOMY to build, test, and execute files.
+1. VIRTUAL FILE SYSTEM: When you write code, you MUST use this format to automatically deploy files:
 \`\`\`html:index.html
 <!-- code -->
 \`\`\`
-The dashboard will auto-detect and deploy it.
+The system will automatically detect this format, save the file to the workspace, and live-reload the application. You do NOT need to ask the user to save it.
 
-2. TERMINAL EXECUTION: To run terminal commands (bash, node, python), wrap them in exact XML tags:
+2. TERMINAL EXECUTION (E2B Cloud Sandbox):
+To run a bash script, start a server, or run python/node files, you MUST output your command wrapped EXACTLY in these XML tags:
 <execute>python3 main.py</execute>
-The system will run it in a secure VM and feed the output back to you. Use ONE <execute> tag per response. Wait for the terminal output before proceeding.`;
+The system will immediately intercept this tag, run the command in a secure Linux microVM containing your files, and feed the console output back to you in the next prompt.
+*CRITICAL:* Only use ONE <execute> tag per response. Wait for the terminal output before proceeding.`;
       
       return personaText + capabilityOverride;
     }
 
-    // THE AUTONOMOUS ENGINE
+    // The Autonomous Orchestration Engine
     const AutonomousEngine = {
       maxLoops: 3,
       currentLoop: 0,
@@ -1001,172 +1060,7 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       }
     };
 
-    function toggleCodespacePane(forceOpen = null) {
-      const pane = document.getElementById("aiCodespaceColumn");
-      const btnText = document.getElementById("btnCodespaceToggleText");
-      
-      if (forceOpen !== null) { isCodespaceOpen = forceOpen; } 
-      else { isCodespaceOpen = !isCodespaceOpen; }
-
-      if (isCodespaceOpen) {
-        pane.classList.remove("hidden");
-        pane.classList.add("flex");
-        if(btnText) btnText.textContent = "Close Workspace";
-      } else {
-        pane.classList.add("hidden");
-        pane.classList.remove("flex");
-        if(btnText) btnText.textContent = "Open Workspace";
-      }
-      lucide.createIcons();
-    }
-
-    function getFileIcon(filename) {
-      const ext = filename.split('.').pop().toLowerCase();
-      if(ext === 'html') return '<i data-lucide="file-code" class="w-4 h-4 text-orange-400"></i>';
-      if(ext === 'css') return '<i data-lucide="file-code" class="w-4 h-4 text-blue-400"></i>';
-      if(ext === 'js') return '<i data-lucide="file-json" class="w-4 h-4 text-yellow-400"></i>';
-      if(ext === 'py') return '<i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400"></i>';
-      return '<i data-lucide="file" class="w-4 h-4 text-zinc-400"></i>';
-    }
-
-    function renderCodespaceFileTabs() {
-      const tree = document.getElementById("codespaceExplorerTree");
-      tree.innerHTML = "";
-      Object.keys(vfs).forEach(filename => {
-        const isActive = filename === csActiveFile;
-        const item = document.createElement("div");
-        item.className = `file-explorer-item group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors text-[12px] font-mono ${isActive ? 'bg-cyan-500/10 text-cyan-300 font-bold' : 'text-zinc-400 hover:bg-surface-900 hover:text-zinc-200'}`;
-        
-        item.innerHTML = `
-          <div class="flex items-center gap-2 overflow-hidden flex-1" onclick="switchCodespaceFile('${filename}')">
-            ${getFileIcon(filename)}
-            <span class="truncate">${filename}</span>
-          </div>
-          <div class="file-actions opacity-0 transition-opacity flex items-center gap-1 shrink-0">
-            <button onclick="event.stopPropagation(); deleteSpecificFile('${filename}')" class="p-1 hover:text-rose-400 rounded transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
-          </div>
-        `;
-        tree.appendChild(item);
-      });
-      lucide.createIcons();
-    }
-
-    function switchCodespaceFile(filename) {
-      csActiveFile = filename;
-      document.getElementById("csCurrentFileLabel").textContent = filename;
-      loadCodespaceEditor();
-      renderCodespaceFileTabs();
-    }
-
-    function loadCodespaceEditor() {
-      document.getElementById("csCodeEditor").value = vfs[csActiveFile] || "";
-    }
-
-    function onEditorContentChange() {
-      vfs[csActiveFile] = document.getElementById("csCodeEditor").value;
-      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-    }
-
-    function setCodespaceView(mode) {
-      csViewMode = mode;
-      const editorCol = document.getElementById("csEditorContainer");
-      const previewCol = document.getElementById("csPreviewContainer");
-      
-      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => {
-        const btn = document.getElementById(id);
-        if(btn) btn.className = "px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors";
-      });
-
-      if (mode === "preview") {
-        editorCol.classList.add("hidden"); editorCol.classList.remove("flex");
-        previewCol.classList.remove("hidden");
-        document.getElementById("btnCsViewPreview").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
-      } else if (mode === "editor") {
-        previewCol.classList.add("hidden");
-        editorCol.classList.remove("hidden"); editorCol.classList.add("flex");
-        document.getElementById("btnCsViewEditor").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
-      } else { 
-        editorCol.classList.remove("hidden"); editorCol.classList.add("flex");
-        previewCol.classList.remove("hidden");
-        document.getElementById("btnCsViewSplit").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
-      }
-    }
-
-    function bundleCodespaceHTML() {
-      let mainHtml = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
-      if (vfs["style.css"]) mainHtml = mainHtml.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
-      if (vfs["script.js"]) mainHtml = mainHtml.replace("</body>", `<script>\n${vfs["script.js"]}\n<` + `/script></body>`);
-      return mainHtml;
-    }
-
-    function runCodespacePreview() {
-      const bundled = bundleCodespaceHTML();
-      const iframe = document.getElementById("csPreviewFrame");
-      const emptyState = document.getElementById("csEmptyState");
-      
-      iframe.srcdoc = bundled;
-      
-      if (bundled.trim().length > 0) {
-        emptyState.style.display = "none";
-        iframe.style.opacity = "1";
-      }
-      
-      document.getElementById("csStatusBadge").innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced (${new Date().toLocaleTimeString()})`;
-      showToast("Codespace Rendered", "Live preview reloaded.");
-    }
-
-    function promptCreateFile() {
-      const name = prompt("Enter new filename (e.g., app.js, layout.html, styles.css):");
-      if (name && name.trim()) {
-        const cleanName = name.trim();
-        if (!vfs[cleanName]) {
-          vfs[cleanName] = `// File: ${cleanName}\n`;
-          localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-          switchCodespaceFile(cleanName);
-          showToast("File Created", cleanName);
-        } else {
-          switchCodespaceFile(cleanName);
-        }
-      }
-    }
-
-    function deleteSpecificFile(filename) {
-      if (filename === "index.html") return alert("Cannot delete root entry index.html");
-      if (confirm(`Delete ${filename} from workspace?`)) {
-        delete vfs[filename];
-        localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-        if(csActiveFile === filename) switchCodespaceFile("index.html");
-        else renderCodespaceFileTabs();
-        showToast("File Deleted", filename);
-      }
-    }
-
-    function openCodespacePopout() {
-      const bundled = bundleCodespaceHTML();
-      const blob = new Blob([bundled], { type: "text/html" });
-      window.open(URL.createObjectURL(blob), "_blank");
-    }
-
-    function exportCodespaceZip() {
-      let exportBlob = new Blob([JSON.stringify(vfs, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(exportBlob);
-      a.download = `codespace_workspace_${Date.now()}.json`;
-      a.click();
-      showToast("Workspace Exported", "Downloaded JSON project bundle.");
-    }
-
-    function writeCodeToCodespace(filename, b64Code) {
-      const decodedCode = decodeBase64Safe(b64Code);
-      vfs[filename] = decodedCode;
-      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-      renderCodespaceFileTabs();
-      switchCodespaceFile(filename);
-      toggleCodespacePane(true);
-      runCodespacePreview();
-      showToast("Artifact Injected", `Updated ${filename} in Codespace.`);
-    }
-
+    // Chat UI Engine
     function parseAiMarkdown(t) {
       if(!t) return "";
 
@@ -1236,7 +1130,7 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
             </div>
             <div class="max-w-xl">
               <h2 class="text-3xl font-heading font-extrabold text-white tracking-tight mb-3">Welcome to ai-llm</h2>
-              <p class="text-sm text-zinc-400 leading-relaxed">Agentic Core active. I can browse the live web, generate complex architectures, and execute terminal commands autonomously in your codespace.</p>
+              <p class="text-sm text-zinc-400 leading-relaxed">Agentic Core active. I can browse the live web, generate architectures, and execute terminal commands autonomously.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mt-6">
               <button class="quick-prompt-btn p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group" data-prompt="${encodeBase64Safe('Create a modern Glassmorphism dashboard layout with HTML and CSS. Auto-deploy it.')}">
@@ -1383,9 +1277,174 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       }
     }
 
-    // =========================================================================
-    // EXM PROJECTS SCANNER
-    // =========================================================================
+    // Codespace Interactivity 
+    function toggleCodespacePane(forceOpen = null) {
+      const pane = document.getElementById("aiCodespaceColumn");
+      const btnText = document.getElementById("btnCodespaceToggleText");
+      
+      if (forceOpen !== null) { isCodespaceOpen = forceOpen; } 
+      else { isCodespaceOpen = !isCodespaceOpen; }
+
+      if (isCodespaceOpen) {
+        pane.classList.remove("hidden");
+        pane.classList.add("flex");
+        if(btnText) btnText.textContent = "Close Workspace";
+      } else {
+        pane.classList.add("hidden");
+        pane.classList.remove("flex");
+        if(btnText) btnText.textContent = "Open Workspace";
+      }
+      lucide.createIcons();
+    }
+
+    function getFileIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      if(ext === 'html') return '<i data-lucide="file-code" class="w-4 h-4 text-orange-400 pointer-events-none"></i>';
+      if(ext === 'css') return '<i data-lucide="file-code" class="w-4 h-4 text-blue-400 pointer-events-none"></i>';
+      if(ext === 'js') return '<i data-lucide="file-json" class="w-4 h-4 text-yellow-400 pointer-events-none"></i>';
+      if(ext === 'py') return '<i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400 pointer-events-none"></i>';
+      return '<i data-lucide="file" class="w-4 h-4 text-zinc-400 pointer-events-none"></i>';
+    }
+
+    function renderCodespaceFileTabs() {
+      const tree = document.getElementById("codespaceExplorerTree");
+      tree.innerHTML = "";
+      Object.keys(vfs).forEach(filename => {
+        const isActive = filename === csActiveFile;
+        const item = document.createElement("div");
+        item.className = `file-explorer-item group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors text-[12px] font-mono ${isActive ? 'bg-cyan-500/10 text-cyan-300 font-bold' : 'text-zinc-400 hover:bg-surface-900 hover:text-zinc-200'}`;
+        
+        item.innerHTML = `
+          <div class="flex items-center gap-2 overflow-hidden flex-1 file-selector" data-filename="${filename}">
+            ${getFileIcon(filename)}
+            <span class="truncate pointer-events-none">${filename}</span>
+          </div>
+          <div class="file-actions opacity-0 transition-opacity flex items-center gap-1 shrink-0">
+            <button class="file-delete-btn p-1 hover:text-rose-400 rounded transition-colors" data-filename="${filename}"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
+          </div>
+        `;
+        tree.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function switchCodespaceFile(filename) {
+      csActiveFile = filename;
+      document.getElementById("csCurrentFileLabel").textContent = filename;
+      loadCodespaceEditor();
+      renderCodespaceFileTabs();
+    }
+
+    function loadCodespaceEditor() {
+      document.getElementById("csCodeEditor").value = vfs[csActiveFile] || "";
+    }
+
+    function onEditorContentChange() {
+      vfs[csActiveFile] = document.getElementById("csCodeEditor").value;
+      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+    }
+
+    function setCodespaceView(mode) {
+      csViewMode = mode;
+      const editorCol = document.getElementById("csEditorContainer");
+      const previewCol = document.getElementById("csPreviewContainer");
+      
+      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => {
+        const btn = document.getElementById(id);
+        if(btn) btn.className = "px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors";
+      });
+
+      if (mode === "preview") {
+        editorCol.classList.add("hidden"); editorCol.classList.remove("flex");
+        previewCol.classList.remove("hidden");
+        document.getElementById("btnCsViewPreview").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      } else if (mode === "editor") {
+        previewCol.classList.add("hidden");
+        editorCol.classList.remove("hidden"); editorCol.classList.add("flex");
+        document.getElementById("btnCsViewEditor").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      } else { 
+        editorCol.classList.remove("hidden"); editorCol.classList.add("flex");
+        previewCol.classList.remove("hidden");
+        document.getElementById("btnCsViewSplit").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      }
+    }
+
+    function bundleCodespaceHTML() {
+      let mainHtml = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
+      if (vfs["style.css"]) mainHtml = mainHtml.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
+      if (vfs["script.js"]) mainHtml = mainHtml.replace("</body>", `<script>\n${vfs["script.js"]}\n<` + `/script></body>`);
+      return mainHtml;
+    }
+
+    function runCodespacePreview() {
+      const bundled = bundleCodespaceHTML();
+      const iframe = document.getElementById("csPreviewFrame");
+      const emptyState = document.getElementById("csEmptyState");
+      
+      iframe.srcdoc = bundled;
+      
+      if (bundled.trim().length > 0) {
+        emptyState.style.display = "none";
+        iframe.style.opacity = "1";
+      }
+      
+      document.getElementById("csStatusBadge").innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced (${new Date().toLocaleTimeString()})`;
+      showToast("Codespace Rendered", "Live preview reloaded.");
+    }
+
+    function promptCreateFile() {
+      const name = prompt("Enter new filename (e.g., app.js, layout.html, styles.css):");
+      if (name && name.trim()) {
+        const cleanName = name.trim();
+        if (!vfs[cleanName]) {
+          vfs[cleanName] = `// File: ${cleanName}\n`;
+          localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+          switchCodespaceFile(cleanName);
+          showToast("File Created", cleanName);
+        } else {
+          switchCodespaceFile(cleanName);
+        }
+      }
+    }
+
+    function deleteSpecificFile(filename) {
+      if (filename === "index.html") return alert("Cannot delete root entry index.html");
+      if (confirm(`Delete ${filename} from workspace?`)) {
+        delete vfs[filename];
+        localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+        if(csActiveFile === filename) switchCodespaceFile("index.html");
+        else renderCodespaceFileTabs();
+        showToast("File Deleted", filename);
+      }
+    }
+
+    function openCodespacePopout() {
+      const bundled = bundleCodespaceHTML();
+      const blob = new Blob([bundled], { type: "text/html" });
+      window.open(URL.createObjectURL(blob), "_blank");
+    }
+
+    function exportCodespaceZip() {
+      let exportBlob = new Blob([JSON.stringify(vfs, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(exportBlob);
+      a.download = `codespace_workspace_${Date.now()}.json`;
+      a.click();
+      showToast("Workspace Exported", "Downloaded JSON project bundle.");
+    }
+
+    function writeCodeToCodespace(filename, b64Code) {
+      const decodedCode = decodeBase64Safe(b64Code);
+      vfs[filename] = decodedCode;
+      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+      renderCodespaceFileTabs();
+      switchCodespaceFile(filename);
+      toggleCodespacePane(true);
+      runCodespacePreview();
+      showToast("Artifact Injected", `Updated ${filename} in Codespace.`);
+    }
+
+    // EXM Projects Console
     function resolveProjectUrl(rawPath) { 
       let c = rawPath.replace(/^\.\//, "").replace(/^\//, ""); 
       if (!c.startsWith("EXM/")) c = "EXM/" + c; 
@@ -1415,9 +1474,7 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       } 
     }
     
-    function filterProjectList() { 
-      renderProjectList(document.getElementById("projectFilterInput").value.toLowerCase()); 
-    }
+    function filterProjectList() { renderProjectList(document.getElementById("projectFilterInput").value.toLowerCase()); }
     
     function renderProjectList(q="") { 
       const c = document.getElementById("projectChipsContainer"); 
@@ -1455,16 +1512,8 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       showToast("Added", `EXM/${n}`); 
     }
     
-    function openActiveInNewTab() { 
-      if(currentSelectedProject) window.open(resolveProjectUrl(currentSelectedProject.path), "_blank"); 
-    }
-    
-    function reloadIframe() { 
-      const f = document.getElementById("previewIframe"); 
-      f.src = f.src; 
-      showToast("Reloaded", "Viewport refreshed."); 
-    }
-    
+    function openActiveInNewTab() { if(currentSelectedProject) window.open(resolveProjectUrl(currentSelectedProject.path), "_blank"); }
+    function reloadIframe() { const f = document.getElementById("previewIframe"); f.src = f.src; showToast("Reloaded", "Viewport refreshed."); }
     function setViewportDevice(w) { 
       document.getElementById("iframeWrapper").style.maxWidth = w; 
       document.querySelectorAll(".device-btn").forEach(b => b.classList.remove("bg-cyan-500", "text-black")); 
@@ -1478,12 +1527,9 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       l.innerHTML = ""; 
       r.innerHTML = ""; 
       repoProjects.forEach((p, i) => { 
-        const o1 = document.createElement("option");
-        const o2 = document.createElement("option"); 
-        o1.value = o2.value = p.name; 
-        o1.textContent = o2.textContent = `EXM/${p.name}`; 
-        l.appendChild(o1); 
-        r.appendChild(o2); 
+        const o1 = document.createElement("option"); const o2 = document.createElement("option"); 
+        o1.value = o2.value = p.name; o1.textContent = o2.textContent = `EXM/${p.name}`; 
+        l.appendChild(o1); r.appendChild(o2); 
         if(i === 1 || i === repoProjects.length - 1) o2.selected = true; 
       }); 
       updateSplitFrames(); 
@@ -1496,11 +1542,7 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       if(r) document.getElementById("splitRightFrame").src = resolveProjectUrl(r.path); 
     }
 
-    // =========================================================================
-    // CLOUD EXECUTION COMPILERS
-    // =========================================================================
-    let currentSandboxLang = "html";
-    
+    // Cloud Compilers
     function setSandboxLanguage(l) { 
       currentSandboxLang = l; 
       ["sbLangHtml", "sbLangPy", "sbLangCpp", "sbLangJava", "sbLangSql"].forEach(id => {
@@ -1514,15 +1556,11 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       const stdoutWrap = document.getElementById("sandboxStdoutWrapper");
       
       if(l === "html") {
-        iframeWrap.classList.remove("hidden");
-        iframeWrap.classList.add("flex");
-        stdoutWrap.classList.add("hidden");
-        stdoutWrap.classList.remove("block");
+        iframeWrap.classList.remove("hidden"); iframeWrap.classList.add("flex");
+        stdoutWrap.classList.add("hidden"); stdoutWrap.classList.remove("block");
       } else {
-        iframeWrap.classList.add("hidden");
-        iframeWrap.classList.remove("flex");
-        stdoutWrap.classList.remove("hidden");
-        stdoutWrap.classList.add("block");
+        iframeWrap.classList.add("hidden"); iframeWrap.classList.remove("flex");
+        stdoutWrap.classList.remove("hidden"); stdoutWrap.classList.add("block");
       } 
     }
     
@@ -1552,11 +1590,7 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
 
       try {
         const res = await fetch("/api/compile", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
-          },
+          method: "POST", headers: { "Content-Type": "application/json", "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || "" },
           body: JSON.stringify({ language: currentSandboxLang, code: c })
         });
         const data = await res.json();
@@ -1567,28 +1601,21 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
         } else {
           out.textContent = `[Compilation Error]: ${data.error}`;
         }
-      } catch (err) {
-        out.textContent = `[Network Error]: Vercel execution backend offline.`;
-      }
+      } catch (err) { out.textContent = `[Network Error]: Vercel execution backend offline.`; }
     }
 
-    // =========================================================================
-    // WHITEBOARD
-    // =========================================================================
+    // Whiteboard Engine
     function resizeWhiteboardCanvas() { 
       const cv = document.getElementById("whiteboardCanvas"); 
       const container = document.getElementById("whiteboardContainer");
       if(!cv || !container || container.clientWidth === 0) return; 
       const ctx = cv.getContext("2d");
       const t = ctx.getImageData(0, 0, cv.width, cv.height); 
-      cv.width = container.clientWidth; 
-      cv.height = container.clientHeight; 
-      ctx.lineCap = "round"; 
-      ctx.lineJoin = "round"; 
+      cv.width = container.clientWidth; cv.height = container.clientHeight; 
+      ctx.lineCap = "round"; ctx.lineJoin = "round"; 
       try { ctx.putImageData(t, 0, 0); } catch(e) {} 
     }
     
-    let startX, startY;
     function initWhiteboard() { 
       const cv = document.getElementById("whiteboardCanvas"); 
       if(!cv) return; 
@@ -1597,14 +1624,9 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       window.addEventListener("resize", resizeWhiteboardCanvas); 
       
       cv.addEventListener("mousedown", e => {
-        isDrawing = true; 
-        startX = e.offsetX;
-        startY = e.offsetY;
+        isDrawing = true; startX = e.offsetX; startY = e.offsetY;
         wbSnapshot = ctx.getImageData(0, 0, cv.width, cv.height);
-        if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') {
-          ctx.beginPath(); 
-          ctx.moveTo(e.offsetX, e.offsetY);
-        }
+        if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') { ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); }
       }); 
       
       cv.addEventListener("mousemove", e => {
@@ -1613,19 +1635,13 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
         ctx.lineWidth = wbCurrentSize; 
         
         if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') {
-          ctx.lineTo(e.offsetX, e.offsetY); 
-          ctx.stroke();
+          ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();
         } else if (wbCurrentTool === 'rect') {
-          ctx.putImageData(wbSnapshot, 0, 0);
-          ctx.beginPath();
-          ctx.rect(startX, startY, e.offsetX - startX, e.offsetY - startY);
-          ctx.stroke();
+          ctx.putImageData(wbSnapshot, 0, 0); ctx.beginPath(); ctx.rect(startX, startY, e.offsetX - startX, e.offsetY - startY); ctx.stroke();
         } else if (wbCurrentTool === 'circle') {
-          ctx.putImageData(wbSnapshot, 0, 0);
-          ctx.beginPath();
+          ctx.putImageData(wbSnapshot, 0, 0); ctx.beginPath();
           const radius = Math.sqrt(Math.pow(e.offsetX - startX, 2) + Math.pow(e.offsetY - startY, 2));
-          ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
-          ctx.stroke();
+          ctx.arc(startX, startY, radius, 0, 2 * Math.PI); ctx.stroke();
         }
       }); 
       
@@ -1647,10 +1663,7 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
     
     function updateWbColor(c) { wbCurrentColor = c; } 
     function updateWbSize(s) { wbCurrentSize = s; }
-    function clearWhiteboard() { 
-      const cv = document.getElementById("whiteboardCanvas"); 
-      cv.getContext("2d").clearRect(0, 0, cv.width, cv.height); 
-    }
+    function clearWhiteboard() { document.getElementById("whiteboardCanvas").getContext("2d").clearRect(0, 0, document.getElementById("whiteboardCanvas").width, document.getElementById("whiteboardCanvas").height); }
     function downloadWhiteboard() { 
       const a = document.createElement("a"); 
       a.download = `sketch_${Date.now()}.png`; 
@@ -1671,32 +1684,25 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
     }
     
     function copyGeneratedDesignCss() { 
-      const cssStr = `.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`;
-      navigator.clipboard.writeText(cssStr); 
+      navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); 
       showToast("Copied", "CSS class ready."); 
     }
 
-    // =========================================================================
-    // TERMINAL
-    // =========================================================================
+    // Terminal Commands
     function handleTerminalKeyDown(e) { 
       if(e.key === "ArrowUp") {
         e.preventDefault(); 
         if(termHistory.length > 0 && termHistoryIdx > 0) {
-          termHistoryIdx--; 
-          e.target.value = termHistory[termHistoryIdx];
+          termHistoryIdx--; e.target.value = termHistory[termHistoryIdx];
         } else if(termHistory.length > 0 && termHistoryIdx === -1) {
-          termHistoryIdx = termHistory.length - 1; 
-          e.target.value = termHistory[termHistoryIdx];
+          termHistoryIdx = termHistory.length - 1; e.target.value = termHistory[termHistoryIdx];
         }
       } else if(e.key === "ArrowDown") {
         e.preventDefault(); 
         if(termHistoryIdx >= 0 && termHistoryIdx < termHistory.length - 1) {
-          termHistoryIdx++; 
-          e.target.value = termHistory[termHistoryIdx];
+          termHistoryIdx++; e.target.value = termHistory[termHistoryIdx];
         } else {
-          termHistoryIdx = -1; 
-          e.target.value = "";
+          termHistoryIdx = -1; e.target.value = "";
         }
       } 
     }
@@ -1707,19 +1713,14 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       const cmd = inp.value.trim(); 
       if(!cmd) return; 
       
-      termHistory.push(cmd); 
-      termHistoryIdx = -1; 
+      termHistory.push(cmd); termHistoryIdx = -1; 
       const scr = document.getElementById("terminalScreen");
       const l = document.createElement("div"); 
       l.className = "text-zinc-300 font-mono mt-2"; 
       l.innerHTML = `<span class="text-cyan-400 font-bold">anish@cloud-vm:~$</span> ${cmd}`; 
       scr.appendChild(l); 
       
-      if (cmd === "clear") { 
-        scr.innerHTML = ""; 
-        inp.value = ""; 
-        return; 
-      }
+      if (cmd === "clear") { scr.innerHTML = ""; inp.value = ""; return; }
       
       const res = document.createElement("div"); 
       res.className = "text-purple-300 font-mono text-[13px] mt-1"; 
@@ -1730,16 +1731,10 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
 
       try {
         const filesArray = Object.keys(vfs).map(key => ({ name: key, content: vfs[key] }));
-
         const fetchRes = await fetch("/api/terminal", {
-          method: "POST", 
-          headers: { 
-            "Content-Type": "application/json",
-            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
-          },
+          method: "POST", headers: { "Content-Type": "application/json", "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || "" },
           body: JSON.stringify({ command: cmd, files: filesArray })
         });
-        
         const data = await fetchRes.json();
         
         if (fetchRes.ok) {
@@ -1754,16 +1749,78 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
         res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; 
         res.textContent = `[Network Timeout]: Could not reach terminal backend.`;
       }
-      
-      inp.value = ""; 
-      scr.scrollTop = scr.scrollHeight;
+      inp.value = ""; scr.scrollTop = scr.scrollHeight;
     }
 
-    function clearAiChat() { 
-      aiConversation = []; 
-      localStorage.removeItem("lumina_ai_history"); 
-      renderAiChat(); 
-      showToast("Cleared", "Conversation memory reset."); 
+    // Vault & Control Data Management
+    function renderNoteTabs() { 
+      const c = document.getElementById("noteTabsContainer"); 
+      c.innerHTML = ""; 
+      vaultNotes.forEach(n => { 
+        const b = document.createElement("button"); 
+        b.className = `px-4 py-2 rounded-xl border cursor-pointer font-bold transition-colors shadow-sm ${n.id === activeNoteId ? 'bg-sky-500 border-sky-500 text-black' : 'bg-surface-900 border-white/5 text-zinc-400 hover:text-white hover:bg-surface-800'}`; 
+        b.textContent = n.title; 
+        b.onclick = () => selectNote(n.id); 
+        c.appendChild(b); 
+      }); 
+    }
+    
+    function selectNote(id) { activeNoteId = id; renderNoteTabs(); loadActiveNoteContent(); }
+    function loadActiveNoteContent() { const n = vaultNotes.find(x => x.id === activeNoteId); if(n) document.getElementById("adminScratchpad").value = n.content; }
+    function onNoteContentChange() { 
+      const n = vaultNotes.find(x => x.id === activeNoteId); 
+      if(n) { 
+        n.content = document.getElementById("adminScratchpad").value; 
+        localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); 
+        if(isMarkdownPreviewActive) toggleMarkdownPreview(true); 
+      } 
+    }
+    
+    function createNewNote() { 
+      const id = "n_" + Date.now(); 
+      vaultNotes.push({ id, title: `Note ${vaultNotes.length+1}`, content: "# New Note" }); 
+      activeNoteId = id; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); 
+      renderNoteTabs(); loadActiveNoteContent(); 
+    }
+    
+    function insertNoteMarkdown(prefixToken, suffixToken) {
+      const textarea = document.getElementById("adminScratchpad");
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const selected = text.substring(start, end);
+      
+      const parsedPrefix = prefixToken.replace(/\\n/g, '\n');
+      const parsedSuffix = suffixToken.replace(/\\n/g, '\n');
+
+      const newText = text.substring(0, start) + parsedPrefix + selected + parsedSuffix + text.substring(end);
+      textarea.value = newText;
+      textarea.selectionStart = start + parsedPrefix.length;
+      textarea.selectionEnd = end + parsedPrefix.length;
+      textarea.focus();
+      onNoteContentChange();
+    }
+
+    function toggleMarkdownPreview(forceRender = false) {
+      if(!forceRender) isMarkdownPreviewActive = !isMarkdownPreviewActive;
+      const editorCol = document.getElementById("adminScratchpad").parentElement;
+      const previewCol = document.getElementById("notePreviewCol");
+      if (isMarkdownPreviewActive) {
+        editorCol.classList.add("hidden"); 
+        previewCol.classList.remove("hidden"); previewCol.classList.add("block");
+        let raw = document.getElementById("adminScratchpad").value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        document.getElementById("noteMarkdownRender").innerHTML = raw
+          .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-3">$1</h3>')
+          .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-4">$1</h2>')
+          .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold text-cyan-400 mt-5">$1</h1>')
+          .replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>')
+          .replace(/\*(.*?)\*/gim, '<em class="italic text-zinc-300">$1</em>')
+          .replace(/`(.*?)`/gim, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
+          .replace(/\n/gim, '<br/>');
+      } else {
+        editorCol.classList.remove("hidden"); editorCol.classList.add("block");
+        previewCol.classList.add("hidden"); previewCol.classList.remove("block");
+      }
     }
 
     function applySandboxPolicy() { 
@@ -1775,29 +1832,14 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`); 
     }
     
-    function setDashboardTheme(t) { 
-      document.documentElement.setAttribute("data-theme", t); 
-      localStorage.setItem("lumina_theme", t); 
-    }
-    
-    function applyCustomAccentColor(h) { 
-      document.documentElement.style.setProperty("--primary", h); 
-      document.documentElement.style.setProperty("--primary-glow", h+"55"); 
-    }
-    
+    function setDashboardTheme(t) { document.documentElement.setAttribute("data-theme", t); localStorage.setItem("lumina_theme", t); }
+    function applyCustomAccentColor(h) { document.documentElement.style.setProperty("--primary", h); document.documentElement.style.setProperty("--primary-glow", h+"55"); }
     function exportDashboardConfig() { 
       const a = document.createElement("a"); 
       a.href = URL.createObjectURL(new Blob([JSON.stringify({projects: repoProjects, notes: vaultNotes})], {type: "application/json"})); 
-      a.download = "godx_config.json"; 
-      a.click(); 
+      a.download = "godx_config.json"; a.click(); 
     }
-    
-    function flushWorkspaceCache() { 
-      if(confirm("Flush all storage?")) { 
-        localStorage.clear(); 
-        location.reload(); 
-      } 
-    }
+    function flushWorkspaceCache() { if(confirm("Flush all storage?")) { localStorage.clear(); location.reload(); } }
     
     function initAmbientParticles() { 
       const cv = document.getElementById("ambientCanvas");
@@ -1805,31 +1847,23 @@ The system will run it in a secure VM and feed the output back to you. Use ONE <
       let w = cv.width = window.innerWidth;
       let h = cv.height = window.innerHeight; 
       const p = Array.from({length: 40}, () => ({
-        x: Math.random() * w, 
-        y: Math.random() * h, 
-        vx: (Math.random() - 0.5) * 0.5, 
-        vy: (Math.random() - 0.5) * 0.5, 
+        x: Math.random() * w, y: Math.random() * h, 
+        vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, 
         r: Math.random() * 1.5 + 0.5
       })); 
       
       function anim() { 
         ctx.clearRect(0, 0, w, h); 
         p.forEach(i => {
-          i.x = (i.x + i.vx + w) % w; 
-          i.y = (i.y + i.vy + h) % h; 
-          ctx.beginPath(); 
-          ctx.arc(i.x, i.y, i.r, 0, Math.PI * 2); 
-          ctx.fillStyle = "rgba(0,242,254,0.3)"; 
-          ctx.fill();
+          i.x = (i.x + i.vx + w) % w; i.y = (i.y + i.vy + h) % h; 
+          ctx.beginPath(); ctx.arc(i.x, i.y, i.r, 0, Math.PI * 2); 
+          ctx.fillStyle = "rgba(0,242,254,0.3)"; ctx.fill();
         }); 
         requestAnimationFrame(anim);
       } 
       anim(); 
       
-      window.addEventListener("resize", () => {
-        w = cv.width = window.innerWidth; 
-        h = cv.height = window.innerHeight;
-      }); 
+      window.addEventListener("resize", () => { w = cv.width = window.innerWidth; h = cv.height = window.innerHeight; }); 
     }
   </script>
 </body>
