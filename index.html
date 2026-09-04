@@ -1,56 +1,782 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LuminaVista Security Node</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            display: ['Space Grotesk', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    body { background-color: #030712; color: white; overflow: hidden; font-family: monospace; }
-    .glass { background: rgba(11, 15, 25, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
-    input { background: #0f172a; border: 1px solid rgba(255,255,255,0.2); outline: none; transition: 0.3s; }
-    input:focus { border-color: #00f2fe; box-shadow: 0 0 10px rgba(0,242,254,0.3); }
-    .btn { background: linear-gradient(135deg, #00f2fe, #00c6ff); color: black; font-weight: bold; cursor: pointer; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    * { box-sizing: border-box; }
+    body {
+      background-color: #030712;
+      color: #f3f4f6;
+      overflow: hidden;
+      font-family: 'JetBrains Mono', monospace;
+      perspective: 1200px;
+    }
+
+    /* Ambient cybernetic grid background */
+    .bg-grid {
+      background-image: 
+        radial-gradient(circle at center, rgba(0, 242, 254, 0.08) 0%, transparent 70%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 48px 48px, 48px 48px;
+    }
+
+    /* Rotating Conic Border Beam */
+    .border-beam-container {
+      position: relative;
+      border-radius: 24px;
+      padding: 1px;
+      overflow: hidden;
+    }
+
+    .border-beam-container::before {
+      content: '';
+      position: absolute;
+      inset: -150%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        transparent 140deg,
+        #00f2fe 180deg,
+        #3b82f6 220deg,
+        #8b5cf6 260deg,
+        transparent 310deg,
+        transparent 360deg
+      );
+      animation: rotateBeam 6s linear infinite;
+      will-change: transform;
+    }
+
+    .border-beam-container.danger-beam::before {
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        #f43f5e 180deg,
+        #fb7185 240deg,
+        transparent 320deg
+      );
+      animation: rotateBeam 1.5s linear infinite;
+    }
+
+    .border-beam-container.success-beam::before {
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        #10b981 180deg,
+        #34d399 240deg,
+        transparent 320deg
+      );
+      animation: rotateBeam 2s linear infinite;
+    }
+
+    @keyframes rotateBeam {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Multi-layered Frosted Glassmorphism */
+    .glass-card {
+      background: linear-gradient(135deg, rgba(13, 19, 33, 0.85) 0%, rgba(6, 10, 20, 0.95) 100%);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-radius: 23px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.75),
+        0 0 35px -5px rgba(0, 242, 254, 0.1),
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+      transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+    }
+
+    /* Laser Scanner Beam */
+    .scan-line {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00f2fe, #00c6ff, transparent);
+      opacity: 0.6;
+      animation: scanSweep 4s ease-in-out infinite;
+      pointer-events-none;
+      z-index: 20;
+    }
+
+    @keyframes scanSweep {
+      0%, 100% { transform: translateY(0); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      98% { transform: translateY(380px); opacity: 0; }
+    }
+
+    /* High-tech Cyber Input */
+    .cyber-input {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      outline: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .cyber-input:focus {
+      background: rgba(15, 23, 42, 0.9);
+      border-color: #00f2fe;
+      box-shadow: 
+        0 0 0 1px #00f2fe,
+        0 0 20px rgba(0, 242, 254, 0.25),
+        inset 0 2px 4px rgba(0,0,0,0.6);
+    }
+
+    /* High-impact Button */
+    .cyber-btn {
+      position: relative;
+      background: linear-gradient(135deg, #00f2fe 0%, #00c6ff 50%, #38bdf8 100%);
+      color: #030712;
+      font-weight: 700;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow: 
+        0 4px 20px rgba(0, 242, 254, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .cyber-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transform: skewX(-20deg);
+      transition: 0.75s ease;
+    }
+
+    .cyber-btn:hover:not(:disabled)::before {
+      left: 150%;
+    }
+
+    .cyber-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 30px rgba(0, 242, 254, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .cyber-btn:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .cyber-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: grayscale(30%);
+      transform: none !important;
+    }
+
+    /* Cyber Corner Brackets */
+    .corner-bracket {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-color: rgba(0, 242, 254, 0.6);
+      pointer-events-none;
+      transition: border-color 0.3s;
+    }
+    .corner-tl { top: 12px; left: 12px; border-top: 2px solid; border-left: 2px solid; }
+    .corner-tr { top: 12px; right: 12px; border-top: 2px solid; border-right: 2px solid; }
+    .corner-bl { bottom: 12px; left: 12px; border-bottom: 2px solid; border-left: 2px solid; }
+    .corner-br { bottom: 12px; right: 12px; border-bottom: 2px solid; border-right: 2px solid; }
+
+    #warp-overlay {
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    #warp-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .pulse-dot {
+      box-shadow: 0 0 12px #10b981;
+    }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen relative">
-  <div class="fixed top-[-10%] left-[20%] w-[550px] h-[550px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none"></div>
+<body class="flex items-center justify-center min-h-screen relative select-none bg-grid">
 
-  <div class="w-full max-w-sm px-6 relative z-10 text-center">
-    <div class="inline-block px-3 py-1 mb-6 rounded-full border border-white/10 bg-black text-xs text-zinc-400">Upstash Vercel Backend Link: Active</div>
+  <!-- Interactive Constellation Grid Canvas -->
+  <canvas id="particle-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+  <!-- Ambient dynamic glow orbs -->
+  <div id="orb-cyan" class="fixed top-[-15%] left-[15%] w-[650px] h-[650px] bg-cyan-500/15 rounded-full blur-[150px] pointer-events-none transition-transform duration-700"></div>
+  <div id="orb-violet" class="fixed bottom-[-20%] right-[10%] w-[580px] h-[580px] bg-purple-600/15 rounded-full blur-[160px] pointer-events-none transition-transform duration-700"></div>
+
+  <!-- Warp / Hyperdrive Cinematic Transition Canvas -->
+  <canvas id="warp-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-40 opacity-0"></canvas>
+
+  <!-- Fullscreen Warp Redirection Overlay -->
+  <div id="warp-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+    <div class="relative flex flex-col items-center max-w-md px-6 text-center">
+      <div class="relative w-20 h-20 mb-6">
+        <div class="absolute inset-0 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
+        <div class="absolute inset-2 rounded-full border-2 border-emerald-500/20 border-b-emerald-400 animate-spin" style="animation-direction: reverse; animation-duration: 0.8s;"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <svg class="w-8 h-8 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="text-xs uppercase tracking-widest text-emerald-400 font-bold mb-2 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        Authentication Verified
+      </div>
+      <h2 class="text-2xl font-display font-bold text-white mb-2 tracking-tight">Initializing Workspace</h2>
+      <div id="telemetry-log" class="font-mono text-[11px] text-zinc-400 space-y-1 h-14 overflow-hidden text-left bg-zinc-950/80 p-3 rounded-lg border border-white/10 w-full">
+        <p class="text-cyan-400">&gt; Handshake cryptographic payload: OK</p>
+        <p class="text-emerald-400">&gt; Verified Upstash secure cluster token</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div id="card-container" class="w-full max-w-[420px] px-6 relative z-10 text-center">
     
-    <form class="glass p-8" onsubmit="submitForm(event)">
-      <h3 class="text-xl mb-2 font-bold font-sans">System Gateway</h3>
-      <p class="text-xs text-zinc-400 mb-6 font-sans">Cookie-based validation.</p>
+    <!-- Top System Telemetry Badge -->
+    <div id="status-badge" class="inline-flex items-center gap-2 px-3.5 py-1.5 mb-6 rounded-full border border-white/10 bg-zinc-950/80 backdrop-blur-xl shadow-lg shadow-black/40 text-xs text-zinc-300 transition-all hover:border-cyan-500/40">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 pulse-dot"></span>
+      </span>
+      <span class="font-mono tracking-tight text-[11px] font-medium text-zinc-300">Upstash Vercel Backend Link: <span class="text-emerald-400 font-semibold">Active</span></span>
+      <span class="text-[10px] text-zinc-500 border-l border-white/10 pl-2">24ms</span>
+    </div>
+
+    <!-- Outer Beam Border Wrapper -->
+    <div id="beam-wrapper" class="border-beam-container">
       
-      <input type="password" id="pass" class="w-full px-4 py-3 text-sm mb-4 rounded-xl text-center" placeholder="Master Key..." required>
-      <div id="err" class="text-rose-400 text-xs hidden mb-4 bg-rose-500/10 p-2 rounded border border-rose-500/20">Access Denied</div>
-      
-      <button id="btn" type="submit" class="btn w-full py-3 rounded-xl font-sans transition-all active:scale-95">Unlock Environment</button>
-    </form>
+      <!-- Interactive 3D Card -->
+      <div id="card-body" class="glass-card p-8 sm:p-9 relative overflow-hidden">
+        
+        <!-- Cyber Accents -->
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="scan-line"></div>
+
+        <!-- Node Header -->
+        <div class="flex flex-col items-center mb-6">
+          <div id="node-shield" class="w-14 h-14 mb-4 rounded-2xl bg-gradient-to-b from-cyan-500/20 to-blue-500/5 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10 relative group">
+            <div class="absolute inset-0 rounded-2xl bg-cyan-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <svg class="w-7 h-7 text-cyan-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+          </div>
+
+          <div class="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-cyan-400 uppercase font-semibold mb-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            LuminaVista Security Node
+          </div>
+          <h1 class="text-2xl font-display font-bold tracking-tight text-white mb-1">System Gateway</h1>
+          <p class="text-xs text-zinc-400 font-sans tracking-wide">Cookie-based validation.</p>
+        </div>
+
+        <!-- Authentication Form with identical function call -->
+        <form id="auth-form" onsubmit="submitForm(event)" class="relative z-10" autocomplete="off">
+          
+          <!-- Key Input Container -->
+          <div class="relative mb-3 group">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-cyan-400 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+              </svg>
+            </div>
+
+            <!-- EXACT same input id="pass" -->
+            <input 
+              type="password" 
+              id="pass" 
+              class="cyber-input w-full pl-10 pr-10 py-3.5 text-sm rounded-xl text-center font-mono placeholder:text-zinc-500 text-zinc-100 tracking-wider" 
+              placeholder="Master Key..." 
+              required
+              autofocus
+            >
+
+            <!-- Show/Hide Toggle Button -->
+            <button 
+              type="button" 
+              id="toggle-pwd" 
+              onclick="togglePasswordVisibility()" 
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-cyan-400 transition-colors focus:outline-none"
+              title="Toggle Key Visibility"
+              tabindex="-1"
+            >
+              <svg id="eye-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <svg id="eye-off-icon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- EXACT same error container id="err" -->
+          <div id="err" class="text-rose-400 text-xs hidden mb-4 bg-rose-500/10 py-2.5 px-3 rounded-xl border border-rose-500/30 flex items-center justify-center gap-2 font-mono">
+            <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span>Access Denied</span>
+          </div>
+
+          <!-- EXACT same button id="btn" -->
+          <button 
+            id="btn" 
+            type="submit" 
+            class="cyber-btn w-full py-3.5 px-4 rounded-xl font-sans tracking-wide text-sm font-semibold flex items-center justify-center gap-2"
+          >
+            <svg id="btn-icon" class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+            </svg>
+            <span id="btn-text">Unlock Environment</span>
+          </button>
+        </form>
+
+        <!-- Diagnostics Footer -->
+        <div class="mt-6 pt-5 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+          <span class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400/80 animate-pulse"></span>
+            AES-256-GCM
+          </span>
+          <span class="text-zinc-600">ID: 0x9F4B // V4</span>
+          <span class="text-cyan-400/80">TLS 1.3</span>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <script>
+    // Audio synthesizer for subtle tactile feedback
+    let audioCtx = null;
+    function playSciFiSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'type') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(680, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.04);
+          gain.gain.setValueAtTime(0.015, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.04);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else if (type === 'error') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.35);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        }
+      } catch (e) {
+        // Audio optional; fails gracefully without interruption
+      }
+    }
+
+    // Toggle password visibility
+    function togglePasswordVisibility() {
+      const p = document.getElementById('pass');
+      const eye = document.getElementById('eye-icon');
+      const eyeOff = document.getElementById('eye-off-icon');
+      if (p.type === 'password') {
+        p.type = 'text';
+        eye.classList.add('hidden');
+        eyeOff.classList.remove('hidden');
+      } else {
+        p.type = 'password';
+        eye.classList.remove('hidden');
+        eyeOff.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('pass').addEventListener('input', () => playSciFiSound('type'));
+
+    // ==========================================
+    // 1. OPENING CINEMATIC SEQUENCE (GSAP)
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+
+      gsap.set("#card-container", { opacity: 0, scale: 0.88, y: 30, rotationX: 12 });
+      gsap.set("#status-badge", { opacity: 0, y: -20, scale: 0.9 });
+      gsap.set(["#node-shield", "h1", "p.text-xs", "#auth-form", ".corner-bracket"], { opacity: 0, y: 15 });
+
+      tl.to("#card-container", {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        rotationX: 0,
+        duration: 1.1,
+        ease: "power3.out"
+      })
+      .to("#status-badge", {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.7,
+        ease: "back.out(1.8)"
+      }, "-=0.6")
+      .to(["#node-shield", "h1", "p.text-xs", "#auth-form", ".corner-bracket"], {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.08
+      }, "-=0.5");
+    });
+
+    // ==========================================
+    // 2. 3D CARD PARALLAX TILT
+    // ==========================================
+    const cardBody = document.getElementById('card-body');
+    const orbCyan = document.getElementById('orb-cyan');
+    const orbViolet = document.getElementById('orb-violet');
+
+    window.addEventListener('mousemove', (e) => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const dx = (e.clientX - cx) / cx;
+      const dy = (e.clientY - cy) / cy;
+
+      gsap.to(cardBody, {
+        rotationY: dx * 9,
+        rotationX: -dy * 9,
+        transformPerspective: 1000,
+        duration: 0.5,
+        ease: "power1.out"
+      });
+
+      gsap.to(orbCyan, { x: dx * 40, y: dy * 40, duration: 1.2, ease: "power1.out" });
+      gsap.to(orbViolet, { x: -dx * 35, y: -dy * 35, duration: 1.2, ease: "power1.out" });
+    });
+
+    window.addEventListener('mouseleave', () => {
+      gsap.to(cardBody, { rotationY: 0, rotationX: 0, duration: 0.8, ease: "power2.out" });
+    });
+
+    // ==========================================
+    // 3. CONSTELLATION PARTICLES CANVAS
+    // ==========================================
+    const pCanvas = document.getElementById('particle-canvas');
+    const ctx = pCanvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let mouse = { x: -1000, y: -1000 };
+
+    function resizeCanvas() {
+      width = pCanvas.width = window.innerWidth;
+      height = pCanvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.45;
+        this.vy = (Math.random() - 0.5) * 0.45;
+        this.radius = Math.random() * 1.5 + 0.7;
+        this.alpha = Math.random() * 0.5 + 0.2;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+
+        const dx = mouse.x - this.x;
+        const dy = mouse.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          const angle = Math.atan2(dy, dx);
+          const force = (120 - dist) / 120;
+          this.x -= Math.cos(angle) * force * 1.8;
+          this.y -= Math.sin(angle) * force * 1.8;
+        }
+      }
+      draw() {
+        ctx.fillStyle = `rgba(0, 242, 254, ${this.alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const count = Math.min(Math.floor((window.innerWidth * window.innerHeight) / 16000), 75);
+    for (let i = 0; i < count; i++) particles.push(new Particle());
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.strokeStyle = `rgba(0, 198, 255, ${0.12 * (1 - dist / 100)})`;
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // ==========================================
+    // 4. QUANTUM HYPERDRIVE CANVAS (Redirect)
+    // ==========================================
+    const warpCanvas = document.getElementById('warp-canvas');
+    const wCtx = warpCanvas.getContext('2d');
+    let warpParticles = [];
+    let warpActive = false;
+
+    function initWarp() {
+      warpCanvas.width = window.innerWidth;
+      warpCanvas.height = window.innerHeight;
+      warpParticles = [];
+      for (let i = 0; i < 280; i++) {
+        warpParticles.push({
+          x: (Math.random() - 0.5) * window.innerWidth,
+          y: (Math.random() - 0.5) * window.innerHeight,
+          z: Math.random() * window.innerWidth,
+          prevZ: Math.random() * window.innerWidth
+        });
+      }
+    }
+
+    function renderWarp() {
+      if (!warpActive) return;
+      wCtx.fillStyle = 'rgba(3, 7, 18, 0.28)';
+      wCtx.fillRect(0, 0, warpCanvas.width, warpCanvas.height);
+      const cx = warpCanvas.width / 2;
+      const cy = warpCanvas.height / 2;
+
+      for (let p of warpParticles) {
+        p.prevZ = p.z;
+        p.z -= 28;
+        if (p.z <= 0) {
+          p.z = warpCanvas.width;
+          p.prevZ = p.z;
+          p.x = (Math.random() - 0.5) * warpCanvas.width;
+          p.y = (Math.random() - 0.5) * warpCanvas.height;
+        }
+
+        const sx = (p.x / p.z) * 450 + cx;
+        const sy = (p.y / p.z) * 450 + cy;
+        const px = (p.x / p.prevZ) * 450 + cx;
+        const py = (p.y / p.prevZ) * 450 + cy;
+
+        wCtx.strokeStyle = 'rgba(0, 242, 254, 0.85)';
+        wCtx.lineWidth = Math.min(2.5, (1 - p.z / warpCanvas.width) * 3);
+        wCtx.beginPath();
+        wCtx.moveTo(px, py);
+        wCtx.lineTo(sx, sy);
+        wCtx.stroke();
+      }
+      requestAnimationFrame(renderWarp);
+    }
+
+    // ==========================================
+    // 5. EXACT SUBMISSION LOGIC & ANIMATIONS
+    // ==========================================
     async function submitForm(e) {
       e.preventDefault();
-      const b = document.getElementById('btn'), err = document.getElementById('err'), p = document.getElementById('pass');
-      b.textContent = "Verifying Request..."; b.disabled = true; err.classList.add("hidden");
+      const b = document.getElementById('btn');
+      const err = document.getElementById('err');
+      const p = document.getElementById('pass');
+      const beam = document.getElementById('beam-wrapper');
+
+      b.disabled = true;
+      err.classList.add("hidden");
+      beam.classList.remove('danger-beam', 'success-beam');
+
+      // Animated verifying spinner state
+      b.innerHTML = `
+        <svg class="animate-spin h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Verifying Request...</span>
+      `;
 
       try {
-        const res = await fetch("/api/auth", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ password: p.value }) });
+        const res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: p.value })
+        });
         const d = await res.json();
-        
+
         if (res.ok && d.success) {
-          b.textContent = "Granted. Booting workspace...";
-          setTimeout(() => window.location.href = "/dashboard.html", 500);
+          playSciFiSound('success');
+          beam.classList.add('success-beam');
+
+          b.innerHTML = `
+            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Granted. Booting workspace...</span>
+          `;
+          b.style.background = 'linear-gradient(135deg, #10b981 0%, #34d399 100%)';
+          b.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.6)';
+
+          // Launch Hyperspace Warp & Redirection Sequence
+          initWarp();
+          warpActive = true;
+          renderWarp();
+
+          const redirectTl = gsap.timeline();
+
+          redirectTl
+            .to("#warp-canvas", { opacity: 1, duration: 0.3 })
+            .to("#warp-overlay", { 
+              opacity: 1, 
+              duration: 0.4, 
+              onStart: () => document.getElementById('warp-overlay').classList.add('active') 
+            }, "-=0.2")
+            .to("#card-container", {
+              scale: 1.05,
+              filter: "blur(8px)",
+              opacity: 0,
+              duration: 0.5,
+              ease: "power2.in"
+            }, "-=0.3");
+
+          // Telemetry status stream
+          setTimeout(() => {
+            const log = document.getElementById('telemetry-log');
+            if (log) {
+              log.innerHTML += `<p class="text-cyan-300">&gt; Allocating VM sandbox pipeline...</p>`;
+              log.scrollTop = log.scrollHeight;
+            }
+          }, 350);
+
+          setTimeout(() => {
+            const log = document.getElementById('telemetry-log');
+            if (log) {
+              log.innerHTML += `<p class="text-emerald-400">&gt; Relaying session to /dashboard.html</p>`;
+              log.scrollTop = log.scrollHeight;
+            }
+          }, 650);
+
+          setTimeout(() => {
+            window.location.href = "/dashboard.html";
+          }, 850);
+
         } else {
-          err.textContent = d.error || "Credentials invalid.";
-          err.classList.remove("hidden"); b.disabled = false; b.textContent = "Unlock Environment"; p.value = ""; p.focus();
+          playSciFiSound('error');
+          beam.classList.add('danger-beam');
+
+          // GSAP Cyber Shockwave Shake
+          gsap.timeline()
+            .to("#card-container", { x: -14, duration: 0.05 })
+            .to("#card-container", { x: 14, duration: 0.05 })
+            .to("#card-container", { x: -10, duration: 0.05 })
+            .to("#card-container", { x: 10, duration: 0.05 })
+            .to("#card-container", { x: -5, duration: 0.05 })
+            .to("#card-container", { x: 5, duration: 0.05 })
+            .to("#card-container", { x: 0, duration: 0.05 });
+
+          b.disabled = false;
+          b.innerHTML = `
+            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+            </svg>
+            <span id="btn-text">Unlock Environment</span>
+          `;
+
+          err.innerHTML = `
+            <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span>${d.error || "Credentials invalid."}</span>
+          `;
+          err.classList.remove("hidden");
+          gsap.fromTo(err, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.3 });
+
+          p.value = "";
+          p.focus();
         }
       } catch (ex) {
-        err.textContent = "Network Error: Could not reach Vercel API.";
-        err.classList.remove("hidden"); b.disabled = false; b.textContent = "Unlock Environment";
+        playSciFiSound('error');
+        beam.classList.add('danger-beam');
+
+        gsap.timeline()
+          .to("#card-container", { x: -12, duration: 0.06 })
+          .to("#card-container", { x: 12, duration: 0.06 })
+          .to("#card-container", { x: 0, duration: 0.06 });
+
+        b.disabled = false;
+        b.innerHTML = `
+          <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+          </svg>
+          <span id="btn-text">Unlock Environment</span>
+        `;
+
+        err.innerHTML = `
+          <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span>Network Error: Could not reach Vercel API.</span>
+        `;
+        err.classList.remove("hidden");
+        gsap.fromTo(err, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.3 });
       }
     }
   </script>
