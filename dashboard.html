@@ -159,7 +159,6 @@
         <!-- Center: Chat Interface -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
-          <!-- Header -->
           <div class="px-6 py-4 border-b border-white/5 bg-surface-900/40 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
             <div class="flex items-center gap-4">
               <div class="relative">
@@ -186,10 +185,8 @@
             </div>
           </div>
 
-          <!-- Chat Conversation Scroll Area -->
           <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[14px] leading-relaxed relative min-h-0 scroll-smooth"></div>
 
-          <!-- Input Bar -->
           <div class="p-4 sm:p-6 pt-2 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
               <div class="relative bg-surface-900/60 backdrop-blur-xl border border-white/10 rounded-3xl focus-within:border-cyan-500/50 focus-within:ring-4 focus-within:ring-cyan-500/10 transition-all p-2 flex items-end shadow-2xl">
@@ -237,9 +234,8 @@
               <div id="codespaceExplorerTree" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
             </div>
 
-            <!-- Main Panel: Dual Display (Editor vs Preview) -->
+            <!-- Main Panel: Dual Display -->
             <div class="flex-1 flex flex-col lg:flex-row h-full relative">
-              <!-- Code Editor -->
               <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
                 <div class="px-4 py-1.5 bg-surface-900/50 text-[10px] text-zinc-400 font-mono border-b border-white/5 flex justify-between tracking-wider uppercase">
                   <span id="csCurrentFileLabel" class="text-cyan-300">index.html</span>
@@ -248,7 +244,6 @@
                 <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-[13px] text-zinc-200 outline-none resize-none leading-loose selection:bg-cyan-500 selection:text-black"></textarea>
               </div>
 
-              <!-- Live Browser Preview -->
               <div id="csPreviewContainer" class="flex-1 h-full bg-surface-950 relative overflow-hidden bg-dot-pattern flex items-center justify-center">
                 <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white absolute inset-0 z-10 transition-opacity duration-300"></iframe>
                 <div id="csEmptyState" class="text-center z-0">
@@ -501,7 +496,7 @@
             <button onclick="insertNoteMarkdown('1. ', '')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" title="Numbered List"><i data-lucide="list-ordered" class="w-4 h-4"></i></button>
             <div class="w-px h-4 bg-white/10 mx-1"></div>
             <button onclick="insertNoteMarkdown('`', '`')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" title="Inline Code"><i data-lucide="code" class="w-4 h-4"></i></button>
-            <button onclick="insertNoteMarkdown('```\\n', '\\n```')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4"></i></button>
+            <button onclick="insertNoteMarkdown('```[NEWLINE]', '[NEWLINE]```')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4"></i></button>
             <button onclick="insertNoteMarkdown('[Link Text](', ')')" class="p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" title="Link"><i data-lucide="link" class="w-4 h-4"></i></button>
           </div>
 
@@ -795,6 +790,48 @@
       const t = document.getElementById("toast"); 
       t.classList.remove("translate-y-24", "opacity-0"); 
       setTimeout(() => t.classList.add("translate-y-24", "opacity-0"), 3500); 
+    }
+
+    // New missing functions implemented:
+    function openSourceInspector() {
+      const modal = document.getElementById("sourceModal");
+      modal.style.display = "flex";
+      setTimeout(() => modal.classList.remove("opacity-0"), 10);
+      loadSourceFile('index.html');
+    }
+
+    function closeSourceInspector() {
+      const modal = document.getElementById("sourceModal");
+      modal.classList.add("opacity-0");
+      setTimeout(() => modal.style.display = "none", 200);
+    }
+
+    function loadSourceFile(file) {
+      const block = document.getElementById("sourceCodeBlock");
+      if(vfs && vfs[file]) {
+        block.textContent = vfs[file];
+      } else {
+        block.textContent = `// ${file} not found in workspace buffer.`;
+      }
+    }
+
+    function handleCmdSearch(e) {
+      const val = e.target.value.toLowerCase();
+      const res = document.getElementById("cmdResults");
+      if(!val) { res.innerHTML = ""; return; }
+      
+      const commands = [
+        { name: "Open AI Studio", action: "switchTab('tab-ai-studio')" },
+        { name: "Open Projects", action: "switchTab('tab-projects')" },
+        { name: "Open Terminal", action: "switchTab('tab-terminal')" },
+        { name: "Open Settings", action: "switchTab('tab-controls')" },
+        { name: "Clear Workspace", action: "flushWorkspaceCache()" }
+      ];
+      
+      const filtered = commands.filter(c => c.name.toLowerCase().includes(val));
+      res.innerHTML = filtered.map(c => 
+        `<button onclick="${c.action}; closeCommandPalette();" class="w-full text-left px-4 py-2 hover:bg-white/10 rounded-lg text-sm text-zinc-300 hover:text-white transition-colors cursor-pointer">${c.name}</button>`
+      ).join('');
     }
 
     function openAiConfigModal() {
@@ -1255,7 +1292,7 @@ The system will immediately intercept this tag, run the command in a secure Linu
                 <h4 class="text-sm font-bold text-white mb-1">Design a Dashboard</h4>
                 <p class="text-xs text-zinc-500">Auto-inject HTML/CSS into workspace.</p>
               </button>
-              <button onclick="loadQuickPrompt('${encodeBase64Safe('Search the live internet for today’s top tech news and summarize it.')}')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+              <button onclick="loadQuickPrompt('${encodeBase64Safe('Search the live internet for recent top tech news and summarize it.')}')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
                 <i data-lucide="globe" class="w-5 h-5 text-indigo-400 mb-2 group-hover:scale-110 transition-transform"></i>
                 <h4 class="text-sm font-bold text-white mb-1">Search the Web</h4>
                 <p class="text-xs text-zinc-500">Bypass training cutoffs with real-time data.</p>
@@ -1883,16 +1920,15 @@ The system will immediately intercept this tag, run the command in a secure Linu
       loadActiveNoteContent(); 
     }
     
-    function insertNoteMarkdown(prefix, suffix) {
+    function insertNoteMarkdown(prefixToken, suffixToken) {
       const textarea = document.getElementById("adminScratchpad");
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const text = textarea.value;
       const selected = text.substring(start, end);
       
-      // Handle literal newline replacements for code block injections
-      const parsedPrefix = prefix.replace(/\\n/g, '\n');
-      const parsedSuffix = suffix.replace(/\\n/g, '\n');
+      const parsedPrefix = prefixToken.replace(/\[NEWLINE\]/g, '\n');
+      const parsedSuffix = suffixToken.replace(/\[NEWLINE\]/g, '\n');
 
       const newText = text.substring(0, start) + parsedPrefix + selected + parsedSuffix + text.substring(end);
       textarea.value = newText;
