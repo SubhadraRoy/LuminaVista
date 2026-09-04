@@ -1115,37 +1115,77 @@ code content here
       }
     }
 
-    function parseAiMarkdown(t) {
-      if (!t) return "";
-      
-      // Clean internal agent directives from visual chat rendering
-      let display = t.replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
-        return `\`\`\`${f.split('.').pop()}:${f}\n${c}\n\`\`\``;
-      }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '> *Agent deleted file: `${1}`*');
+    function escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-      return display.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
-        const lang = l1 || l2 || "text";
-        const file = f1 || "";
-        const cleanEscaped = code.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        const safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function parseAiMarkdown(t) {
+  if (!t) return "";
 
-        return `
-          <div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-md">
-            <div class="px-4 py-1.5 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center">
-              <span class="font-bold flex items-center gap-1.5"><i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${file || lang}</span>
-              <div class="flex items-center gap-2">
-                ${file ? `<button onclick="vfs['${file}']=\`${cleanEscaped}\`; localStorage.setItem('lumina_codespace_vfs', JSON.stringify(vfs)); renderCodespaceFileTree(); renderCodespaceFileTabs(); switchCodespaceFile('${file}'); toggleCodespacePane(true); runCodespacePreview();" class="text-emerald-400 font-bold hover:underline cursor-pointer">Apply</button>` : ''}
-                <button onclick="navigator.clipboard.writeText(this.closest('.bg-surface-950').querySelector('code').innerText); showToast('Copied', 'Code block copied');" class="text-zinc-400 hover:text-white cursor-pointer">Copy</button>
-              </div>
-            </div>
-            <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${safeCode}</code></pre>
+  // 1. Disarm and normalize tool call artifacts before escaping
+  let processed = t.replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
+    return `\`\`\`${f.split('.').pop()}:${f}\n${c}\n\`\`\``;
+  }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '> *Agent removed file: `$1`*');
+
+  // 2. Extract code blocks and escape raw source contents safely
+  const codeBlocks = [];
+  processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
+    const lang = l1 || l2 || "text";
+    const file = f1 || "";
+    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+    codeBlocks.push({ lang, file, code });
+    return placeholder;
+  });
+
+  // 3. HTML-escape all user/AI conversational prose to kill raw tag injections
+  let safeProse = escapeHtml(processed);
+
+  // 4. Reconstruct markdown formatting safely on sanitized prose
+  safeProse = safeProse
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
+    .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono">$1</code>')
+    .replace(/\n/g, '<br/>');
+
+  // 5. Re-inject sanitized, encapsulated code blocks
+  codeBlocks.forEach((item, index) => {
+    const safeCodeText = escapeHtml(item.code);
+    const cleanAttr = escapeHtml(JSON.stringify(item.code));
+
+    const htmlCard = `
+      <div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-md">
+        <div class="px-4 py-1.5 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center">
+          <span class="font-bold flex items-center gap-1.5"><i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${escapeHtml(item.file || item.lang)}</span>
+          <div class="flex items-center gap-2">
+            ${item.file ? `<button onclick='applyArtifactSafe("${escapeHtml(item.file)}", ${cleanAttr})' class="text-emerald-400 font-bold hover:underline cursor-pointer">Apply to VFS</button>` : ''}
+            <button onclick="navigator.clipboard.writeText(this.closest('.bg-surface-950').querySelector('code').innerText); showToast('Copied', 'Code block copied');" class="text-zinc-400 hover:text-white cursor-pointer">Copy</button>
           </div>
-        `;
-      }).replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
-        .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono">$1</code>')
-        .replace(/\n/g, '<br/>');
-    }
+        </div>
+        <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${safeCodeText}</code></pre>
+      </div>
+    `;
+    safeProse = safeProse.replace(`__CODE_BLOCK_${index}__`, htmlCard);
+  });
+
+  return safeProse;
+}
+
+// Safe helper that prevents quote-breaking syntax errors
+function applyArtifactSafe(file, content) {
+  vfs[file] = content;
+  localStorage.setItem('lumina_codespace_vfs', JSON.stringify(vfs));
+  renderCodespaceFileTree();
+  renderCodespaceFileTabs();
+  switchCodespaceFile(file);
+  toggleCodespacePane(true);
+  runCodespacePreview();
+  showToast("Artifact Applied", `Saved ${file} securely.`);
+}
 
     function renderAiChat() {
       const box = document.getElementById("aiChatHistory");
