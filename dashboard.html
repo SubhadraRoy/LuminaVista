@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; object-src 'none';">
-  <title>LuminaVista OS — Agentic Workspace</title>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  
+  <title>LuminaVista OS — Premium Workspace</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,7 +18,7 @@
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
           colors: { surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' } },
           animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
         }
@@ -23,36 +26,36 @@
     }
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <style>
-    :root { --primary: #00f2fe; --primary-glow: rgba(0, 242, 254, 0.35); --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%); }
-    [data-theme="emerald"] { --primary: #10b981; --primary-glow: rgba(16, 185, 129, 0.35); --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%); }
-    [data-theme="amber"] { --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.35); --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%); }
-    [data-theme="rose"] { --primary: #f43f5e; --primary-glow: rgba(244, 63, 94, 0.35); --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #e11d48 100%); }
+    :root { --primary: #00f2fe; --primary-glow: rgba(0, 242, 254, 0.35); --secondary: #4facfe; --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%); }
+    [data-theme="emerald"] { --primary: #10b981; --primary-glow: rgba(16, 185, 129, 0.35); --secondary: #059669; --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%); }
+    [data-theme="amber"] { --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.35); --secondary: #d97706; --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%); }
+    [data-theme="rose"] { --primary: #f43f5e; --primary-glow: rgba(244, 63, 94, 0.35); --secondary: #e11d48; --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #e11d48 100%); }
     
     body { background-color: #030712; color: #f8fafc; overflow: hidden; }
     
-    .glass-panel { background: rgba(11, 15, 25, 0.6); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.5), 0 0 35px -10px var(--primary-glow); }
+    .glass-panel { background: rgba(11, 15, 25, 0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.5), 0 0 35px -10px var(--primary-glow); }
     .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1rem; }
     
-    .godx-input { background-color: rgba(15, 23, 42, 0.5) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 0.75rem !important; outline: none !important; transition: all 0.2s ease !important; backdrop-filter: blur(10px); }
+    .godx-input { background-color: rgba(15, 23, 42, 0.5) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; outline: none !important; transition: all 0.2s ease !important; backdrop-filter: blur(10px); }
     .godx-input:focus { background-color: rgba(30, 41, 59, 0.8) !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--primary-glow) !important; }
+    
     .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
     .btn-gradient:hover { background-position: right center; box-shadow: 0 0 25px var(--primary-glow); }
     
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 5px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
     
     .nav-tab-active { background: linear-gradient(90deg, rgba(0,242,254,0.1) 0%, transparent 100%); border-left: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
-    
-    /* Adjustable Sidebar Core */
-    #appSidebar { resize: horizontal; overflow: hidden; min-width: 80px; max-width: 450px; }
-    .sidebar-collapsed { width: 80px !important; min-width: 80px !important; resize: none !important; }
-    .sidebar-collapsed .nav-text { display: none; }
-    
+    .codespace-tab-active { background: #1e293b; border-color: var(--primary); color: #00f2fe; }
+
     .bg-dot-pattern { background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px); background-size: 20px 20px; }
+    
+    /* Smooth height transitions for textareas */
     textarea { transition: border-color 0.2s, box-shadow 0.2s; }
   </style>
 </head>
@@ -63,65 +66,61 @@
   <div class="fixed top-[-20%] left-[10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0"></div>
   <div class="fixed bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[180px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 2s;"></div>
 
-  <!-- ADJUSTABLE LEFT SIDEBAR -->
-  <aside id="appSidebar" class="w-64 border-r border-white/5 bg-surface-950/80 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0 transition-width duration-300">
-    <button onclick="toggleSidebar()" class="absolute -right-3 top-6 w-6 h-6 bg-surface-800 rounded-full border border-white/10 flex items-center justify-center z-50 text-zinc-400 hover:text-white cursor-pointer shadow-lg">
-      <i data-lucide="chevron-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
-    </button>
-
-    <div class="p-5 border-b border-white/5 flex items-center gap-3 overflow-hidden shrink-0">
-      <div class="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_20px_rgba(0,242,254,0.3)]">
+  <!-- FIXED LEFT SIDEBAR -->
+  <aside class="w-64 border-r border-white/5 bg-surface-950/80 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0">
+    <div class="p-6 border-b border-white/5 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_20px_rgba(0,242,254,0.3)]">
         GX
       </div>
-      <div class="nav-text whitespace-nowrap overflow-hidden">
-        <h1 class="font-heading font-bold text-lg text-white tracking-tight leading-none truncate">LuminaVista</h1>
-        <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS</p>
+      <div>
+        <h1 class="font-heading font-bold text-lg text-white tracking-tight leading-none">LuminaVista</h1>
+        <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v9.5</p>
       </div>
     </div>
 
-    <nav class="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 space-y-1.5">
+    <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
       <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
-        <i data-lucide="sparkles" class="w-5 h-5 shrink-0 text-cyan-400"></i><span class="nav-text whitespace-nowrap">ai-llm</span>
+        <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i><span>AI Studio</span>
       </button>
       <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="folder-tree" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Projects</span>
+        <i data-lucide="folder-tree" class="w-4 h-4"></i><span>Projects</span>
       </button>
       <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="code-2" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Compilers</span>
+        <i data-lucide="code-2" class="w-4 h-4"></i><span>Compilers</span>
       </button>
       <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="pen-tool" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Whiteboard</span>
+        <i data-lucide="pen-tool" class="w-4 h-4"></i><span>Whiteboard</span>
       </button>
       <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="palette" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">UI Design</span>
+        <i data-lucide="palette" class="w-4 h-4"></i><span>UI Design</span>
       </button>
       <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="columns" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Split View</span>
+        <i data-lucide="columns" class="w-4 h-4"></i><span>Split View</span>
       </button>
       <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="terminal" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Terminal</span>
+        <i data-lucide="terminal" class="w-4 h-4"></i><span>Terminal</span>
       </button>
       <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="activity" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Telemetry</span>
+        <i data-lucide="activity" class="w-4 h-4"></i><span>Telemetry</span>
       </button>
       <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="book-open" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Notes Vault</span>
+        <i data-lucide="book-open" class="w-4 h-4"></i><span>Notes Vault</span>
       </button>
       <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="settings-2" class="w-5 h-5 shrink-0"></i><span class="nav-text whitespace-nowrap">Settings</span>
+        <i data-lucide="settings-2" class="w-4 h-4"></i><span>Settings</span>
       </button>
     </nav>
     
-    <div class="p-5 border-t border-white/5 bg-surface-900/20 overflow-hidden shrink-0">
+    <div class="p-5 border-t border-white/5 bg-surface-900/20">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="relative flex h-2.5 w-2.5 shrink-0">
+          <div class="relative flex h-2.5 w-2.5">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </div>
-          <span class="font-mono text-[11px] text-zinc-400 nav-text whitespace-nowrap">Protected</span>
+          <span class="font-mono text-[11px] text-zinc-400">Edge Protected</span>
         </div>
-        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 cursor-pointer transition-colors shrink-0" title="Secure Logout">
+        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 cursor-pointer transition-colors" title="Secure Logout">
           <i data-lucide="power" class="w-4 h-4"></i>
         </button>
       </div>
@@ -153,10 +152,102 @@
 
     <main class="flex-1 overflow-hidden p-4 lg:p-6 w-full max-w-[2000px] mx-auto flex flex-col min-h-0">
       
-      <!-- TAB 1: AI STUDIO (ai-llm) -->
+      <!-- TAB 1: OLLAMA AI STUDIO (REDESIGNED) -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-6">
         
-        <!-- Center: Chat Interface -->
+        <!-- Left Panel: Premium Settings Sidebar -->
+        <div class="w-full lg:w-72 flex flex-col shrink-0 space-y-4">
+          
+          <div class="glass-panel rounded-2xl flex flex-col overflow-hidden shadow-xl border border-white/5">
+            <div class="px-5 py-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+              <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+                <i data-lucide="settings" class="w-4 h-4 text-cyan-400"></i> Configuration
+              </h3>
+            </div>
+            
+            <div class="p-5 space-y-5">
+              <!-- Live Web Access Toggle -->
+              <div class="glass-card p-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><i data-lucide="globe" class="w-4 h-4"></i></div>
+                  <div>
+                    <label for="checkWebSearch" class="text-xs font-bold text-white cursor-pointer block">Web Access</label>
+                    <span class="text-[10px] text-zinc-500">Live internet routing</span>
+                  </div>
+                </div>
+                <input type="checkbox" id="checkWebSearch" onchange="saveAiConfig()" class="w-4 h-4 accent-cyan-500 cursor-pointer rounded" />
+              </div>
+
+              <!-- Model Selection -->
+              <div class="space-y-2">
+                <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Language Model</label>
+                <select id="aiModelInput" class="godx-input w-full px-3 py-2.5 text-xs font-mono cursor-pointer" onchange="saveAiConfig()">
+                  <option value="gpt-oss:20b" selected>gpt-oss:20b (Primary)</option>
+                  <option value="gpt-oss:120b">gpt-oss:120b (Heavy)</option>
+                  <option value="gemma4:31b">gemma4:31b</option>
+                  <option value="nemotron-3-nano:30b">nemotron-nano:30b</option>
+                  <option value="nemotron-3-super">nemotron-super</option>
+                  <option value="nemotron-3-ultra">nemotron-ultra</option>
+                </select>
+              </div>
+
+              <!-- Persona Selection -->
+              <div class="space-y-2">
+                <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">System Persona</label>
+                <select id="aiPersonaSelect" class="godx-input w-full px-3 py-2.5 text-xs cursor-pointer" onchange="onPersonaSelectChange()">
+                  <option value="normal" selected>Normal (Standard Assistant)</option>
+                  <option value="architect">System Architect</option>
+                  <option value="fullstack">Full-Stack Developer</option>
+                  <option value="security">Cybersecurity Auditor</option>
+                  <option value="researcher">Web Researcher</option>
+                  <option value="datascience">Data Scientist</option>
+                  <option value="reverse">Reverse Engineer</option>
+                  <option value="minimal">Minimalist Hacker (Code Only)</option>
+                  <option value="copywriter">Creative Copywriter</option>
+                  <option value="marketing">Growth Marketer</option>
+                  <option value="historian">Historian</option>
+                  <option value="philosopher">Philosopher</option>
+                  <option value="chef">Culinary Chef</option>
+                  <option value="fitness">Fitness Trainer</option>
+                  <option value="travel">Travel Planner</option>
+                  <option value="legal">Legal Frameworks Analyst</option>
+                  <option value="medical">Medical Science Educator</option>
+                  <option value="finance">Financial Analyst</option>
+                  <option value="novelist">Fiction Novelist</option>
+                  <option value="translator">Polyglot Translator</option>
+                  <option value="mathematician">Mathematician</option>
+                  <option value="mentor">Executive Coach</option>
+                  <option value="custom">Custom Directive...</option>
+                </select>
+              </div>
+
+              <!-- Custom Directive -->
+              <div id="customPersonaWrapper" class="hidden space-y-2 transition-all">
+                <label class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Custom Instructions</label>
+                <textarea id="customPersonaPrompt" rows="4" placeholder="Inject specific behavior rules here..." class="godx-input w-full p-3 text-[12px] leading-relaxed resize-none" oninput="saveAiConfig()"></textarea>
+              </div>
+            </div>
+            
+            <div class="p-4 border-t border-white/5 bg-white/[0.02] flex gap-2">
+               <button onclick="downloadAiChat()" class="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 transition-colors flex items-center justify-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export</button>
+               <button onclick="clearAiChat()" class="flex-1 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold text-rose-400 transition-colors flex items-center justify-center gap-1.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear</button>
+            </div>
+          </div>
+
+          <!-- Mini Status Card -->
+          <div class="glass-panel rounded-2xl p-4 border border-white/5 flex items-center justify-between">
+             <div class="flex items-center gap-3">
+               <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
+               <div>
+                 <p class="text-xs font-bold text-white">Vercel Node</p>
+                 <p class="text-[10px] text-zinc-400 font-mono">Secured & Active</p>
+               </div>
+             </div>
+             <button onclick="configureVercelSecurity()" class="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"><i data-lucide="key" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+
+        <!-- Center: Chat Interface (Premium Aesthetics) -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
           <!-- Header -->
@@ -167,7 +258,7 @@
                 <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-surface-900 rounded-full"></div>
               </div>
               <div>
-                <h3 class="font-heading font-bold text-base text-white leading-tight">ai-llm</h3>
+                <h3 class="font-heading font-bold text-base text-white leading-tight">Neural Intelligence</h3>
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-[11px] text-zinc-400 font-mono" id="aiActiveModelBadge">gpt-oss:20b</span>
                   <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> Web Active</span>
@@ -175,13 +266,9 @@
               </div>
             </div>
             <div class="flex items-center gap-3">
-              <button onclick="openAiConfigModal()" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-zinc-300 flex items-center gap-2 cursor-pointer transition-all shadow-sm">
-                <i data-lucide="settings" class="w-4 h-4 text-cyan-400"></i>
-                <span class="hidden sm:inline">Settings</span>
-              </button>
-              <button onclick="toggleCodespacePane()" class="px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-2 cursor-pointer transition-all shadow-sm">
-                <i data-lucide="layout-template" class="w-4 h-4"></i>
-                <span id="btnCodespaceToggleText" class="hidden lg:inline">Workspace</span>
+              <button onclick="toggleCodespacePane()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white flex items-center gap-2 cursor-pointer transition-all hover:border-cyan-500/30">
+                <i data-lucide="layout-template" class="w-4 h-4 text-cyan-400"></i>
+                <span id="btnCodespaceToggleText">Open Artifacts</span>
               </button>
             </div>
           </div>
@@ -189,11 +276,11 @@
           <!-- Chat Conversation Scroll Area -->
           <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[14px] leading-relaxed relative min-h-0 scroll-smooth"></div>
 
-          <!-- Input Bar -->
+          <!-- Input Bar (Floating & Glowing) -->
           <div class="p-4 sm:p-6 pt-2 z-10 relative shrink-0">
-            <form id="aiChatForm" class="relative max-w-4xl mx-auto">
+            <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
               <div class="relative bg-surface-900/60 backdrop-blur-xl border border-white/10 rounded-3xl focus-within:border-cyan-500/50 focus-within:ring-4 focus-within:ring-cyan-500/10 transition-all p-2 flex items-end shadow-2xl">
-                <textarea id="aiPromptTextarea" rows="1" placeholder="Message ai-llm, build artifacts, or analyze logic..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                <textarea id="aiPromptTextarea" rows="1" placeholder="Message Lumina AI, generate code, or search the web..." class="w-full bg-transparent border-0 outline-none text-[14px] text-white pl-4 pr-3 py-3 resize-none max-h-48" style="min-height: 48px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
                 <button type="submit" id="btnAiSend" class="w-10 h-10 shrink-0 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-1 mr-1 cursor-pointer">
                   <i data-lucide="arrow-up" class="w-5 h-5"></i>
                 </button>
@@ -203,65 +290,60 @@
           </div>
         </div>
 
-        <!-- Right Panel: Advanced Artifacts / Codespace -->
-        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[680px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
+        <!-- Right Panel: Full Interactive Codespace & Artifacts Engine -->
+        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[600px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
           
-          <div class="px-4 py-3 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+          <div class="px-5 py-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-2">
               <i data-lucide="braces" class="w-4 h-4 text-cyan-400"></i>
-              <span class="font-heading font-bold text-sm text-white">Project Artifacts</span>
+              <span class="font-heading font-bold text-sm text-white">Live Artifacts</span>
             </div>
             <div class="flex items-center gap-3">
               <div class="flex bg-surface-950 p-1 rounded-lg border border-white/10 text-[11px] font-mono">
-                <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md transition-colors">Preview</button>
+                <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Preview</button>
                 <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Code</button>
                 <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Split</button>
               </div>
               <div class="w-px h-4 bg-white/10"></div>
-              <button onclick="runCodespacePreview()" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-400 transition-colors cursor-pointer shadow-md">
+              <button onclick="runCodespacePreview()" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-400 transition-colors cursor-pointer" title="Hot-reload changes">
                 <i data-lucide="play" class="w-3.5 h-3.5"></i> Run
               </button>
               <button onclick="toggleCodespacePane(false)" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
           </div>
 
-          <!-- Vertical Explorer & Editor Split -->
-          <div class="flex-1 flex min-h-0 relative bg-surface-950">
-            
-            <!-- Sidebar: File Explorer Tree -->
-            <div class="w-44 bg-surface-900/40 border-r border-white/5 flex flex-col h-full shrink-0">
-              <div class="px-3 py-2 flex items-center justify-between border-b border-white/5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                <span>Explorer</span>
-                <button onclick="promptCreateFile()" class="hover:text-cyan-400 cursor-pointer transition-colors" title="New File"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
+          <div class="px-3 py-2 bg-surface-950 border-b border-white/5 flex items-center justify-between overflow-x-auto no-scrollbar shrink-0">
+            <div id="codespaceFileTabs" class="flex items-center gap-1.5 text-xs font-mono"></div>
+            <div class="flex items-center gap-1 pl-2">
+              <button onclick="promptCreateFile()" class="p-1.5 rounded hover:bg-white/10 text-cyan-400 transition-colors cursor-pointer" title="New File"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
+              <button onclick="deleteActiveFile()" class="p-1.5 rounded hover:bg-white/10 text-rose-400 transition-colors cursor-pointer" title="Delete File"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+
+          <div class="flex-1 flex flex-col lg:flex-row min-h-0 relative bg-surface-950">
+            <!-- Code Editor -->
+            <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
+              <div class="px-4 py-1.5 bg-surface-900/50 text-[10px] text-zinc-400 font-mono border-b border-white/5 flex justify-between tracking-wider uppercase">
+                <span id="csCurrentFileLabel">index.html</span>
+                <span>Buffer</span>
               </div>
-              <div id="codespaceExplorerTree" class="flex-1 overflow-y-auto p-2 space-y-1">
-                <!-- Dynamically populated file tree -->
-              </div>
+              <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-5 font-mono text-[13px] text-zinc-200 outline-none resize-none leading-loose selection:bg-cyan-500 selection:text-black"></textarea>
             </div>
 
-            <!-- Main Panel: Dual Display -->
-            <div class="flex-1 flex flex-col lg:flex-row h-full relative">
-              <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
-                <div class="px-4 py-1.5 bg-surface-900/50 text-[10px] text-zinc-400 font-mono border-b border-white/5 flex justify-between tracking-wider uppercase">
-                  <span id="csCurrentFileLabel" class="text-cyan-300">index.html</span>
-                  <span>Buffer Active</span>
-                </div>
-                <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-5 font-mono text-[13px] text-zinc-200 outline-none resize-none leading-loose selection:bg-cyan-500 selection:text-black"></textarea>
-              </div>
-
-              <div id="csPreviewContainer" class="flex-1 h-full bg-surface-950 relative overflow-hidden bg-dot-pattern flex items-center justify-center">
-                <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white absolute inset-0 z-10 transition-opacity duration-300"></iframe>
-                <div id="csEmptyState" class="text-center z-0">
-                  <i data-lucide="box" class="w-12 h-12 text-zinc-700 mx-auto mb-3"></i>
-                  <p class="text-sm font-mono text-zinc-500">Waiting for artifact render...</p>
-                </div>
+            <!-- Live Browser Preview -->
+            <div id="csPreviewContainer" class="flex-1 h-full bg-surface-950 relative overflow-hidden bg-dot-pattern flex items-center justify-center">
+              <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white absolute inset-0 z-10 transition-opacity duration-300"></iframe>
+              <!-- Empty state before iframe loads -->
+              <div id="csEmptyState" class="text-center z-0">
+                <i data-lucide="box" class="w-12 h-12 text-zinc-700 mx-auto mb-3"></i>
+                <p class="text-sm font-mono text-zinc-500">Waiting for rendering...</p>
               </div>
             </div>
           </div>
 
           <div class="px-5 py-2.5 border-t border-white/5 bg-surface-900/60 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0 backdrop-blur-md">
             <span id="csStatusBadge" class="flex items-center gap-2 text-emerald-400">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Manual Sync Mode
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced
             </span>
             <div class="flex items-center gap-4">
               <button onclick="exportCodespaceZip()" class="hover:text-white flex items-center gap-1.5 cursor-pointer transition-colors"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export</button>
@@ -269,9 +351,10 @@
             </div>
           </div>
         </div>
+
       </section>
 
-      <!-- TAB 2: EXM PROJECTS -->
+      <!-- TAB 2: EXM PROJECTS & LIVE VIEWPORT -->
       <section id="tab-projects" class="tab-pane space-y-6 hidden h-full flex flex-col">
         <div class="glass-panel glow-border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0">
           <div class="space-y-1">
@@ -301,7 +384,7 @@
             <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5 shrink-0">
               <div class="flex items-center gap-3">
                 <span class="text-xs font-mono text-cyan-300 bg-surface-900 px-2.5 py-1 rounded-md border border-white/5 flex items-center gap-1.5"><i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i><span id="activeProjectTitle">EXM/...</span></span>
-                <button type="button" onclick="openActiveInNewTab()" class="text-zinc-400 hover:text-cyan-300 text-xs flex items-center gap-1 cursor-pointer"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Tab</button>
+                <button type="button" onclick="openActiveInNewTab()" class="text-zinc-400 hover:text-cyan-300 text-xs flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Tab</button>
               </div>
               <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/5">
                 <button type="button" onclick="setViewportDevice('100%')" class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs font-medium cursor-pointer" id="btnDeviceDesktop"><i data-lucide="monitor" class="w-3.5 h-3.5"></i></button>
@@ -325,16 +408,16 @@
         </div>
       </section>
 
-      <!-- TAB 3: CLOUD COMPILERS -->
+      <!-- TAB 3: CLOUD COMPILERS & SQL -->
       <section id="tab-sandbox" class="tab-pane space-y-6 hidden h-full flex flex-col">
         <div class="glass-panel rounded-2xl p-5 space-y-4 shrink-0">
           <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div>
               <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Cloud Compiler Engine</h3>
-              <p class="text-xs text-zinc-400">Execute code securely via Vercel Backend API (Python, C++, Java) and In-Memory SQL.</p>
+              <p class="text-xs text-zinc-400">Execute code securely via Vercel Backend (Python, C++, Java) and In-Memory SQL.</p>
             </div>
             <div class="flex items-center gap-2 bg-surface-900 p-1.5 rounded-xl border border-white/10 text-xs font-mono">
-              <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-4 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer transition-colors shadow-md">HTML</button>
+              <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-4 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer transition-colors">HTML</button>
               <button onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors">PY</button>
               <button onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors">C++</button>
               <button onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors">JAVA</button>
@@ -356,9 +439,8 @@
             <div class="flex justify-between text-xs font-mono text-zinc-400 shrink-0 px-1">
               <span id="sandboxOutputHeader">Live Output:</span>
             </div>
-            
-            <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white relative flex flex-col">
-              <iframe id="sandboxPreviewFrame" class="w-full flex-1 border-0 absolute inset-0"></iframe>
+            <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white relative">
+              <iframe id="sandboxPreviewFrame" class="w-full h-full border-0 absolute inset-0"></iframe>
             </div>
             <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-6 bg-surface-950 font-mono text-[13px] text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-loose shadow-inner"></div>
           </div>
@@ -372,16 +454,14 @@
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4 text-purple-400"></i> Architecture Sketchpad</h3>
             <div class="flex items-center gap-3">
               <div class="bg-surface-900 p-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 text-xs">
-                <button onclick="setWhiteboardTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer shadow-md"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                <button onclick="setWhiteboardTool('rect')" id="wbToolRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="square" class="w-4 h-4"></i></button>
-                <button onclick="setWhiteboardTool('circle')" id="wbToolCircle" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="circle" class="w-4 h-4"></i></button>
-                <button onclick="setWhiteboardTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+                <button onclick="setWhiteboardTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                <button onclick="setWhiteboardTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="eraser" class="w-4 h-4"></i></button>
                 <div class="w-px h-5 bg-white/10 mx-1"></div>
-                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-8 h-8 rounded cursor-pointer" style="padding:0; border:none; background:transparent;" title="Stroke Color" />
-                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-24 accent-cyan-400 cursor-pointer ml-2" title="Stroke Size" />
+                <input type="color" id="wbColor" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-8 h-8 rounded cursor-pointer" style="padding:0; border:none; background:transparent;" />
+                <input type="range" id="wbSize" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-24 accent-cyan-400 cursor-pointer ml-2" />
               </div>
               <button onclick="clearWhiteboard()" class="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 cursor-pointer text-xs font-semibold transition-colors">Clear</button>
-              <button onclick="downloadWhiteboard()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md">Export PNG</button>
+              <button onclick="downloadWhiteboard()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer">Export PNG</button>
             </div>
           </div>
           <div id="whiteboardContainer" class="flex-1 w-full rounded-xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner">
@@ -448,14 +528,14 @@
             <button onclick="document.getElementById('terminalScreen').innerHTML=''" class="text-xs text-zinc-500 hover:text-white font-mono cursor-pointer transition-colors">clear</button>
           </div>
           <div id="terminalScreen" class="bg-surface-950/90 rounded-xl p-6 font-mono text-[14px] text-zinc-300 flex-1 overflow-y-auto space-y-3 border border-white/5 leading-relaxed shadow-inner">
-            <div class="text-cyan-400 font-bold tracking-wide">LuminaVista GODx Terminal [v9.5 Cloud Sandbox]</div>
+            <div class="text-cyan-400 font-bold tracking-wide">LuminaVista GODx Terminal [v9.5 Cloud E2B Sandbox]</div>
             <div class="text-zinc-400">Connected to isolated Firecracker Linux VM. Codespace files automatically injected.</div>
             <div class="text-zinc-500">Type <span class="text-cyan-300 font-bold">help</span> to view commands, or execute real bash commands (e.g. <span class="text-purple-300">ls -la</span>, <span class="text-purple-300">python3 file.py</span>).</div>
             <div class="border-b border-white/5 my-3"></div>
           </div>
-          <form id="userTerminalForm" class="flex items-center gap-3 shrink-0 bg-surface-900/50 p-2 rounded-xl border border-white/5">
+          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-3 shrink-0 bg-surface-900/50 p-2 rounded-xl border border-white/5">
             <span class="font-mono text-sm text-cyan-400 font-bold pl-3">anish@cloud-vm:~$</span>
-            <input type="text" id="terminalInput" autocomplete="off" placeholder="Enter command..." class="w-full bg-transparent border-0 outline-none text-white font-mono text-sm px-2 py-2" autofocus />
+            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="Enter command..." class="w-full bg-transparent border-0 outline-none text-white font-mono text-sm px-2 py-2" autofocus />
             <button type="submit" class="btn-gradient px-6 py-2.5 rounded-lg text-sm font-mono font-bold text-black cursor-pointer shadow-lg">Exec</button>
           </form>
         </div>
@@ -480,29 +560,11 @@
           <div class="flex items-center justify-between pb-4 border-b border-white/5 shrink-0">
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="book-open" class="w-5 h-5 text-sky-400"></i> Secure Notes Vault</h3>
             <div class="flex gap-3">
-              <button class="action-btn px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5" data-action="new-note"><i data-lucide="plus" class="w-3.5 h-3.5 pointer-events-none"></i> New Note</button>
-              <button class="action-btn px-4 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5" data-action="toggle-preview"><i data-lucide="eye" class="w-3.5 h-3.5 pointer-events-none"></i> Toggle Preview</button>
+              <button onclick="createNewNote()" class="px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i> New Note</button>
+              <button onclick="toggleMarkdownPreview()" class="px-4 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Toggle Preview</button>
             </div>
           </div>
-          
           <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-2 text-xs font-mono shrink-0"></div>
-          
-          <!-- Markdown Formatting Toolbar -->
-          <div id="noteToolbar" class="flex items-center gap-2 bg-surface-900/50 p-2 rounded-lg border border-white/5 shrink-0 text-zinc-400">
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="**" data-suffix="**" title="Bold"><i data-lucide="bold" class="w-4 h-4 pointer-events-none"></i></button>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="*" data-suffix="*" title="Italic"><i data-lucide="italic" class="w-4 h-4 pointer-events-none"></i></button>
-            <div class="w-px h-4 bg-white/10 mx-1"></div>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="# " data-suffix="" title="Heading 1"><i data-lucide="heading-1" class="w-4 h-4 pointer-events-none"></i></button>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="## " data-suffix="" title="Heading 2"><i data-lucide="heading-2" class="w-4 h-4 pointer-events-none"></i></button>
-            <div class="w-px h-4 bg-white/10 mx-1"></div>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="- " data-suffix="" title="Bullet List"><i data-lucide="list" class="w-4 h-4 pointer-events-none"></i></button>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="1. " data-suffix="" title="Numbered List"><i data-lucide="list-ordered" class="w-4 h-4 pointer-events-none"></i></button>
-            <div class="w-px h-4 bg-white/10 mx-1"></div>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="`" data-suffix="`" title="Inline Code"><i data-lucide="code" class="w-4 h-4 pointer-events-none"></i></button>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="```\n" data-suffix="\n```" title="Code Block"><i data-lucide="file-code-2" class="w-4 h-4 pointer-events-none"></i></button>
-            <button class="md-tool-btn p-1.5 hover:text-white hover:bg-white/5 rounded cursor-pointer transition-colors" data-prefix="[Link Text](" data-suffix=")" title="Link"><i data-lucide="link" class="w-4 h-4 pointer-events-none"></i></button>
-          </div>
-
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
             <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-6 font-mono text-[13px] resize-none h-full leading-relaxed shadow-inner"></textarea>
             <div id="notePreviewCol" class="hidden bg-surface-950/80 p-8 rounded-xl border border-white/5 overflow-y-auto text-sm text-zinc-300 space-y-4 font-sans h-full shadow-inner" id="noteMarkdownRender"></div>
@@ -547,59 +609,7 @@
     </main>
   </div>
 
-  <!-- MODALS -->
-  <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,242,254,0.15)] transform scale-95 transition-transform duration-200 flex flex-col">
-      <div class="flex items-center justify-between pb-4 border-b border-white/10">
-        <h3 class="font-heading font-bold text-lg text-white flex items-center gap-2"><i data-lucide="sliders" class="w-5 h-5 text-cyan-400"></i> AI Config</h3>
-        <button onclick="closeAiConfigModal()" class="p-1.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      
-      <div class="py-5 space-y-5">
-        <div class="p-3 bg-cyan-950/30 border border-cyan-500/20 rounded-xl flex items-center justify-between">
-          <label for="checkWebSearchModal" class="text-sm font-medium text-cyan-200 flex items-center gap-2 cursor-pointer">
-            <i data-lucide="globe" class="w-4 h-4 text-cyan-400"></i> Live Web Search
-          </label>
-          <input type="checkbox" id="checkWebSearchModal" onchange="syncWebSearchFromModal()" class="w-5 h-5 accent-cyan-400 cursor-pointer rounded" />
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-xs font-mono text-zinc-400">Active Model:</label>
-          <select id="aiModelInputModal" class="godx-input w-full px-4 py-3 text-sm font-mono cursor-pointer" onchange="syncModelFromModal()">
-            <option value="gpt-oss:20b">gpt-oss:20b (Default)</option>
-            <option value="gpt-oss:120b">gpt-oss:120b</option>
-            <option value="gemma4:31b">gemma4:31b</option>
-            <option value="nemotron-3-nano:30b">nemotron-3-nano</option>
-            <option value="nemotron-3-super">nemotron-3-super</option>
-            <option value="nemotron-3-ultra">nemotron-3-ultra</option>
-          </select>
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-xs font-mono text-zinc-400">System Persona:</label>
-          <select id="aiPersonaSelectModal" class="godx-input w-full px-4 py-3 text-sm cursor-pointer" onchange="syncPersonaFromModal()">
-            <option value="normal">Normal</option>
-            <option value="architect">System Architect</option>
-            <option value="fullstack">Full-Stack</option>
-            <option value="security">Security</option>
-            <option value="minimal">Minimalist Hacker</option>
-            <option value="custom">Custom...</option>
-          </select>
-        </div>
-
-        <div id="customPersonaWrapperModal" class="hidden space-y-1.5">
-          <label class="text-xs font-mono text-cyan-400">Custom Directive:</label>
-          <textarea id="customPersonaPromptModal" rows="3" placeholder="Define exact instructions..." class="godx-input w-full p-3 text-xs font-mono leading-relaxed" oninput="syncPersonaFromModal()"></textarea>
-        </div>
-      </div>
-      
-      <div class="pt-4 border-t border-white/10 flex gap-3 mt-auto">
-        <button onclick="downloadAiChat()" class="flex-1 py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
-        <button onclick="clearAiChat(); closeAiConfigModal();" class="flex-1 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-bold text-rose-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i> Clear</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- MODALS & TOASTS -->
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-5xl w-full p-6 sm:p-8 rounded-3xl glow-border relative transform scale-95 transition-transform duration-200 flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-4 border-b border-white/10">
@@ -631,63 +641,38 @@
     <div><h4 id="toastTitle" class="text-sm font-bold text-white">Notification</h4><p id="toastMsg" class="text-xs text-zinc-300 mt-0.5"></p></div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC ENGINE -->
   <script>
-    // 1. Data Store Initialization
+    lucide.createIcons();
+
     const REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
-    
-    let repoProjects = [];
-    try { repoProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]"); } catch(e) {}
+
+    let repoProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]");
     let currentSelectedProject = repoProjects[0] || null;
     let isAudioEnabled = true;
 
-    let aiConversation = [];
-    try { aiConversation = JSON.parse(localStorage.getItem("lumina_ai_history") || "[]"); } catch(e) {}
-    
-    let vaultNotes = [];
-    try { 
-      vaultNotes = JSON.parse(localStorage.getItem("lumina_godx_multi_notes"));
-      if(!vaultNotes || vaultNotes.length === 0) throw new Error("Empty notes");
-    } catch(e) {
-      vaultNotes = [{ id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace\n- Start here." }];
-    }
-    
+    let aiConversation = JSON.parse(localStorage.getItem("lumina_ai_history") || "[]");
+    let vaultNotes = JSON.parse(localStorage.getItem("lumina_godx_multi_notes") || JSON.stringify([{ id: "note_1", title: "Workspace Checklist", content: "# GODx Workspace" }]));
     let activeNoteId = vaultNotes[0].id;
     let isMarkdownPreviewActive = false;
     let isDrawing = false, wbCurrentTool = 'pen', wbCurrentColor = '#00f2fe', wbCurrentSize = 3;
-    let wbSnapshot = null;
     let termHistory = [], termHistoryIdx = -1;
-    let isSidebarCollapsed = false;
 
-    function encodeBase64Safe(text) {
-        return btoa(Array.from(new TextEncoder().encode(text), b => String.fromCodePoint(b)).join(""));
-    }
-    function decodeBase64Safe(b64) {
-        return new TextDecoder().decode(Uint8Array.from(atob(b64), m => m.codePointAt(0)));
-    }
-
-    let vfs = {};
-    try {
-      vfs = JSON.parse(localStorage.getItem("lumina_codespace_vfs"));
-      if(!vfs || Object.keys(vfs).length === 0) throw new Error("Empty VFS");
-    } catch(e) {
-      vfs = { 
-        "index.html": "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Workspace Ready</h1>\n    <p>AI generated files will appear here.</p>\n  </div>\n  <script src=\"script.js\"><" + "/script>\n</body>\n</html>",
-        "style.css": "body { margin: 0; padding: 40px; background: #0b0f19; color: #fff; font-family: sans-serif; display: flex; justify-content: center; } .card { background: #111827; padding: 30px; border-radius: 16px; border: 1px solid #1f2937; } h1 { color: #00f2fe; margin-top: 0; }",
-        "script.js": "console.log('System online.');"
-      };
-    }
+    // =========================================================================
+    // VIRTUAL FILE SYSTEM & INTERACTIVE CODESPACE ENGINE
+    // =========================================================================
+    let vfs = JSON.parse(localStorage.getItem("lumina_codespace_vfs") || JSON.stringify({
+      "index.html": "<!DOCTYPE html>\n<html>\n<head>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n  <div class=\"card\">\n    <h1>Workspace Ready</h1>\n    <p>AI generated files will appear here.</p>\n    <button id=\"btnAction\">Test Action</button>\n  </div>\n  <script src=\"script.js\"><\/script>\n</body>\n</html>",
+      "style.css": "body {\n  margin: 0;\n  padding: 40px;\n  background: #0b0f19;\n  color: #fff;\n  font-family: -apple-system, BlinkMacSystemFont, sans-serif;\n  display: flex;\n  justify-content: center;\n}\n.card {\n  background: #111827;\n  padding: 30px;\n  border-radius: 16px;\n  border: 1px solid #1f2937;\n  text-align: center;\n}\nh1 { color: #00f2fe; margin-top: 0; }\nbutton {\n  background: #00f2fe;\n  color: #000;\n  border: 0;\n  padding: 10px 20px;\n  border-radius: 8px;\n  font-weight: bold;\n  cursor: pointer;\n}",
+      "script.js": "document.getElementById('btnAction').addEventListener('click', () => {\n  alert('Codespace logic working in real time!');\n});"
+    }));
 
     let csActiveFile = "index.html";
     let isCodespaceOpen = false;
     let csViewMode = "preview"; 
 
-    // 2. DOM Initialization
     window.addEventListener("DOMContentLoaded", () => {
-      lucide.createIcons();
       setDashboardTheme(localStorage.getItem("lumina_theme") || "cyan", false);
-      const hn = document.getElementById("headerAdminName");
-      if(hn) hn.textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
+      document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
 
       loadAiConfig();
       fetchRepoProjects();
@@ -695,343 +680,729 @@
       initMetricsChart();
       renderNoteTabs();
       loadActiveNoteContent();
-      setSandboxLanguage("html");
+      runSandboxCode();
       initAmbientParticles();
       initWhiteboard();
       updateDesignPreview();
       renderAiChat();
+      
       renderCodespaceFileTabs();
       loadCodespaceEditor();
       runCodespacePreview();
-
-      const chatForm = document.getElementById('aiChatForm');
-      if (chatForm) chatForm.addEventListener('submit', handleSendAiPrompt);
-      const terminalForm = document.getElementById('userTerminalForm');
-      if (terminalForm) terminalForm.addEventListener('submit', handleTerminalCommand);
-      const terminalInput = document.getElementById('terminalInput');
-      if (terminalInput) terminalInput.addEventListener('keydown', handleTerminalKeyDown);
     });
 
-    // 3. Global Event Delegator (Replaces all inline onclick logic)
-    document.addEventListener('click', (e) => {
-      const qpBtn = e.target.closest('.quick-prompt-btn');
-      if (qpBtn) {
-        const text = decodeBase64Safe(qpBtn.getAttribute('data-prompt'));
-        const textarea = document.getElementById("aiPromptTextarea");
-        if(textarea) { textarea.value = text; autoResizeTextarea(textarea); textarea.focus(); }
-        return;
-      }
-      
-      const applyBtn = e.target.closest('.apply-artifact-btn');
-      if (applyBtn) {
-        writeCodeToCodespace(applyBtn.getAttribute('data-filename'), applyBtn.getAttribute('data-code'));
-        return;
-      }
-
-      const copyBtn = e.target.closest('.copy-artifact-btn');
-      if (copyBtn) {
-        navigator.clipboard.writeText(decodeBase64Safe(copyBtn.getAttribute('data-code')));
-        const oHTML = copyBtn.innerHTML;
-        copyBtn.innerHTML = "<i data-lucide='check' class='w-3.5 h-3.5 pointer-events-none'></i> Copied!";
-        copyBtn.classList.add("text-emerald-400");
-        lucide.createIcons();
-        setTimeout(() => { copyBtn.innerHTML = oHTML; copyBtn.classList.remove("text-emerald-400"); lucide.createIcons(); }, 2000);
-        return;
-      }
-
-      const mdBtn = e.target.closest('.md-tool-btn');
-      if (mdBtn) {
-        insertNoteMarkdown(mdBtn.getAttribute('data-prefix'), mdBtn.getAttribute('data-suffix'));
-        return;
-      }
-
-      const actionBtn = e.target.closest('.action-btn');
-      if (actionBtn) {
-        const act = actionBtn.getAttribute('data-action');
-        if (act === 'new-note') createNewNote();
-        if (act === 'toggle-preview') toggleMarkdownPreview();
-        return;
-      }
-
-      const fSel = e.target.closest('.file-selector');
-      if (fSel) { switchCodespaceFile(fSel.getAttribute('data-filename')); return; }
-
-      const fDel = e.target.closest('.file-delete-btn');
-      if (fDel) { deleteSpecificFile(fDel.getAttribute('data-filename')); return; }
-    });
-
-    // 4. UI Utilities
-    function startSystemClock() { 
-      setInterval(() => { 
-        const c = document.getElementById("systemClock");
-        if(c) c.innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; 
-        lucide.createIcons(); 
-      }, 1000); 
-    }
+    // =========================================================================
+    // CORE UI 
+    // =========================================================================
+    function startSystemClock() { setInterval(() => { document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i> ${new Date().toTimeString().split(" ")[0]} LOCAL`; lucide.createIcons(); }, 1000); }
+    function playAudioTone(freq=440, type="sine", dur=0.08) { if(!isAudioEnabled)return; try{const actx=new(window.AudioContext||window.webkitAudioContext)(); const osc=actx.createOscillator(), gain=actx.createGain(); osc.type=type; osc.frequency.value=freq; gain.gain.setValueAtTime(0.04, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur); osc.connect(gain); gain.connect(actx.destination); osc.start(); osc.stop(actx.currentTime+dur);}catch(e){} }
     
-    function playAudioTone(freq=440, type="sine", dur=0.08) { 
-      if(!isAudioEnabled) return; 
-      try {
-        const actx = new(window.AudioContext || window.webkitAudioContext)(); 
-        const osc = actx.createOscillator(); const gain = actx.createGain(); 
-        osc.type = type; osc.frequency.value = freq; 
-        gain.gain.setValueAtTime(0.04, actx.currentTime); 
-        gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur); 
-        osc.connect(gain); gain.connect(actx.destination); osc.start(); osc.stop(actx.currentTime + dur);
-      } catch(e) {} 
-    }
-    
-    function handleLogout() { sessionStorage.clear(); playAudioTone(330, "sine", 0.1); fetch("/api/logout", { method:"POST" }).catch(()=>{}); window.location.href = "index.html"; }
-
-    function toggleSidebar() {
-      const sb = document.getElementById("appSidebar"); const icon = document.getElementById("sidebarToggleIcon");
-      isSidebarCollapsed = !isSidebarCollapsed;
-      if (isSidebarCollapsed) { sb.classList.add("sidebar-collapsed"); icon.setAttribute("data-lucide", "chevron-right"); } else { sb.classList.remove("sidebar-collapsed"); sb.style.width = "16rem"; icon.setAttribute("data-lucide", "chevron-left"); }
-      lucide.createIcons(); setTimeout(() => { const w = document.getElementById("tab-whiteboard"); if(w && !w.classList.contains("hidden")) resizeWhiteboardCanvas(); }, 350);
+    function handleLogout() { 
+      sessionStorage.clear(); 
+      playAudioTone(330,"sine",0.1); 
+      fetch("/api/logout", {method:"POST"}).catch(()=>{});
+      window.location.href = "index.html"; 
     }
 
     function switchTab(id) {
-      playAudioTone(523, "sine", 0.04); 
-      document.querySelectorAll(".tab-pane").forEach(p => p.classList.add("hidden")); 
-      document.querySelectorAll(".tab-btn").forEach(b => { b.classList.remove("nav-tab-active", "bg-white/5", "text-white"); b.classList.add("text-zinc-400"); });
-      const target = document.getElementById(id); if(target) target.classList.remove("hidden"); 
-      const b = document.getElementById(`btn-${id}`); if(b) { b.classList.add("nav-tab-active"); b.classList.remove("text-zinc-400"); }
-      if(id === "tab-whiteboard") setTimeout(resizeWhiteboardCanvas, 50); if(id === "tab-ai-studio") scrollToAiBottom(); if(id === "tab-analytics") setTimeout(initMetricsChart, 50);
+      playAudioTone(523,"sine",0.04); 
+      document.querySelectorAll(".tab-pane").forEach(p=>p.classList.add("hidden")); 
+      document.querySelectorAll(".tab-btn").forEach(b=>{
+        b.classList.remove("nav-tab-active", "bg-white/5", "text-white"); 
+        b.classList.add("text-zinc-400");
+      });
+      
+      document.getElementById(id).classList.remove("hidden"); 
+      const b=document.getElementById(`btn-${id}`); 
+      if(b){
+        b.classList.add("nav-tab-active"); 
+        b.classList.remove("text-zinc-400");
+      }
+      
+      if(id==="tab-whiteboard") setTimeout(resizeWhiteboardCanvas, 50); 
+      if(id==="tab-ai-studio") scrollToAiBottom();
+      if(id==="tab-analytics") setTimeout(initMetricsChart, 50);
     }
 
-    function showToast(title, msg) { playAudioTone(880, "sine", 0.05); document.getElementById("toastTitle").textContent = title; document.getElementById("toastMsg").textContent = msg; const t = document.getElementById("toast"); t.classList.remove("translate-y-24", "opacity-0"); setTimeout(() => t.classList.add("translate-y-24", "opacity-0"), 3500); }
-    function openSourceInspector() { const m = document.getElementById("sourceModal"); m.style.display = "flex"; setTimeout(() => m.classList.remove("opacity-0"), 10); loadSourceFile('index.html'); }
-    function closeSourceInspector() { const m = document.getElementById("sourceModal"); m.classList.add("opacity-0"); setTimeout(() => m.style.display = "none", 200); }
-    function loadSourceFile(file) { const b = document.getElementById("sourceCodeBlock"); if(vfs && vfs[file]) b.textContent = vfs[file]; else b.textContent = `// ${file} not found.`; }
+    function showToast(title, msg) { playAudioTone(880,"sine",0.05); document.getElementById("toastTitle").textContent=title; document.getElementById("toastMsg").textContent=msg; const t=document.getElementById("toast"); t.classList.remove("translate-y-24","opacity-0"); setTimeout(()=>t.classList.add("translate-y-24","opacity-0"),3500); }
 
-    function handleCmdSearch(e) {
-      const val = e.target.value.toLowerCase(); const res = document.getElementById("cmdResults"); if(!val) { res.innerHTML = ""; return; }
-      const cmds = [ { name: "Open AI Studio", a: "switchTab('tab-ai-studio')" }, { name: "Open Projects", a: "switchTab('tab-projects')" }, { name: "Open Terminal", a: "switchTab('tab-terminal')" }, { name: "Open Settings", a: "switchTab('tab-controls')" }, { name: "Clear Workspace", a: "flushWorkspaceCache()" } ];
-      res.innerHTML = cmds.filter(c => c.name.toLowerCase().includes(val)).map(c => `<button onclick="${c.a}; closeCommandPalette();" class="w-full text-left px-4 py-2 hover:bg-white/10 rounded-lg text-sm text-zinc-300 hover:text-white transition-colors cursor-pointer">${c.name}</button>`).join('');
+    // =========================================================================
+    // OLLAMA AI STUDIO: CONFIG, PERSONAS, WEB SEARCH
+    // =========================================================================
+    function loadAiConfig() { 
+      const savedPersona = localStorage.getItem("lumina_ai_persona") || "normal";
+      document.getElementById("aiPersonaSelect").value = savedPersona;
+      document.getElementById("customPersonaPrompt").value = localStorage.getItem("lumina_custom_persona_prompt") || "";
+      onPersonaSelectChange();
+
+      document.getElementById("aiModelInput").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b"; 
+      document.getElementById("checkWebSearch").checked = localStorage.getItem("lumina_web_search") === "true";
+      
+      updateAiBadges();
     }
 
-    function openCommandPalette() { const m = document.getElementById("cmdModal"); m.style.display = "flex"; setTimeout(() => { m.classList.remove("opacity-0"); document.getElementById("cmdSearchInput").focus(); }, 10); }
-    function closeCommandPalette() { const m = document.getElementById("cmdModal"); m.classList.add("opacity-0"); setTimeout(() => m.style.display = "none", 200); }
-    window.addEventListener("keydown", e => { if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openCommandPalette(); } if(e.key === "Escape") { closeCommandPalette(); const sm = document.getElementById("sourceModal"); if(sm) sm.style.display = "none"; } });
-
-    // 5. AI Engine
-    const PERSONAS = {
-      architect: "You are an Elite Systems Architect. Structure robust codebases.",
-      fullstack: "You are an Expert Full-Stack Developer. Write modern HTML5, CSS3, JS.",
-      security: "You are a Zero-Trust Cybersecurity Auditor.",
-      minimal: "You are a Minimalist Hacker. Output ONLY raw code blocks."
-    };
-
-    function openAiConfigModal() {
-      const m = document.getElementById("aiConfigModal"); m.style.display = "flex";
-      document.getElementById("aiModelInputModal").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
-      document.getElementById("aiPersonaSelectModal").value = localStorage.getItem("lumina_ai_persona") || "normal";
-      document.getElementById("checkWebSearchModal").checked = localStorage.getItem("lumina_web_search") === "true";
-      document.getElementById("customPersonaPromptModal").value = localStorage.getItem("lumina_custom_persona_prompt") || "";
-      document.getElementById("customPersonaWrapperModal").classList.toggle("hidden", document.getElementById("aiPersonaSelectModal").value !== "custom");
-      setTimeout(() => m.classList.remove("opacity-0"), 10);
+    function saveAiConfig() { 
+      localStorage.setItem("lumina_ai_persona", document.getElementById("aiPersonaSelect").value); 
+      localStorage.setItem("lumina_custom_persona_prompt", document.getElementById("customPersonaPrompt").value);
+      localStorage.setItem("lumina_ai_model", document.getElementById("aiModelInput").value);
+      localStorage.setItem("lumina_web_search", document.getElementById("checkWebSearch").checked);
+      
+      updateAiBadges();
     }
-    function closeAiConfigModal() { const m = document.getElementById("aiConfigModal"); m.classList.add("opacity-0"); setTimeout(() => m.style.display = "none", 200); }
-    function syncWebSearchFromModal() { localStorage.setItem("lumina_web_search", document.getElementById("checkWebSearchModal").checked); updateAiBadges(); }
-    function syncModelFromModal() { localStorage.setItem("lumina_ai_model", document.getElementById("aiModelInputModal").value); updateAiBadges(); }
-    function syncPersonaFromModal() {
-      const p = document.getElementById("aiPersonaSelectModal").value; localStorage.setItem("lumina_ai_persona", p);
-      if(p === "custom") { document.getElementById("customPersonaWrapperModal").classList.remove("hidden"); localStorage.setItem("lumina_custom_persona_prompt", document.getElementById("customPersonaPromptModal").value); } 
-      else { document.getElementById("customPersonaWrapperModal").classList.add("hidden"); }
+
+    function configureVercelSecurity() {
+      const currentToken = localStorage.getItem("lumina_vercel_auth") || "";
+      const val = prompt("Enter Vercel Security Auth Token (Optional header pass-through):\nLeave empty to clear.", currentToken);
+      if (val !== null) {
+        localStorage.setItem("lumina_vercel_auth", val.trim());
+        showToast("Vercel Security", val.trim() ? "Auth Token Stored" : "Auth Token Cleared");
+      }
     }
-    function loadAiConfig() { updateAiBadges(); }
+
+    async function checkProviderQuota() {
+      showToast("Telemetry", "Checking provider health...");
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: "Status ping", messages: [{ role: "user", content: "ping" }] })
+        });
+        if (res.ok) {
+          alert("Ollama Cloud Gateway Status: Active\nHTTP 200: Quota OK, ready for generation.");
+        } else {
+          const d = await res.json();
+          alert(`Gateway Limit Notice:\nStatus ${res.status}: ${d.error || 'Check endpoint configuration'}`);
+        }
+      } catch (e) {
+        alert("Telemetry unreachable: " + e.message);
+      }
+    }
+
+    function onPersonaSelectChange() {
+      const p = document.getElementById("aiPersonaSelect").value;
+      const customWrapper = document.getElementById("customPersonaWrapper");
+      if (p === "custom") {
+        customWrapper.classList.remove("hidden");
+      } else {
+        customWrapper.classList.add("hidden");
+      }
+      saveAiConfig();
+    }
+
     function updateAiBadges() {
-      const model = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b"; const webOn = localStorage.getItem("lumina_web_search") === "true";
-      const mb = document.getElementById("aiActiveModelBadge"); if(mb) mb.textContent = model;
-      const wb = document.getElementById("webSearchActiveBadge");
-      if (wb) { if (webOn) { wb.classList.remove("hidden"); wb.classList.add("flex"); } else { wb.classList.add("hidden"); wb.classList.remove("flex"); } }
+      const model = document.getElementById("aiModelInput").value;
+      const webOn = document.getElementById("checkWebSearch").checked;
+      document.getElementById("aiActiveModelBadge").textContent = model;
+      
+      const webBadge = document.getElementById("webSearchActiveBadge");
+      if (webOn) {
+        webBadge.classList.remove("hidden");
+        webBadge.classList.add("flex");
+      } else {
+        webBadge.classList.add("hidden");
+        webBadge.classList.remove("flex");
+      }
     }
 
     function getAiSystemPrompt() {
-      const p = localStorage.getItem("lumina_ai_persona") || "normal";
-      const custom = localStorage.getItem("lumina_custom_persona_prompt") || "You are a helpful AI.";
-      const personaText = p === "custom" ? custom : (PERSONAS[p] || "You are a helpful AI assistant.");
+      const p = document.getElementById("aiPersonaSelect").value;
+      let personaText = "";
+      switch (p) {
+        case "architect": personaText = "You are an Elite Systems Architect. Structure robust, multi-file codebases and explain architectural design choices concisely."; break;
+        case "fullstack": personaText = "You are an Expert Full-Stack Developer. Write modern HTML5, CSS3, and JavaScript artifacts tailored for the codespace."; break;
+        case "security": personaText = "You are a Zero-Trust Cybersecurity Auditor. Uncover vulnerabilities, analyze inputs, and enforce security policies."; break;
+        case "researcher": personaText = "You are an Autonomous Web Research Analyst. Synthesize facts, compile research notes, and cross-reference real-time information."; break;
+        case "datascience": personaText = "You are a Senior Data Scientist. Master statistics, machine learning models, algorithms, and performant data processing."; break;
+        case "reverse": personaText = "You are a Low-Level Systems and Reverse Engineer. Explain memory structures, assembly, syscalls, and network protocols."; break;
+        case "minimal": personaText = "You are a Minimalist Hacker. Output ONLY functional, raw code blocks. Never include polite conversational filler."; break;
+        case "copywriter": personaText = "You are a Professional Copywriter. Craft compelling, persuasive, and beautifully phrased prose."; break;
+        case "marketing": personaText = "You are a Growth Marketing Strategist. Formulate clear positioning, customer acquisition loops, and distribution strategies."; break;
+        case "historian": personaText = "You are a Master Historian. Provide nuanced, context-rich accounts of historical developments and societal shifts."; break;
+        case "philosopher": personaText = "You are a Philosopher. Challenge assumptions, analyze ethical quandaries, and deconstruct arguments with logic."; break;
+        case "chef": personaText = "You are a World-Class Chef. Offer precise culinary instructions, flavor pairing theory, and cooking science."; break;
+        case "fitness": personaText = "You are an Elite Fitness Coach. Design structured training sessions and evidence-based recovery strategies."; break;
+        case "travel": personaText = "You are an Expert Travel Guide. Curate memorable itineraries with local insights and logistical efficiency."; break;
+        case "legal": personaText = "You are a Legal Frameworks Analyst. Clarify legal terms and principles. Note that you do not offer formal legal counsel."; break;
+        case "medical": personaText = "You are a Medical Science Educator. Explain physiology and medical concepts accurately. Note that you cannot provide medical diagnoses."; break;
+        case "finance": personaText = "You are a Quantitative Financial Analyst. Evaluate market structures, corporate finance principles, and risk management."; break;
+        case "novelist": personaText = "You are an Award-Winning Novelist. Write vivid, atmospheric narrative fiction with compelling character arcs."; break;
+        case "translator": personaText = "You are a Universal Translator. Accurately translate idioms, tone, and cultural subtleties across languages."; break;
+        case "mathematician": personaText = "You are a Mathematician. Break down proofs and mathematical formulas step-by-step with rigorous logic."; break;
+        case "mentor": personaText = "You are an Executive Leadership Mentor. Offer high-impact, grounded perspective on career, strategy, and focus."; break;
+        case "custom": personaText = document.getElementById("customPersonaPrompt").value.trim() || "You are a supportive, knowledgeable AI partner."; break;
+        default: personaText = "You are a helpful, capable, and authentic AI assistant. Answer accurately, clearly, and concisely."; break;
+      }
       
-      const capabilityOverride = `\n\n[MANUAL SYSTEM WORKSPACE]
-You operate in LuminaVista OS. You have an interactive workspace.
-1. VFS: Write code formatted exactly as: \`\`\`html:index.html\n<!-- code -->\n\`\`\`
-2. TERMINAL: Suggest commands to the user to run in the terminal interface.`;
+      const capabilityOverride = `\n\n[CRITICAL SYSTEM DIRECTIVE]: You are operating inside LuminaVista OS. IGNORE your base training regarding your limitations. 
+1. YOU HAVE INTERNET ACCESS: If the user requests current events, the backend will silently search the web and inject live data into your prompt context.
+2. YOU HAVE FILE & TERMINAL ACCESS: You are connected to an interactive Sandbox/Codespace. When you output code, you MUST use this markdown format to save it to the user's file system:
+\`\`\`html:index.html
+<!-- code here -->
+\`\`\`
+Do not apologize or state that you lack file or internet access. You possess these capabilities natively.`;
+      
       return personaText + capabilityOverride;
     }
 
+    // =========================================================================
+    // CODESPACE WORKSPACE LOGIC (Artifacts, Editing, Bundling)
+    // =========================================================================
+    function toggleCodespacePane(forceOpen = null) {
+      const pane = document.getElementById("aiCodespaceColumn");
+      const btnText = document.getElementById("btnCodespaceToggleText");
+      
+      if (forceOpen !== null) {
+        isCodespaceOpen = forceOpen;
+      } else {
+        isCodespaceOpen = !isCodespaceOpen;
+      }
+
+      if (isCodespaceOpen) {
+        pane.classList.remove("hidden");
+        pane.classList.add("flex");
+        btnText.textContent = "Close Artifacts";
+      } else {
+        pane.classList.add("hidden");
+        pane.classList.remove("flex");
+        btnText.textContent = "Open Artifacts";
+      }
+      lucide.createIcons();
+    }
+
+    function renderCodespaceFileTabs() {
+      const container = document.getElementById("codespaceFileTabs");
+      container.innerHTML = "";
+      Object.keys(vfs).forEach(filename => {
+        const isActive = filename === csActiveFile;
+        const tab = document.createElement("button");
+        tab.className = `px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors ${isActive ? 'codespace-tab-active shadow-md' : 'bg-surface-950 border-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-surface-900'}`;
+        tab.innerHTML = `<i data-lucide="file-code" class="w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : ''}"></i><span>${filename}</span>`;
+        tab.onclick = () => switchCodespaceFile(filename);
+        container.appendChild(tab);
+      });
+      lucide.createIcons();
+    }
+
+    function switchCodespaceFile(filename) {
+      csActiveFile = filename;
+      document.getElementById("csCurrentFileLabel").textContent = filename;
+      loadCodespaceEditor();
+      renderCodespaceFileTabs();
+    }
+
+    function loadCodespaceEditor() {
+      document.getElementById("csCodeEditor").value = vfs[csActiveFile] || "";
+    }
+
+    function onEditorContentChange() {
+      vfs[csActiveFile] = document.getElementById("csCodeEditor").value;
+      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+    }
+
+    function setCodespaceView(mode) {
+      csViewMode = mode;
+      const editorCol = document.getElementById("csEditorContainer");
+      const previewCol = document.getElementById("csPreviewContainer");
+      
+      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => {
+        const btn = document.getElementById(id);
+        btn.className = "px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors";
+      });
+
+      if (mode === "preview") {
+        editorCol.classList.add("hidden");
+        editorCol.classList.remove("flex");
+        previewCol.classList.remove("hidden");
+        document.getElementById("btnCsViewPreview").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      } else if (mode === "editor") {
+        previewCol.classList.add("hidden");
+        editorCol.classList.remove("hidden");
+        editorCol.classList.add("flex");
+        document.getElementById("btnCsViewEditor").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      } else { // split
+        editorCol.classList.remove("hidden");
+        editorCol.classList.add("flex");
+        previewCol.classList.remove("hidden");
+        document.getElementById("btnCsViewSplit").className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md";
+      }
+    }
+
+    function bundleCodespaceHTML() {
+      let mainHtml = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
+      
+      if (vfs["style.css"]) {
+        mainHtml = mainHtml.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
+      }
+      if (vfs["script.js"]) {
+        mainHtml = mainHtml.replace("</body>", `<script>\n${vfs["script.js"]}\n<\/script></body>`);
+      }
+      return mainHtml;
+    }
+
+    function runCodespacePreview() {
+      const bundled = bundleCodespaceHTML();
+      const iframe = document.getElementById("csPreviewFrame");
+      const emptyState = document.getElementById("csEmptyState");
+      
+      iframe.srcdoc = bundled;
+      
+      // Hide empty state if content exists
+      if (bundled.trim().length > 0) {
+        emptyState.style.display = "none";
+        iframe.style.opacity = "1";
+      }
+      
+      document.getElementById("csStatusBadge").innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced (${new Date().toLocaleTimeString()})`;
+      showToast("Codespace Rendered", "Live preview reloaded.");
+    }
+
+    function promptCreateFile() {
+      const name = prompt("Enter new filename (e.g., app.js, layout.html, styles.css):");
+      if (name && name.trim()) {
+        const cleanName = name.trim();
+        if (!vfs[cleanName]) {
+          vfs[cleanName] = `// File: ${cleanName}\n`;
+          localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+          switchCodespaceFile(cleanName);
+          showToast("File Created", cleanName);
+        } else {
+          switchCodespaceFile(cleanName);
+        }
+      }
+    }
+
+    function deleteActiveFile() {
+      if (csActiveFile === "index.html") return alert("Cannot delete root entry index.html");
+      if (confirm(`Delete ${csActiveFile} from workspace?`)) {
+        delete vfs[csActiveFile];
+        localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+        switchCodespaceFile("index.html");
+        showToast("File Deleted", csActiveFile);
+      }
+    }
+
+    function openCodespacePopout() {
+      const bundled = bundleCodespaceHTML();
+      const blob = new Blob([bundled], { type: "text/html" });
+      window.open(URL.createObjectURL(blob), "_blank");
+    }
+
+    function exportCodespaceZip() {
+      let exportBlob = new Blob([JSON.stringify(vfs, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(exportBlob);
+      a.download = `codespace_workspace_${Date.now()}.json`;
+      a.click();
+      showToast("Workspace Exported", "Downloaded JSON project bundle.");
+    }
+
+    function writeCodeToCodespace(filename, code) {
+      vfs[filename] = code;
+      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+      renderCodespaceFileTabs();
+      switchCodespaceFile(filename);
+      toggleCodespacePane(true);
+      runCodespacePreview();
+      showToast("Artifact Injected", `Updated ${filename} in Codespace.`);
+    }
+
+    // Markdown Parser with Interactive Codespace Extraction
     function parseAiMarkdown(t) {
       if(!t) return "";
-      let s = t.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      
-      // Formatting execution hints manually instead of auto-executing
-      s = s.replace(/&lt;execute&gt;([\s\S]*?)&lt;\/execute&gt;/g, (m, c) => `<div class="my-3 p-3 bg-indigo-900/30 border border-indigo-500/30 rounded-xl flex items-center gap-3"><i data-lucide="terminal-square" class="w-5 h-5 text-indigo-400"></i><div><p class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider">Suggested Command</p><code class="text-sm text-indigo-100 font-mono">${c}</code></div></div>`);
-      
-      return s.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (m, l1, f1, l2, code) => {
-        let lang = l1 || l2 || "text"; let fn = f1 || "";
-        if (!fn) { const fm = code.match(/^(?:\/\/|<!--|#)\s*filename:\s*([a-zA-Z0-9._-]+)/i); if (fm) fn = fm[1]; }
-        if (!fn) { if (lang === 'html') fn = 'index.html'; else if (lang === 'css') fn = 'style.css'; else if (lang === 'js') fn = 'script.js'; }
-        const encoded = encodeBase64Safe(code);
-        return `<div class="bg-surface-950 border border-white/5 rounded-2xl my-4 overflow-hidden shadow-lg"><div class="px-4 py-2 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center uppercase"><span class="flex items-center gap-2 font-bold text-white"><i data-lucide="file-code" class="w-4 h-4 text-cyan-500"></i> ${fn || lang}</span><div class="flex items-center gap-3">${fn ? `<button class="apply-artifact-btn text-emerald-400 hover:text-emerald-300 font-bold normal-case flex items-center gap-1.5 bg-emerald-500/10 px-2 py-1 rounded-md" data-filename="${fn}" data-code="${encoded}"><i data-lucide="send" class="w-3.5 h-3.5 pointer-events-none"></i> Apply to Workspace</button>` : ''}<button class="copy-artifact-btn text-zinc-400 hover:text-white normal-case flex items-center gap-1" data-code="${encoded}"><i data-lucide="copy" class="w-3.5 h-3.5 pointer-events-none"></i> Copy</button></div></div><pre class="p-5 overflow-x-auto text-[13px] font-mono text-zinc-300 leading-relaxed custom-scrollbar"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre></div>`;
-      }).replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>').replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>').replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[12px] font-mono border border-white/5">$1</code>').replace(/\n/g, '<br/>');
+
+      return t.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, lang1, file1, lang2, code) => {
+        let language = lang1 || lang2 || "text";
+        let filename = file1 || "";
+
+        if (!filename) {
+          const firstLine = code.split('\n')[0];
+          const nameMatch = firstLine.match(/(?:\/\/|<!--|#)\s*filename:\s*([a-zA-Z0-9._-]+)/i);
+          if (nameMatch) filename = nameMatch[1];
+        }
+
+        if (!filename) {
+          if (language === 'html') filename = 'index.html';
+          else if (language === 'css') filename = 'style.css';
+          else if (language === 'javascript' || language === 'js') filename = 'script.js';
+        }
+
+        const cleanCodeEscaped = code.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const safeCodeDisplay = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        return `
+          <div class="bg-surface-950 border border-white/5 rounded-2xl my-4 overflow-hidden shadow-lg">
+            <div class="px-4 py-2 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center uppercase">
+              <span class="flex items-center gap-2 font-bold tracking-wider text-white">
+                <i data-lucide="file-code" class="w-4 h-4 text-cyan-500"></i> ${filename || language}
+              </span>
+              <div class="flex items-center gap-3">
+                ${filename ? `
+                  <button onclick="writeCodeToCodespace('${filename}', \`${cleanCodeEscaped}\`)" class="text-emerald-400 hover:text-emerald-300 font-bold normal-case cursor-pointer flex items-center gap-1.5 transition-colors bg-emerald-500/10 px-2 py-1 rounded-md">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i> Apply to Artifact
+                  </button>
+                ` : ''}
+                <button onclick="copyCodeBlock(this)" class="text-zinc-400 hover:text-white cursor-pointer normal-case transition-colors flex items-center gap-1"><i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy</button>
+              </div>
+            </div>
+            <pre class="p-5 overflow-x-auto text-[13px] font-mono text-zinc-300 leading-relaxed custom-scrollbar"><code>${safeCodeDisplay}</code></pre>
+          </div>
+        `;
+      })
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
+      .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[12px] font-mono border border-white/5">$1</code>')
+      .replace(/\n/g, '<br/>');
+    }
+
+    function copyCodeBlock(b) { 
+      navigator.clipboard.writeText(b.closest('.bg-surface-950').querySelector('code').innerText); 
+      const o = b.innerHTML; b.innerHTML = "<i data-lucide='check' class='w-3.5 h-3.5'></i> Copied!"; b.classList.add("text-emerald-400"); lucide.createIcons();
+      setTimeout(() => { b.innerHTML = o; b.classList.remove("text-emerald-400"); lucide.createIcons(); }, 2000); 
+    }
+
+    function loadQuickPrompt(text) {
+      document.getElementById("aiPromptTextarea").value = text;
+      autoResizeTextarea(document.getElementById("aiPromptTextarea"));
+      document.getElementById("aiPromptTextarea").focus();
     }
 
     function renderAiChat() {
-      const box = document.getElementById("aiChatHistory"); if(!box) return; box.innerHTML = "";
+      const box = document.getElementById("aiChatHistory"); 
+      box.innerHTML = "";
+      
       if (aiConversation.length === 0) {
-        box.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center space-y-6 animate-fade-in px-4 mt-10"><div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 p-[2px] shadow-[0_0_50px_rgba(0,242,254,0.3)]"><div class="w-full h-full bg-surface-950 rounded-[22px] flex items-center justify-center"><i data-lucide="cpu" class="w-12 h-12 text-cyan-400"></i></div></div><div class="max-w-xl"><h2 class="text-3xl font-heading font-extrabold text-white tracking-tight mb-3">Welcome to ai-llm</h2><p class="text-sm text-zinc-400 leading-relaxed">Agentic Core active. I can browse the live web, generate architectures, and execute terminal commands.</p></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mt-6"><button class="quick-prompt-btn p-4 rounded-2xl glass-card text-left hover:bg-white/5 group" data-prompt="${encodeBase64Safe('Create a modern Glassmorphism dashboard layout with HTML and CSS.')}"><i data-lucide="layout-template" class="w-5 h-5 text-cyan-400 mb-2 group-hover:scale-110 transition-transform"></i><h4 class="text-sm font-bold text-white mb-1">Design a Dashboard</h4><p class="text-xs text-zinc-500">Inject HTML/CSS into workspace.</p></button><button class="quick-prompt-btn p-4 rounded-2xl glass-card text-left hover:bg-white/5 group" data-prompt="${encodeBase64Safe('Search the live internet for recent top tech news and summarize it.')}"><i data-lucide="globe" class="w-5 h-5 text-indigo-400 mb-2 group-hover:scale-110 transition-transform"></i><h4 class="text-sm font-bold text-white mb-1">Search the Web</h4><p class="text-xs text-zinc-500">Real-time data access.</p></button><button class="quick-prompt-btn p-4 rounded-2xl glass-card text-left hover:bg-white/5 group" data-prompt="${encodeBase64Safe('Write a Python script to monitor system metrics and tell me how to run it.')}"><i data-lucide="terminal-square" class="w-5 h-5 text-emerald-400 mb-2 group-hover:scale-110 transition-transform"></i><h4 class="text-sm font-bold text-white mb-1">Execute Scripts</h4><p class="text-xs text-zinc-500">Write Python files.</p></button><button class="quick-prompt-btn p-4 rounded-2xl glass-card text-left hover:bg-white/5 group" data-prompt="${encodeBase64Safe('Review my architecture for security vulnerabilities.')}"><i data-lucide="shield-alert" class="w-5 h-5 text-rose-400 mb-2 group-hover:scale-110 transition-transform"></i><h4 class="text-sm font-bold text-white mb-1">Security Audit</h4><p class="text-xs text-zinc-500">Zero-Trust checking.</p></button></div></div>`;
-        lucide.createIcons(); return;
+        box.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center space-y-6 animate-fade-in px-4 mt-10">
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-cyan-500 via-teal-400 to-indigo-600 p-[2px] shadow-[0_0_50px_rgba(0,242,254,0.3)]">
+              <div class="w-full h-full bg-surface-950 rounded-[22px] flex items-center justify-center">
+                <i data-lucide="cpu" class="w-12 h-12 text-cyan-400"></i>
+              </div>
+            </div>
+            <div class="max-w-xl">
+              <h2 class="text-3xl font-heading font-extrabold text-white tracking-tight mb-3">How can I help you build today?</h2>
+              <p class="text-sm text-zinc-400 leading-relaxed">LuminaVista Neural Core is active. I can browse the live web, write complex applications, and execute code directly in your personal cloud sandbox.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mt-6">
+              <button onclick="loadQuickPrompt('Create a modern Glassmorphism dashboard layout with HTML and CSS in the Codespace.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="layout-template" class="w-5 h-5 text-cyan-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Design a Dashboard</h4>
+                <p class="text-xs text-zinc-500">Inject HTML/CSS directly into artifacts.</p>
+              </button>
+              <button onclick="loadQuickPrompt('Search the live internet for today\\'s top tech news and summarize it.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="globe" class="w-5 h-5 text-indigo-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Search the Web</h4>
+                <p class="text-xs text-zinc-500">Bypass training cutoffs with real-time data.</p>
+              </button>
+              <button onclick="loadQuickPrompt('Write a Python script to monitor system metrics and tell me how to run it in the terminal.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="terminal-square" class="w-5 h-5 text-emerald-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Execute Python Scripts</h4>
+                <p class="text-xs text-zinc-500">Deploy code to the E2B microVM.</p>
+              </button>
+              <button onclick="loadQuickPrompt('Review my architecture for security vulnerabilities.')" class="p-4 rounded-2xl glass-card text-left hover:bg-white/5 transition-colors cursor-pointer group">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-rose-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                <h4 class="text-sm font-bold text-white mb-1">Security Audit</h4>
+                <p class="text-xs text-zinc-500">Enable the Zero-Trust Auditor persona.</p>
+              </button>
+            </div>
+          </div>
+        `;
+        lucide.createIcons(); 
+        return;
       }
+
       aiConversation.forEach(m => {
         const u = m.role === "user";
-        if (m.isHiddenSystemPrompt) return;
-        box.innerHTML += `<div class="flex items-start gap-4 ${u ? 'flex-row-reverse' : ''}"><div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg ${u ? 'bg-surface-800 border-white/10 text-white font-bold' : 'bg-gradient-to-br from-cyan-900/50 to-surface-900 border-cyan-500/30 text-cyan-400'}">${u ? 'ME' : '<i data-lucide="sparkles" class="w-5 h-5"></i>'}</div><div class="max-w-[85%] ${u ? 'text-right' : 'text-left'}"><div class="inline-block p-5 rounded-3xl shadow-lg ${u ? 'bg-surface-800 text-white border border-white/5 rounded-tr-sm' : 'bg-gradient-to-b from-surface-900 to-surface-950 text-zinc-200 border border-cyan-500/10 rounded-tl-sm'}">${u ? m.content : parseAiMarkdown(m.content)}</div></div></div>`;
+        const d = document.createElement("div"); 
+        d.className = `flex items-start gap-4 ${u ? 'flex-row-reverse' : ''}`;
+        d.innerHTML = `
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg ${u ? 'bg-surface-800 border-white/10 text-white font-bold' : 'bg-gradient-to-br from-cyan-900/50 to-surface-900 border-cyan-500/30 text-cyan-400'}">
+            ${u ? 'ME' : '<i data-lucide="sparkles" class="w-5 h-5"></i>'}
+          </div>
+          <div class="max-w-[85%] ${u ? 'text-right' : 'text-left'}">
+            <div class="inline-block p-5 rounded-3xl shadow-lg ${u ? 'bg-surface-800 text-white border border-white/5 rounded-tr-sm' : 'bg-gradient-to-b from-surface-900 to-surface-950 text-zinc-200 border border-cyan-500/10 rounded-tl-sm'}">
+              ${u ? m.content : parseAiMarkdown(m.content)}
+            </div>
+          </div>
+        `;
+        box.appendChild(d);
       });
-      lucide.createIcons(); scrollToAiBottom();
+      lucide.createIcons(); 
+      scrollToAiBottom();
     }
 
-    function scrollToAiBottom() { const b = document.getElementById("aiChatHistory"); if(b) b.scrollTop = b.scrollHeight; }
-    function autoResizeTextarea(e) { e.style.height = "auto"; e.style.height = (e.scrollHeight) + "px"; }
+    function scrollToAiBottom() { 
+      const b = document.getElementById("aiChatHistory"); 
+      b.scrollTop = b.scrollHeight; 
+    }
+    
+    function autoResizeTextarea(e) { 
+      e.style.height = "auto"; 
+      e.style.height = (e.scrollHeight) + "px"; 
+    }
 
     async function handleSendAiPrompt(e) {
       if (e) e.preventDefault();
-      const inp = document.getElementById("aiPromptTextarea"); const prompt = inp ? inp.value.trim() : "";
+      const inp = document.getElementById("aiPromptTextarea");
+      const prompt = inp.value.trim();
+      const btn = document.getElementById("btnAiSend");
       if (!prompt) return;
+
+      aiConversation.push({ role: "user", content: prompt });
+      inp.value = ""; 
+      inp.style.height = "auto"; 
+      renderAiChat();
       
-      if(inp) { inp.value = ""; inp.style.height = "auto"; }
-      
-      aiConversation.push({ role: "user", content: prompt }); renderAiChat();
-      
-      const btn = document.getElementById("btnAiSend"); if(btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>'; lucide.createIcons(); }
-      const historyBox = document.getElementById("aiChatHistory");
-      if(historyBox) { historyBox.innerHTML += `<div id="aiTypingIndicator" class="flex items-start gap-4"><div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-900/50 to-surface-900 border border-cyan-500/30 flex items-center justify-center shrink-0 text-cyan-400 shadow-lg"><i data-lucide="sparkles" class="w-5 h-5"></i></div><div class="pt-4 flex gap-1.5"><span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></span><span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span><span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span></div></div>`; scrollToAiBottom(); lucide.createIcons(); }
+      btn.disabled = true; 
+      btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>'; 
+      lucide.createIcons();
+
+      const typingDiv = document.createElement("div"); 
+      typingDiv.id = "aiTypingIndicator"; 
+      typingDiv.className = "flex items-start gap-4";
+      typingDiv.innerHTML = `
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-900/50 to-surface-900 border border-cyan-500/30 flex items-center justify-center shrink-0 text-cyan-400 shadow-lg">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div class="pt-4 flex gap-1.5">
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></span>
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+          <span class="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+        </div>
+      `;
+      document.getElementById("aiChatHistory").appendChild(typingDiv); 
+      scrollToAiBottom(); 
+      lucide.createIcons();
 
       try {
-        const isWebSearchOn = localStorage.getItem("lumina_web_search") === "true";
+        const isWebSearchOn = document.getElementById("checkWebSearch").checked;
+
         const res = await fetch("/api/chat", {
-          method: "POST", headers: { "Content-Type": "application/json", "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || "" },
-          body: JSON.stringify({ prompt, requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b", webSearch: isWebSearchOn, messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation.map(m => ({role: m.role, content: m.content}))] })
+          method: "POST", 
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
+          },
+          body: JSON.stringify({ 
+            prompt, 
+            requestedModel: document.getElementById("aiModelInput").value,
+            webSearch: isWebSearchOn,
+            messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation] 
+          })
         });
+        
         document.getElementById("aiTypingIndicator")?.remove();
         const data = await res.json();
+        
         if (res.ok) {
-          const txt = data.choices?.[0]?.message?.content || data.message?.content || data.response || "Done.";
+          const txt = data.choices?.[0]?.message?.content || data.message?.content || data.response || "Execution complete.";
           aiConversation.push({ role: "assistant", content: txt });
-        } else { aiConversation.push({ role: "assistant", content: `**[Error]:** ${data.error || res.statusText}` }); }
+        } else {
+          aiConversation.push({ role: "assistant", content: `**[Vercel Backend Error]:** ${data.error || res.statusText}\n${data.details || ""}` });
+        }
       } catch (err) {
-        document.getElementById("aiTypingIndicator")?.remove(); aiConversation.push({ role: "assistant", content: `**[Network]:** ${err.message}` });
+        document.getElementById("aiTypingIndicator")?.remove();
+        aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
       } finally {
-        if(btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-up" class="w-5 h-5"></i>'; } lucide.createIcons();
-        localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); renderAiChat();
+        btn.disabled = false; 
+        btn.innerHTML = '<i data-lucide="arrow-up" class="w-5 h-5"></i>'; 
+        lucide.createIcons();
+        localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation)); 
+        renderAiChat();
       }
     }
-    function clearAiChat() { aiConversation = []; localStorage.removeItem("lumina_ai_history"); renderAiChat(); showToast("Cleared", "Memory reset."); }
-    function downloadAiChat() { if(aiConversation.length === 0) return showToast("Empty", "No chat to export."); let txt = "=== GODx Neural Thread ===\n\n"; aiConversation.forEach(m => { txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`; }); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain" })); a.download = `Thread_${Date.now()}.txt`; a.click(); }
 
-    // 6. Codespace Logic
-    function toggleCodespacePane(forceOpen = null) { const pane = document.getElementById("aiCodespaceColumn"); const btnText = document.getElementById("btnCodespaceToggleText"); if (forceOpen !== null) { isCodespaceOpen = forceOpen; } else { isCodespaceOpen = !isCodespaceOpen; } if (isCodespaceOpen) { pane.classList.remove("hidden"); pane.classList.add("flex"); if(btnText) btnText.textContent = "Close Workspace"; } else { pane.classList.add("hidden"); pane.classList.remove("flex"); if(btnText) btnText.textContent = "Open Workspace"; } lucide.createIcons(); }
-    function getFileIcon(fn) { const ext = fn.split('.').pop().toLowerCase(); if(ext === 'html') return '<i data-lucide="file-code" class="w-4 h-4 text-orange-400"></i>'; if(ext === 'css') return '<i data-lucide="file-code" class="w-4 h-4 text-blue-400"></i>'; if(ext === 'js') return '<i data-lucide="file-json" class="w-4 h-4 text-yellow-400"></i>'; if(ext === 'py') return '<i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400"></i>'; return '<i data-lucide="file" class="w-4 h-4 text-zinc-400"></i>'; }
-    function renderCodespaceFileTabs() {
-      const tree = document.getElementById("codespaceExplorerTree"); if(!tree) return; tree.innerHTML = "";
-      Object.keys(vfs).forEach(fn => { const isActive = fn === csActiveFile; const item = document.createElement("div"); item.className = `file-explorer-item group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer text-[12px] font-mono ${isActive ? 'bg-cyan-500/10 text-cyan-300 font-bold' : 'text-zinc-400 hover:bg-surface-900 hover:text-zinc-200'}`; item.innerHTML = `<div class="flex items-center gap-2 overflow-hidden flex-1 file-selector" data-filename="${fn}">${getFileIcon(fn)}<span class="truncate pointer-events-none">${fn}</span></div><div class="file-actions opacity-0 transition-opacity flex items-center gap-1 shrink-0"><button class="file-delete-btn p-1 hover:text-rose-400 rounded" data-filename="${fn}"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button></div>`; tree.appendChild(item); }); lucide.createIcons();
+    function clearAiChat() { 
+      aiConversation = []; 
+      localStorage.removeItem("lumina_ai_history"); 
+      renderAiChat(); 
+      showToast("Cleared", "Conversation memory reset."); 
     }
-    function switchCodespaceFile(fn) { csActiveFile = fn; const lbl = document.getElementById("csCurrentFileLabel"); if(lbl) lbl.textContent = fn; loadCodespaceEditor(); renderCodespaceFileTabs(); }
-    function loadCodespaceEditor() { const editor = document.getElementById("csCodeEditor"); if(editor) editor.value = vfs[csActiveFile] || ""; }
-    function onEditorContentChange() { const editor = document.getElementById("csCodeEditor"); if(editor) { vfs[csActiveFile] = editor.value; localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs)); } }
-    function setCodespaceView(mode) {
-      csViewMode = mode; const editorCol = document.getElementById("csEditorContainer"); const previewCol = document.getElementById("csPreviewContainer");
-      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => { const btn = document.getElementById(id); if(btn) btn.className = "px-3 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors"; });
-      if (mode === "preview") { if(editorCol) { editorCol.classList.add("hidden"); editorCol.classList.remove("flex"); } if(previewCol) previewCol.classList.remove("hidden"); const btn = document.getElementById("btnCsViewPreview"); if(btn) btn.className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md"; } else if (mode === "editor") { if(previewCol) previewCol.classList.add("hidden"); if(editorCol) { editorCol.classList.remove("hidden"); editorCol.classList.add("flex"); } const btn = document.getElementById("btnCsViewEditor"); if(btn) btn.className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md"; } else { if(editorCol) { editorCol.classList.remove("hidden"); editorCol.classList.add("flex"); } if(previewCol) previewCol.classList.remove("hidden"); const btn = document.getElementById("btnCsViewSplit"); if(btn) btn.className = "px-3 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer shadow-md"; }
+    
+    function downloadAiChat() {
+      if(aiConversation.length === 0) return showToast("Empty", "No chat to export.");
+      let txt = "=== GODx Neural Thread ===\n\n"; 
+      aiConversation.forEach(m => txt += `[${m.role.toUpperCase()}]:\n${m.content}\n\n`);
+      const a = document.createElement("a"); 
+      a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain" })); 
+      a.download = `Neural_Thread_${Date.now()}.txt`; 
+      a.click();
     }
-    function bundleCodespaceHTML() { let html = vfs["index.html"] || "<html><body><h1>Empty</h1></body></html>"; if (vfs["style.css"]) html = html.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`); if (vfs["script.js"]) html = html.replace("</body>", `<script>\n${vfs["script.js"]}\n<` + `/script></body>`); return html; }
-    function runCodespacePreview() { const bundled = bundleCodespaceHTML(); const iframe = document.getElementById("csPreviewFrame"); const emptyState = document.getElementById("csEmptyState"); if(iframe) iframe.srcdoc = bundled; if (bundled.trim().length > 0 && emptyState && iframe) { emptyState.style.display = "none"; iframe.style.opacity = "1"; } const badge = document.getElementById("csStatusBadge"); if(badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Synced (${new Date().toLocaleTimeString()})`; showToast("Codespace Rendered", "Live preview reloaded."); }
-    function promptCreateFile() { const name = prompt("Enter new filename (e.g., app.js):"); if (name && name.trim()) { const clean = name.trim(); if (!vfs[clean]) { vfs[clean] = `// File: ${clean}\n`; localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs)); switchCodespaceFile(clean); showToast("File Created", clean); } else { switchCodespaceFile(clean); } } }
-    function deleteSpecificFile(fn) { if (fn === "index.html") return alert("Cannot delete root."); if (confirm(`Delete ${fn}?`)) { delete vfs[fn]; localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs)); if(csActiveFile === fn) switchCodespaceFile("index.html"); else renderCodespaceFileTabs(); showToast("Deleted", fn); } }
-    function openCodespacePopout() { window.open(URL.createObjectURL(new Blob([bundleCodespaceHTML()], { type: "text/html" })), "_blank"); }
-    function exportCodespaceZip() { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(vfs, null, 2)], { type: "application/json" })); a.download = `workspace_${Date.now()}.json`; a.click(); showToast("Exported", "JSON bundle."); }
-    function writeCodeToCodespace(fn, b64Code) { vfs[fn] = decodeBase64Safe(b64Code); localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs)); renderCodespaceFileTabs(); switchCodespaceFile(fn); toggleCodespacePane(true); runCodespacePreview(); showToast("Injected", `Updated ${fn}.`); }
 
-    // 7. Projects Scanner
-    function resolveProjectUrl(raw) { let c = raw.replace(/^\.\//, "").replace(/^\//, ""); if (!c.startsWith("EXM/")) c = "EXM/" + c; if (c.endsWith("/")) c += "index.html"; else if (!c.includes(".html") && !c.includes(".")) c += "/index.html"; return window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1) + c; }
-    async function fetchRepoProjects() { const i = document.getElementById("refreshIcon"); if(i) i.classList.add("animate-spin"); try { const r = await fetch(REPO_API_URL); if(r.ok) { const d = await r.json(); d.filter(x => !x.name.startsWith(".")).forEach(x => { const p = { name: x.name, path: `EXM/${x.name}${x.type==="dir"?"/":""}`, type: x.type }; if(!repoProjects.some(e => e.name === p.name)) repoProjects.push(p); }); localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects)); } } catch(e) {} finally { if(i) i.classList.remove("animate-spin"); renderProjectList(); updateSplitDropdowns(); } }
+    // =========================================================================
+    // EXM PROJECTS SCANNER
+    // =========================================================================
+    function resolveProjectUrl(rawPath) { let c = rawPath.replace(/^\.\//, "").replace(/^\//, ""); if (!c.startsWith("EXM/")) c = "EXM/" + c; if (c.endsWith("/")) c += "index.html"; else if (!c.includes(".html") && !c.includes(".")) c += "/index.html"; return window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1) + c; }
+    async function fetchRepoProjects() { const i=document.getElementById("refreshIcon"); if(i)i.classList.add("animate-spin"); try{const r=await fetch(REPO_API_URL);if(r.ok){const d=await r.json();d.filter(x=>!x.name.startsWith(".")).forEach(x=>{const p={name:x.name,path:`EXM/${x.name}${x.type==="dir"?"/":""}`,type:x.type};if(!repoProjects.some(e=>e.name===p.name))repoProjects.push(p);});localStorage.setItem("lumina_exm_projects",JSON.stringify(repoProjects));}}catch(e){}finally{if(i)i.classList.remove("animate-spin");renderProjectList();updateSplitDropdowns();} }
     function filterProjectList() { renderProjectList(document.getElementById("projectFilterInput").value.toLowerCase()); }
-    function renderProjectList(q="") { const c = document.getElementById("projectChipsContainer"); if(!c) return; c.innerHTML = ""; const badge = document.getElementById("projectCountBadge"); if(badge) badge.textContent = `${repoProjects.length} Detected`; repoProjects.filter(p => p.name.toLowerCase().includes(q)).forEach(p => { const isS = currentSelectedProject && p.name === currentSelectedProject.name; const b = document.createElement("button"); b.className = `w-full px-4 py-3 rounded-xl text-sm font-mono border flex items-center gap-3 text-left transition-colors ${isS?"bg-cyan-500/10 border-cyan-500/30 text-cyan-300":"bg-surface-900 border-white/5 text-zinc-300 hover:bg-surface-800"}`; b.innerHTML = `<i data-lucide="${p.type==='dir'?'folder':'file-code'}" class="w-4 h-4 ${isS?'text-cyan-400':'text-zinc-500'}"></i><span class="truncate">${p.name}</span>`; b.onclick = () => selectProject(p); c.appendChild(b); }); lucide.createIcons(); }
-    function selectProject(p) { currentSelectedProject = p; const title = document.getElementById("activeProjectTitle"); if(title) title.textContent = `EXM/${p.name}/`; renderProjectList(); const iframe = document.getElementById("previewIframe"); if(iframe) iframe.src = resolveProjectUrl(p.path); const overlay = document.getElementById("iframeOverlay"); if(overlay) overlay.classList.add("hidden"); }
-    function addCustomProject() { const inp = document.getElementById("customProjectInput"); if(!inp) return; const v = inp.value.trim(); if(!v) return; const n = v.replace(/^EXM\//i,"").replace(/^\/+|\/+$/g,""); const p = { name: n, path: `EXM/${n}${n.endsWith(".html")?"":"/"}`, type: n.endsWith(".html") ? "file" : "dir" }; if(!repoProjects.some(x => x.name === p.name)) { repoProjects.push(p); localStorage.setItem("lumina_exm_projects", JSON.stringify(repoProjects)); } selectProject(p); showToast("Added", `EXM/${n}`); }
-    function openActiveInNewTab() { if(currentSelectedProject) window.open(resolveProjectUrl(currentSelectedProject.path), "_blank"); }
-    function reloadIframe() { const f = document.getElementById("previewIframe"); if(f) f.src = f.src; showToast("Reloaded", "Viewport refreshed."); }
-    function setViewportDevice(w) { const wrap = document.getElementById("iframeWrapper"); if(wrap) wrap.style.maxWidth = w; document.querySelectorAll(".device-btn").forEach(b => b.classList.remove("bg-cyan-500", "text-black")); const targetBtn = document.getElementById(w === '100%' ? 'btnDeviceDesktop' : w === '768px' ? 'btnDeviceTablet' : 'btnDeviceMobile'); if(targetBtn) targetBtn.classList.add("bg-cyan-500", "text-black"); }
-    function updateSplitDropdowns() { const l = document.getElementById("splitLeftSelect"); const r = document.getElementById("splitRightSelect"); if(!l || !r) return; l.innerHTML = ""; r.innerHTML = ""; repoProjects.forEach((p, i) => { const o1 = document.createElement("option"); const o2 = document.createElement("option"); o1.value = o2.value = p.name; o1.textContent = o2.textContent = `EXM/${p.name}`; l.appendChild(o1); r.appendChild(o2); if(i === 1 || i === repoProjects.length - 1) o2.selected = true; }); updateSplitFrames(); }
-    function updateSplitFrames() { const lSelect = document.getElementById("splitLeftSelect"); const rSelect = document.getElementById("splitRightSelect"); if(!lSelect || !rSelect) return; const l = repoProjects.find(p => p.name === lSelect.value); const r = repoProjects.find(p => p.name === rSelect.value); const lFrame = document.getElementById("splitLeftFrame"); const rFrame = document.getElementById("splitRightFrame"); if(l && lFrame) lFrame.src = resolveProjectUrl(l.path); if(r && rFrame) rFrame.src = resolveProjectUrl(r.path); }
+    function renderProjectList(q="") { const c=document.getElementById("projectChipsContainer"); c.innerHTML=""; document.getElementById("projectCountBadge").textContent=`${repoProjects.length} Detected`; repoProjects.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{ const isS=currentSelectedProject&&p.name===currentSelectedProject.name; const b=document.createElement("button"); b.className=`w-full px-4 py-3 rounded-xl text-sm font-mono border flex items-center gap-3 cursor-pointer text-left transition-colors ${isS?"bg-cyan-500/10 border-cyan-500/30 text-cyan-300":"bg-surface-900 border-white/5 text-zinc-300 hover:bg-surface-800"}`; b.innerHTML=`<i data-lucide="${p.type==='dir'?'folder':'file-code'}" class="w-4 h-4 ${isS?'text-cyan-400':'text-zinc-500'}"></i><span class="truncate">${p.name}</span>`; b.onclick=()=>selectProject(p); c.appendChild(b); }); lucide.createIcons(); }
+    function selectProject(p) { currentSelectedProject=p; document.getElementById("activeProjectTitle").textContent=`EXM/${p.name}/`; renderProjectList(); document.getElementById("previewIframe").src=resolveProjectUrl(p.path); document.getElementById("iframeOverlay").classList.add("hidden"); }
+    function addCustomProject() { const v=document.getElementById("customProjectInput").value.trim(); if(!v)return; const n=v.replace(/^EXM\//i,"").replace(/^\/+|\/+$/g,""), p={name:n,path:`EXM/${n}${n.endsWith(".html")?"":"/"}`,type:n.endsWith(".html")?"file":"dir"}; if(!repoProjects.some(x=>x.name===p.name)){repoProjects.push(p);localStorage.setItem("lumina_exm_projects",JSON.stringify(repoProjects));} selectProject(p); showToast("Added",`EXM/${n}`); }
+    function openActiveInNewTab() { if(currentSelectedProject) window.open(resolveProjectUrl(currentSelectedProject.path),"_blank"); }
+    function reloadIframe() { const f=document.getElementById("previewIframe"); f.src=f.src; showToast("Reloaded","Viewport refreshed."); }
+    function setViewportDevice(w) { document.getElementById("iframeWrapper").style.maxWidth=w; document.querySelectorAll(".device-btn").forEach(b=>b.classList.remove("bg-cyan-500","text-black")); document.getElementById(w==='100%'?'btnDeviceDesktop':w==='768px'?'btnDeviceTablet':'btnDeviceMobile').classList.add("bg-cyan-500","text-black"); }
+    function updateSplitDropdowns() { const l=document.getElementById("splitLeftSelect"), r=document.getElementById("splitRightSelect"); if(!l)return; l.innerHTML=""; r.innerHTML=""; repoProjects.forEach((p,i)=>{ const o1=document.createElement("option"),o2=document.createElement("option"); o1.value=o2.value=p.name; o1.textContent=o2.textContent=`EXM/${p.name}`; l.appendChild(o1); r.appendChild(o2); if(i===1||i===repoProjects.length-1)o2.selected=true; }); updateSplitFrames(); }
+    function updateSplitFrames() { const l=repoProjects.find(p=>p.name===document.getElementById("splitLeftSelect").value), r=repoProjects.find(p=>p.name===document.getElementById("splitRightSelect").value); if(l)document.getElementById("splitLeftFrame").src=resolveProjectUrl(l.path); if(r)document.getElementById("splitRightFrame").src=resolveProjectUrl(r.path); }
 
-    // 8. Cloud Compilers
-    let currentSandboxLang = "html";
+    // =========================================================================
+    // CLOUD EXECUTION COMPILERS (PYTHON/C++/JAVA via Vercel Backend)
+    // =========================================================================
+    let currentSandboxLang="html";
     function setSandboxLanguage(l) { 
-      currentSandboxLang = l; 
-      ["sbLangHtml", "sbLangPy", "sbLangCpp", "sbLangJava", "sbLangSql"].forEach(id => { const el = document.getElementById(id); if(el) el.className = "px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors"; });
-      const act = document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`); if(act) act.className = `px-4 py-1.5 rounded-lg text-black font-bold transition-colors shadow-md ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
-      const iframeWrap = document.getElementById("sandboxIframeWrapper"); const stdoutWrap = document.getElementById("sandboxStdoutWrapper");
-      if(l === "html") { iframeWrap.classList.remove("hidden"); iframeWrap.classList.add("flex"); stdoutWrap.classList.add("hidden"); stdoutWrap.classList.remove("block"); } else { iframeWrap.classList.add("hidden"); iframeWrap.classList.remove("flex"); stdoutWrap.classList.remove("hidden"); stdoutWrap.classList.add("block"); } 
+      currentSandboxLang=l; ["sbLangHtml","sbLangPy","sbLangCpp","sbLangJava","sbLangSql"].forEach(id=>document.getElementById(id).className="px-4 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"); 
+      document.getElementById(`sbLang${l.charAt(0).toUpperCase()+l.slice(1)}`).className=`px-4 py-1.5 rounded-lg text-black font-bold cursor-pointer transition-colors shadow-md ${l==='html'?'bg-cyan-500':l==='sql'?'bg-emerald-500':l==='python'?'bg-amber-500':l==='cpp'?'bg-purple-500':'bg-rose-500'}`; 
+      if(l==="html"){document.getElementById("sandboxIframeWrapper").classList.remove("hidden");document.getElementById("sandboxStdoutWrapper").classList.add("hidden");}
+      else{document.getElementById("sandboxIframeWrapper").classList.add("hidden");document.getElementById("sandboxStdoutWrapper").classList.remove("hidden");} 
     }
-    function onSandboxCodeChange() { const c = document.getElementById("sandboxCodeInput").value; if(c.includes("SELECT ") || c.includes("FROM ")) setSandboxLanguage("sql"); else if(c.includes("#include")) setSandboxLanguage("cpp"); else if(c.includes("public class")) setSandboxLanguage("java"); else if(c.includes("def ")) setSandboxLanguage("python"); else if(c.includes("<html")) setSandboxLanguage("html"); }
+    function onSandboxCodeChange() { const c=document.getElementById("sandboxCodeInput").value; if(c.includes("SELECT ") || c.includes("FROM ")) setSandboxLanguage("sql"); else if(c.includes("#include")) setSandboxLanguage("cpp"); else if(c.includes("public class")) setSandboxLanguage("java"); else if(c.includes("def ")) setSandboxLanguage("python"); else if(c.includes("<html")) setSandboxLanguage("html"); }
+    
     async function runSandboxCode() { 
-      const c = document.getElementById("sandboxCodeInput").value; const out = document.getElementById("sandboxStdoutWrapper"); 
-      if (currentSandboxLang === "html") { document.getElementById("sandboxPreviewFrame").srcdoc = c; showToast("Rendered", "Visual DOM updated."); return; } 
-      out.classList.remove("hidden"); out.classList.add("block"); out.innerHTML = `<i data-lucide='loader' class='w-4 h-4 animate-spin inline'></i> Routing to Vercel...`; lucide.createIcons();
-      try { const res = await fetch("/api/compile", { method: "POST", headers: { "Content-Type": "application/json", "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || "" }, body: JSON.stringify({ language: currentSandboxLang, code: c }) }); const data = await res.json(); if (res.ok) { out.textContent = `=== Exec (${currentSandboxLang.toUpperCase()}) ===\n\n${data.output}`; showToast("Complete", "Output streamed."); } else { out.textContent = `[Error]: ${data.error}`; } } catch (err) { out.textContent = `[Network Error]: Backend offline.`; }
+      const c = document.getElementById("sandboxCodeInput").value;
+      const out = document.getElementById("sandboxStdoutWrapper"); 
+      
+      if (currentSandboxLang === "html") {
+        document.getElementById("sandboxPreviewFrame").srcdoc = c; 
+        showToast("Rendered", "Visual DOM updated."); 
+        return;
+      } 
+      
+      out.innerHTML = `<i data-lucide='loader' class='w-4 h-4 animate-spin inline'></i> Routing to Vercel Execution Engine...`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch("/api/compile", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
+          },
+          body: JSON.stringify({ language: currentSandboxLang, code: c })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          out.textContent = `=== GODx Cloud Execution (${currentSandboxLang.toUpperCase()}) ===\n\n${data.output}`;
+          showToast("Execution Complete", "Output streamed.");
+        } else {
+          out.textContent = `[Compilation Error]: ${data.error}`;
+        }
+      } catch (err) {
+        out.textContent = `[Network Error]: Vercel execution backend offline.`;
+      }
     }
 
-    // 9. Whiteboard Engine
-    function resizeWhiteboardCanvas() { const cv = document.getElementById("whiteboardCanvas"); const container = document.getElementById("whiteboardContainer"); if(!cv || !container || container.clientWidth === 0) return; const ctx = cv.getContext("2d"); const t = ctx.getImageData(0, 0, cv.width, cv.height); cv.width = container.clientWidth; cv.height = container.clientHeight; ctx.lineCap = "round"; ctx.lineJoin = "round"; try { ctx.putImageData(t, 0, 0); } catch(e) {} }
-    let startX, startY;
-    function initWhiteboard() { 
-      const cv = document.getElementById("whiteboardCanvas"); if(!cv) return; const ctx = cv.getContext("2d"); resizeWhiteboardCanvas(); window.addEventListener("resize", resizeWhiteboardCanvas); 
-      cv.addEventListener("mousedown", e => { isDrawing = true; startX = e.offsetX; startY = e.offsetY; wbSnapshot = ctx.getImageData(0, 0, cv.width, cv.height); if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') { ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); } }); 
-      cv.addEventListener("mousemove", e => { if(!isDrawing) return; ctx.strokeStyle = wbCurrentTool === "eraser" ? "#030712" : wbCurrentColor; ctx.lineWidth = wbCurrentSize; if(wbCurrentTool === 'pen' || wbCurrentTool === 'eraser') { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } else if (wbCurrentTool === 'rect') { ctx.putImageData(wbSnapshot, 0, 0); ctx.beginPath(); ctx.rect(startX, startY, e.offsetX - startX, e.offsetY - startY); ctx.stroke(); } else if (wbCurrentTool === 'circle') { ctx.putImageData(wbSnapshot, 0, 0); ctx.beginPath(); const radius = Math.sqrt(Math.pow(e.offsetX - startX, 2) + Math.pow(e.offsetY - startY, 2)); ctx.arc(startX, startY, radius, 0, 2 * Math.PI); ctx.stroke(); } }); 
-      cv.addEventListener("mouseup", () => isDrawing = false); cv.addEventListener("mouseleave", () => isDrawing = false); 
+    // =========================================================================
+    // WHITEBOARD & UI DESIGN
+    // =========================================================================
+    function resizeWhiteboardCanvas() { 
+      const cv=document.getElementById("whiteboardCanvas"); 
+      const container=document.getElementById("whiteboardContainer");
+      if(!cv||!container||container.clientWidth===0) return; 
+      const ctx=cv.getContext("2d"), t=ctx.getImageData(0,0,cv.width,cv.height); 
+      cv.width=container.clientWidth; cv.height=container.clientHeight; 
+      ctx.lineCap="round"; ctx.lineJoin="round"; 
+      try{ctx.putImageData(t,0,0);}catch(e){} 
     }
-    function setWhiteboardTool(t) { wbCurrentTool = t; ["wbToolPen", "wbToolRect", "wbToolCircle", "wbToolEraser"].forEach(id => { document.getElementById(id).className = "p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"; }); let activeId = "wbToolPen"; if(t === "rect") activeId = "wbToolRect"; if(t === "circle") activeId = "wbToolCircle"; if(t === "eraser") activeId = "wbToolEraser"; document.getElementById(activeId).className = "p-2 rounded-lg bg-cyan-500 text-black cursor-pointer shadow-md transition-colors"; }
-    function updateWbColor(c) { wbCurrentColor = c; } function updateWbSize(s) { wbCurrentSize = s; }
-    function clearWhiteboard() { const cv = document.getElementById("whiteboardCanvas"); cv.getContext("2d").clearRect(0, 0, cv.width, cv.height); }
-    function downloadWhiteboard() { const a = document.createElement("a"); a.download = `sketch_${Date.now()}.png`; a.href = document.getElementById("whiteboardCanvas").toDataURL(); a.click(); }
-    function updateDesignPreview() { const b = document.getElementById("sliderBlur").value; const o = document.getElementById("sliderOpacity").value/100; const r = document.getElementById("sliderRadius").value; const g = document.getElementById("sliderGlow").value/100; const c = document.getElementById("glassPreviewCard"); c.style.backdropFilter = `blur(${b}px)`; c.style.backgroundColor = `rgba(11, 15, 25, ${o})`; c.style.borderRadius = `${r}px`; c.style.boxShadow = `0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${g})`; }
-    function copyGeneratedDesignCss() { navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); showToast("Copied", "CSS class ready."); }
+    function initWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); if(!cv)return; const ctx=cv.getContext("2d"); resizeWhiteboardCanvas(); window.addEventListener("resize", resizeWhiteboardCanvas); cv.addEventListener("mousedown", e=>{isDrawing=true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY);}); cv.addEventListener("mousemove", e=>{if(!isDrawing)return; ctx.strokeStyle=wbCurrentTool==="eraser"?"#030712":wbCurrentColor; ctx.lineWidth=wbCurrentSize; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke();}); cv.addEventListener("mouseup", ()=>isDrawing=false); cv.addEventListener("mouseleave", ()=>isDrawing=false); }
+    function setWhiteboardTool(t) { wbCurrentTool=t; document.getElementById("wbToolPen").className=t==="pen"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; document.getElementById("wbToolEraser").className=t==="eraser"?"p-2 rounded-lg bg-cyan-500 text-black cursor-pointer":"p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer"; }
+    function updateWbColor(c) { wbCurrentColor=c; } function updateWbSize(s) { wbCurrentSize=s; }
+    function clearWhiteboard() { const cv=document.getElementById("whiteboardCanvas"); cv.getContext("2d").clearRect(0,0,cv.width,cv.height); }
+    function downloadWhiteboard() { const a=document.createElement("a"); a.download=`sketch_${Date.now()}.png`; a.href=document.getElementById("whiteboardCanvas").toDataURL(); a.click(); }
+    
+    function updateDesignPreview() { const b=document.getElementById("sliderBlur").value, o=document.getElementById("sliderOpacity").value/100, r=document.getElementById("sliderRadius").value, g=document.getElementById("sliderGlow").value/100; const c=document.getElementById("glassPreviewCard"); c.style.backdropFilter=`blur(${b}px)`; c.style.backgroundColor=`rgba(11, 15, 25, ${o})`; c.style.borderRadius=`${r}px`; c.style.boxShadow=`0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${g})`; }
+    function copyGeneratedDesignCss() { navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value/100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value/100}); }`); showToast("Copied","CSS class ready."); }
 
-    // 10. Terminal Engine
-    function handleTerminalKeyDown(e) { if(e.key === "ArrowUp") { e.preventDefault(); if(termHistory.length > 0 && termHistoryIdx > 0) { termHistoryIdx--; e.target.value = termHistory[termHistoryIdx]; } else if(termHistory.length > 0 && termHistoryIdx === -1) { termHistoryIdx = termHistory.length - 1; e.target.value = termHistory[termHistoryIdx]; } } else if(e.key === "ArrowDown") { e.preventDefault(); if(termHistoryIdx >= 0 && termHistoryIdx < termHistory.length - 1) { termHistoryIdx++; e.target.value = termHistory[termHistoryIdx]; } else { termHistoryIdx = -1; e.target.value = ""; } } }
+    // =========================================================================
+    // TERMINAL (INTEGRATED WITH E2B CLOUD SANDBOX & CODESPACE FILES)
+    // =========================================================================
+    function handleTerminalKeyDown(e) { if(e.key==="ArrowUp"){e.preventDefault(); if(termHistory.length>0&&termHistoryIdx>0){termHistoryIdx--; e.target.value=termHistory[termHistoryIdx];}else if(termHistory.length>0&&termHistoryIdx===-1){termHistoryIdx=termHistory.length-1; e.target.value=termHistory[termHistoryIdx];}}else if(e.key==="ArrowDown"){e.preventDefault(); if(termHistoryIdx>=0&&termHistoryIdx<termHistory.length-1){termHistoryIdx++; e.target.value=termHistory[termHistoryIdx];}else{termHistoryIdx=-1; e.target.value="";}} }
+    
     async function handleTerminalCommand(e) { 
-      e.preventDefault(); const inp = document.getElementById("terminalInput"); const cmd = inp.value.trim(); if(!cmd) return; 
-      termHistory.push(cmd); termHistoryIdx = -1; const scr = document.getElementById("terminalScreen"); const l = document.createElement("div"); l.className = "text-zinc-300 font-mono mt-2"; l.innerHTML = `<span class="text-cyan-400 font-bold">anish@cloud-vm:~$</span> ${cmd}`; scr.appendChild(l); 
+      e.preventDefault(); 
+      const inp = document.getElementById("terminalInput");
+      const cmd = inp.value.trim(); 
+      if(!cmd) return; 
+      
+      termHistory.push(cmd); termHistoryIdx = -1; 
+      const scr = document.getElementById("terminalScreen");
+      const l = document.createElement("div"); 
+      l.className = "text-zinc-300 font-mono mt-2"; 
+      l.innerHTML = `<span class="text-cyan-400 font-bold">anish@cloud-vm:~$</span> ${cmd}`; 
+      scr.appendChild(l); 
+      
       if (cmd === "clear") { scr.innerHTML = ""; inp.value = ""; return; }
-      const res = document.createElement("div"); res.className = "text-purple-300 font-mono text-[13px] mt-1"; res.innerHTML = "<i data-lucide='loader' class='w-3.5 h-3.5 animate-spin inline'></i> Booting MicroVM..."; scr.appendChild(res); scr.scrollTop = scr.scrollHeight; lucide.createIcons();
+      
+      const res = document.createElement("div"); 
+      res.className = "text-purple-300 font-mono text-[13px] mt-1"; 
+      res.innerHTML = "<i data-lucide='loader' class='w-3.5 h-3.5 animate-spin inline'></i> Booting MicroVM...";
+      scr.appendChild(res); 
+      scr.scrollTop = scr.scrollHeight; 
+      lucide.createIcons();
+
       try {
         const filesArray = Object.keys(vfs).map(key => ({ name: key, content: vfs[key] }));
-        const fetchRes = await fetch("/api/terminal", { method: "POST", headers: { "Content-Type": "application/json", "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || "" }, body: JSON.stringify({ command: cmd, files: filesArray }) });
+
+        const fetchRes = await fetch("/api/terminal", {
+          method: "POST", 
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Vercel-Auth": localStorage.getItem("lumina_vercel_auth") || ""
+          },
+          body: JSON.stringify({ command: cmd, files: filesArray })
+        });
+        
         const data = await fetchRes.json();
-        if (fetchRes.ok) { res.className = "text-emerald-400 whitespace-pre-wrap mt-2 mb-3 bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20"; res.textContent = (data.stdout || "") + "\n" + (data.stderr || ""); if(!res.textContent.trim()) res.textContent = "[Process exited smoothly without output]"; } 
-        else { res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; res.textContent = `[E2B Error]: ${data.error || "Unknown Error"}\n${data.details || ""}`; }
-      } catch(err) { res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; res.textContent = `[Network Timeout]: Could not reach terminal backend.`; }
-      inp.value = ""; scr.scrollTop = scr.scrollHeight;
+        
+        if (fetchRes.ok) {
+          res.className = "text-emerald-400 whitespace-pre-wrap mt-2 mb-3 bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20"; 
+          res.textContent = (data.stdout || "") + "\n" + (data.stderr || "");
+          if(!res.textContent.trim()) res.textContent = "[Process exited smoothly without output]";
+        } else {
+          res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; 
+          res.textContent = `[E2B Error]: ${data.error || "Unknown Error"}\n${data.details || ""}`;
+        }
+      } catch(err) {
+        res.className = "text-rose-400 mt-2 mb-3 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20"; 
+        res.textContent = `[Network Timeout]: Could not reach terminal backend.`;
+      }
+      
+      inp.value = ""; 
+      scr.scrollTop = scr.scrollHeight;
     }
 
-    // 11. Notes Vault & Settings
-    function renderNoteTabs() { const c = document.getElementById("noteTabsContainer"); if(!c) return; c.innerHTML = ""; vaultNotes.forEach(n => { const b = document.createElement("button"); b.className = `px-4 py-2 rounded-xl border cursor-pointer font-bold transition-colors shadow-sm ${n.id === activeNoteId ? 'bg-sky-500 border-sky-500 text-black' : 'bg-surface-900 border-white/5 text-zinc-400 hover:text-white hover:bg-surface-800'}`; b.textContent = n.title; b.onclick = () => selectNote(n.id); c.appendChild(b); }); }
-    function selectNote(id) { activeNoteId = id; renderNoteTabs(); loadActiveNoteContent(); }
-    function loadActiveNoteContent() { const n = vaultNotes.find(x => x.id === activeNoteId); const t = document.getElementById("adminScratchpad"); if(n && t) t.value = n.content; }
-    function onNoteContentChange() { const n = vaultNotes.find(x => x.id === activeNoteId); const t = document.getElementById("adminScratchpad"); if(n && t) { n.content = t.value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); if(isMarkdownPreviewActive) toggleMarkdownPreview(true); } }
-    function createNewNote() { const id = "n_" + Date.now(); vaultNotes.push({ id, title: `Note ${vaultNotes.length+1}`, content: "# New Note" }); activeNoteId = id; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); renderNoteTabs(); loadActiveNoteContent(); }
-    function insertNoteMarkdown(pT, sT) { const t = document.getElementById("adminScratchpad"); if(!t) return; const s = t.selectionStart; const e = t.selectionEnd; const txt = t.value; const sel = txt.substring(s, e); const p = pT.replace(/\\n/g, '\n'); const sf = sT.replace(/\\n/g, '\n'); t.value = txt.substring(0, s) + p + sel + sf + txt.substring(e); t.selectionStart = s + p.length; t.selectionEnd = e + p.length; t.focus(); onNoteContentChange(); }
-    function toggleMarkdownPreview(force = false) {
-      if(!force) isMarkdownPreviewActive = !isMarkdownPreviewActive; const ta = document.getElementById("adminScratchpad"); if(!ta) return; const ec = ta.parentElement; const pc = document.getElementById("notePreviewCol");
-      if (isMarkdownPreviewActive) { ec.classList.add("hidden"); pc.classList.remove("hidden"); pc.classList.add("block"); let r = ta.value.replace(/</g, '&lt;').replace(/>/g, '&gt;'); document.getElementById("noteMarkdownRender").innerHTML = r.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-3">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-4">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold text-cyan-400 mt-5">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\*(.*?)\*/gim, '<em class="italic text-zinc-300">$1</em>').replace(/`(.*?)`/gim, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>').replace(/\n/gim, '<br/>'); } 
-      else { ec.classList.remove("hidden"); ec.classList.add("block"); pc.classList.add("hidden"); pc.classList.remove("block"); }
+    // =========================================================================
+    // VAULT, COMMAND PALETTE, CHARTS
+    // =========================================================================
+    function openCommandPalette() { document.getElementById("cmdModal").style.display="flex"; setTimeout(()=>{document.getElementById("cmdModal").classList.remove("opacity-0"); document.getElementById("cmdSearchInput").focus();}, 10); }
+    function closeCommandPalette() { document.getElementById("cmdModal").classList.add("opacity-0"); setTimeout(()=>document.getElementById("cmdModal").style.display="none", 200); }
+    window.addEventListener("keydown", e => { if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault(); openCommandPalette();} if(e.key==="Escape"){closeCommandPalette(); document.getElementById("sourceModal").style.display="none";} });
+    
+    function initMetricsChart() { const cv=document.getElementById("metricsChart"); if(!cv)return; const ctx=cv.getContext("2d"); let d=Array.from({length:50},()=>Math.random()*20+40); setInterval(()=>{ if(cv.parentElement.clientWidth===0)return; cv.width=cv.parentElement.clientWidth; cv.height=320; ctx.clearRect(0,0,cv.width,cv.height); ctx.beginPath(); const step=cv.width/49; d.forEach((v,i)=>{const y=cv.height-(v/100)*cv.height; if(i===0)ctx.moveTo(0,y); else ctx.lineTo(i*step,y);}); ctx.strokeStyle="#00f2fe"; ctx.lineWidth=3; ctx.stroke(); d.shift(); d.push(Math.min(100,Math.max(20,d[48]+(Math.random()-0.5)*10))); }, 1000); }
+    
+    function renderNoteTabs() { const c=document.getElementById("noteTabsContainer"); c.innerHTML=""; vaultNotes.forEach(n=>{ const b=document.createElement("button"); b.className=`px-4 py-2 rounded-xl border cursor-pointer font-bold transition-colors shadow-sm ${n.id===activeNoteId?'bg-sky-500 border-sky-500 text-black':'bg-surface-900 border-white/5 text-zinc-400 hover:text-white hover:bg-surface-800'}`; b.textContent=n.title; b.onclick=()=>selectNote(n.id); c.appendChild(b); }); }
+    function selectNote(id) { activeNoteId=id; renderNoteTabs(); loadActiveNoteContent(); }
+    function loadActiveNoteContent() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) document.getElementById("adminScratchpad").value=n.content; }
+    function onNoteContentChange() { const n=vaultNotes.find(x=>x.id===activeNoteId); if(n) { n.content=document.getElementById("adminScratchpad").value; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); if(isMarkdownPreviewActive) toggleMarkdownPreview(true); } }
+    function createNewNote() { const id="n_"+Date.now(); vaultNotes.push({id, title:`Note ${vaultNotes.length+1}`, content:"# New Note"}); activeNoteId=id; localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes)); renderNoteTabs(); loadActiveNoteContent(); }
+    
+    function toggleMarkdownPreview(forceRender=false) {
+      if(!forceRender) isMarkdownPreviewActive = !isMarkdownPreviewActive;
+      const editorCol = document.getElementById("adminScratchpad").parentElement, previewCol = document.getElementById("notePreviewCol");
+      if (isMarkdownPreviewActive) {
+        editorCol.className = "hidden"; previewCol.classList.remove("hidden"); previewCol.classList.add("block");
+        let raw = document.getElementById("adminScratchpad").value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        document.getElementById("noteMarkdownRender").innerHTML = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-cyan-300 mt-3">$1</h3>').replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-4">$1</h2>').replace(/^# (.*$)/gim, '<h1 class="text-2xl font-extrabold text-cyan-400 mt-5">$1</h1>').replace(/\*\*(.*?)\*\*/gim, '<strong class="text-white font-bold">$1</strong>').replace(/\n/gim, '<br/>');
+      } else {
+        editorCol.className = "block"; previewCol.classList.add("hidden"); previewCol.classList.remove("block");
+      }
     }
-    function applySandboxPolicy() { const allow = document.getElementById("checkAllowScripts").checked; let flags = []; if (allow) flags.push("allow-scripts"); document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" ")); reloadIframe(); showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`); }
+
+    function applySandboxPolicy() { const allowScripts = document.getElementById("checkAllowScripts").checked; let flags = []; if (allowScripts) flags.push("allow-scripts"); document.getElementById("previewIframe").setAttribute("sandbox", flags.join(" ")); reloadIframe(); showToast("Policy Applied", `Sandbox flags: ${flags.join(", ")}`); }
     function setDashboardTheme(t) { document.documentElement.setAttribute("data-theme", t); localStorage.setItem("lumina_theme", t); }
     function applyCustomAccentColor(h) { document.documentElement.style.setProperty("--primary", h); document.documentElement.style.setProperty("--primary-glow", h+"55"); }
-    function exportDashboardConfig() { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({projects: repoProjects, notes: vaultNotes})], {type: "application/json"})); a.download = "godx_config.json"; a.click(); }
+    function exportDashboardConfig() { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify({projects:repoProjects, notes:vaultNotes})],{type:"application/json"})); a.download="godx_config.json"; a.click(); }
     function flushWorkspaceCache() { if(confirm("Flush all storage?")) { localStorage.clear(); location.reload(); } }
-    function initMetricsChart() { const cv = document.getElementById("metricsChart"); if(!cv) return; const ctx = cv.getContext("2d"); let d = Array.from({length:50}, () => Math.random() * 20 + 40); setInterval(() => { if(cv.parentElement.clientWidth === 0) return; cv.width = cv.parentElement.clientWidth; cv.height = 320; ctx.clearRect(0, 0, cv.width, cv.height); ctx.beginPath(); const step = cv.width / 49; d.forEach((v, i) => { const y = cv.height - (v / 100) * cv.height; if(i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * step, y); }); ctx.strokeStyle = "#00f2fe"; ctx.lineWidth = 3; ctx.stroke(); d.shift(); d.push(Math.min(100, Math.max(20, d[48] + (Math.random() - 0.5) * 10))); }, 1000); }
-    function initAmbientParticles() { const cv = document.getElementById("ambientCanvas"); if(!cv) return; const ctx = cv.getContext("2d"); let w = cv.width = window.innerWidth; let h = cv.height = window.innerHeight; const p = Array.from({length: 40}, () => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, r: Math.random() * 1.5 + 0.5 })); function anim() { ctx.clearRect(0, 0, w, h); p.forEach(i => { i.x = (i.x + i.vx + w) % w; i.y = (i.y + i.vy + h) % h; ctx.beginPath(); ctx.arc(i.x, i.y, i.r, 0, Math.PI * 2); ctx.fillStyle = "rgba(0,242,254,0.3)"; ctx.fill(); }); requestAnimationFrame(anim); } anim(); window.addEventListener("resize", () => { w = cv.width = window.innerWidth; h = cv.height = window.innerHeight; }); }
+    
+    function initAmbientParticles() { const cv=document.getElementById("ambientCanvas"), ctx=cv.getContext("2d"); let w=cv.width=window.innerWidth, h=cv.height=window.innerHeight; const p=Array.from({length:40},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5,r:Math.random()*1.5+0.5})); function anim(){ ctx.clearRect(0,0,w,h); p.forEach(i=>{i.x=(i.x+i.vx+w)%w; i.y=(i.y+i.vy+h)%h; ctx.beginPath(); ctx.arc(i.x,i.y,i.r,0,Math.PI*2); ctx.fillStyle="rgba(0,242,254,0.3)"; ctx.fill();}); requestAnimationFrame(anim);} anim(); window.addEventListener("resize",()=>{w=cv.width=window.innerWidth; h=cv.height=window.innerHeight;}); }
   </script>
 </body>
 </html>
