@@ -6,7 +6,7 @@
   <title>LuminaVista Security Node</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script>
@@ -41,11 +41,45 @@
       background-size: 100% 100%, 48px 48px, 48px 48px;
     }
 
+    /* Magic UI Retro Grid Plane */
+    .retro-grid-container {
+      position: fixed;
+      bottom: -120px;
+      left: 0;
+      right: 0;
+      height: 480px;
+      overflow: hidden;
+      perspective: 350px;
+      pointer-events: none;
+      z-index: 1;
+      mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 80%);
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 80%);
+    }
+
+    .retro-grid-plane {
+      position: absolute;
+      inset: 0;
+      width: 200%;
+      left: -50%;
+      height: 100%;
+      transform: rotateX(72deg);
+      background-image: 
+        linear-gradient(to right, rgba(0, 242, 254, 0.22) 1px, transparent 0),
+        linear-gradient(to bottom, rgba(0, 242, 254, 0.22) 1px, transparent 0);
+      background-size: 40px 40px;
+      animation: gridScroll 14s linear infinite;
+    }
+
+    @keyframes gridScroll {
+      0% { transform: rotateX(72deg) translateY(0); }
+      100% { transform: rotateX(72deg) translateY(40px); }
+    }
+
     /* Animated Conic Border Beam */
     .border-beam-container {
       position: relative;
-      border-radius: 24px;
-      padding: 1px;
+      border-radius: 26px;
+      padding: 1.5px;
       overflow: hidden;
     }
 
@@ -53,19 +87,19 @@
       content: '';
       position: absolute;
       inset: -150%;
-      background: conic-gradient(from 0deg, transparent 0deg, transparent 140deg, #00f2fe 180deg, #3b82f6 220deg, #8b5cf6 260deg, transparent 310deg, transparent 360deg);
+      background: conic-gradient(from 0deg, transparent 0deg, transparent 130deg, #00f2fe 180deg, #3b82f6 220deg, #8b5cf6 260deg, transparent 310deg, transparent 360deg);
       animation: rotateBeam 6s linear infinite;
       will-change: transform;
     }
 
     .border-beam-container.danger-beam::before {
       background: conic-gradient(from 0deg, transparent 0deg, #f43f5e 180deg, #fb7185 240deg, transparent 320deg);
-      animation: rotateBeam 1.5s linear infinite;
+      animation: rotateBeam 1.2s linear infinite;
     }
 
     .border-beam-container.success-beam::before {
       background: conic-gradient(from 0deg, transparent 0deg, #10b981 180deg, #34d399 240deg, transparent 320deg);
-      animation: rotateBeam 2s linear infinite;
+      animation: rotateBeam 1.8s linear infinite;
     }
 
     @keyframes rotateBeam {
@@ -75,21 +109,21 @@
 
     /* Glassmorphism Card with Spotlight Torch */
     .glass-card {
-      background: linear-gradient(135deg, rgba(13, 19, 33, 0.88) 0%, rgba(6, 10, 20, 0.96) 100%);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border-radius: 23px;
+      background: linear-gradient(135deg, rgba(13, 19, 33, 0.9) 0%, rgba(6, 10, 20, 0.98) 100%);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border-radius: 25px;
       position: relative;
-      z-index: 1;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 35px -5px rgba(0, 242, 254, 0.1), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+      z-index: 2;
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.85), 0 0 40px -5px rgba(0, 242, 254, 0.12), inset 0 1px 1px 0 rgba(255, 255, 255, 0.18);
       transition: transform 0.15s ease-out, box-shadow 0.3s ease;
     }
 
     .glass-spotlight {
       position: absolute;
       inset: 0;
-      border-radius: 23px;
-      background: radial-gradient(350px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 242, 254, 0.12), transparent 70%);
+      border-radius: 25px;
+      background: radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 242, 254, 0.14), transparent 70%);
       pointer-events: none;
       z-index: 2;
     }
@@ -102,31 +136,57 @@
       right: 0;
       height: 2px;
       background: linear-gradient(90deg, transparent, #00f2fe, #00c6ff, transparent);
-      opacity: 0.6;
-      animation: scanSweep 4s ease-in-out infinite;
-      pointer-events: none;
+      opacity: 0.7;
+      animation: scanSweep 3.5s ease-in-out infinite;
+      pointer-events-none;
       z-index: 20;
     }
 
     @keyframes scanSweep {
       0%, 100% { transform: translateY(0); opacity: 0; }
-      10% { opacity: 0.8; }
-      90% { opacity: 0.8; }
-      98% { transform: translateY(420px); opacity: 0; }
+      12% { opacity: 0.85; }
+      88% { opacity: 0.85; }
+      98% { transform: translateY(460px); opacity: 0; }
     }
 
-    /* High-tech Input */
+    /* Orbital Radar Rings around Shield */
+    .orbit-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px dashed rgba(0, 242, 254, 0.3);
+      pointer-events-none;
+    }
+    .orbit-ring-1 {
+      inset: -10px;
+      animation: spinClockwise 12s linear infinite;
+    }
+    .orbit-ring-2 {
+      inset: -20px;
+      border-color: rgba(139, 92, 246, 0.25);
+      animation: spinCounter 18s linear infinite;
+    }
+
+    @keyframes spinClockwise {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes spinCounter {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    /* Cyber Input */
     .cyber-input {
-      background: rgba(15, 23, 42, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       outline: none;
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
     }
     .cyber-input:focus {
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.95);
       border-color: #00f2fe;
-      box-shadow: 0 0 0 1px #00f2fe, 0 0 20px rgba(0, 242, 254, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 0 0 1px #00f2fe, 0 0 25px rgba(0, 242, 254, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.6);
     }
 
     /* Magnetic Primary Action Button */
@@ -137,7 +197,7 @@
       font-weight: 700;
       cursor: pointer;
       overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0, 242, 254, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 22px rgba(0, 242, 254, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.55);
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: transform;
     }
@@ -149,7 +209,7 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
       transform: skewX(-20deg);
       transition: 0.75s ease;
     }
@@ -159,7 +219,7 @@
     }
 
     .cyber-btn:hover {
-      box-shadow: 0 8px 30px rgba(0, 242, 254, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      box-shadow: 0 10px 35px rgba(0, 242, 254, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
 
     .cyber-btn:disabled {
@@ -173,9 +233,9 @@
     /* Corner Cyber Brackets */
     .corner-bracket {
       position: absolute;
-      width: 10px;
-      height: 10px;
-      border-color: rgba(0, 242, 254, 0.6);
+      width: 11px;
+      height: 11px;
+      border-color: rgba(0, 242, 254, 0.7);
       pointer-events-none;
       transition: border-color 0.3s;
       z-index: 5;
@@ -184,6 +244,22 @@
     .corner-tr { top: 12px; right: 12px; border-top: 2px solid; border-right: 2px solid; }
     .corner-bl { bottom: 12px; left: 12px; border-bottom: 2px solid; border-left: 2px solid; }
     .corner-br { bottom: 12px; right: 12px; border-bottom: 2px solid; border-right: 2px solid; }
+
+    /* Shockwave Ripple Ring */
+    .shockwave-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.2);
+      width: 450px;
+      height: 450px;
+      border-radius: 50%;
+      border: 2px solid #00f2fe;
+      box-shadow: 0 0 40px #00f2fe, inset 0 0 40px #00f2fe;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 30;
+    }
 
     /* Warp Overlay */
     #warp-overlay {
@@ -197,7 +273,7 @@
     }
 
     .pulse-dot {
-      box-shadow: 0 0 12px #10b981;
+      box-shadow: 0 0 14px #10b981;
     }
 
     .decrypt-bar-fill {
@@ -211,44 +287,30 @@
   <!-- Interactive Constellation Grid Canvas -->
   <canvas id="particle-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
-  <!-- Keypress Shockwave Particles Canvas -->
-  <canvas id="spark-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-20"></canvas>
+  <!-- Interactive Cursor Comet Trail & Sparkles Canvas -->
+  <canvas id="trail-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-10"></canvas>
 
-  <!-- Audio Toggle HUD -->
-  <div class="fixed top-5 right-5 z-30 flex items-center gap-2">
-    <button 
-      id="sound-toggle" 
-      type="button"
-      onclick="toggleSound()" 
-      class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-zinc-950/70 backdrop-blur-md text-[11px] text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all shadow-lg"
-      title="Toggle Cyber Sound Effects"
-    >
-      <svg id="sound-on-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
-      </svg>
-      <svg id="sound-off-icon" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m12.414-6l-6 6m0-6l6 6"/>
-      </svg>
-      <span id="sound-label" class="font-mono">AUDIO: ON</span>
-    </button>
+  <!-- Magic UI 3D Retro Grid Plane -->
+  <div class="retro-grid-container">
+    <div class="retro-grid-plane"></div>
   </div>
 
   <!-- Ambient dynamic glow orbs -->
-  <div id="orb-cyan" class="fixed top-[-15%] left-[15%] w-[650px] h-[650px] bg-cyan-500/15 rounded-full blur-[150px] pointer-events-none transition-transform duration-700"></div>
-  <div id="orb-violet" class="fixed bottom-[-20%] right-[10%] w-[580px] h-[580px] bg-purple-600/15 rounded-full blur-[160px] pointer-events-none transition-transform duration-700"></div>
+  <div id="orb-cyan" class="fixed top-[-15%] left-[15%] w-[680px] h-[680px] bg-cyan-500/18 rounded-full blur-[150px] pointer-events-none transition-transform duration-700"></div>
+  <div id="orb-violet" class="fixed bottom-[-20%] right-[10%] w-[620px] h-[620px] bg-purple-600/18 rounded-full blur-[160px] pointer-events-none transition-transform duration-700"></div>
 
   <!-- Warp / Hyperdrive Transition Canvas -->
   <canvas id="warp-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-40 opacity-0"></canvas>
 
-  <!-- Fullscreen Redirection Overlay -->
-  <div id="warp-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-lg">
+  <!-- Fullscreen Quantum Warp Redirection Overlay -->
+  <div id="warp-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-xl">
     <div class="relative flex flex-col items-center max-w-md px-6 text-center">
-      <div class="relative w-24 h-24 mb-6">
+      <div class="relative w-28 h-28 mb-6">
         <div class="absolute inset-0 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
         <div class="absolute inset-2 rounded-full border-2 border-emerald-500/20 border-b-emerald-400 animate-spin" style="animation-direction: reverse; animation-duration: 0.8s;"></div>
-        <div class="absolute inset-4 rounded-full border border-purple-500/30 border-l-purple-400 animate-spin" style="animation-duration: 1.4s;"></div>
+        <div class="absolute inset-5 rounded-full border border-purple-500/30 border-l-purple-400 animate-spin" style="animation-duration: 1.4s;"></div>
         <div class="absolute inset-0 flex items-center justify-center">
-          <svg class="w-9 h-9 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-10 h-10 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
           </svg>
         </div>
@@ -265,12 +327,15 @@
         <div id="decrypt-progress" class="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-blue-500 decrypt-bar-fill"></div>
       </div>
 
-      <div id="telemetry-log" class="font-mono text-[11px] text-zinc-400 space-y-1 h-16 overflow-hidden text-left bg-zinc-950/90 p-3 rounded-xl border border-white/10 w-full shadow-2xl">
+      <div id="telemetry-log" class="font-mono text-[11px] text-zinc-400 space-y-1 h-20 overflow-hidden text-left bg-zinc-950/90 p-3 rounded-xl border border-white/10 w-full shadow-2xl">
         <p class="text-cyan-400">&gt; Handshake cryptographic payload: OK</p>
         <p class="text-emerald-400">&gt; Verified Upstash cluster token</p>
       </div>
     </div>
   </div>
+
+  <!-- Shockwave Element -->
+  <div id="shockwave" class="shockwave-ring"></div>
 
   <!-- Main Container -->
   <div id="card-container" class="w-full max-w-[430px] px-6 relative z-10 text-center">
@@ -282,7 +347,7 @@
         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 pulse-dot"></span>
       </span>
       <span class="font-mono tracking-tight text-[11px] font-medium text-zinc-300">Upstash Vercel Backend Link: <span class="text-emerald-400 font-semibold">Active</span></span>
-      <canvas id="ping-sparkline" width="38" height="14" class="inline-block opacity-80"></canvas>
+      <canvas id="ping-sparkline" width="38" height="14" class="inline-block opacity-85"></canvas>
       <span id="latency-text" class="text-[10px] text-zinc-500 font-mono border-l border-white/10 pl-2">24ms</span>
     </div>
 
@@ -302,18 +367,22 @@
         <div class="corner-bracket corner-br"></div>
         <div class="scan-line"></div>
 
-        <!-- Node Header -->
+        <!-- Node Header with Orbital Radar Rings -->
         <div class="flex flex-col items-center mb-6 relative z-10">
-          <div 
-            id="node-shield" 
-            onmouseenter="scrambleHeader()" 
-            class="w-14 h-14 mb-4 rounded-2xl bg-gradient-to-b from-cyan-500/20 to-blue-500/5 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10 relative group cursor-pointer"
-            title="Hover to run integrity scan"
-          >
-            <div class="absolute inset-0 rounded-2xl bg-cyan-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <svg class="w-7 h-7 text-cyan-400 relative z-10 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
+          <div class="relative mb-5">
+            <div class="orbit-ring orbit-ring-1"></div>
+            <div class="orbit-ring orbit-ring-2"></div>
+            <div 
+              id="node-shield" 
+              onmouseenter="scrambleHeader()" 
+              class="w-16 h-16 rounded-2xl bg-gradient-to-b from-cyan-500/25 via-blue-500/10 to-transparent border border-cyan-500/40 flex items-center justify-center shadow-lg shadow-cyan-500/15 relative group cursor-pointer"
+              title="Hover to trigger integrity scan"
+            >
+              <div class="absolute inset-0 rounded-2xl bg-cyan-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <svg class="w-8 h-8 text-cyan-400 relative z-10 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+            </div>
           </div>
 
           <div class="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-widest text-cyan-400 uppercase font-semibold mb-1">
@@ -322,6 +391,18 @@
           </div>
           <h1 id="scramble-title" class="text-2xl font-display font-bold tracking-tight text-white mb-1">System Gateway</h1>
           <p class="text-xs text-zinc-400 font-sans tracking-wide">Cookie-based validation.</p>
+        </div>
+
+        <!-- Realtime Key Entropy & Cipher Hash Stream -->
+        <div class="mb-3 px-1 flex items-center justify-between text-[10px] font-mono text-zinc-400 relative z-10">
+          <span id="cipher-stream" class="text-cyan-400/90 font-medium tracking-tight">HASH: 0x00000000</span>
+          <!-- Dynamic 4-tier security gauge -->
+          <div class="flex items-center gap-1">
+            <span id="bar-1" class="w-2 h-1 rounded-full bg-zinc-700 transition-colors"></span>
+            <span id="bar-2" class="w-2 h-1 rounded-full bg-zinc-700 transition-colors"></span>
+            <span id="bar-3" class="w-2 h-1 rounded-full bg-zinc-700 transition-colors"></span>
+            <span id="bar-4" class="w-2 h-1 rounded-full bg-zinc-700 transition-colors"></span>
+          </div>
         </div>
 
         <!-- Authentication Form with identical function call -->
@@ -393,7 +474,7 @@
             <span class="w-1.5 h-1.5 rounded-full bg-cyan-400/80 animate-pulse"></span>
             AES-256-GCM
           </span>
-          <span class="text-zinc-600">ID: 0x9F4B // V4</span>
+          <span class="text-zinc-600">NODE: 0x9F4B // V4</span>
           <span class="text-cyan-400/80">TLS 1.3</span>
         </div>
 
@@ -403,64 +484,96 @@
 
   <script>
     // ==========================================
-    // AUDIO SYNTHESIZER & MUTE CONTROLLER
+    // ZERO-LATENCY WEB AUDIO SYNTHESIZER (ALWAYS ON)
     // ==========================================
-    let audioEnabled = true;
     let audioCtx = null;
 
-    function toggleSound() {
-      audioEnabled = !audioEnabled;
-      const onIcon = document.getElementById('sound-on-icon');
-      const offIcon = document.getElementById('sound-off-icon');
-      const label = document.getElementById('sound-label');
-
-      if (audioEnabled) {
-        onIcon.classList.remove('hidden');
-        offIcon.classList.add('hidden');
-        label.textContent = "AUDIO: ON";
-        playSciFiSound('type');
-      } else {
-        onIcon.classList.add('hidden');
-        offIcon.classList.remove('hidden');
-        label.textContent = "AUDIO: OFF";
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
       }
     }
 
+    // Automatically initialize audio on first user interaction
+    window.addEventListener('pointerdown', initAudio, { once: true });
+    window.addEventListener('keydown', initAudio, { once: true });
+
     function playSciFiSound(type) {
-      if (!audioEnabled) return;
       try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        initAudio();
+        if (!audioCtx) return;
         const now = audioCtx.currentTime;
 
         if (type === 'type') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(680, now);
-          osc.frequency.exponentialRampToValueAtTime(320, now + 0.04);
-          gain.gain.setValueAtTime(0.015, now);
-          gain.gain.linearRampToValueAtTime(0.001, now + 0.04);
+          osc.frequency.setValueAtTime(740, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.035);
+          gain.gain.setValueAtTime(0.018, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.035);
           osc.start(now);
-          osc.stop(now + 0.04);
-        } else if (type === 'error') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(160, now);
-          osc.frequency.linearRampToValueAtTime(90, now + 0.25);
-          gain.gain.setValueAtTime(0.08, now);
-          gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
-          osc.start(now);
-          osc.stop(now + 0.25);
-        } else if (type === 'success') {
+          osc.stop(now + 0.035);
+        } else if (type === 'hover') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(440, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.35);
-          gain.gain.setValueAtTime(0.06, now);
-          gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
+          osc.frequency.setValueAtTime(1200, now);
+          osc.frequency.exponentialRampToValueAtTime(1600, now + 0.06);
+          gain.gain.setValueAtTime(0.01, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.06);
           osc.start(now);
-          osc.stop(now + 0.4);
+          osc.stop(now + 0.06);
+        } else if (type === 'scan') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.linearRampToValueAtTime(800, now + 0.15);
+          gain.gain.setValueAtTime(0.02, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } else if (type === 'error') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(170, now);
+          osc.frequency.linearRampToValueAtTime(70, now + 0.28);
+          gain.gain.setValueAtTime(0.09, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'success') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'triangle';
+            const noteStart = now + i * 0.07;
+            osc.frequency.setValueAtTime(freq, noteStart);
+            gain.gain.setValueAtTime(0.04, noteStart);
+            gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.45);
+            osc.start(noteStart);
+            osc.stop(noteStart + 0.45);
+          });
         }
       } catch (e) {
         // Audio optional
@@ -484,60 +597,102 @@
     }
 
     // ==========================================
-    // KEYPRESS NEON SPARKS PARTICLES
+    // INTERACTIVE CURSOR COMET SPARKLES TRAIL
     // ==========================================
-    const sCanvas = document.getElementById('spark-canvas');
-    const sCtx = sCanvas.getContext('2d');
-    let sparks = [];
+    const tCanvas = document.getElementById('trail-canvas');
+    const tCtx = tCanvas.getContext('2d');
+    let trailSparks = [];
 
-    function resizeSparkCanvas() {
-      sCanvas.width = window.innerWidth;
-      sCanvas.height = window.innerHeight;
+    function resizeTrailCanvas() {
+      tCanvas.width = window.innerWidth;
+      tCanvas.height = window.innerHeight;
     }
-    resizeSparkCanvas();
-    window.addEventListener('resize', resizeSparkCanvas);
+    resizeTrailCanvas();
+    window.addEventListener('resize', resizeTrailCanvas);
 
-    function spawnSparks() {
-      const inputEl = document.getElementById('pass');
-      const rect = inputEl.getBoundingClientRect();
-      const originX = rect.left + rect.width / 2;
-      const originY = rect.top + rect.height / 2;
+    window.addEventListener('mousemove', (e) => {
+      if (Math.random() > 0.35) {
+        trailSparks.push({
+          x: e.clientX,
+          y: e.clientY,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: (Math.random() - 0.5) * 1.5,
+          size: Math.random() * 2 + 1,
+          alpha: 0.8,
+          color: Math.random() > 0.5 ? 'rgba(0, 242, 254,' : 'rgba(168, 85, 247,'
+        });
+      }
+    });
 
-      for (let i = 0; i < 5; i++) {
-        sparks.push({
-          x: originX + (Math.random() - 0.5) * 80,
-          y: originY,
-          vx: (Math.random() - 0.5) * 4,
-          vy: -(Math.random() * 3 + 1),
+    function renderTrail() {
+      tCtx.clearRect(0, 0, tCanvas.width, tCanvas.height);
+      for (let i = trailSparks.length - 1; i >= 0; i--) {
+        const s = trailSparks[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.alpha -= 0.025;
+        if (s.alpha <= 0) {
+          trailSparks.splice(i, 1);
+          continue;
+        }
+        tCtx.fillStyle = `${s.color}${s.alpha})`;
+        tCtx.beginPath();
+        tCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        tCtx.fill();
+      }
+      requestAnimationFrame(renderTrail);
+    }
+    renderTrail();
+
+    // ==========================================
+    // KEYPRESS NEON PARTICLES & ENTROPY GAUGE
+    // ==========================================
+    function updateKeyTelemetry() {
+      const p = document.getElementById('pass');
+      const stream = document.getElementById('cipher-stream');
+      const val = p.value;
+      const len = val.length;
+
+      if (len === 0) {
+        stream.textContent = "HASH: 0x00000000";
+      } else {
+        let hash = 0;
+        for (let i = 0; i < len; i++) {
+          hash = (hash << 5) - hash + val.charCodeAt(i);
+          hash |= 0;
+        }
+        stream.textContent = `HASH: 0x${Math.abs(hash).toString(16).padStart(8, '0').toUpperCase()}`;
+      }
+
+      const b1 = document.getElementById('bar-1');
+      const b2 = document.getElementById('bar-2');
+      const b3 = document.getElementById('bar-3');
+      const b4 = document.getElementById('bar-4');
+
+      b1.className = len >= 2 ? "w-2 h-1 rounded-full bg-rose-500 transition-colors" : "w-2 h-1 rounded-full bg-zinc-700 transition-colors";
+      b2.className = len >= 5 ? "w-2 h-1 rounded-full bg-amber-400 transition-colors" : "w-2 h-1 rounded-full bg-zinc-700 transition-colors";
+      b3.className = len >= 8 ? "w-2 h-1 rounded-full bg-cyan-400 transition-colors" : "w-2 h-1 rounded-full bg-zinc-700 transition-colors";
+      b4.className = len >= 12 ? "w-2 h-1 rounded-full bg-emerald-400 transition-colors shadow-sm shadow-emerald-400" : "w-2 h-1 rounded-full bg-zinc-700 transition-colors";
+
+      const rect = p.getBoundingClientRect();
+      const ox = rect.left + rect.width / 2;
+      const oy = rect.top + rect.height / 2;
+      for (let i = 0; i < 4; i++) {
+        trailSparks.push({
+          x: ox + (Math.random() - 0.5) * 70,
+          y: oy,
+          vx: (Math.random() - 0.5) * 3,
+          vy: -(Math.random() * 2.5 + 1),
+          size: Math.random() * 2 + 1.2,
           alpha: 1,
-          size: Math.random() * 2 + 1
+          color: 'rgba(0, 242, 254,'
         });
       }
     }
 
-    function animateSparks() {
-      sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const s = sparks[i];
-        s.x += s.vx;
-        s.y += s.vy;
-        s.alpha -= 0.035;
-        if (s.alpha <= 0) {
-          sparks.splice(i, 1);
-          continue;
-        }
-        sCtx.fillStyle = `rgba(0, 242, 254, ${s.alpha})`;
-        sCtx.beginPath();
-        sCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-        sCtx.fill();
-      }
-      requestAnimationFrame(animateSparks);
-    }
-    animateSparks();
-
     document.getElementById('pass').addEventListener('input', () => {
       playSciFiSound('type');
-      spawnSparks();
+      updateKeyTelemetry();
     });
 
     // ==========================================
@@ -571,7 +726,7 @@
     function scrambleHeader() {
       scrambleText(document.getElementById('scramble-title'), 'System Gateway', 0.6);
       scrambleText(document.getElementById('scramble-tag'), 'LuminaVista Security Node', 0.6);
-      playSciFiSound('type');
+      playSciFiSound('scan');
     }
 
     // ==========================================
@@ -696,6 +851,8 @@
       });
     });
 
+    btnWrapper.addEventListener('mouseenter', () => playSciFiSound('hover'));
+
     btnWrapper.addEventListener('mouseleave', () => {
       gsap.to(btnMag, {
         x: 0,
@@ -796,7 +953,7 @@
       warpCanvas.width = window.innerWidth;
       warpCanvas.height = window.innerHeight;
       warpParticles = [];
-      for (let i = 0; i < 280; i++) {
+      for (let i = 0; i < 300; i++) {
         warpParticles.push({
           x: (Math.random() - 0.5) * window.innerWidth,
           y: (Math.random() - 0.5) * window.innerHeight,
@@ -828,7 +985,7 @@
         const px = (p.x / p.prevZ) * 450 + cx;
         const py = (p.y / p.prevZ) * 450 + cy;
 
-        wCtx.strokeStyle = 'rgba(0, 242, 254, 0.85)';
+        wCtx.strokeStyle = 'rgba(0, 242, 254, 0.88)';
         wCtx.lineWidth = Math.min(2.5, (1 - p.z / warpCanvas.width) * 3);
         wCtx.beginPath();
         wCtx.moveTo(px, py);
@@ -839,7 +996,7 @@
     }
 
     // ==========================================
-    // 6. EXACT SUBMIT LOGIC & MULTI-STAGE PROGRESS
+    // 6. EXACT SUBMIT LOGIC & ENHANCED VFX
     // ==========================================
     async function submitForm(e) {
       e.preventDefault();
@@ -871,6 +1028,13 @@
         if (res.ok && d.success) {
           playSciFiSound('success');
           beam.classList.add('success-beam');
+
+          // Trigger circular shockwave ripple
+          const sw = document.getElementById('shockwave');
+          gsap.fromTo(sw, 
+            { scale: 0.1, opacity: 1 }, 
+            { scale: 3.5, opacity: 0, duration: 0.9, ease: "power2.out" }
+          );
 
           b.innerHTML = `
             <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -921,7 +1085,7 @@
 
           setTimeout(() => {
             window.location.href = "/dashboard.html";
-          }, 900);
+          }, 950);
 
         } else {
           playSciFiSound('error');
@@ -954,6 +1118,7 @@
           gsap.fromTo(err, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.3 });
 
           p.value = "";
+          updateKeyTelemetry();
           p.focus();
         }
       } catch (ex) {
