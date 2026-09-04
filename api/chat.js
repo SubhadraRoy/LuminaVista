@@ -1,83 +1,117 @@
 import { Redis } from '@upstash/redis';
+import { Sandbox } from '@e2b/code-interpreter';
 
-export const maxDuration = 10; // Fast execution, just for queuing
+export const maxDuration = 60; // Max Vercel Timeout
 
 export default async function handler(req, res) {
-  // 1. CORS Preflight
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vercel-Auth');
-    return res.status(200).end();
-  }
-
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-  // 2. Authentication Gateway
-  const dbUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const dbToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  let userSession = "anonymous";
-  
-  try {
-    const redis = new Redis({ url: dbUrl, token: dbToken });
-    const match = (req.headers.cookie || '').match(/godx_session=([^;]+)/);
-    if (!match || !(await redis.get(`session:${match[1]}`))) {
-      return res.status(401).json({ error: 'Unauthorized Session' });
-    }
-    userSession = match[1];
-    await redis.expire(`session:${userSession}`, 1200);
-  } catch (e) {
-    return res.status(500).json({ error: 'Database Verification Fault' });
-  }
-
-  // 3. Publish to QStash (The Cordovan Ladder)
-  const qstashToken = process.env.QSTASH_TOKEN;
-  const qstashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io/v2/publish";
-  const workerEndpoint = `https://${req.headers.host}/api/worker`; // The route we will build next
-
-  if (!qstashToken) return res.status(500).json({ error: "QSTASH_TOKEN missing." });
-
-  // Generate a unique tracking ID for this background job
-  const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  const redis = new Redis({ url, token });
+  const sessionKey = "admin_workspace";
 
   try {
-    const { prompt, requestedModel, messages, webSearch, currentVfs } = req.body;
+    let { requestedModel, messages, currentVfs } = req.body;
+    let terminalLogs = [];
+    let isTaskComplete = false;
+    let loopCount = 0;
+    const MAX_LOOPS = 2; // Prevent infinite loops
+    let aiReply = "";
 
-    const payload = {
-      jobId,
-      userSession,
-      prompt,
-      requestedModel,
-      messages,
-      webSearch,
-      currentVfs // Pass the current file state so the worker knows what to edit
-    };
+    // Autonomous Execution Loop
+    while (!isTaskComplete && loopCount < MAX_LOOPS) {
+      loopCount++;
+      
+      // 1. Ask LLM
+      const aiRes = await fetch(process.env.OLLAMA_ENDPOINT || "https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${process.env.OLLAMA_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: requestedModel || "gpt-oss:20b", messages: messages, stream: false })
+      });
 
-    // Push the job to the queue
-    const qRes = await fetch(`${qstashUrl}/${workerEndpoint}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${qstashToken}`,
-        'Content-Type': 'application/json',
-        'Upstash-Forward-User-Agent': 'LuminaVista-Dispatcher',
-        'Upstash-Retries': '0' // Prevent duplicate executions if the AI takes too long
-      },
-      body: JSON.stringify(payload)
-    });
+      if (!aiRes.ok) throw new Error(`Provider Error: ${await aiRes.text()}`);
+      const aiData = await aiRes.json();
+      aiReply = aiData.choices?.[0]?.message?.content || aiData.message?.content || "";
+      
+      messages.push({ role: "assistant", content: aiReply });
 
-    if (!qRes.ok) {
-      const err = await qRes.text();
-      return res.status(502).json({ error: "Queue Dispatch Failed", details: err });
+      // 2. Parse Tool Executions
+      let hasTerminalExec = false;
+      const writeRegex = /\[TOOL:WRITE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE\]/g;
+      const execRegex = /\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g;
+      
+      let match;
+      while ((match = writeRegex.exec(aiReply)) !== null) {
+        currentVfs[match[1]] = match[2].trim();
+        terminalLogs.push(`[System]: Wrote artifact ${match[1]}`);
+      }
+
+      let cmdsToRun = [];
+      while ((match = execRegex.exec(aiReply)) !== null) {
+        cmdsToRun.push(match[1].trim());
+        hasTerminalExec = true;
+      }
+
+      // 3. E2B MicroVM Execution & Auto-Fixing
+      if (hasTerminalExec && process.env.E2B_API_KEY) {
+        terminalLogs.push(`[System]: Booting isolated E2B microVM...`);
+        const sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
+        
+        for (const [name, content] of Object.entries(currentVfs)) {
+          await sbx.files.write(name, content);
+        }
+
+        let loopFailed = false;
+        let systemFeedback = "";
+
+        for (const cmd of cmdsToRun) {
+          terminalLogs.push(`➜ ${cmd}`);
+          const execution = await sbx.commands.run(cmd, { timeoutMs: 15000 });
+          
+          if (execution.stdout) terminalLogs.push(execution.stdout);
+          
+          // IF COMMAND FAILS -> Inject error back to AI to fix it
+          if (execution.stderr || execution.error) {
+            terminalLogs.push(`[Error]: ${execution.stderr || execution.error.message}`);
+            systemFeedback += `Command '${cmd}' failed with error:\n${execution.stderr}\nPlease analyze this error, rewrite the required files using [TOOL:WRITE], and run the command again using [TOOL:EXEC].`;
+            loopFailed = true;
+            break; 
+          }
+        }
+
+        // Sync files back
+        try {
+          const list = await sbx.files.list('.');
+          for (const item of list) {
+            if (item.type === 'file') currentVfs[item.name] = await sbx.files.read(item.name);
+          }
+        } catch (ignore) {}
+        await sbx.kill();
+
+        if (loopFailed) {
+          messages.push({ role: "user", content: `[SYSTEM AUTO-FEEDBACK]:\n${systemFeedback}` });
+          // Loop repeats here to allow AI to fix its own code automatically
+        } else {
+          isTaskComplete = true; // Success! Exit loop.
+        }
+      } else {
+        isTaskComplete = true; // No terminal commands needed. Exit loop.
+      }
     }
 
-    // 4. Instantly release the browser
-    return res.status(202).json({ 
-      status: "queued", 
-      jobId: jobId,
-      message: "Task dispatched to background worker successfully." 
-    });
+    // 4. Save the Final Cloud State to Redis (Runs even if browser disconnects)
+    const currentState = JSON.parse(await redis.get(sessionKey) || "{}");
+    await redis.set(sessionKey, JSON.stringify({
+      ...currentState,
+      vfs: currentVfs,
+      chat: messages
+    }));
+
+    return res.status(200).json({ reply: aiReply, vfs: currentVfs, logs: terminalLogs, messages });
 
   } catch (error) {
-    return res.status(500).json({ error: "Dispatcher Fault", details: error.message });
+    return res.status(500).json({ error: error.message });
   }
 }

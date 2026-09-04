@@ -54,7 +54,6 @@
     .codespace-tab-active { background: #1e293b; border-color: var(--primary); color: #00f2fe; }
     .bg-dot-pattern { background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px); background-size: 20px 20px; }
     
-    /* Resizable Splitter Cursor */
     .sidebar-resizer { width: 4px; cursor: col-resize; transition: background 0.2s; }
     .sidebar-resizer:hover, .sidebar-resizer.resizing { background: var(--primary); }
   </style>
@@ -162,14 +161,14 @@
     <main class="flex-1 overflow-hidden p-4 lg:p-5 w-full max-w-[2100px] mx-auto flex flex-col min-h-0 select-text">
       
       <!-- ===================================================================== -->
-      <!-- TAB 1: ai-llm STUDIO (Full-Width Studio + Floating Config Modal)      -->
+      <!-- TAB 1: ai-llm STUDIO                                                  -->
       <!-- ===================================================================== -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-4">
         
-        <!-- Center Chat Box (Maximized Real Estate) -->
+        <!-- Center Chat Box -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
-          <!-- ai-llm Header -->
+          <!-- Header -->
           <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-black font-bold shadow-md shadow-cyan-500/20">
@@ -187,7 +186,6 @@
               </div>
             </div>
 
-            <!-- Action Controls -->
             <div class="flex items-center gap-2">
               <button onclick="openAiConfigModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors" title="Configure AI & Personas">
                 <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -203,10 +201,10 @@
             </div>
           </div>
 
-          <!-- Chat Conversation Scroll Area -->
+          <!-- Chat History -->
           <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[13px] leading-relaxed relative min-h-0"></div>
 
-          <!-- Floating Input Bar -->
+          <!-- Prompt Form -->
           <div class="p-4 pt-1 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
               <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
@@ -219,10 +217,10 @@
           </div>
         </div>
 
-        <!-- Right Panel: Advanced Interactive Artifact IDE & Tree Manager -->
-        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[650px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
+        <!-- Right Panel: Advanced Interactive Artifact IDE & Embedded Terminal -->
+        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[680px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
           
-          <!-- IDE Top Header -->
+          <!-- IDE Header -->
           <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-2">
               <i data-lucide="binary" class="w-4 h-4 text-cyan-400"></i>
@@ -232,6 +230,7 @@
               <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
                 <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Preview</button>
                 <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Code</button>
+                <button onclick="setCodespaceView('terminal')" id="btnCsViewTerminal" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Terminal</button>
                 <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Split</button>
               </div>
               <button onclick="runCodespacePreview()" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer" title="Hot-reload preview">
@@ -241,7 +240,7 @@
             </div>
           </div>
 
-          <!-- Advanced Sub-Bar: Breadcrumbs & Actions -->
+          <!-- Breadcrumbs & Actions -->
           <div class="px-3 py-1.5 bg-surface-950 border-b border-white/5 flex items-center justify-between text-xs font-mono shrink-0">
             <div class="flex items-center gap-1.5 text-zinc-400">
               <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -261,13 +260,13 @@
             </div>
           </div>
 
-          <!-- File Tabs Bar -->
+          <!-- File Tabs -->
           <div class="px-2 py-1 bg-surface-900/60 border-b border-white/5 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0" id="codespaceFileTabs"></div>
 
-          <!-- Main Dual Workspace: Explorer Tree + Code/Preview -->
+          <!-- Main Dual Workspace (Explorer Tree + Views) -->
           <div class="flex-1 flex min-h-0 relative bg-surface-950">
             
-            <!-- Collapsible File Tree Sidebar inside IDE -->
+            <!-- Explorer Sidebar -->
             <div class="w-44 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
               <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center">
                 <span>Explorer</span>
@@ -276,19 +275,31 @@
               <div id="vfsTreeContainer" class="flex-1 p-2 space-y-1 overflow-y-auto"></div>
             </div>
 
-            <!-- Code Editor Column -->
+            <!-- Code Editor Area -->
             <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
               <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-xs text-zinc-200 outline-none resize-none leading-relaxed selection:bg-cyan-500 selection:text-black"></textarea>
             </div>
 
-            <!-- Live Browser Preview Column -->
+            <!-- Live Browser Preview Area -->
             <div id="csPreviewContainer" class="flex-1 h-full bg-white relative">
               <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
             </div>
 
+            <!-- Embedded Terminal View -->
+            <div id="csTerminalContainer" class="hidden flex-1 h-full bg-[#0d1117] flex-col relative font-mono text-[11px] overflow-hidden">
+              <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all">
+                <div class="text-cyan-400 font-bold">LuminaVista Embedded MicroVM CLI</div>
+                <div class="text-zinc-500">Autonomous loop execution output will stream here.</div>
+              </div>
+              <form onsubmit="handleIdeTerminalCommand(event)" class="border-t border-white/5 bg-black/50 flex items-center p-2 shrink-0">
+                <span class="text-emerald-400 font-bold mr-2">➜</span>
+                <input type="text" id="csTermInput" class="flex-1 bg-transparent outline-none text-white text-xs font-mono" placeholder="Execute terminal command in mounted VFS..." autocomplete="off">
+              </form>
+            </div>
+
           </div>
 
-          <!-- Codespace Status Footer -->
+          <!-- Status Footer -->
           <div class="px-4 py-2 border-t border-white/10 bg-surface-900/90 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0">
             <span id="csStatusBadge" class="flex items-center gap-1.5 text-emerald-400">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Runtime Synced
@@ -397,7 +408,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: WHITEBOARD PRO (Persistent Base64 Storage)                     -->
+      <!-- TAB 4: WHITEBOARD PRO                                                 -->
       <!-- ===================================================================== -->
       <section id="tab-whiteboard" class="tab-pane hidden h-full flex-col space-y-3">
         <div class="glass-panel rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
@@ -483,7 +494,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 7: QUANTUM TERMINAL CLI (Agentic E2B MicroVM)                     -->
+      <!-- TAB 7: QUANTUM TERMINAL CLI                                           -->
       <!-- ===================================================================== -->
       <section id="tab-terminal" class="tab-pane space-y-3 hidden h-full flex flex-col">
         <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col min-h-0 space-y-3">
@@ -527,7 +538,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 9: NOTES VAULT PRO (.txt Uploads Added)                           -->
+      <!-- TAB 9: NOTES VAULT PRO (.txt/.md Uploads + Markdown Toolbar)           -->
       <!-- ===================================================================== -->
       <section id="tab-scratchpad" class="tab-pane space-y-3 hidden h-full flex flex-col">
         <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -607,19 +618,14 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- FLOATING MODAL: AI-LLM CONFIGURATION                                      -->
+  <!-- MODALS: CONFIG, COMMAND PALETTE, SOURCE, TOAST                            -->
   <!-- ========================================================================= -->
   <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-5">
-      
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
-        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
-          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> ai-llm Studio Settings
-        </h3>
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> ai-llm Studio Settings</h3>
         <button onclick="closeAiConfigModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-
-      <!-- Web Search Switch -->
       <div class="p-3 bg-surface-900/80 border border-white/5 rounded-xl flex items-center justify-between">
         <div>
           <label for="modalCheckWebSearch" class="text-xs font-bold text-white cursor-pointer block">Live Internet Access</label>
@@ -627,8 +633,6 @@
         </div>
         <input type="checkbox" id="modalCheckWebSearch" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
       </div>
-
-      <!-- Model Selector -->
       <div class="space-y-1.5">
         <label class="text-xs font-mono text-zinc-400">Active Ollama Model:</label>
         <select id="modalAiModelSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfigFromModal()">
@@ -640,8 +644,6 @@
           <option value="nemotron-3-ultra">nemotron-3-ultra</option>
         </select>
       </div>
-
-      <!-- 20+ Personas Roster -->
       <div class="space-y-1.5">
         <label class="text-xs font-mono text-zinc-400">System Persona Roster:</label>
         <select id="modalAiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onModalPersonaChange()">
@@ -670,13 +672,10 @@
           <option value="custom">Custom Directive...</option>
         </select>
       </div>
-
-      <!-- Custom Directive Textarea -->
       <div id="modalCustomPersonaWrapper" class="hidden space-y-1.5">
         <label class="text-xs font-mono text-cyan-400">Custom System Directive:</label>
         <textarea id="modalCustomPersonaPrompt" rows="3" placeholder="Define exact instructions..." class="godx-input w-full p-2.5 text-xs font-mono resize-none leading-relaxed" oninput="saveAiConfigFromModal()"></textarea>
       </div>
-
       <div class="pt-2 flex gap-3">
         <button onclick="checkProviderQuota()" class="flex-1 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-cyan-400 border border-white/10 cursor-pointer">Quota Telemetry</button>
         <button onclick="closeAiConfigModal()" class="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer">Save & Dismiss</button>
@@ -684,7 +683,6 @@
     </div>
   </div>
 
-  <!-- Command Palette Modal (⌘K) -->
   <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-24 p-4 opacity-0 transition-opacity duration-200">
     <div class="bg-surface-900/90 backdrop-blur-2xl max-w-xl w-full p-2 rounded-2xl border border-white/10 shadow-2xl transform scale-95 transition-transform duration-200">
       <div class="flex items-center gap-3 p-3 border-b border-white/5">
@@ -696,13 +694,11 @@
     </div>
   </div>
 
-  <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
     <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20"><i data-lucide="check" class="w-4 h-4"></i></div>
     <div><h4 id="toastTitle" class="text-sm font-bold text-white">Notice</h4><p id="toastMsg" class="text-xs text-zinc-300"></p></div>
   </div>
 
-  <!-- Source Modal -->
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-4xl w-full p-6 rounded-3xl relative flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
@@ -714,7 +710,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT LOGIC ENGINE                                                   -->
+  <!-- MASTER CLIENT-SIDE LOGIC ENGINE                                          -->
   <!-- ========================================================================= -->
   <script>
     lucide.createIcons();
@@ -766,36 +762,7 @@
       loadCodespaceEditor();
       runCodespacePreview();
       initCompilerSample('html');
-
-      // Initialize the background autonomous poller
-      startAutonomousSyncPoller();
     });
-
-    // =========================================================================
-    // BACKGROUND AUTONOMOUS SYNC POLLER
-    // =========================================================================
-    function startAutonomousSyncPoller() {
-      // This prepares the frontend for the 'Fire-and-Forget' backend architecture.
-      // Every 5 seconds it will silently ping the server. Once you update the backend 
-      // to keep running without the browser, this will pull the finished files and logs.
-      setInterval(async () => {
-        try {
-          // Future-proofing: When you create /api/status, this will read it
-          /*
-          const res = await fetch("/api/status", { method: "GET" });
-          if (res.ok) {
-             const data = await res.json();
-             if (data.updatedVfs && JSON.stringify(data.updatedVfs) !== JSON.stringify(vfs)) {
-                vfs = data.updatedVfs;
-                localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-                renderCodespaceFileTree();
-                renderCodespaceFileTabs();
-             }
-          }
-          */
-        } catch(e) { }
-      }, 5000);
-    }
 
     // =========================================================================
     // 1. SIDEBAR RESIZE & MINIMIZE CONTROLS
@@ -921,7 +888,7 @@
     }
 
     // =========================================================================
-    // 3. ADVANCED ARTIFACT CODESPACE & FILE TREE (IDE ADVANCEMENT)
+    // 3. ADVANCED ARTIFACT CODESPACE & EMBEDDED TERMINAL
     // =========================================================================
     function toggleCodespacePane(forceOpen = null) {
       const pane = document.getElementById("aiCodespaceColumn");
@@ -998,19 +965,26 @@
       csViewMode = mode;
       const editor = document.getElementById("csEditorContainer");
       const preview = document.getElementById("csPreviewContainer");
-      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewSplit"].forEach(id => {
+      const terminal = document.getElementById("csTerminalContainer");
+
+      ["btnCsViewPreview", "btnCsViewEditor", "btnCsViewTerminal", "btnCsViewSplit"].forEach(id => {
         document.getElementById(id).className = "px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer";
       });
 
+      editor.classList.add("hidden"); editor.classList.remove("flex");
+      preview.classList.add("hidden"); preview.classList.remove("flex");
+      terminal.classList.add("hidden"); terminal.classList.remove("flex");
+
       if (mode === "preview") {
-        editor.classList.add("hidden"); editor.classList.remove("flex");
         preview.classList.remove("hidden");
         document.getElementById("btnCsViewPreview").className = "px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer";
       } else if (mode === "editor") {
-        preview.classList.add("hidden");
         editor.classList.remove("hidden"); editor.classList.add("flex");
         document.getElementById("btnCsViewEditor").className = "px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer";
-      } else {
+      } else if (mode === "terminal") {
+        terminal.classList.remove("hidden"); terminal.classList.add("flex");
+        document.getElementById("btnCsViewTerminal").className = "px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer";
+      } else { // Split View: Editor + Preview
         editor.classList.remove("hidden"); editor.classList.add("flex");
         preview.classList.remove("hidden");
         document.getElementById("btnCsViewSplit").className = "px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer";
@@ -1081,13 +1055,51 @@
       a.click();
     }
 
+    async function handleIdeTerminalCommand(e) {
+      e.preventDefault();
+      const inp = document.getElementById("csTermInput");
+      const cmd = inp.value.trim();
+      if (!cmd) return;
+      inp.value = "";
+
+      const out = document.getElementById("csTermOutput");
+      out.innerHTML += `<div class="mt-2 text-emerald-400 font-bold">➜ ${escapeHtml(cmd)}</div>`;
+      out.scrollTop = out.scrollHeight;
+
+      try {
+        const filesArray = Object.keys(vfs).map(k => ({ name: k, content: vfs[k] }));
+        const r = await fetch("/api/terminal", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: cmd, files: filesArray })
+        });
+        const d = await r.json();
+        if (r.ok) {
+          if (d.stdout) out.innerHTML += `<div class="text-zinc-200">${escapeHtml(d.stdout)}</div>`;
+          if (d.stderr) out.innerHTML += `<div class="text-rose-400">${escapeHtml(d.stderr)}</div>`;
+          if (!d.stdout && !d.stderr) out.innerHTML += `<div class="text-zinc-500">[Exit 0]</div>`;
+          if (Array.isArray(d.workspaceFiles)) {
+            d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
+            localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+            renderCodespaceFileTree();
+            renderCodespaceFileTabs();
+          }
+        } else {
+          out.innerHTML += `<div class="text-rose-400">[MicroVM Error]: ${escapeHtml(d.error || '')}</div>`;
+        }
+      } catch (err) {
+        out.innerHTML += `<div class="text-rose-400">[Network Fault]: ${escapeHtml(err.message)}</div>`;
+      }
+      out.scrollTop = out.scrollHeight;
+    }
+
     // =========================================================================
     // 4. AUTONOMOUS AI AGENT PROTOCOL (PARSE TOOLS, WRITE/DELETE/EXECUTE)
     // =========================================================================
     function getAiSystemPrompt() {
       const p = localStorage.getItem("lumina_ai_persona") || "normal";
       let personaText = "You are an autonomous AI collaborator operating inside LuminaVista OS.";
-      
       const customPrompt = localStorage.getItem("lumina_custom_persona_prompt") || "";
       if (p === "custom" && customPrompt.trim()) personaText = customPrompt.trim();
 
@@ -1098,13 +1110,13 @@ You have direct read, write, edit, and execution access to this environment.
 code content here
 [/TOOL:WRITE_FILE]
 2. When deleting files: [TOOL:DELETE_FILE filename="filename.ext"][/TOOL:DELETE_FILE]
-3. When executing terminal commands: [TOOL:EXEC_CMD]your bash command[/TOOL:EXEC_CMD]
+3. When executing terminal commands: [TOOL:EXEC]your bash command[/TOOL:EXEC]
 4. When you return code, the browser automatically executes it and writes it to disk. Do not apologize or say you lack file access.`;
 
       return personaText + agentProtocol;
     }
 
-    function parseAndExecuteAgentDirectives(rawText) {
+    async function parseAndExecuteAgentDirectives(rawText) {
       // 1. Parse File Write Directives
       const writeRegex = /\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g;
       let match;
@@ -1144,10 +1156,48 @@ code content here
         renderCodespaceFileTree();
         renderCodespaceFileTabs();
       }
+
+      // 4. Parse Autonomous Execution Directives: [TOOL:EXEC]cmd[/TOOL:EXEC]
+      const execRegex = /\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g;
+      let execMatch;
+      while ((execMatch = execRegex.exec(rawText)) !== null) {
+        const cmd = execMatch[1].trim();
+        toggleCodespacePane(true);
+        setCodespaceView('terminal');
+        const termOut = document.getElementById("csTermOutput");
+        termOut.innerHTML += `<div class="mt-2 text-cyan-400 font-bold">[Agent Auto-Exec]: ➜ ${escapeHtml(cmd)}</div>`;
+        termOut.scrollTop = termOut.scrollHeight;
+
+        try {
+          const filesArray = Object.keys(vfs).map(k => ({ name: k, content: vfs[k] }));
+          const res = await fetch("/api/terminal", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command: cmd, files: filesArray })
+          });
+          const d = await res.json();
+          if (res.ok) {
+            if (d.stdout) termOut.innerHTML += `<div class="text-emerald-400">${escapeHtml(d.stdout)}</div>`;
+            if (d.stderr) termOut.innerHTML += `<div class="text-rose-400">${escapeHtml(d.stderr)}</div>`;
+            if (Array.isArray(d.workspaceFiles)) {
+              d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
+              localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+              renderCodespaceFileTree();
+              renderCodespaceFileTabs();
+            }
+          } else {
+            termOut.innerHTML += `<div class="text-rose-400">[MicroVM Error]: ${escapeHtml(d.error || '')}</div>`;
+          }
+        } catch (e) {
+          termOut.innerHTML += `<div class="text-rose-400">[Network Fault]: ${escapeHtml(e.message)}</div>`;
+        }
+        termOut.scrollTop = termOut.scrollHeight;
+      }
     }
 
     function escapeHtml(str) {
-      return str
+      return (str || '')
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -1160,7 +1210,8 @@ code content here
 
       let processed = t.replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
         return `\`\`\`${f.split('.').pop()}:${f}\n${c}\n\`\`\``;
-      }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '> *Agent removed file: `$1`*');
+      }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '> *Agent removed file: `$1`*')
+        .replace(/\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g, '> *Agent executed terminal command: `$1`*');
 
       const codeBlocks = [];
       processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
@@ -1284,7 +1335,7 @@ code content here
         if (res.ok) {
           const reply = data.choices?.[0]?.message?.content || data.message?.content || data.response || "Task executed.";
           aiConversation.push({ role: "assistant", content: reply });
-          parseAndExecuteAgentDirectives(reply);
+          await parseAndExecuteAgentDirectives(reply);
         } else {
           aiConversation.push({ role: "assistant", content: `**[Engine Fault]:** ${data.error || res.statusText}\n${data.details || ''}` });
         }
@@ -1426,7 +1477,7 @@ code content here
 
       const log = document.createElement("div");
       log.className = "text-zinc-400 font-mono";
-      log.innerHTML = `<span class="text-cyan-400 font-bold">anish@microvm:~$</span> ${cmd}`;
+      log.innerHTML = `<span class="text-cyan-400 font-bold">anish@microvm:~$</span> ${escapeHtml(cmd)}`;
       scr.appendChild(log);
 
       if (cmd === "clear") { scr.innerHTML = ""; inp.value = ""; return; }
@@ -1453,7 +1504,7 @@ code content here
           const data = await aiRes.json();
           if (aiRes.ok) {
             const reply = data.choices?.[0]?.message?.content || data.response || "";
-            parseAndExecuteAgentDirectives(reply);
+            await parseAndExecuteAgentDirectives(reply);
 
             res.className = "text-emerald-400 font-mono whitespace-pre-wrap my-1";
             res.textContent = `[Agent Output]:\n${reply}`;
@@ -1509,16 +1560,14 @@ code content here
     }
 
     // =========================================================================
-    // 7. WHITEBOARD PRO (Persistent Base64 Storage)
+    // 7. WHITEBOARD PRO (Persistent Vector/Base64 State Engine)
     // =========================================================================
     function initWhiteboard() {
       const cv = document.getElementById("whiteboardCanvas");
       if (!cv) return;
       
-      // Load saved state before attaching events
-      loadWbState();
-      
       resizeWhiteboard();
+      loadWbState();
       window.addEventListener("resize", resizeWhiteboard);
 
       cv.addEventListener("mousedown", startWbDrawing);
@@ -1535,8 +1584,8 @@ code content here
       const img = new Image();
       img.src = saved;
       img.onload = () => {
-         ctx.clearRect(0, 0, cv.width, cv.height);
-         ctx.drawImage(img, 0, 0);
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(img, 0, 0);
       };
     }
 
@@ -1554,16 +1603,16 @@ code content here
       const wrap = document.getElementById("whiteboardContainer");
       if (!cv || !wrap || wrap.clientWidth === 0) return;
       
-      const ctx = cv.getContext("2d");
-      const savedData = localStorage.getItem("lumina_wb_state") || cv.toDataURL(); 
-      
+      const savedData = localStorage.getItem("lumina_wb_state");
       cv.width = wrap.clientWidth;
       cv.height = wrap.clientHeight;
       
       if (savedData && savedData !== "data:,") {
-         const img = new Image();
-         img.src = savedData;
-         img.onload = () => { ctx.drawImage(img, 0, 0); }
+        const img = new Image();
+        img.src = savedData;
+        img.onload = () => {
+          cv.getContext("2d").drawImage(img, 0, 0);
+        };
       }
     }
 
@@ -1643,7 +1692,6 @@ code content here
         drawWbArrow(ctx, wbStartX, wbStartY, curX, curY);
       }
       
-      // Persist to local storage immediately after stroke finishes
       localStorage.setItem("lumina_wb_state", cv.toDataURL("image/png"));
     }
 
@@ -1741,7 +1789,7 @@ code content here
     }
 
     // =========================================================================
-    // 8. NOTES VAULT PRO (.txt/.md Imports & Auto-save)
+    // 8. NOTES VAULT PRO (.txt/.md Imports, Auto-save, Stats)
     // =========================================================================
     function handleNoteUpload(e) {
       const file = e.target.files[0];
@@ -1750,7 +1798,6 @@ code content here
       reader.onload = function(evt) {
         const content = evt.target.result;
         const id = "note_" + Date.now();
-        // Use the filename (without extension) as the note title, max 20 chars
         const title = file.name.replace(/\.[^/.]+$/, "").substring(0, 20);
         vaultNotes.push({ id, title, content });
         activeNoteId = id;
@@ -1760,7 +1807,7 @@ code content here
         showToast("Import Successful", `Loaded ${file.name}`);
       };
       reader.readAsText(file);
-      e.target.value = ""; // Reset input so the same file can be imported again
+      e.target.value = "";
     }
 
     function insertMd(prefix, suffix = "") {
@@ -1876,11 +1923,12 @@ code content here
         activeBtn.classList.remove("text-zinc-400");
       }
       
-      // Hook: Force Whiteboard to load state correctly after DOM makes it visible
-      if (id === "tab-whiteboard") setTimeout(() => {
-        resizeWhiteboard();
-        loadWbState();
-      }, 50);
+      if (id === "tab-whiteboard") {
+        setTimeout(() => {
+          resizeWhiteboard();
+          loadWbState();
+        }, 50);
+      }
       
       if (id === "tab-analytics") setTimeout(initMetricsChart, 50);
     }
