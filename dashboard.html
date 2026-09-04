@@ -353,7 +353,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 3: CLOUD COMPILERS & SQL (Fully Fixed & Operational)              -->
+      <!-- TAB 3: CLOUD COMPILERS & SQL                                          -->
       <!-- ===================================================================== -->
       <section id="tab-sandbox" class="tab-pane space-y-4 hidden h-full flex flex-col">
         <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shrink-0">
@@ -397,7 +397,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: WHITEBOARD PRO (Tools: Shapes, Arrows, Text, Undo/Redo, Grid)  -->
+      <!-- TAB 4: WHITEBOARD PRO (Persistent Base64 Storage)                     -->
       <!-- ===================================================================== -->
       <section id="tab-whiteboard" class="tab-pane hidden h-full flex-col space-y-3">
         <div class="glass-panel rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
@@ -527,7 +527,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 9: NOTES VAULT PRO (Markdown Formatting Toolbar + Word Stats)     -->
+      <!-- TAB 9: NOTES VAULT PRO (.txt Uploads Added)                           -->
       <!-- ===================================================================== -->
       <section id="tab-scratchpad" class="tab-pane space-y-3 hidden h-full flex flex-col">
         <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -556,6 +556,8 @@
 
           <!-- Actions -->
           <div class="flex items-center gap-2">
+            <input type="file" id="noteUploadInput" accept=".txt,.md" class="hidden" onchange="handleNoteUpload(event)" />
+            <button onclick="document.getElementById('noteUploadInput').click()" class="p-1.5 rounded-xl bg-surface-900 text-zinc-300 hover:text-white cursor-pointer" title="Import .txt / .md"><i data-lucide="upload" class="w-4 h-4"></i></button>
             <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 text-xs font-mono cursor-pointer">+ New Note</button>
             <button onclick="toggleMarkdownPreview()" class="px-3 py-1.5 rounded-xl bg-surface-900 text-zinc-300 text-xs font-mono cursor-pointer">Preview</button>
             <button onclick="downloadNoteFile()" class="p-1.5 rounded-xl bg-surface-900 text-zinc-300 hover:text-white cursor-pointer" title="Download .md"><i data-lucide="download" class="w-4 h-4"></i></button>
@@ -605,7 +607,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- FLOATING MODAL: AI-LLM CONFIGURATION (Pop-up via Button)                 -->
+  <!-- FLOATING MODAL: AI-LLM CONFIGURATION                                      -->
   <!-- ========================================================================= -->
   <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-5">
@@ -712,7 +714,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT LOGIC ENGINE                                                  -->
+  <!-- JAVASCRIPT LOGIC ENGINE                                                   -->
   <!-- ========================================================================= -->
   <script>
     lucide.createIcons();
@@ -764,7 +766,36 @@
       loadCodespaceEditor();
       runCodespacePreview();
       initCompilerSample('html');
+
+      // Initialize the background autonomous poller
+      startAutonomousSyncPoller();
     });
+
+    // =========================================================================
+    // BACKGROUND AUTONOMOUS SYNC POLLER
+    // =========================================================================
+    function startAutonomousSyncPoller() {
+      // This prepares the frontend for the 'Fire-and-Forget' backend architecture.
+      // Every 5 seconds it will silently ping the server. Once you update the backend 
+      // to keep running without the browser, this will pull the finished files and logs.
+      setInterval(async () => {
+        try {
+          // Future-proofing: When you create /api/status, this will read it
+          /*
+          const res = await fetch("/api/status", { method: "GET" });
+          if (res.ok) {
+             const data = await res.json();
+             if (data.updatedVfs && JSON.stringify(data.updatedVfs) !== JSON.stringify(vfs)) {
+                vfs = data.updatedVfs;
+                localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+                renderCodespaceFileTree();
+                renderCodespaceFileTabs();
+             }
+          }
+          */
+        } catch(e) { }
+      }, 5000);
+    }
 
     // =========================================================================
     // 1. SIDEBAR RESIZE & MINIMIZE CONTROLS
@@ -1116,76 +1147,70 @@ code content here
     }
 
     function escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
 
-function parseAiMarkdown(t) {
-  if (!t) return "";
+    function parseAiMarkdown(t) {
+      if (!t) return "";
 
-  // 1. Disarm and normalize tool call artifacts before escaping
-  let processed = t.replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
-    return `\`\`\`${f.split('.').pop()}:${f}\n${c}\n\`\`\``;
-  }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '> *Agent removed file: `$1`*');
+      let processed = t.replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
+        return `\`\`\`${f.split('.').pop()}:${f}\n${c}\n\`\`\``;
+      }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '> *Agent removed file: `$1`*');
 
-  // 2. Extract code blocks and escape raw source contents safely
-  const codeBlocks = [];
-  processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
-    const lang = l1 || l2 || "text";
-    const file = f1 || "";
-    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
-    codeBlocks.push({ lang, file, code });
-    return placeholder;
-  });
+      const codeBlocks = [];
+      processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
+        const lang = l1 || l2 || "text";
+        const file = f1 || "";
+        const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+        codeBlocks.push({ lang, file, code });
+        return placeholder;
+      });
 
-  // 3. HTML-escape all user/AI conversational prose to kill raw tag injections
-  let safeProse = escapeHtml(processed);
+      let safeProse = escapeHtml(processed);
 
-  // 4. Reconstruct markdown formatting safely on sanitized prose
-  safeProse = safeProse
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
-    .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono">$1</code>')
-    .replace(/\n/g, '<br/>');
+      safeProse = safeProse
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono">$1</code>')
+        .replace(/\n/g, '<br/>');
 
-  // 5. Re-inject sanitized, encapsulated code blocks
-  codeBlocks.forEach((item, index) => {
-    const safeCodeText = escapeHtml(item.code);
-    const cleanAttr = escapeHtml(JSON.stringify(item.code));
+      codeBlocks.forEach((item, index) => {
+        const safeCodeText = escapeHtml(item.code);
+        const cleanAttr = escapeHtml(JSON.stringify(item.code));
 
-    const htmlCard = `
-      <div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-md">
-        <div class="px-4 py-1.5 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center">
-          <span class="font-bold flex items-center gap-1.5"><i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${escapeHtml(item.file || item.lang)}</span>
-          <div class="flex items-center gap-2">
-            ${item.file ? `<button onclick='applyArtifactSafe("${escapeHtml(item.file)}", ${cleanAttr})' class="text-emerald-400 font-bold hover:underline cursor-pointer">Apply to VFS</button>` : ''}
-            <button onclick="navigator.clipboard.writeText(this.closest('.bg-surface-950').querySelector('code').innerText); showToast('Copied', 'Code block copied');" class="text-zinc-400 hover:text-white cursor-pointer">Copy</button>
+        const htmlCard = `
+          <div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-md">
+            <div class="px-4 py-1.5 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center">
+              <span class="font-bold flex items-center gap-1.5"><i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${escapeHtml(item.file || item.lang)}</span>
+              <div class="flex items-center gap-2">
+                ${item.file ? `<button onclick='applyArtifactSafe("${escapeHtml(item.file)}", ${cleanAttr})' class="text-emerald-400 font-bold hover:underline cursor-pointer">Apply to VFS</button>` : ''}
+                <button onclick="navigator.clipboard.writeText(this.closest('.bg-surface-950').querySelector('code').innerText); showToast('Copied', 'Code block copied');" class="text-zinc-400 hover:text-white cursor-pointer">Copy</button>
+              </div>
+            </div>
+            <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${safeCodeText}</code></pre>
           </div>
-        </div>
-        <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${safeCodeText}</code></pre>
-      </div>
-    `;
-    safeProse = safeProse.replace(`__CODE_BLOCK_${index}__`, htmlCard);
-  });
+        `;
+        safeProse = safeProse.replace(`__CODE_BLOCK_${index}__`, htmlCard);
+      });
 
-  return safeProse;
-}
+      return safeProse;
+    }
 
-// Safe helper that prevents quote-breaking syntax errors
-function applyArtifactSafe(file, content) {
-  vfs[file] = content;
-  localStorage.setItem('lumina_codespace_vfs', JSON.stringify(vfs));
-  renderCodespaceFileTree();
-  renderCodespaceFileTabs();
-  switchCodespaceFile(file);
-  toggleCodespacePane(true);
-  runCodespacePreview();
-  showToast("Artifact Applied", `Saved ${file} securely.`);
-}
+    function applyArtifactSafe(file, content) {
+      vfs[file] = content;
+      localStorage.setItem('lumina_codespace_vfs', JSON.stringify(vfs));
+      renderCodespaceFileTree();
+      renderCodespaceFileTabs();
+      switchCodespaceFile(file);
+      toggleCodespacePane(true);
+      runCodespacePreview();
+      showToast("Artifact Applied", `Saved ${file} securely.`);
+    }
 
     function renderAiChat() {
       const box = document.getElementById("aiChatHistory");
@@ -1245,7 +1270,7 @@ function applyArtifactSafe(file, content) {
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
-          credentials: "include", // CRITICAL: Ensures Upstash session cookies pass
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             prompt,
@@ -1348,7 +1373,7 @@ function applyArtifactSafe(file, content) {
       try {
         const res = await fetch("/api/compile", {
           method: "POST",
-          credentials: "include", // CRITICAL: Fixes the compiler session bug
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ language: currentSbLang, code })
         });
@@ -1406,7 +1431,6 @@ function applyArtifactSafe(file, content) {
 
       if (cmd === "clear") { scr.innerHTML = ""; inp.value = ""; return; }
 
-      // AUTONOMOUS TERMINAL AGENT INTERCEPTOR: `ai <prompt>`
       if (cmd.startsWith("ai ")) {
         const agentPrompt = cmd.slice(3).trim();
         const res = document.createElement("div");
@@ -1445,7 +1469,6 @@ function applyArtifactSafe(file, content) {
         return;
       }
 
-      // NATIVE BASH EXECUTION IN E2B MICROVM
       const res = document.createElement("div");
       res.className = "text-purple-300 font-mono text-[11px]";
       res.innerHTML = `<i data-lucide='loader' class='w-3 h-3 animate-spin inline'></i> Dispatching command to Firecracker Linux VM...`;
@@ -1467,7 +1490,6 @@ function applyArtifactSafe(file, content) {
           res.textContent = (d.stdout || "") + (d.stderr ? "\n" + d.stderr : "");
           if (!res.textContent.trim()) res.textContent = "[Command completed with exit status 0]";
 
-          // Sync workspace files created in the VM back to the frontend VFS
           if (Array.isArray(d.workspaceFiles)) {
             d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
             localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
@@ -1487,11 +1509,15 @@ function applyArtifactSafe(file, content) {
     }
 
     // =========================================================================
-    // 7. WHITEBOARD PRO (Shapes, Arrows, Text, Undo/Redo, Grid)
+    // 7. WHITEBOARD PRO (Persistent Base64 Storage)
     // =========================================================================
     function initWhiteboard() {
       const cv = document.getElementById("whiteboardCanvas");
       if (!cv) return;
+      
+      // Load saved state before attaching events
+      loadWbState();
+      
       resizeWhiteboard();
       window.addEventListener("resize", resizeWhiteboard);
 
@@ -1501,23 +1527,44 @@ function applyArtifactSafe(file, content) {
       cv.addEventListener("mouseleave", stopWbDrawing);
     }
 
+    function loadWbState() {
+      const saved = localStorage.getItem("lumina_wb_state");
+      if (!saved || saved === "data:,") return;
+      const cv = document.getElementById("whiteboardCanvas");
+      const ctx = cv.getContext("2d");
+      const img = new Image();
+      img.src = saved;
+      img.onload = () => {
+         ctx.clearRect(0, 0, cv.width, cv.height);
+         ctx.drawImage(img, 0, 0);
+      };
+    }
+
+    function saveWbState() {
+      const cv = document.getElementById("whiteboardCanvas");
+      const data = cv.toDataURL("image/png");
+      wbUndoStack.push(data);
+      if (wbUndoStack.length > 25) wbUndoStack.shift();
+      wbRedoStack = [];
+      localStorage.setItem("lumina_wb_state", data);
+    }
+
     function resizeWhiteboard() {
       const cv = document.getElementById("whiteboardCanvas");
       const wrap = document.getElementById("whiteboardContainer");
       if (!cv || !wrap || wrap.clientWidth === 0) return;
       
       const ctx = cv.getContext("2d");
-      const img = ctx.getImageData(0, 0, cv.width, cv.height);
+      const savedData = localStorage.getItem("lumina_wb_state") || cv.toDataURL(); 
+      
       cv.width = wrap.clientWidth;
       cv.height = wrap.clientHeight;
-      try { ctx.putImageData(img, 0, 0); } catch(e) {}
-    }
-
-    function saveWbState() {
-      const cv = document.getElementById("whiteboardCanvas");
-      wbUndoStack.push(cv.toDataURL());
-      if (wbUndoStack.length > 25) wbUndoStack.shift();
-      wbRedoStack = [];
+      
+      if (savedData && savedData !== "data:,") {
+         const img = new Image();
+         img.src = savedData;
+         img.onload = () => { ctx.drawImage(img, 0, 0); }
+      }
     }
 
     function startWbDrawing(e) {
@@ -1535,6 +1582,7 @@ function applyArtifactSafe(file, content) {
           ctx.fillStyle = wbColor;
           ctx.font = `${Math.max(14, wbSize * 4)}px 'Plus Jakarta Sans', sans-serif`;
           ctx.fillText(text, wbStartX, wbStartY);
+          localStorage.setItem("lumina_wb_state", cv.toDataURL("image/png"));
         }
         isDrawing = false;
         return;
@@ -1594,6 +1642,9 @@ function applyArtifactSafe(file, content) {
       } else if (wbTool === "arrow") {
         drawWbArrow(ctx, wbStartX, wbStartY, curX, curY);
       }
+      
+      // Persist to local storage immediately after stroke finishes
+      localStorage.setItem("lumina_wb_state", cv.toDataURL("image/png"));
     }
 
     function drawWbArrow(ctx, fromx, fromy, tox, toy) {
@@ -1634,7 +1685,7 @@ function applyArtifactSafe(file, content) {
     function undoWhiteboard() {
       if (wbUndoStack.length === 0) return;
       const cv = document.getElementById("whiteboardCanvas");
-      wbRedoStack.push(cv.toDataURL());
+      wbRedoStack.push(cv.toDataURL("image/png"));
       const last = wbUndoStack.pop();
       const img = new Image();
       img.src = last;
@@ -1642,13 +1693,14 @@ function applyArtifactSafe(file, content) {
         const ctx = cv.getContext("2d");
         ctx.clearRect(0, 0, cv.width, cv.height);
         ctx.drawImage(img, 0, 0);
+        localStorage.setItem("lumina_wb_state", last);
       };
     }
 
     function redoWhiteboard() {
       if (wbRedoStack.length === 0) return;
       const cv = document.getElementById("whiteboardCanvas");
-      wbUndoStack.push(cv.toDataURL());
+      wbUndoStack.push(cv.toDataURL("image/png"));
       const next = wbRedoStack.pop();
       const img = new Image();
       img.src = next;
@@ -1656,6 +1708,7 @@ function applyArtifactSafe(file, content) {
         const ctx = cv.getContext("2d");
         ctx.clearRect(0, 0, cv.width, cv.height);
         ctx.drawImage(img, 0, 0);
+        localStorage.setItem("lumina_wb_state", next);
       };
     }
 
@@ -1676,6 +1729,7 @@ function applyArtifactSafe(file, content) {
       saveWbState();
       const cv = document.getElementById("whiteboardCanvas");
       cv.getContext("2d").clearRect(0, 0, cv.width, cv.height);
+      localStorage.removeItem("lumina_wb_state");
     }
 
     function downloadWhiteboard() {
@@ -1687,8 +1741,28 @@ function applyArtifactSafe(file, content) {
     }
 
     // =========================================================================
-    // 8. NOTES VAULT PRO (Markdown Formatting Toolbar, Live Word Count)
+    // 8. NOTES VAULT PRO (.txt/.md Imports & Auto-save)
     // =========================================================================
+    function handleNoteUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const content = evt.target.result;
+        const id = "note_" + Date.now();
+        // Use the filename (without extension) as the note title, max 20 chars
+        const title = file.name.replace(/\.[^/.]+$/, "").substring(0, 20);
+        vaultNotes.push({ id, title, content });
+        activeNoteId = id;
+        localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(vaultNotes));
+        renderNoteTabs();
+        loadActiveNoteContent();
+        showToast("Import Successful", `Loaded ${file.name}`);
+      };
+      reader.readAsText(file);
+      e.target.value = ""; // Reset input so the same file can be imported again
+    }
+
     function insertMd(prefix, suffix = "") {
       const area = document.getElementById("adminScratchpad");
       const start = area.selectionStart;
@@ -1801,7 +1875,13 @@ function applyArtifactSafe(file, content) {
         activeBtn.classList.add("nav-tab-active");
         activeBtn.classList.remove("text-zinc-400");
       }
-      if (id === "tab-whiteboard") setTimeout(resizeWhiteboard, 50);
+      
+      // Hook: Force Whiteboard to load state correctly after DOM makes it visible
+      if (id === "tab-whiteboard") setTimeout(() => {
+        resizeWhiteboard();
+        loadWbState();
+      }, 50);
+      
       if (id === "tab-analytics") setTimeout(initMetricsChart, 50);
     }
 
