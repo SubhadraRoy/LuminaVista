@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   
-  <!-- Tailwind CSS Core -->
+  <!-- Tailwind CSS Engine -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -44,15 +44,12 @@
     }
   </script>
 
-  <!-- Lucide Icons & GSAP -->
+  <!-- Icons & Animation Scripts -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
-  <!-- Master Stylesheet -->
   <style>
-    /* ---------------------------------------------------------------------- */
-    /* THEME VARIABLES & COLOR PALETTES                                       */
-    /* ---------------------------------------------------------------------- */
+    /* Theme color variables */
     :root { 
       --primary: #00f2fe; 
       --primary-glow: rgba(0, 242, 254, 0.35); 
@@ -84,9 +81,7 @@
       overflow: hidden; 
     }
     
-    /* ---------------------------------------------------------------------- */
-    /* GLASSMORPHISM & UTILITY CLASSES                                        */
-    /* ---------------------------------------------------------------------- */
+    /* Core Glassmorphism */
     .glass-panel { 
       background: rgba(11, 15, 25, 0.75); 
       backdrop-filter: blur(24px); 
@@ -104,7 +99,6 @@
       outline: none !important; 
       transition: all 0.2s ease !important; 
     }
-    
     .godx-input:focus { 
       background-color: rgba(30, 41, 59, 0.8) !important; 
       border-color: var(--primary) !important; 
@@ -116,35 +110,24 @@
       background-image: var(--accent-gradient); 
       transition: 0.3s ease; 
     }
-    
     .btn-gradient:hover { 
       background-position: right center; 
       box-shadow: 0 0 25px var(--primary-glow); 
     }
     
-    /* ---------------------------------------------------------------------- */
-    /* CUSTOM SCROLLBARS                                                      */
-    /* ---------------------------------------------------------------------- */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
     .custom-scrollbar::-webkit-scrollbar { height: 6px; }
     
-    /* ---------------------------------------------------------------------- */
-    /* NAVIGATION & TABS                                                      */
-    /* ---------------------------------------------------------------------- */
+    /* Active Navigation State */
     .nav-tab-active { 
       background: linear-gradient(90deg, rgba(0,242,254,0.12) 0%, transparent 100%); 
       border-left: 3px solid var(--primary); 
-      color: #ffffff; 
+      color: #ffffff !important; 
       text-shadow: 0 0 10px var(--primary-glow); 
-    }
-    
-    .codespace-tab-active { 
-      background: #1e293b; 
-      border-color: var(--primary); 
-      color: #00f2fe; 
     }
     
     .bg-dot-pattern { 
@@ -161,9 +144,7 @@
       background: var(--primary); 
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* CLAUDE CODE UI (THINKING ACCORDIONS & ANIMATIONS)                      */
-    /* ---------------------------------------------------------------------- */
+    /* Claude Code UI Components */
     .thought-card {
       background: rgba(15, 23, 42, 0.65);
       border: 1px solid rgba(0, 242, 254, 0.2);
@@ -213,10 +194,10 @@
 
     /* Tab Switch Fader */
     .fade-in {
-      animation: fadeIn 0.2s ease-in-out forwards;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
@@ -224,15 +205,13 @@
 
 <body class="flex h-screen font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950 select-none">
 
-  <!-- ========================================================================= -->
-  <!-- BACKGROUND AMBIENCE & CANVAS                                              -->
-  <!-- ========================================================================= -->
+  <!-- Ambient Light Backdrops -->
   <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
   <div class="fixed top-[-20%] left-[10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0"></div>
   <div class="fixed bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[180px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 2s;"></div>
 
   <!-- ========================================================================= -->
-  <!-- LEFT NAVIGATION SIDEBAR                                                   -->
+  <!-- SIDEBAR NAVIGATION                                                        -->
   <!-- ========================================================================= -->
   <aside id="mainSidebar" class="border-r border-white/5 bg-surface-950/85 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0 transition-[width] duration-150" style="width: 250px;">
     
@@ -252,56 +231,46 @@
       </button>
     </div>
 
-    <!-- Navigation Tab Buttons -->
+    <!-- Navigation Items -->
     <nav class="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-      
-      <!-- AI Studio Tab -->
       <button onclick="App.switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
         <i data-lucide="bot" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">ai-llm Studio</span>
       </button>
       
-      <!-- Projects Tab -->
       <button onclick="App.switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="folder-tree" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Projects</span>
       </button>
       
-      <!-- Compilers Tab -->
       <button onclick="App.switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="code-2" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Compilers & Scripts</span>
+        <i data-lucide="code-2" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Compilers & SQL</span>
       </button>
       
-      <!-- Whiteboard Tab -->
       <button onclick="App.switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="pen-tool" class="w-4 h-4 shrink-0 text-purple-400"></i><span class="sidebar-label">Whiteboard Pro</span>
       </button>
       
-      <!-- UI Generator Tab -->
       <button onclick="App.switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="palette" class="w-4 h-4 shrink-0 text-pink-400"></i><span class="sidebar-label">UI Generator</span>
       </button>
 
-      <!-- Terminal Tab -->
       <button onclick="App.switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="terminal" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Terminal MicroVM</span>
       </button>
       
-      <!-- Telemetry Tab -->
       <button onclick="App.switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="activity" class="w-4 h-4 shrink-0 text-amber-400"></i><span class="sidebar-label">Telemetry</span>
       </button>
       
-      <!-- Notes Tab -->
       <button onclick="App.switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
-        <i data-lucide="book-open" class="w-4 h-4 shrink-0 text-sky-400"></i><span class="sidebar-label">Notes Markdown</span>
+        <i data-lucide="book-open" class="w-4 h-4 shrink-0 text-sky-400"></i><span class="sidebar-label">Notes Vault</span>
       </button>
       
-      <!-- Settings Tab -->
       <button onclick="App.switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="settings" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Settings</span>
       </button>
     </nav>
     
-    <!-- Sidebar Footer (Security Status) -->
+    <!-- Sidebar Footer -->
     <div class="p-3.5 border-t border-white/5 bg-surface-900/40 w-full">
       <div class="flex items-center justify-between w-full">
         <div class="flex items-center gap-2 overflow-hidden">
@@ -315,7 +284,7 @@
     </div>
   </aside>
 
-  <!-- Resizer Handle -->
+  <!-- Sidebar Resizer -->
   <div id="sidebarResizer" class="sidebar-resizer h-full z-40 bg-white/5" title="Drag to resize sidebar"></div>
 
   <!-- ========================================================================= -->
@@ -323,7 +292,7 @@
   <!-- ========================================================================= -->
   <div class="flex-1 flex flex-col h-full relative z-10 min-w-0">
     
-    <!-- Top System Action Bar -->
+    <!-- Header -->
     <header class="w-full border-b border-white/5 bg-surface-950/60 backdrop-blur-xl px-6 py-3 flex items-center justify-between z-30 shrink-0">
       <div class="flex items-center gap-3">
         <button onclick="UI.openCommandPalette()" class="flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 transition-colors cursor-pointer shadow-sm">
@@ -334,7 +303,7 @@
       </div>
 
       <div class="flex items-center gap-4 text-xs text-zinc-400 font-mono">
-        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>00:00:00</span>
+        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>00:00:00 IST</span>
         <span class="text-zinc-700">•</span>
         <span class="text-white">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Anish x</span></span>
         <span class="text-zinc-700">•</span>
@@ -342,18 +311,17 @@
       </div>
     </header>
 
-    <!-- Content Router Wrapper -->
+    <!-- Main Content Container -->
     <main class="flex-1 overflow-hidden p-4 lg:p-5 w-full max-w-[2100px] mx-auto flex flex-col min-h-0 select-text">
       
       <!-- ===================================================================== -->
-      <!-- TAB 1: AI STUDIO & VS CODE IDE                                        -->
+      <!-- TAB 1: AI STUDIO & WORKSPACE IDE                                      -->
       <!-- ===================================================================== -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-4 fade-in">
         
-        <!-- COLUMN A: Autonomous Chat Agent -->
+        <!-- Chat Column -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
-          <!-- Chat Header -->
           <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-black font-bold shadow-md shadow-cyan-500/20">
@@ -363,12 +331,14 @@
                 <div class="flex items-center gap-2">
                   <h3 class="font-heading font-bold text-sm text-white leading-tight">ai-llm</h3>
                   <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
+                  <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20 items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
+                  </span>
                 </div>
                 <p class="text-[10px] text-zinc-400 font-mono mt-0.5" id="aiActivePersonaBadge">Persona: Normal (Default)</p>
               </div>
             </div>
 
-            <!-- Chat Actions -->
             <div class="flex items-center gap-2">
               <button onclick="UI.openAiConfig()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors" title="Configure AI & Personas">
                 <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i><span>Configure</span>
@@ -382,10 +352,10 @@
             </div>
           </div>
 
-          <!-- Chat Conversation Viewport -->
+          <!-- Chat History -->
           <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[13px] leading-relaxed relative min-h-0 custom-scrollbar"></div>
 
-          <!-- Chat Input Form -->
+          <!-- Input Bar -->
           <div class="p-4 pt-1 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="AI.submitPrompt(event)">
               <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
@@ -398,10 +368,9 @@
           </div>
         </div>
 
-        <!-- COLUMN B: VS Code Workspace / Interactive Artifact IDE -->
-        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[650px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
+        <!-- Codespace Column -->
+        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[680px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
           
-          <!-- Workspace Action Header -->
           <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-2">
               <i data-lucide="binary" class="w-4 h-4 text-cyan-400"></i>
@@ -409,15 +378,13 @@
             </div>
             
             <div class="flex items-center gap-2">
-              <!-- IDE View Mode Toggles (Code -> Terminal -> Preview) -->
               <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
                 <button onclick="IDE.setViewMode('code')" id="btnCsViewCode" class="px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Code</button>
                 <button onclick="IDE.setViewMode('terminal')" id="btnCsViewTerminal" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Terminal</button>
                 <button onclick="IDE.setViewMode('preview')" id="btnCsViewPreview" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Preview</button>
               </div>
               
-              <!-- Master Run Button -->
-              <button onclick="IDE.runActiveFile()" id="btnRunActiveFile" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer shadow-sm" title="Execute Code or Render HTML">
+              <button onclick="IDE.runActiveFile()" id="btnRunActiveFile" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer shadow-sm">
                 <i data-lucide="play" class="w-3 h-3"></i> Run
               </button>
               
@@ -425,15 +392,12 @@
             </div>
           </div>
 
-          <!-- Open File Tabs Bar (VS Code style - Only opened files appear here) -->
-          <div class="px-2 py-1 bg-surface-900/60 border-b border-white/5 flex items-center gap-1 overflow-x-auto custom-scrollbar shrink-0" id="codespaceFileTabs">
-            <!-- Tabs injected dynamically -->
-          </div>
+          <!-- Open File Tabs -->
+          <div class="px-2 py-1 bg-surface-900/60 border-b border-white/5 flex items-center gap-1 overflow-x-auto custom-scrollbar shrink-0" id="codespaceFileTabs"></div>
 
-          <!-- Dual Pane Core: Left Explorer Tree + Right Content Area -->
+          <!-- File Explorer + Viewport Area -->
           <div class="flex-1 flex min-h-0 relative bg-surface-950">
             
-            <!-- Explorer Tree Sidebar (Shows all files & folders in VFS) -->
             <div class="w-44 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
               <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center bg-surface-900/80">
                 <span>Explorer</span>
@@ -442,42 +406,32 @@
                   <button onclick="IDE.promptCreateFile()" title="New File" class="p-1 hover:text-cyan-400 cursor-pointer"><i data-lucide="file-plus" class="w-3.5 h-3.5"></i></button>
                 </div>
               </div>
-              <div id="vfsTreeContainer" class="flex-1 p-2 space-y-0.5 overflow-y-auto custom-scrollbar">
-                <!-- Tree injected dynamically -->
-              </div>
+              <div id="vfsTreeContainer" class="flex-1 p-2 space-y-0.5 overflow-y-auto custom-scrollbar"></div>
             </div>
 
-            <!-- Main Editor / Terminal / Preview Viewport -->
             <div class="flex-1 flex flex-col h-full relative min-w-0">
-              
-              <!-- Code Editor Container -->
               <div id="csEditorContainer" class="flex flex-1 h-full flex-col relative">
                 <textarea id="csCodeEditor" oninput="IDE.saveEditorContent()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-[13px] text-zinc-200 outline-none resize-none leading-relaxed selection:bg-cyan-500 selection:text-black custom-scrollbar"></textarea>
               </div>
 
-              <!-- Embedded E2B Terminal Container -->
               <div id="csTerminalContainer" class="hidden flex-1 h-full bg-[#0d1117] flex-col relative font-mono text-[11px] overflow-hidden">
                 <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all custom-scrollbar">
                   <div class="text-cyan-400 font-bold">LuminaVista Embedded MicroVM CLI</div>
                   <div class="text-zinc-500">Autonomous loop execution output will stream here.</div>
                   <div class="border-b border-white/5 my-2"></div>
                 </div>
-                <!-- Manual Command Input within IDE -->
                 <form onsubmit="IDE.handleTerminalCommand(event)" class="border-t border-white/5 bg-black/50 flex items-center p-2 shrink-0">
                   <span class="text-emerald-400 font-bold mr-2">➜</span>
                   <input type="text" id="csTermInput" class="flex-1 bg-transparent outline-none text-white text-xs font-mono" placeholder="Execute manual terminal command..." autocomplete="off">
                 </form>
               </div>
 
-              <!-- Live Web DOM Preview Container -->
               <div id="csPreviewContainer" class="hidden flex-1 h-full bg-white relative">
                 <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
               </div>
-
             </div>
           </div>
           
-          <!-- Bottom IDE Status Bar -->
           <div class="px-4 py-1.5 border-t border-white/10 bg-surface-900/90 font-mono text-[10px] flex justify-between items-center text-zinc-500 shrink-0">
             <span class="flex items-center gap-1.5 text-emerald-400">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Runtime Synced
@@ -492,7 +446,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 2: EXM PROJECTS (GitHub Integration)                              -->
+      <!-- TAB 2: PROJECTS                                                       -->
       <!-- ===================================================================== -->
       <section id="tab-projects" class="tab-pane hidden space-y-4 h-full flex-col fade-in">
         <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0">
@@ -541,7 +495,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 3: CLOUD COMPILERS (Direct E2B Execution - No Piston)             -->
+      <!-- TAB 3: NATIVE COMPILERS                                               -->
       <!-- ===================================================================== -->
       <section id="tab-sandbox" class="tab-pane hidden space-y-4 h-full flex-col fade-in">
         <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shrink-0">
@@ -549,7 +503,7 @@
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
               <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Native Compiler Engine
             </h3>
-            <p class="text-xs text-zinc-400">Bypasses public API limits. Compiles directly inside isolated E2B Firecracker MicroVMs.</p>
+            <p class="text-xs text-zinc-400">Directly compiles and executes inside isolated E2B Firecracker MicroVMs.</p>
           </div>
           <div class="flex items-center gap-2 bg-surface-900 p-1.5 rounded-xl border border-white/10 text-xs font-mono">
             <button onclick="Compilers.setLang('python')" id="sbLangPython" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer transition-colors">Python</button>
@@ -561,7 +515,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-          <!-- Editor Side -->
           <div class="flex flex-col space-y-2 h-full">
             <div class="flex justify-between items-center text-xs font-mono text-zinc-400 px-1">
               <span>Source Buffer:</span>
@@ -572,47 +525,43 @@
             <textarea id="compilerCodeInput" class="godx-input w-full flex-1 p-4 font-mono text-[13px] outline-none resize-none leading-relaxed custom-scrollbar"></textarea>
           </div>
 
-          <!-- Execution Output Side -->
           <div class="flex flex-col space-y-2 h-full">
             <div class="flex justify-between items-center text-xs font-mono text-zinc-400 px-1">
-              <span>E2B Runtime Output Stream:</span>
+              <span>E2B Runtime Output:</span>
               <button onclick="document.getElementById('compilerStdoutWrapper').textContent=''" class="text-zinc-500 hover:text-white text-[11px] cursor-pointer transition-colors">Clear</button>
             </div>
-            <div id="compilerStdoutWrapper" class="flex-1 rounded-xl p-5 bg-surface-950 font-mono text-xs text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-inner custom-scrollbar">Output will stream here...</div>
+            <div id="compilerStdoutWrapper" class="flex-1 rounded-xl p-5 bg-surface-950 font-mono text-xs text-zinc-300 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-inner custom-scrollbar">Execution logs will appear here...</div>
           </div>
         </div>
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: WHITEBOARD PRO (DPI & Resize Fixed)                            -->
+      <!-- TAB 4: WHITEBOARD PRO                                                 -->
       <!-- ===================================================================== -->
       <section id="tab-whiteboard" class="tab-pane hidden h-full flex-col space-y-3 fade-in">
         <div class="glass-panel rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
           
-          <!-- Drawing Tool Palette -->
           <div class="flex items-center gap-1.5 bg-surface-900 p-1.5 rounded-xl border border-white/10 text-xs">
-            <button onclick="Whiteboard.setTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer shadow-md" title="Freehand Brush"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-            <button onclick="Whiteboard.setTool('line')" id="wbToolLine" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Straight Line"><i data-lucide="minus" class="w-4 h-4"></i></button>
-            <button onclick="Whiteboard.setTool('arrow')" id="wbToolArrow" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Directional Arrow"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></button>
+            <button onclick="Whiteboard.setTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer shadow-md" title="Brush"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+            <button onclick="Whiteboard.setTool('line')" id="wbToolLine" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Line"><i data-lucide="minus" class="w-4 h-4"></i></button>
+            <button onclick="Whiteboard.setTool('arrow')" id="wbToolArrow" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Arrow"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></button>
             <button onclick="Whiteboard.setTool('rect')" id="wbToolRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Rectangle"><i data-lucide="square" class="w-4 h-4"></i></button>
             <button onclick="Whiteboard.setTool('circle')" id="wbToolCircle" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Circle"><i data-lucide="circle" class="w-4 h-4"></i></button>
             <button onclick="Whiteboard.setTool('text')" id="wbToolText" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Text Label"><i data-lucide="type" class="w-4 h-4"></i></button>
             <button onclick="Whiteboard.setTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Eraser"><i data-lucide="eraser" class="w-4 h-4"></i></button>
           </div>
 
-          <!-- Color & Size Configurations -->
           <div class="flex items-center gap-2 bg-surface-900 p-1.5 rounded-xl border border-white/10">
-            <input type="color" id="wbColorPicker" value="#00f2fe" onchange="Whiteboard.updateColor(this.value)" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" title="Stroke Color" />
-            <input type="range" id="wbSizeSlider" min="1" max="25" value="3" onchange="Whiteboard.updateSize(this.value)" class="w-20 accent-cyan-400 cursor-pointer" title="Stroke Thickness" />
+            <input type="color" id="wbColorPicker" value="#00f2fe" onchange="Whiteboard.updateColor(this.value)" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" title="Color" />
+            <input type="range" id="wbSizeSlider" min="1" max="25" value="3" onchange="Whiteboard.updateSize(this.value)" class="w-20 accent-cyan-400 cursor-pointer" title="Size" />
             <span id="wbSizeLabel" class="text-[11px] font-mono text-zinc-400 w-6">3px</span>
           </div>
 
-          <!-- History & Canvas State Actions -->
           <div class="flex items-center gap-2">
             <button onclick="Whiteboard.undo()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer transition-colors" title="Undo"><i data-lucide="undo" class="w-4 h-4"></i></button>
             <button onclick="Whiteboard.redo()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer transition-colors" title="Redo"><i data-lucide="redo" class="w-4 h-4"></i></button>
             <button onclick="Whiteboard.toggleGrid()" id="btnWbGrid" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono text-zinc-300 border border-white/10 cursor-pointer transition-colors">Grid: On</button>
-            <button onclick="Whiteboard.clear()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-xs cursor-pointer transition-colors">Clear Canvas</button>
+            <button onclick="Whiteboard.clear()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 text-xs cursor-pointer transition-colors">Clear</button>
             <button onclick="Whiteboard.download()" class="btn-gradient px-4 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md">Export PNG</button>
           </div>
         </div>
@@ -623,13 +572,13 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 5: UI DESIGN STUDIO                                               -->
+      <!-- TAB 5: UI GENERATOR                                                   -->
       <!-- ===================================================================== -->
       <section id="tab-design" class="tab-pane hidden space-y-4 h-full fade-in">
         <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shrink-0">
           <div>
             <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i> Glassmorphism Token Generator</h3>
-            <p class="text-xs text-zinc-400">Manipulate GPU hardware rendering parameters in real time.</p>
+            <p class="text-xs text-zinc-400">Real-time GPU hardware-accelerated CSS token adjustment.</p>
           </div>
           <button onclick="UI.copyDesignCss()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md">Copy CSS Token</button>
         </div>
@@ -652,7 +601,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 6: FULLSCREEN QUANTUM TERMINAL                                    -->
+      <!-- TAB 6: TERMINAL MICROVM                                               -->
       <!-- ===================================================================== -->
       <section id="tab-terminal" class="tab-pane hidden space-y-3 h-full flex-col fade-in">
         <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col min-h-0 space-y-3">
@@ -674,14 +623,14 @@
 
           <form onsubmit="Terminal.submitMainTerm(event)" class="flex items-center gap-2 shrink-0 bg-surface-900/60 p-2.5 rounded-xl border border-white/5 focus-within:border-cyan-500/30 transition-colors">
             <span class="font-mono text-[13px] text-cyan-400 font-bold pl-2">root@microvm:~$</span>
-            <input type="text" id="mainTerminalInput" autocomplete="off" onkeydown="Terminal.handleHistory(event)" placeholder="Execute shell commands natively..." class="w-full bg-transparent border-0 outline-none text-white font-mono text-[13px] px-2 py-1.5" />
+            <input type="text" id="mainTerminalInput" autocomplete="off" placeholder="Execute shell commands natively..." class="w-full bg-transparent border-0 outline-none text-white font-mono text-[13px] px-2 py-1.5" />
             <button type="submit" id="btnMainTermSend" class="btn-gradient px-4 py-2 rounded-lg text-xs font-mono font-bold text-black cursor-pointer shadow-md">Execute</button>
           </form>
         </div>
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 7: TELEMETRY & SYSTEM ANALYTICS                                   -->
+      <!-- TAB 7: TELEMETRY                                                      -->
       <!-- ===================================================================== -->
       <section id="tab-analytics" class="tab-pane hidden space-y-4 flex-col fade-in">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -696,12 +645,11 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 8: NOTES VAULT PRO (.txt/.md Parsing)                             -->
+      <!-- TAB 8: NOTES VAULT                                                    -->
       <!-- ===================================================================== -->
       <section id="tab-scratchpad" class="tab-pane hidden space-y-3 h-full flex-col fade-in">
         <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
           
-          <!-- Markdown Formatting Toolbar -->
           <div class="flex items-center gap-1 bg-surface-900 p-1 rounded-xl border border-white/10 text-xs">
             <button onclick="Notes.insertMd('**', '**')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-bold cursor-pointer" title="Bold">B</button>
             <button onclick="Notes.insertMd('*', '*')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white italic cursor-pointer" title="Italic">I</button>
@@ -716,33 +664,26 @@
             <button onclick="Notes.insertMd('| Col 1 | Col 2 |\n|---|---|\n| Val 1 | Val 2 |\n')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer" title="Table"><i data-lucide="table" class="w-3.5 h-3.5"></i></button>
           </div>
 
-          <!-- Real-Time Metrics -->
           <div class="flex items-center gap-3 text-[11px] font-mono text-zinc-400 uppercase tracking-widest bg-surface-950 px-3 py-1.5 rounded-lg border border-white/5">
             <span id="noteWordCount">0 words</span>
             <span class="text-zinc-700">•</span>
             <span id="noteCharCount">0 chars</span>
           </div>
 
-          <!-- Action Buttons -->
           <div class="flex items-center gap-2">
             <input type="file" id="noteUploadInput" accept=".txt,.md" class="hidden" onchange="Notes.handleUpload(event)" />
             <button onclick="document.getElementById('noteUploadInput').click()" class="px-3 py-1.5 rounded-xl bg-surface-900 text-zinc-300 hover:text-white border border-white/10 cursor-pointer flex items-center gap-1 transition-colors text-xs"><i data-lucide="upload" class="w-3.5 h-3.5"></i> Import</button>
             <button onclick="Notes.createNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold cursor-pointer transition-colors">+ New Note</button>
             <button onclick="Notes.togglePreview()" class="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold cursor-pointer transition-colors">Toggle Preview</button>
             <button onclick="Notes.downloadNote()" class="p-1.5 rounded-xl bg-surface-900 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Download Markdown"><i data-lucide="download" class="w-4 h-4"></i></button>
-            <button onclick="Notes.deleteNote()" class="p-1.5 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 cursor-pointer transition-colors" title="Delete Note"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>
 
-        <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-1 text-xs font-mono shrink-0 custom-scrollbar">
-          <!-- Dynamically populated by JS -->
-        </div>
+        <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-1 text-xs font-mono shrink-0 custom-scrollbar"></div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
           <textarea id="noteEditor" oninput="Notes.onContentChange()" class="godx-input w-full p-5 font-mono text-[13px] resize-none h-full leading-relaxed custom-scrollbar shadow-inner"></textarea>
-          <div id="notePreviewCol" class="hidden bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-[13px] text-zinc-300 space-y-3 font-sans h-full leading-relaxed custom-scrollbar shadow-inner">
-            <!-- Markdown renders here -->
-          </div>
+          <div id="notePreviewCol" class="hidden bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-[13px] text-zinc-300 space-y-3 font-sans h-full leading-relaxed custom-scrollbar shadow-inner"></div>
         </div>
       </section>
 
@@ -773,7 +714,7 @@
           
           <div class="glass-panel rounded-2xl p-5 space-y-4 shadow-xl border-t-2 border-t-rose-500">
             <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="hard-drive" class="w-4 h-4 text-rose-400"></i> Storage Vault Reset</h3>
-            <p class="text-[11px] text-zinc-400 leading-relaxed">Permanently flush the browser's local storage cache. This will delete your Virtual File System, Notes, and AI Chat history.</p>
+            <p class="text-[11px] text-zinc-400 leading-relaxed">Permanently flush the browser's local storage cache. This will reset the Virtual File System, Notes, and AI Chat history.</p>
             <button onclick="Settings.exportConfig()" class="w-full py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-300 text-xs font-mono cursor-pointer border border-white/10 transition-colors"><i data-lucide="download" class="w-3.5 h-3.5 inline mr-1"></i> Export Backup JSON</button>
             <button onclick="Settings.flushCache()" class="w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-black text-xs font-bold cursor-pointer shadow-md transition-colors"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline mr-1"></i> FLUSH LOCAL CACHE</button>
           </div>
@@ -784,7 +725,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- MODALS: CONFIG, COMMAND PALETTE, SOURCE, TOAST                            -->
+  <!-- MODALS                                                                    -->
   <!-- ========================================================================= -->
   
   <!-- AI Config Modal -->
@@ -795,7 +736,6 @@
         <button onclick="UI.closeAiConfig()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
-      <!-- Internet Toggle -->
       <div class="p-3 bg-surface-900/80 border border-white/5 rounded-xl flex items-center justify-between">
         <div>
           <label for="modalCheckWebSearch" class="text-xs font-bold text-white cursor-pointer block">Live Internet Access</label>
@@ -804,7 +744,6 @@
         <input type="checkbox" id="modalCheckWebSearch" onchange="UI.saveAiConfig()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
       </div>
       
-      <!-- Model Dropdown -->
       <div class="space-y-1.5">
         <label class="text-xs font-mono text-zinc-400">Active Model Endpoint:</label>
         <select id="modalAiModelSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="UI.saveAiConfig()">
@@ -832,7 +771,7 @@
     </div>
   </div>
 
-  <!-- Toast Notification Pop-up -->
+  <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
     <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20"><i data-lucide="check" class="w-4 h-4"></i></div>
     <div>
@@ -855,36 +794,28 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT MASTER CONTROLLER (MVC ARCHITECTURE)                           -->
+  <!-- MASTER CLIENT ENGINE (MVC)                                                -->
   <!-- ========================================================================= -->
   <script>
-    // Initialize standard icons
     lucide.createIcons();
 
     // ==========================================
-    // 1. STATE STORE (The Brain)
+    // 1. STATE STORE
     // ==========================================
     const State = {
-      // Virtual File System Mock Database
       vfs: JSON.parse(localStorage.getItem("lumina_codespace_vfs") || JSON.stringify({
         "src/main.py": "import sys\nprint('=== LuminaVista Cloud Engine ===')\nprint(f'Runtime Python {sys.version}')\nprint('MicroVM Execution Ready.')",
         "src/utils.js": "function calculate() {\n  return 100 * 20;\n}\nconsole.log('Result:', calculate());",
         "public/index.html": "<!DOCTYPE html>\n<html lang='en'>\n<head>\n  <style>\n    body { background: #030712; color: #00f2fe; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }\n    h1 { text-shadow: 0 0 20px rgba(0, 242, 254, 0.5); }\n  </style>\n</head>\n<body>\n  <h1>LuminaVista Live Web DOM Preview</h1>\n</body>\n</html>"
       })),
-      
-      // IDE Configuration
       ide: {
         tabs: JSON.parse(localStorage.getItem("lumina_open_tabs") || '["src/main.py", "public/index.html"]'),
         active: "src/main.py",
-        viewMode: "code" // 'code', 'terminal', 'preview'
+        viewMode: "code"
       },
-      
-      // AI Orchestrator Chat Memory
       ai: {
         history: JSON.parse(localStorage.getItem("lumina_ai_history") || "[]")
       },
-      
-      // Notes Vault
       notes: {
         list: JSON.parse(localStorage.getItem("lumina_notes") || JSON.stringify([{ 
           id: "note_" + Date.now(), 
@@ -893,13 +824,9 @@
         }])),
         activeId: null
       },
-      
-      // Whiteboard Persistence
       wb: {
         dataURL: localStorage.getItem("lumina_wb_state") || null
       },
-
-      // E2B Native Compilers
       compilers: {
         lang: 'python',
         samples: {
@@ -910,18 +837,14 @@
           bash: "# Bash Direct E2B Compute\necho 'Bash Shell Execution OK.'"
         }
       },
-
-      // EXM Github Projects
       projects: {
         list: JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]"),
         active: null
       }
     };
 
-    // Ensure Note ID is initialized safely
     State.notes.activeId = State.notes.list.length > 0 ? State.notes.list[0].id : null;
 
-    // Master Save Function
     function saveState() {
       try {
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(State.vfs));
@@ -937,11 +860,9 @@
     }
 
     // ==========================================
-    // 2. SYSTEM API WRAPPER (Network Layer)
+    // 2. NETWORK API
     // ==========================================
     const SystemAPI = {
-      
-      // Master E2B Terminal Executor
       async executeTerminal(cmd) {
         try {
           const filesArray = Object.keys(State.vfs).map(k => ({ name: k, content: State.vfs[k] }));
@@ -954,19 +875,17 @@
           const data = await res.json();
           
           if (res.ok && data.workspaceFiles && Array.isArray(data.workspaceFiles)) {
-            // Re-sync VFS with modified files from MicroVM
             data.workspaceFiles.forEach(f => { State.vfs[f.name] = f.content; });
             saveState();
-            IDE.renderTree(); // Refresh UI Tree
+            IDE.renderTree();
           }
           
           return { ok: res.ok, stdout: data.stdout, stderr: data.stderr, error: data.error };
         } catch (err) {
-          return { ok: false, error: err.message || "Network request failed to /api/terminal." };
+          return { ok: false, error: err.message || "Network request failed." };
         }
       },
 
-      // Single-File Native Compiler (No Piston, pure E2B route)
       async compileNative(code, language) {
         try {
           const res = await fetch("/api/compile", {
@@ -982,7 +901,6 @@
         }
       },
 
-      // Autonomous LLM Chat Call
       async agentChat(promptText) {
         try {
           const model = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
@@ -1016,7 +934,7 @@
     };
 
     // ==========================================
-    // 3. UTILITY FUNCTIONS
+    // 3. UTILITIES
     // ==========================================
     const Utils = {
       escapeHtml(str) {
@@ -1047,21 +965,18 @@
     };
 
     // ==========================================
-    // 4. MAIN APPLICATION CONTROLLER
+    // 4. MAIN APP CONTROLLER
     // ==========================================
     const App = {
       init() {
-        // Theme & Boot Settings
         const theme = localStorage.getItem("lumina_theme") || "cyan";
         document.documentElement.setAttribute("data-theme", theme);
-        document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Admin x";
+        document.getElementById("headerAdminName").textContent = sessionStorage.getItem("lumina_godx_user") || "Anish x";
 
-        // Clock loop
         setInterval(() => {
           document.getElementById("systemClock").innerHTML = `<i data-lucide="clock" class="w-3.5 h-3.5 inline text-cyan-400"></i> ${new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })} IST`;
         }, 1000);
 
-        // Sub-Module Initialization
         IDE.init();
         AI.init();
         Whiteboard.init();
@@ -1069,46 +984,49 @@
         Compilers.init();
         Projects.init();
 
-        // Decorative background loop
         this.initAmbientCanvas();
-
-        // Background Cloud Poller
-        this.startBackgroundPoller();
       },
 
       switchTab(tabId) {
-        // Hide all views
-        document.querySelectorAll(".view-section").forEach(p => {
-          p.classList.add("hidden");
-          p.classList.remove("fade-in");
+        // 1. Hide all tab panes
+        document.querySelectorAll(".tab-pane").forEach(pane => {
+          pane.classList.add("hidden");
+          pane.classList.remove("fade-in");
         });
-        
-        // Remove active class from sidebar
-        document.querySelectorAll(".tab-btn").forEach(b => {
-          b.classList.remove("nav-tab-active");
-          b.classList.add("text-zinc-400");
+
+        // 2. Clear active state on all sidebar navigation buttons
+        document.querySelectorAll(".tab-btn").forEach(btn => {
+          btn.classList.remove("nav-tab-active");
+          btn.classList.add("text-zinc-400");
         });
-        
-        // Show selected view
-        const sectionId = tabId.replace('tab-', 'view-');
-        const section = document.getElementById(sectionId);
-        if (section) {
-          section.classList.remove("hidden");
-          // Trigger reflow to restart CSS animation
-          void section.offsetWidth; 
-          section.classList.add("fade-in");
+
+        // 3. Show target tab pane directly by exact ID
+        const targetPane = document.getElementById(tabId);
+        if (targetPane) {
+          targetPane.classList.remove("hidden");
+          void targetPane.offsetWidth; // Force CSS reflow
+          targetPane.classList.add("fade-in");
         }
-        
-        // Highlight active sidebar button
-        const btn = document.getElementById(`btn-${tabId}`);
-        if (btn) {
-          btn.classList.add("nav-tab-active");
-          btn.classList.remove("text-zinc-400");
+
+        // 4. Highlight active sidebar button
+        const targetBtn = document.getElementById(`btn-${tabId}`);
+        if (targetBtn) {
+          targetBtn.classList.add("nav-tab-active");
+          targetBtn.classList.remove("text-zinc-400");
         }
-        
-        // Specific module logic on view switch
-        if (tabId === 'tab-whiteboard') setTimeout(() => Whiteboard.resize(), 150);
-        if (tabId === 'tab-analytics') setTimeout(this.initMetricsChart, 150);
+
+        // 5. Trigger component-specific canvas updates on reveal
+        if (tabId === 'tab-whiteboard') {
+          setTimeout(() => Whiteboard.resize(), 50);
+        }
+        if (tabId === 'tab-analytics') {
+          setTimeout(() => this.initMetricsChart(), 50);
+        }
+      },
+
+      logout() {
+        sessionStorage.clear();
+        window.location.href = "/index.html";
       },
 
       initAmbientCanvas() {
@@ -1172,24 +1090,16 @@
           ctx.lineJoin = 'round';
           ctx.stroke();
           
-          // Generate realistic looking server fluctuation
           this.chartData.shift(); 
           let last = this.chartData[this.chartData.length - 1];
           let next = Math.min(95, Math.max(30, last + (Math.random() - 0.5) * 15));
           this.chartData.push(next);
         }, 1000);
-      },
-
-      startBackgroundPoller() {
-        // Silently syncs VFS if background executions modify it
-        setInterval(async () => {
-          // Future-proofing block for full Redis sync implementation
-        }, 10000);
       }
     };
 
     // ==========================================
-    // 5. IDE MODULE (VS CODE LOGIC)
+    // 5. IDE CONTROLLER
     // ==========================================
     const IDE = {
       init() {
@@ -1200,7 +1110,6 @@
         this.renderTabsBar();
         this.loadFileIntoEditor();
         
-        // Initial View routing based on active file extension
         if (State.ide.active && (State.ide.active.endsWith('.html') || State.ide.active.endsWith('.htm'))) {
           this.setViewMode('preview');
           this.updateWebPreview();
@@ -1231,7 +1140,6 @@
         const container = document.getElementById("vfsTreeContainer");
         container.innerHTML = "";
         
-        // Build nested directory object from flat paths
         const treeObj = {};
         Object.keys(State.vfs).forEach(path => {
           const parts = path.split('/');
@@ -1244,12 +1152,10 @@
           }
         });
 
-        // Recursively render tree to DOM
         Object.keys(treeObj).sort().forEach(key => {
           if (treeObj[key] === '__FILE__') {
             container.appendChild(this.createFileDomNode(key, key));
           } else {
-            // Render Folder
             const folderDiv = document.createElement("div");
             folderDiv.className = "mb-1.5";
             folderDiv.innerHTML = `
@@ -1277,7 +1183,6 @@
         const btn = document.createElement("button");
         const isActive = fullPath === State.ide.active;
         
-        // Determine icon by extension
         let icon = "file-code";
         if (fullPath.endsWith('.html')) icon = "file-code-2";
         else if (fullPath.endsWith('.css') || fullPath.endsWith('.json')) icon = "file-spreadsheet";
@@ -1285,8 +1190,6 @@
 
         btn.className = `w-full px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-left transition-colors cursor-pointer truncate ${isActive ? 'bg-cyan-500/20 text-cyan-300 font-bold shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`;
         btn.innerHTML = `<i data-lucide="${icon}" class="w-3.5 h-3.5 shrink-0 ${isActive ? 'text-cyan-400' : 'text-zinc-500'}"></i><span class="truncate tracking-wide text-[11px]">${displayName}</span>`;
-        
-        // Add delete hover action logic
         btn.innerHTML += `<div class="ml-auto opacity-0 hover:opacity-100 transition-opacity" onclick="event.stopPropagation(); IDE.deleteFile('${fullPath}')"><i data-lucide="trash" class="w-3 h-3 text-rose-500 hover:text-rose-400"></i></div>`;
 
         btn.onclick = () => this.openFileTab(fullPath);
@@ -1303,7 +1206,7 @@
           
           const tabDiv = document.createElement("div");
           tabDiv.className = `px-3.5 py-1.5 rounded-t-lg border-t border-x text-[11px] font-mono flex items-center gap-2.5 cursor-pointer transition-colors ${isActive ? 'bg-surface-950 border-white/20 border-b-transparent text-cyan-400 font-bold z-10 relative' : 'bg-surface-900/60 border-transparent border-b-white/10 text-zinc-500 hover:text-zinc-300'}`;
-          tabDiv.style.marginBottom = isActive ? "-1px" : "0"; // Blend active tab into editor background
+          tabDiv.style.marginBottom = isActive ? "-1px" : "0";
 
           tabDiv.innerHTML = `
             <span class="truncate max-w-[120px]" title="${path}">${fileName}</span>
@@ -1331,7 +1234,6 @@
         this.renderTabsBar();
         this.loadFileIntoEditor();
 
-        // Smart View Routing
         if (path.endsWith('.html') || path.endsWith('.htm')) {
           this.setViewMode('preview');
           this.updateWebPreview();
@@ -1400,7 +1302,7 @@
       deleteFile(path) {
         if (confirm(`Permanently delete ${path}?`)) {
           delete State.vfs[path];
-          this.closeFileTab(path); // This handles the render/save cascacde
+          this.closeFileTab(path);
           Utils.showToast("File Deleted", `Removed ${path} from VFS.`);
         }
       },
@@ -1411,17 +1313,14 @@
         const tv = document.getElementById("csTerminalContainer");
         const pv = document.getElementById("csPreviewContainer");
 
-        // Reset toggles
         ["btnCsViewCode", "btnCsViewTerminal", "btnCsViewPreview"].forEach(id => {
           document.getElementById(id).className = "px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors";
         });
 
-        // Hide all views
         cv.classList.add("hidden"); cv.classList.remove("flex");
         tv.classList.add("hidden"); tv.classList.remove("flex");
         pv.classList.add("hidden"); pv.classList.remove("flex");
 
-        // Show selected view
         if (mode === "code") {
           cv.classList.remove("hidden"); cv.classList.add("flex");
           document.getElementById("btnCsViewCode").className = "px-2.5 py-1 rounded bg-cyan-500 text-black font-bold shadow-sm";
@@ -1435,17 +1334,14 @@
       },
 
       updateWebPreview() {
-        // Look for an entry index.html or the active HTML file
         const htmlToRender = State.ide.active && State.ide.active.endsWith('.html') ? State.vfs[State.ide.active] : (State.vfs["index.html"] || State.vfs["public/index.html"] || "<h1>No HTML Content</h1>");
         document.getElementById("csPreviewFrame").srcdoc = htmlToRender;
       },
 
       async runActiveFile() {
         if (!State.ide.active) return;
-        
         const file = State.ide.active;
 
-        // Path A: HTML Web Rendering
         if (file.endsWith('.html') || file.endsWith('.htm')) {
           this.updateWebPreview();
           this.setViewMode('preview');
@@ -1453,12 +1349,10 @@
           return;
         }
 
-        // Path B: Native MicroVM Execution
         this.setViewMode('terminal');
         const termOut = document.getElementById("csTermOutput");
         
-        // Determine Runner Command
-        let cmd = `cat "${file}"`; // Default fallback
+        let cmd = `cat "${file}"`;
         if (file.endsWith('.py')) cmd = `python3 "${file}"`;
         else if (file.endsWith('.js')) cmd = `node "${file}"`;
         else if (file.endsWith('.ts')) cmd = `npx tsx "${file}"`;
@@ -1468,7 +1362,6 @@
 
         Terminal.print(termOut, `➜ System Execution: ${cmd}`, "text-cyan-400 font-bold mt-2");
         
-        // Add visual loading state
         const loadingId = "loader_" + Date.now();
         termOut.innerHTML += `<div id="${loadingId}" class="text-purple-400 text-[10px] my-1"><i data-lucide="loader" class="w-3 h-3 inline animate-spin"></i> Provisioning execution sandbox...</div>`;
         termOut.scrollTop = termOut.scrollHeight;
@@ -1482,7 +1375,7 @@
         if (result.ok) {
           if (result.stdout) Terminal.print(termOut, result.stdout, "text-zinc-200");
           if (result.stderr) Terminal.print(termOut, result.stderr, "text-rose-400");
-          if (!result.stdout && !result.stderr) Terminal.print(termOut, "[Process completed entirely cleanly without STDOUT]", "text-zinc-500 italic");
+          if (!result.stdout && !result.stderr) Terminal.print(termOut, "[Process completed cleanly without STDOUT]", "text-zinc-500 italic");
         } else {
           Terminal.print(termOut, `[Sandbox Crash]: ${result.error}`, "text-rose-500 bg-rose-500/10 p-2 rounded border border-rose-500/20");
         }
@@ -1499,7 +1392,6 @@
         Terminal.print(termOut, `➜ ${cmd}`, "text-emerald-400 font-bold mt-2");
         
         const result = await SystemAPI.executeTerminal(cmd);
-        
         if (result.ok) {
           if (result.stdout) Terminal.print(termOut, result.stdout, "text-zinc-200");
           if (result.stderr) Terminal.print(termOut, result.stderr, "text-rose-400");
@@ -1514,12 +1406,12 @@
         a.href = URL.createObjectURL(blob);
         a.download = `luminavista_vfs_export_${Date.now()}.json`;
         a.click();
-        Utils.showToast("VFS Exported", "Downloaded workspace as JSON.");
+        Utils.showToast("VFS Exported", "Downloaded workspace JSON.");
       }
     };
 
     // ==========================================
-    // 6. TERMINAL MODULE (Global)
+    // 6. TERMINAL CONTROLLER
     // ==========================================
     const Terminal = {
       print(element, text, classList) {
@@ -1545,17 +1437,15 @@
         const out = document.getElementById("mainTerminalScreen");
         this.print(out, `root@microvm:~$ ${cmd}`, "text-emerald-400 font-bold mt-3");
 
-        // Handle Autonomous AI Agent command routing from terminal
         if (cmd.startsWith("ai ")) {
           const agentCmd = cmd.substring(3).trim();
           this.print(out, `[Initiating Kernel Cognitive Search: ${agentCmd}]`, "text-purple-400 text-[10px] animate-pulse");
           
-          const res = await SystemAPI.chat(`[TERMINAL CONTEXT]: Execute this intent -> ${agentCmd}`);
+          const res = await SystemAPI.agentChat(`[TERMINAL CONTEXT]: Execute this intent -> ${agentCmd}`);
           if (res.ok) {
-            out.lastChild.remove(); // remove pulse text
-            this.print(out, `[Agent Executed Routine Successfully]`, "text-emerald-500 font-bold");
+            out.lastChild.remove();
+            this.print(out, `[Agent Routine Completed]`, "text-emerald-500 font-bold");
             this.print(out, res.reply, "text-zinc-300 my-2 p-3 bg-surface-900 border border-white/5 rounded-xl");
-            // If the AI modified files, re-render IDE tree in background
             IDE.renderTree();
           } else {
             out.lastChild.remove();
@@ -1564,24 +1454,19 @@
           return;
         }
 
-        // Standard Bash Execution
         const result = await SystemAPI.executeTerminal(cmd);
         if (result.ok) {
           if (result.stdout) this.print(out, result.stdout, "text-zinc-200 ml-2 border-l-2 border-zinc-700 pl-2");
           if (result.stderr) this.print(out, result.stderr, "text-amber-400 ml-2 border-l-2 border-amber-700 pl-2");
-          if (!result.stdout && !result.stderr) this.print(out, "Process 0", "text-zinc-600 text-[10px] italic");
+          if (!result.stdout && !result.stderr) this.print(out, "[Process completed with status 0]", "text-zinc-600 text-[10px] italic");
         } else {
           this.print(out, `[Execution Fault]: ${result.error}`, "text-rose-500 bg-rose-500/10 p-2 rounded mt-1");
         }
-      },
-      
-      handleHistory(e) {
-        // Optional: Implement Up/Down arrow terminal history here
       }
     };
 
     // ==========================================
-    // 7. AI ORCHESTRATOR MODULE
+    // 7. AI ORCHESTRATOR CONTROLLER
     // ==========================================
     const AI = {
       init() {
@@ -1634,10 +1519,8 @@ B. Execute Shell Command:
 
       parseMarkdown(t) {
         if (!t) return "";
-
         let processed = t;
 
-        // 1. Transform <thought_process> into Animated Collapsible Accordion
         processed = processed.replace(/<thought_process>([\s\S]*?)<\/thought_process>/gi, (match, thoughts) => {
           return `
             <details class="thought-card group" open>
@@ -1656,7 +1539,6 @@ B. Execute Shell Command:
           `;
         });
 
-        // 2. Transform Agent Tools into Visual Action Badges
         processed = processed.replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
           return `<div class="my-2.5 p-2.5 bg-surface-950 border-l-2 border-emerald-400 rounded-lg shadow-sm flex items-center justify-between font-mono text-[11px] text-emerald-400">
             <span class="flex items-center gap-2"><i data-lucide="file-edit" class="w-3.5 h-3.5"></i> Artifact Deployed: <strong>${Utils.escapeHtml(f)}</strong></span>
@@ -1668,14 +1550,12 @@ B. Execute Shell Command:
         .replace(/\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g, 
           '<div class="my-2.5 p-2.5 bg-surface-950 border-l-2 border-cyan-400 rounded-lg shadow-sm flex items-center justify-between font-mono text-[11px] text-cyan-400"><span class="flex items-center gap-2"><i data-lucide="terminal" class="w-3.5 h-3.5"></i> MicroVM Exec: <code>$1</code></span><span class="text-[10px] text-zinc-500 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">E2B Sh</span></div>');
 
-        // 3. Stash Code Blocks before HTML & Markdown Processing
         const codeBlocks = [];
         processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
           codeBlocks.push({ lang: l1 || l2 || "text", file: f1 || "", code });
           return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
         });
 
-        // 4. Stash HTML tags generated by thoughts & tool badges so they aren't double-escaped
         const htmlSnippets = [];
         processed = processed.replace(/(<details class="thought-card[\s\S]*?<\/details>|<div class="my-2[\s\S]*?<\/div>)/gi, (match) => {
           htmlSnippets.push(match);
@@ -1683,23 +1563,16 @@ B. Execute Shell Command:
         });
 
         let safeProse = Utils.escapeHtml(processed);
-
-        // 5. Restore HTML Snippets
         htmlSnippets.forEach((snippet, index) => {
           safeProse = safeProse.replace(`__HTML_SNIPPET_${index}__`, snippet);
         });
 
-        // 6. Markdown Table Engine -> Glassmorphic Tailwind Tables
         safeProse = safeProse.replace(/(?:\|.*\|\n?)+/g, (match) => {
           const rawRows = match.trim().split('\n');
           let tableHtml = '<div class="overflow-x-auto my-4 rounded-xl border border-white/10 shadow-xl bg-surface-950/60"><table class="w-full text-left border-collapse font-sans text-xs">';
-          
           let isHeader = true;
           rawRows.forEach((row) => {
-            if (row.includes('---')) {
-              isHeader = false;
-              return;
-            }
+            if (row.includes('---')) { isHeader = false; return; }
             const cols = row.split('|').map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length);
             tableHtml += `<tr class="border-b border-white/5 transition-colors hover:bg-white/[0.02]">`;
             cols.forEach(col => {
@@ -1712,11 +1585,9 @@ B. Execute Shell Command:
             tableHtml += `</tr>`;
             isHeader = false;
           });
-          
           return tableHtml + '</table></div>';
         });
 
-        // 7. Headers, Callouts, Bold & Inline Code
         safeProse = safeProse
           .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-cyan-300 mt-4 mb-2 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> $1</h3>')
           .replace(/^## (.*$)/gim, '<h2 class="text-base font-bold text-white mt-5 mb-2 pb-1 border-b border-white/5">$1</h2>')
@@ -1726,7 +1597,6 @@ B. Execute Shell Command:
           .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
           .replace(/\n/g, '<br/>');
 
-        // 8. Re-inject Syntactically Styled Code Blocks
         codeBlocks.forEach((item, index) => {
           const htmlCard = `
             <div class="bg-surface-950 border border-white/10 rounded-xl my-4 overflow-hidden shadow-2xl">
@@ -1794,17 +1664,14 @@ B. Execute Shell Command:
         const btn = document.getElementById("btnAiSend");
         if (!promptText) return;
 
-        // Push User Message
         State.ai.history.push({ role: "user", content: promptText });
         inp.value = ""; 
         inp.style.height = "auto";
         this.renderChat();
 
-        // Lock UI
         btn.disabled = true;
         btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin text-black"></i>';
 
-        // Inject Pulse Skeleton
         const chatBox = document.getElementById("aiChatHistory");
         const skeleton = document.createElement("div");
         skeleton.id = "activeThinkingIndicator";
@@ -1828,10 +1695,8 @@ B. Execute Shell Command:
         chatBox.scrollTop = chatBox.scrollHeight;
         lucide.createIcons();
 
-        // Fetch Reply
         const result = await SystemAPI.agentChat(promptText);
         
-        // Remove Skeleton
         const loaderDom = document.getElementById("activeThinkingIndicator");
         if (loaderDom) loaderDom.remove();
 
@@ -1840,7 +1705,6 @@ B. Execute Shell Command:
           State.ai.history.push({ role: "assistant", content: reply });
           saveState();
 
-          // Auto-Focus Orchestrator
           if (reply.includes("[TOOL:WRITE_FILE")) {
             IDE.toggleCodespacePane(true);
             IDE.setViewMode('code');
@@ -1850,33 +1714,27 @@ B. Execute Shell Command:
             IDE.setViewMode('terminal');
           }
 
-          // Process Agent File Mutations Natively in Client-Side State
-          // (Backend handles it too, but this provides instant visual snap)
           const writeRegex = /\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g;
           let mWrite;
           while ((mWrite = writeRegex.exec(reply)) !== null) {
             const fName = mWrite[1];
             State.vfs[fName] = mWrite[2].trim();
             saveState();
-            IDE.openFileTab(fName); // This also forces a tree render
+            IDE.openFileTab(fName);
           }
 
-          // Trigger Executions visibly if specified
           const execRegex = /\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g;
           let mExec;
           while ((mExec = execRegex.exec(reply)) !== null) {
             const cmd = mExec[1].trim();
             const termOut = document.getElementById("csTermOutput");
             Terminal.print(termOut, `[Agent Auto-Exec]: ➜ ${cmd}`, "text-cyan-400 font-bold mt-2");
-            // Note: In your backend Vercel logic, the backend ALREADY ran this and returned the files.
-            // If you are relying on client-side triggering, you would run SystemAPI.executeTerminal(cmd) here.
           }
 
         } else {
           State.ai.history.push({ role: "assistant", content: `**[Engine Fault]:** ${result.error}\n${result.details || ''}` });
         }
 
-        // Unlock UI
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>';
         lucide.createIcons();
@@ -1893,7 +1751,7 @@ B. Execute Shell Command:
     };
 
     // ==========================================
-    // 8. WHITEBOARD MODULE (PRO)
+    // 8. WHITEBOARD CONTROLLER
     // ==========================================
     const Whiteboard = {
       init() {
@@ -1908,18 +1766,15 @@ B. Execute Shell Command:
         this.undoStack = [];
         this.redoStack = [];
 
-        // Mount listeners securely
         this.cv.addEventListener("mousedown", this.start.bind(this));
         this.cv.addEventListener("mousemove", this.draw.bind(this));
         this.cv.addEventListener("mouseup", this.stop.bind(this));
         this.cv.addEventListener("mouseleave", this.stop.bind(this));
         
-        // Touch support
-        this.cv.addEventListener("touchstart", (e) => { e.preventDefault(); const t = e.touches[0]; this.start(t); }, {passive: false});
-        this.cv.addEventListener("touchmove", (e) => { e.preventDefault(); const t = e.touches[0]; this.draw(t); }, {passive: false});
+        this.cv.addEventListener("touchstart", (e) => { e.preventDefault(); this.start(e.touches[0]); }, {passive: false});
+        this.cv.addEventListener("touchmove", (e) => { e.preventDefault(); this.draw(e.touches[0]); }, {passive: false});
         this.cv.addEventListener("touchend", this.stop.bind(this));
 
-        // Use ResizeObserver for ultra-accurate DPI mapping instead of window resize
         const resizeObserver = new ResizeObserver(Utils.debounce(() => this.resize(), 50));
         resizeObserver.observe(this.cv.parentElement);
 
@@ -1930,10 +1785,7 @@ B. Execute Shell Command:
         const wrap = this.cv.parentElement;
         if (!wrap || wrap.clientWidth === 0) return;
         
-        // Preserve state across resize
-        const savedData = State.wb || localStorage.getItem("lumina_wb_state");
-        
-        // Match internal pixel resolution to DOM size exactly
+        const savedData = State.wb.dataURL || localStorage.getItem("lumina_wb_state");
         this.cv.width = wrap.clientWidth;
         this.cv.height = wrap.clientHeight;
         
@@ -1953,7 +1805,7 @@ B. Execute Shell Command:
 
       commitState() {
         const data = this.cv.toDataURL("image/png");
-        State.wb = data;
+        State.wb.dataURL = data;
         localStorage.setItem("lumina_wb_state", data);
       },
 
@@ -1966,7 +1818,7 @@ B. Execute Shell Command:
         this.startY = e.clientY - rect.top;
 
         if (this.tool === 'text') {
-          const txt = prompt("Text label:");
+          const txt = prompt("Enter text label:");
           if (txt) {
             this.ctx.fillStyle = this.color;
             this.ctx.font = `${Math.max(16, this.size * 5)}px 'Inter', sans-serif`;
@@ -2080,10 +1932,10 @@ B. Execute Shell Command:
       toggleGrid() {
         const wrap = document.getElementById("whiteboardContainer");
         const btn = document.getElementById("btnWbGrid");
-        if (wrap.classList.contains("bg-dots")) {
-          wrap.classList.remove("bg-dots"); btn.textContent = "Grid: Off";
+        if (wrap.classList.contains("bg-dot-pattern")) {
+          wrap.classList.remove("bg-dot-pattern"); btn.textContent = "Grid: Off";
         } else {
-          wrap.classList.add("bg-dots"); btn.textContent = "Grid: On";
+          wrap.classList.add("bg-dot-pattern"); btn.textContent = "Grid: On";
         }
       },
 
@@ -2096,7 +1948,7 @@ B. Execute Shell Command:
     };
 
     // ==========================================
-    // 9. NATIVE COMPILERS (E2B BACKED)
+    // 9. NATIVE COMPILERS CONTROLLER
     // ==========================================
     const Compilers = {
       init() {
@@ -2112,8 +1964,6 @@ B. Execute Shell Command:
         });
         
         document.getElementById(btnMap[l]).className = "px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer transition-colors shadow-sm";
-        
-        // Load Sample Code
         document.getElementById("compilerCodeInput").value = State.compilers.samples[l] || "";
       },
 
@@ -2135,7 +1985,7 @@ B. Execute Shell Command:
     };
 
     // ==========================================
-    // 10. NOTES VAULT (.txt Import/Export)
+    // 10. NOTES VAULT CONTROLLER
     // ==========================================
     const Notes = {
       init() {
@@ -2200,17 +2050,6 @@ B. Execute Shell Command:
         Utils.showToast("Vault Updated", "New note created.");
       },
 
-      deleteNote() {
-        if (State.notes.list.length <= 1) return alert("Cannot delete the last remaining note.");
-        if (confirm("Permanently delete this note?")) {
-          State.notes.list = State.notes.list.filter(n => n.id !== State.notes.activeId);
-          State.notes.activeId = State.notes.list[0].id;
-          saveState();
-          this.renderTabs();
-          this.loadContent();
-        }
-      },
-
       handleUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -2268,14 +2107,13 @@ B. Execute Shell Command:
       },
 
       renderMarkdownPreview(rawText) {
-        // Reuse the AI Markdown Engine for standard notes
         document.getElementById("notePreviewCol").innerHTML = AI.parseMarkdown(rawText);
         lucide.createIcons();
       }
     };
 
     // ==========================================
-    // 11. PROJECTS EXM (GitHub Scanner)
+    // 11. PROJECTS CONTROLLER
     // ==========================================
     const Projects = {
       init() {
@@ -2330,14 +2168,12 @@ B. Execute Shell Command:
         document.getElementById("activeProjectTitle").textContent = `EXM/${p.name}/`;
         this.renderList();
         
-        // Resolve Github Path to Localhost equivalent
         let pathStr = p.path.replace(/^\.\//, "").replace(/^\//, "");
         if (!pathStr.startsWith("EXM/")) pathStr = "EXM/" + pathStr;
         if (pathStr.endsWith("/")) pathStr += "index.html";
         else if (!pathStr.includes(".html") && !pathStr.includes(".")) pathStr += "/index.html";
         
         const targetUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1) + pathStr;
-        
         document.getElementById("previewIframe").src = targetUrl;
         document.getElementById("iframeOverlay").classList.add("hidden");
       },
@@ -2365,7 +2201,7 @@ B. Execute Shell Command:
     };
 
     // ==========================================
-    // 12. UI SETTINGS & UTILS
+    // 12. SETTINGS & UI HELPERS
     // ==========================================
     const Settings = {
       setTheme(t) {
@@ -2386,11 +2222,11 @@ B. Execute Shell Command:
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `luminavista_full_backup_${Date.now()}.json`;
+        a.download = `luminavista_backup_${Date.now()}.json`;
         a.click();
       },
       flushCache() {
-        if (confirm("CRITICAL WARNING: This will permanently purge your VFS, Notes, and AI Memory from local storage. Are you sure?")) {
+        if (confirm("WARNING: All local state, files, and notes will be permanently purged. Proceed?")) {
           localStorage.clear();
           window.location.reload();
         }
@@ -2398,11 +2234,26 @@ B. Execute Shell Command:
     };
 
     const UI = {
+      toggleSidebar() {
+        const sb = document.getElementById("mainSidebar");
+        const icon = document.getElementById("sidebarToggleIcon");
+        const isMin = sb.style.width === "68px";
+        sb.style.width = isMin ? "250px" : "68px";
+        document.querySelectorAll(".sidebar-label").forEach(el => el.classList.toggle("hidden", !isMin));
+        icon.setAttribute("data-lucide", isMin ? "chevrons-left" : "chevrons-right");
+        lucide.createIcons();
+      },
+
       openCommandPalette() {
         const m = document.getElementById("cmdModal");
         m.style.display = "flex";
         setTimeout(() => { m.classList.remove("opacity-0"); document.getElementById("cmdSearchInput").focus(); }, 10);
         this.handleCmdSearch({ target: { value: '' } });
+      },
+      closeCommandPalette() {
+        const m = document.getElementById("cmdModal");
+        m.classList.add("opacity-0");
+        setTimeout(() => m.style.display = "none", 200);
       },
       handleCmdSearch(e) {
         const q = e.target.value.toLowerCase();
@@ -2412,9 +2263,12 @@ B. Execute Shell Command:
           { label: "Navigate to Compilers", act: () => App.switchTab('tab-sandbox') },
           { label: "Navigate to Whiteboard", act: () => App.switchTab('tab-whiteboard') },
           { label: "Navigate to Terminal", act: () => App.switchTab('tab-terminal') },
-          { label: "Configure Core Personas", act: this.openAiConfig },
-          { label: "Toggle IDE Workspace", act: IDE.toggleCodespacePane },
-          { label: "Emergency Flush Cache", act: Settings.flushCache }
+          { label: "Navigate to Telemetry", act: () => App.switchTab('tab-analytics') },
+          { label: "Navigate to Notes Vault", act: () => App.switchTab('tab-scratchpad') },
+          { label: "Open Settings", act: () => App.switchTab('tab-controls') },
+          { label: "Configure Core AI Settings", act: this.openAiConfig },
+          { label: "Toggle IDE Workspace Pane", act: IDE.toggleCodespacePane },
+          { label: "Clear AI Conversation", act: AI.clearChat }
         ];
         const res = document.getElementById("cmdResults");
         res.innerHTML = "";
@@ -2422,13 +2276,16 @@ B. Execute Shell Command:
           const row = document.createElement("button");
           row.className = "w-full px-3 py-2 text-left text-xs font-mono text-zinc-300 hover:text-white hover:bg-white/10 rounded-lg flex items-center justify-between cursor-pointer transition-colors";
           row.innerHTML = `<span>${item.label}</span><i data-lucide="arrow-right" class="w-3.5 h-3.5 text-cyan-400"></i>`;
-          row.onclick = () => { document.getElementById("cmdModal").style.display = "none"; item.act(); };
+          row.onclick = () => { UI.closeCommandPalette(); item.act(); };
           res.appendChild(row);
         });
         lucide.createIcons();
       },
+
       openAiConfig() {
         const m = document.getElementById("aiConfigModal");
+        document.getElementById("modalAiModelSelect").value = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
+        document.getElementById("modalCheckWebSearch").checked = localStorage.getItem("lumina_web_search") === "true";
         m.style.display = "flex";
         setTimeout(() => m.classList.remove("opacity-0"), 10);
       },
@@ -2441,13 +2298,23 @@ B. Execute Shell Command:
         localStorage.setItem("lumina_ai_model", document.getElementById("modalAiModelSelect").value);
         localStorage.setItem("lumina_web_search", document.getElementById("modalCheckWebSearch").checked);
         document.getElementById("aiActiveModelBadge").textContent = document.getElementById("modalAiModelSelect").value;
+        const webBadge = document.getElementById("webSearchActiveBadge");
+        if (document.getElementById("modalCheckWebSearch").checked) {
+          webBadge.classList.remove("hidden");
+          webBadge.classList.add("flex");
+        } else {
+          webBadge.classList.add("hidden");
+          webBadge.classList.remove("flex");
+        }
       },
+
       openSourceInspector() {
         const m = document.getElementById("sourceModal");
         m.style.display = "flex";
         setTimeout(() => m.classList.remove("opacity-0"), 10);
         document.getElementById("sourceCodeBlock").textContent = document.documentElement.outerHTML;
       },
+
       updateDesignPreview() {
         const b = document.getElementById("sliderBlur").value;
         const o = document.getElementById("sliderOpacity").value / 100;
@@ -2464,34 +2331,30 @@ B. Execute Shell Command:
         c.style.borderRadius = `${r}px`;
         c.style.boxShadow = `0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, ${g})`;
       },
+
       copyDesignCss() {
         navigator.clipboard.writeText(`.glass { background: rgba(11, 15, 25, ${document.getElementById("sliderOpacity").value / 100}); backdrop-filter: blur(${document.getElementById("sliderBlur").value}px); border-radius: ${document.getElementById("sliderRadius").value}px; box-shadow: 0 0 30px rgba(0,242,254,${document.getElementById("sliderGlow").value / 100}); }`);
         Utils.showToast("Copied", "CSS Token copied to clipboard.");
-      },
-      toggleSidebar() {
-        const sb = document.getElementById("mainSidebar");
-        const icon = document.getElementById("sidebarToggleIcon");
-        const isMin = sb.style.width === "68px";
-        
-        sb.style.width = isMin ? "250px" : "68px";
-        document.querySelectorAll(".sidebar-label").forEach(el => el.classList.toggle("hidden", !isMin));
-        icon.setAttribute("data-lucide", isMin ? "chevrons-left" : "chevrons-right");
-        lucide.createIcons();
       }
     };
 
-    // Global Keybinds
+    // Global Key Listener
     window.addEventListener("keydown", e => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); UI.openCommandPalette(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault(); 
+        UI.openCommandPalette();
+      }
       if (e.key === "Escape") {
-        document.getElementById("cmdModal").style.display = "none";
-        document.getElementById("aiConfigModal").style.display = "none";
+        UI.closeCommandPalette();
+        UI.closeAiConfig();
         document.getElementById("sourceModal").style.display = "none";
       }
     });
 
-    // Boot App
-    App.init();
+    // Boot Routine
+    window.addEventListener("DOMContentLoaded", () => {
+      App.init();
+    });
   </script>
 </body>
 </html>
