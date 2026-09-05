@@ -1,7 +1,7 @@
 import { Redis } from '@upstash/redis';
 import { Sandbox } from '@e2b/code-interpreter';
 
-export const maxDuration = 60; // Max Vercel Timeout
+export const maxDuration = 60; // Max execution time for Vercel Hobby
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -10,17 +10,16 @@ export default async function handler(req, res) {
   const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
   const redis = new Redis({ url, token });
-  const sessionKey = "admin_workspace";
 
   try {
     let { requestedModel, messages, currentVfs } = req.body;
     let terminalLogs = [];
     let isTaskComplete = false;
     let loopCount = 0;
-    const MAX_LOOPS = 2; // Prevent infinite loops
+    const MAX_LOOPS = 2; // Prevents infinite looping within Vercel's 60s timeout
     let aiReply = "";
 
-    // Autonomous Execution Loop
+    // === THE AUTONOMOUS EXECUTION LOOP ===
     while (!isTaskComplete && loopCount < MAX_LOOPS) {
       loopCount++;
       
@@ -37,15 +36,15 @@ export default async function handler(req, res) {
       
       messages.push({ role: "assistant", content: aiReply });
 
-      // 2. Parse Tool Executions
+      // 2. Parse Tool Executions from AI response
       let hasTerminalExec = false;
-      const writeRegex = /\[TOOL:WRITE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE\]/g;
+      const writeRegex = /\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g;
       const execRegex = /\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g;
       
       let match;
       while ((match = writeRegex.exec(aiReply)) !== null) {
         currentVfs[match[1]] = match[2].trim();
-        terminalLogs.push(`[System]: Wrote artifact ${match[1]}`);
+        terminalLogs.push(`[Agent Action]: Wrote artifact ${match[1]}`);
       }
 
       let cmdsToRun = [];
@@ -56,9 +55,10 @@ export default async function handler(req, res) {
 
       // 3. E2B MicroVM Execution & Auto-Fixing
       if (hasTerminalExec && process.env.E2B_API_KEY) {
-        terminalLogs.push(`[System]: Booting isolated E2B microVM...`);
+        terminalLogs.push(`[System]: Booting isolated E2B microVM for execution...`);
         const sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
         
+        // Inject current files into the VM
         for (const [name, content] of Object.entries(currentVfs)) {
           await sbx.files.write(name, content);
         }
@@ -66,22 +66,23 @@ export default async function handler(req, res) {
         let loopFailed = false;
         let systemFeedback = "";
 
+        // Run commands
         for (const cmd of cmdsToRun) {
           terminalLogs.push(`➜ ${cmd}`);
           const execution = await sbx.commands.run(cmd, { timeoutMs: 15000 });
           
           if (execution.stdout) terminalLogs.push(execution.stdout);
           
-          // IF COMMAND FAILS -> Inject error back to AI to fix it
+          // AUTONOMOUS FEEDBACK: If command crashes, inject error back to AI
           if (execution.stderr || execution.error) {
-            terminalLogs.push(`[Error]: ${execution.stderr || execution.error.message}`);
-            systemFeedback += `Command '${cmd}' failed with error:\n${execution.stderr}\nPlease analyze this error, rewrite the required files using [TOOL:WRITE], and run the command again using [TOOL:EXEC].`;
+            terminalLogs.push(`[Crash Detected]: ${execution.stderr || execution.error.message}`);
+            systemFeedback += `Command '${cmd}' failed with error:\n${execution.stderr}\nPlease analyze this error, rewrite the required files using [TOOL:WRITE_FILE], and run the command again using [TOOL:EXEC].`;
             loopFailed = true;
             break; 
           }
         }
 
-        // Sync files back
+        // Sync files back in case the VM modified them
         try {
           const list = await sbx.files.list('.');
           for (const item of list) {
@@ -90,9 +91,10 @@ export default async function handler(req, res) {
         } catch (ignore) {}
         await sbx.kill();
 
+        // If loop failed, restart the while-loop without user input
         if (loopFailed) {
+          terminalLogs.push(`[System]: Initiating autonomous self-correction loop...`);
           messages.push({ role: "user", content: `[SYSTEM AUTO-FEEDBACK]:\n${systemFeedback}` });
-          // Loop repeats here to allow AI to fix its own code automatically
         } else {
           isTaskComplete = true; // Success! Exit loop.
         }
@@ -100,14 +102,6 @@ export default async function handler(req, res) {
         isTaskComplete = true; // No terminal commands needed. Exit loop.
       }
     }
-
-    // 4. Save the Final Cloud State to Redis (Runs even if browser disconnects)
-    const currentState = JSON.parse(await redis.get(sessionKey) || "{}");
-    await redis.set(sessionKey, JSON.stringify({
-      ...currentState,
-      vfs: currentVfs,
-      chat: messages
-    }));
 
     return res.status(200).json({ reply: aiReply, vfs: currentVfs, logs: terminalLogs, messages });
 

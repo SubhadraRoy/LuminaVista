@@ -1,25 +1,33 @@
 import { Redis } from '@upstash/redis';
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  // CORS Preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    return res.status(200).end();
+  }
 
   const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  let userSession = "admin_workspace"; // Centralized state key
+  
+  if (!url || !token) return res.status(500).json({ error: 'Redis credentials missing.' });
+
+  const redis = new Redis({ url, token });
+  const sessionKey = "master_workspace_state"; // Centralized state key for your admin dashboard
 
   try {
-    const redis = new Redis({ url, token });
-
-    // Handle GET: Retrieve the workspace state when the dashboard loads
+    // GET: Retrieve the workspace state when the dashboard loads
     if (req.method === 'GET') {
-      const state = await redis.get(userSession);
+      const state = await redis.get(sessionKey);
       return res.status(200).json(state || { vfs: null, notes: null, whiteboard: null, chat: null });
     }
 
-    // Handle POST: Update the workspace state when the user edits something
+    // POST: Update the workspace state when you draw, type, or code
     if (req.method === 'POST') {
       const { vfs, notes, whiteboard, chat } = req.body;
-      const currentState = (await redis.get(userSession)) || {};
+      const currentState = (await redis.get(sessionKey)) || {};
       
       const newState = {
         vfs: vfs !== undefined ? vfs : currentState.vfs,
@@ -28,7 +36,7 @@ export default async function handler(req, res) {
         chat: chat !== undefined ? chat : currentState.chat
       };
 
-      await redis.set(userSession, JSON.stringify(newState));
+      await redis.set(sessionKey, JSON.stringify(newState));
       return res.status(200).json({ success: true });
     }
 
