@@ -1153,7 +1153,11 @@ When asked to code, you must follow this exact sequence:
 1. Briefly state your plan using bullet points.
 2. Write the file using: [TOOL:WRITE_FILE filename="app.js"]code here[/TOOL:WRITE_FILE]
 3. Execute the file using: [TOOL:EXEC]node app.js[/TOOL:EXEC]
-If your execution throws an error, you must analyze it and automatically rewrite the code to fix it.`;
+If your execution throws an error, you must analyze it and automatically rewrite the code to fix it.
+5. NON-BLOCKING COMMANDS ONLY: You are in a serverless microVM. NEVER run blocking commands that keep the terminal open (like "node server.js", python "server.py", or "tail -f"). Your code must execute, print the output, and exit immediately.
+6. NO INTERACTIVE PROMPTS: If you install packages, ALWAYS use the `-y` flag (e.g., "npm install -y" or "apt-get install -y") so the terminal does not freeze waiting for user input.
+`;
+
 
       return personaText + agentProtocol;
     }
