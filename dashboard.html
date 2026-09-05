@@ -285,7 +285,7 @@
               <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
             </div>
 
-            <!-- Embedded Terminal View (ADDED & FIXED) -->
+            <!-- Embedded Terminal View (CLAUDE CODE STYLE) -->
             <div id="csTerminalContainer" class="hidden flex-1 h-full bg-[#0d1117] flex-col relative font-mono text-[11px] overflow-hidden">
               <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all custom-scrollbar">
                 <div class="text-cyan-400 font-bold">LuminaVista Embedded MicroVM CLI</div>
@@ -1374,7 +1374,7 @@ If your execution throws an error, you must analyze it and automatically rewrite
           // === CLAUDE CODE AUTO-FOCUS ORCHESTRATOR ===
           if (reply.includes("[TOOL:WRITE_FILE")) {
             toggleCodespacePane(true);
-            setCodespaceView('code'); // Auto-switch to see the code
+            setCodespaceView('editor'); // Auto-switch to see the code
           }
           if (reply.includes("[TOOL:EXEC]")) {
             toggleCodespacePane(true);
