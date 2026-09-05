@@ -1431,63 +1431,92 @@ Your output directly shapes the LuminaVista frontend. Format your responses with
     }
 
     async function handleSendAiPrompt(e) {
-      if (e) e.preventDefault();
-      const inp = document.getElementById("aiPromptTextarea");
-      const prompt = inp.value.trim();
-      const btn = document.getElementById("btnAiSend");
-      if (!prompt) return;
+  if (e) e.preventDefault();
+  const inp = document.getElementById("aiPromptTextarea");
+  const prompt = inp.value.trim();
+  const btn = document.getElementById("btnAiSend");
+  if (!prompt) return;
 
-      aiConversation.push({ role: "user", content: prompt });
-      inp.value = ""; inp.style.height = "auto";
-      renderAiChat();
+  aiConversation.push({ role: "user", content: prompt });
+  inp.value = ""; 
+  inp.style.height = "auto";
+  renderAiChat();
 
-      btn.disabled = true;
-      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>';
-      lucide.createIcons();
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>';
 
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt,
-            requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
-            webSearch: localStorage.getItem("lumina_web_search") === "true",
-            messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation],
-            currentVfs: vfs 
-          })
-        });
+  // Inject Real-Time Thinking Indicator Skeleton into the Chat Box
+  const chatBox = document.getElementById("aiChatHistory");
+  const thinkingIndicator = document.createElement("div");
+  thinkingIndicator.id = "activeThinkingIndicator";
+  thinkingIndicator.className = "flex items-start gap-3";
+  thinkingIndicator.innerHTML = `
+    <div class="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shrink-0">
+      <i data-lucide="cpu" class="w-4 h-4 animate-pulse"></i>
+    </div>
+    <div class="max-w-[85%] flex-1">
+      <div class="thinking-skeleton p-4 rounded-2xl rounded-tl-sm border border-cyan-500/20 text-xs font-mono space-y-2">
+        <div class="flex items-center gap-2 text-cyan-300 font-bold tracking-wider uppercase text-[10px]">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+          Formulating Cognitive Architecture & Verifying MicroVM Playbooks...
+        </div>
+        <div class="h-2 bg-white/5 rounded w-3/4 animate-pulse"></div>
+        <div class="h-2 bg-white/5 rounded w-1/2 animate-pulse" style="animation-delay: 0.2s"></div>
+      </div>
+    </div>
+  `;
+  chatBox.appendChild(thinkingIndicator);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  lucide.createIcons();
 
-        const data = await res.json();
-        if (res.ok) {
-          const reply = data.reply || data.choices?.[0]?.message?.content || "Task executed.";
-          aiConversation.push({ role: "assistant", content: reply });
-          
-          // === CLAUDE CODE AUTO-FOCUS ORCHESTRATOR ===
-          if (reply.includes("[TOOL:WRITE_FILE")) {
-            toggleCodespacePane(true);
-            setCodespaceView('editor'); // Auto-switch to see the code
-          }
-          if (reply.includes("[TOOL:EXEC]")) {
-            toggleCodespacePane(true);
-            setCodespaceView('terminal'); // Auto-switch to watch the terminal execute
-          }
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
+        webSearch: localStorage.getItem("lumina_web_search") === "true",
+        messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation],
+        currentVfs: vfs 
+      })
+    });
 
-          await parseAndExecuteAgentDirectives(reply);
-        } else {
-          aiConversation.push({ role: "assistant", content: `**[Engine Fault]:** ${data.error || res.statusText}\n${data.details || ''}` });
-        }
-      } catch (err) {
-        aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>';
-        lucide.createIcons();
-        localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation));
-        renderAiChat();
+    const data = await res.json();
+    thinkingIndicator.remove(); // Remove thinking skeleton once response arrives
+
+    if (res.ok) {
+      const reply = data.reply || data.choices?.[0]?.message?.content || data.message?.content || "Task executed.";
+      aiConversation.push({ role: "assistant", content: reply });
+      
+      // Autonomous Auto-Focus routing
+      if (reply.includes("[TOOL:WRITE_FILE")) {
+        toggleCodespacePane(true);
+        setCodespaceView('code');
       }
+      if (reply.includes("[TOOL:EXEC]")) {
+        toggleCodespacePane(true);
+        setCodespaceView('terminal');
+      }
+
+      await parseAndExecuteAgentDirectives(reply);
+    } else {
+      aiConversation.push({ role: "assistant", content: `**[Engine Fault]:** ${data.error || res.statusText}\n${data.details || ''}` });
     }
+  } catch (err) {
+    if (document.getElementById("activeThinkingIndicator")) {
+      document.getElementById("activeThinkingIndicator").remove();
+    }
+    aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="arrow-up" class="w-4 h-4"></i>';
+    lucide.createIcons();
+    localStorage.setItem("lumina_ai_history", JSON.stringify(aiConversation));
+    renderAiChat();
+  }
+}
 
     function clearAiChat() {
       aiConversation = [];
