@@ -1,6 +1,7 @@
 {
   "name": "luminavista-os",
   "version": "10.0.0",
+  "type": "module",
   "private": true,
   "dependencies": {
     "@upstash/redis": "^1.28.0",

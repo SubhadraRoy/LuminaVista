@@ -56,6 +56,7 @@
     
     .sidebar-resizer { width: 4px; cursor: col-resize; transition: background 0.2s; }
     .sidebar-resizer:hover, .sidebar-resizer.resizing { background: var(--primary); }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
   </style>
 </head>
 <body class="flex h-screen font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950 select-none">
@@ -71,9 +72,7 @@
     <!-- Sidebar Header -->
     <div class="p-4 border-b border-white/5 flex items-center justify-between">
       <div id="sidebarBrand" class="flex items-center gap-3 overflow-hidden">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_15px_rgba(0,242,254,0.3)] shrink-0">
-          GX
-        </div>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_15px_rgba(0,242,254,0.3)] shrink-0">GX</div>
         <div class="sidebar-label whitespace-nowrap">
           <h1 class="font-heading font-bold text-base text-white tracking-tight leading-none">LuminaVista</h1>
           <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v10</p>
@@ -161,14 +160,14 @@
     <main class="flex-1 overflow-hidden p-4 lg:p-5 w-full max-w-[2100px] mx-auto flex flex-col min-h-0 select-text">
       
       <!-- ===================================================================== -->
-      <!-- TAB 1: ai-llm STUDIO                                                  -->
+      <!-- TAB 1: ai-llm STUDIO (Full-Width Studio + Floating Config Modal)      -->
       <!-- ===================================================================== -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-4">
         
-        <!-- Center Chat Box -->
+        <!-- Center Chat Box (Maximized Real Estate) -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
-          <!-- Header -->
+          <!-- ai-llm Header -->
           <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-black font-bold shadow-md shadow-cyan-500/20">
@@ -186,6 +185,7 @@
               </div>
             </div>
 
+            <!-- Action Controls -->
             <div class="flex items-center gap-2">
               <button onclick="openAiConfigModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors" title="Configure AI & Personas">
                 <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -201,10 +201,10 @@
             </div>
           </div>
 
-          <!-- Chat History -->
+          <!-- Chat Conversation Scroll Area -->
           <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[13px] leading-relaxed relative min-h-0"></div>
 
-          <!-- Prompt Form -->
+          <!-- Floating Input Bar -->
           <div class="p-4 pt-1 z-10 relative shrink-0">
             <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
               <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
@@ -217,10 +217,10 @@
           </div>
         </div>
 
-        <!-- Right Panel: Advanced Interactive Artifact IDE & Embedded Terminal -->
-        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[680px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
+        <!-- Right Panel: Advanced Interactive Artifact IDE & Tree Manager -->
+        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[650px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
           
-          <!-- IDE Header -->
+          <!-- IDE Top Header -->
           <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-2">
               <i data-lucide="binary" class="w-4 h-4 text-cyan-400"></i>
@@ -240,7 +240,7 @@
             </div>
           </div>
 
-          <!-- Breadcrumbs & Actions -->
+          <!-- Advanced Sub-Bar: Breadcrumbs & Actions -->
           <div class="px-3 py-1.5 bg-surface-950 border-b border-white/5 flex items-center justify-between text-xs font-mono shrink-0">
             <div class="flex items-center gap-1.5 text-zinc-400">
               <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -260,13 +260,13 @@
             </div>
           </div>
 
-          <!-- File Tabs -->
+          <!-- File Tabs Bar -->
           <div class="px-2 py-1 bg-surface-900/60 border-b border-white/5 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0" id="codespaceFileTabs"></div>
 
-          <!-- Main Dual Workspace (Explorer Tree + Views) -->
+          <!-- Main Dual Workspace: Explorer Tree + Code/Preview/Terminal -->
           <div class="flex-1 flex min-h-0 relative bg-surface-950">
             
-            <!-- Explorer Sidebar -->
+            <!-- Collapsible File Tree Sidebar inside IDE -->
             <div class="w-44 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
               <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center">
                 <span>Explorer</span>
@@ -275,19 +275,19 @@
               <div id="vfsTreeContainer" class="flex-1 p-2 space-y-1 overflow-y-auto"></div>
             </div>
 
-            <!-- Code Editor Area -->
+            <!-- Code Editor Column -->
             <div id="csEditorContainer" class="hidden flex-1 h-full flex-col border-r border-white/5 relative">
               <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-xs text-zinc-200 outline-none resize-none leading-relaxed selection:bg-cyan-500 selection:text-black"></textarea>
             </div>
 
-            <!-- Live Browser Preview Area -->
+            <!-- Live Browser Preview Column -->
             <div id="csPreviewContainer" class="flex-1 h-full bg-white relative">
               <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
             </div>
 
-            <!-- Embedded Terminal View -->
+            <!-- Embedded Terminal View (ADDED & FIXED) -->
             <div id="csTerminalContainer" class="hidden flex-1 h-full bg-[#0d1117] flex-col relative font-mono text-[11px] overflow-hidden">
-              <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all">
+              <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all custom-scrollbar">
                 <div class="text-cyan-400 font-bold">LuminaVista Embedded MicroVM CLI</div>
                 <div class="text-zinc-500">Autonomous loop execution output will stream here.</div>
               </div>
@@ -299,7 +299,7 @@
 
           </div>
 
-          <!-- Status Footer -->
+          <!-- Codespace Status Footer -->
           <div class="px-4 py-2 border-t border-white/10 bg-surface-900/90 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0">
             <span id="csStatusBadge" class="flex items-center gap-1.5 text-emerald-400">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Runtime Synced
@@ -408,7 +408,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: WHITEBOARD PRO                                                 -->
+      <!-- TAB 4: WHITEBOARD PRO (Persistent Base64 Storage)                     -->
       <!-- ===================================================================== -->
       <section id="tab-whiteboard" class="tab-pane hidden h-full flex-col space-y-3">
         <div class="glass-panel rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
@@ -494,7 +494,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 7: QUANTUM TERMINAL CLI                                           -->
+      <!-- TAB 7: QUANTUM TERMINAL CLI (Agentic E2B MicroVM)                     -->
       <!-- ===================================================================== -->
       <section id="tab-terminal" class="tab-pane space-y-3 hidden h-full flex flex-col">
         <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col min-h-0 space-y-3">
@@ -508,7 +508,7 @@
             <div class="text-[11px] font-mono text-zinc-500">Use <span class="text-cyan-400 font-bold">ai &lt;command&gt;</span> for Autonomous Agent execution</div>
           </div>
           
-          <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto space-y-2 border border-white/5 leading-relaxed">
+          <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-5 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto space-y-2 border border-white/5 leading-relaxed custom-scrollbar">
             <div class="text-cyan-400 font-bold">LuminaVista Quantum Terminal [v10 Linux MicroVM]</div>
             <div class="text-zinc-500">VFS Files automatically mounted. Execute bash, node, python, or use autonomous agent mode.</div>
             <div class="border-b border-white/5 my-2"></div>
@@ -538,7 +538,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 9: NOTES VAULT PRO (.txt/.md Uploads + Markdown Toolbar)           -->
+      <!-- TAB 9: NOTES VAULT PRO (.txt Uploads Added)                           -->
       <!-- ===================================================================== -->
       <section id="tab-scratchpad" class="tab-pane space-y-3 hidden h-full flex flex-col">
         <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -578,8 +578,8 @@
         <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-1 text-xs font-mono shrink-0"></div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-          <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-4 font-mono text-xs resize-none h-full leading-relaxed"></textarea>
-          <div id="notePreviewCol" class="hidden bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-xs text-zinc-300 space-y-3 font-sans h-full leading-relaxed" id="noteMarkdownRender"></div>
+          <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-4 font-mono text-xs resize-none h-full leading-relaxed custom-scrollbar"></textarea>
+          <div id="notePreviewCol" class="hidden bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-xs text-zinc-300 space-y-3 font-sans h-full leading-relaxed custom-scrollbar" id="noteMarkdownRender"></div>
         </div>
       </section>
 
@@ -618,14 +618,19 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- MODALS: CONFIG, COMMAND PALETTE, SOURCE, TOAST                            -->
+  <!-- FLOATING MODAL: AI-LLM CONFIGURATION (Pop-up via Button)                  -->
   <!-- ========================================================================= -->
   <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-5">
+      
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
-        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> ai-llm Studio Settings</h3>
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> ai-llm Studio Settings
+        </h3>
         <button onclick="closeAiConfigModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
+
+      <!-- Web Search Switch -->
       <div class="p-3 bg-surface-900/80 border border-white/5 rounded-xl flex items-center justify-between">
         <div>
           <label for="modalCheckWebSearch" class="text-xs font-bold text-white cursor-pointer block">Live Internet Access</label>
@@ -633,6 +638,8 @@
         </div>
         <input type="checkbox" id="modalCheckWebSearch" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
       </div>
+
+      <!-- Model Selector -->
       <div class="space-y-1.5">
         <label class="text-xs font-mono text-zinc-400">Active Ollama Model:</label>
         <select id="modalAiModelSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfigFromModal()">
@@ -644,6 +651,8 @@
           <option value="nemotron-3-ultra">nemotron-3-ultra</option>
         </select>
       </div>
+
+      <!-- 20+ Personas Roster -->
       <div class="space-y-1.5">
         <label class="text-xs font-mono text-zinc-400">System Persona Roster:</label>
         <select id="modalAiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onModalPersonaChange()">
@@ -672,10 +681,13 @@
           <option value="custom">Custom Directive...</option>
         </select>
       </div>
+
+      <!-- Custom Directive Textarea -->
       <div id="modalCustomPersonaWrapper" class="hidden space-y-1.5">
         <label class="text-xs font-mono text-cyan-400">Custom System Directive:</label>
         <textarea id="modalCustomPersonaPrompt" rows="3" placeholder="Define exact instructions..." class="godx-input w-full p-2.5 text-xs font-mono resize-none leading-relaxed" oninput="saveAiConfigFromModal()"></textarea>
       </div>
+
       <div class="pt-2 flex gap-3">
         <button onclick="checkProviderQuota()" class="flex-1 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-cyan-400 border border-white/10 cursor-pointer">Quota Telemetry</button>
         <button onclick="closeAiConfigModal()" class="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer">Save & Dismiss</button>
@@ -683,6 +695,7 @@
     </div>
   </div>
 
+  <!-- Command Palette Modal (⌘K) -->
   <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-24 p-4 opacity-0 transition-opacity duration-200">
     <div class="bg-surface-900/90 backdrop-blur-2xl max-w-xl w-full p-2 rounded-2xl border border-white/10 shadow-2xl transform scale-95 transition-transform duration-200">
       <div class="flex items-center gap-3 p-3 border-b border-white/5">
@@ -694,23 +707,25 @@
     </div>
   </div>
 
+  <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
     <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20"><i data-lucide="check" class="w-4 h-4"></i></div>
     <div><h4 id="toastTitle" class="text-sm font-bold text-white">Notice</h4><p id="toastMsg" class="text-xs text-zinc-300"></p></div>
   </div>
 
+  <!-- Source Modal -->
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
     <div class="glass-panel max-w-4xl w-full p-6 rounded-3xl relative flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 class="font-heading font-bold text-base text-white">Source Inspector</h3>
         <button onclick="document.getElementById('sourceModal').style.display='none'" class="p-1.5 text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <div class="flex-1 overflow-y-auto bg-surface-950 p-4 rounded-xl my-3 border border-white/5"><pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap">Loading...</code></pre></div>
+      <div class="flex-1 overflow-y-auto bg-surface-950 p-4 rounded-xl my-3 border border-white/5"><pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap custom-scrollbar">Loading...</code></pre></div>
     </div>
   </div>
 
   <!-- ========================================================================= -->
-  <!-- MASTER CLIENT-SIDE LOGIC ENGINE                                          -->
+  <!-- JAVASCRIPT LOGIC ENGINE                                                   -->
   <!-- ========================================================================= -->
   <script>
     lucide.createIcons();
@@ -762,7 +777,31 @@
       loadCodespaceEditor();
       runCodespacePreview();
       initCompilerSample('html');
+
+      // Initialize the background autonomous poller
+      startAutonomousSyncPoller();
     });
+
+    // =========================================================================
+    // BACKGROUND AUTONOMOUS SYNC POLLER
+    // =========================================================================
+    function startAutonomousSyncPoller() {
+      setInterval(async () => {
+        try {
+          // Future-proofing: When you map /api/sync fully, this pulls background state
+          // const res = await fetch("/api/sync", { method: "GET" });
+          // if (res.ok) {
+          //    const data = await res.json();
+          //    if (data && data.vfs && JSON.stringify(data.vfs) !== JSON.stringify(vfs)) {
+          //       vfs = data.vfs;
+          //       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+          //       renderCodespaceFileTree();
+          //       renderCodespaceFileTabs();
+          //    }
+          // }
+        } catch(e) { }
+      }, 5000);
+    }
 
     // =========================================================================
     // 1. SIDEBAR RESIZE & MINIMIZE CONTROLS
@@ -1095,7 +1134,7 @@
     }
 
     // =========================================================================
-    // 4. AUTONOMOUS AI AGENT PROTOCOL (PARSE TOOLS, WRITE/DELETE/EXECUTE)
+    // 4. AUTONOMOUS AI AGENT PROTOCOL & CLAUDE CODE UI PARSER
     // =========================================================================
     function getAiSystemPrompt() {
       const p = localStorage.getItem("lumina_ai_persona") || "normal";
@@ -1104,14 +1143,17 @@
       if (p === "custom" && customPrompt.trim()) personaText = customPrompt.trim();
 
       const agentProtocol = `\n\n[AUTONOMOUS SYSTEM PROTOCOL - YOU HAVE ROOT ACCESS]:
-You have direct read, write, edit, and execution access to this environment.
-1. When writing/editing files for the user, ALWAYS use this exact tag format:
-[TOOL:WRITE_FILE filename="filename.ext"]
-code content here
-[/TOOL:WRITE_FILE]
-2. When deleting files: [TOOL:DELETE_FILE filename="filename.ext"][/TOOL:DELETE_FILE]
-3. When executing terminal commands: [TOOL:EXEC]your bash command[/TOOL:EXEC]
-4. When you return code, the browser automatically executes it and writes it to disk. Do not apologize or say you lack file access.`;
+You are an elite, autonomous AI operating inside LuminaVista OS. 
+[FORMATTING RULES]:
+1. ALWAYS use Markdown tables (| Column | Column |) when listing data, comparing items, or outputting metrics.
+2. ALWAYS use bold text (**Text**) or Markdown headers (### Header) to organize your thoughts.
+
+[EXECUTION LOOP]:
+When asked to code, you must follow this exact sequence:
+1. Briefly state your plan using bullet points.
+2. Write the file using: [TOOL:WRITE_FILE filename="app.js"]code here[/TOOL:WRITE_FILE]
+3. Execute the file using: [TOOL:EXEC]node app.js[/TOOL:EXEC]
+If your execution throws an error, you must analyze it and automatically rewrite the code to fix it.`;
 
       return personaText + agentProtocol;
     }
@@ -1146,18 +1188,7 @@ code content here
         }
       }
 
-      // 3. Parse Markdown code blocks with filename: ext
-      const mdCodeBlockRegex = /```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+))\n([\s\S]*?)```/g;
-      while ((match = mdCodeBlockRegex.exec(rawText)) !== null) {
-        const fname = match[2];
-        const fcontent = match[3];
-        vfs[fname] = fcontent;
-        localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
-        renderCodespaceFileTree();
-        renderCodespaceFileTabs();
-      }
-
-      // 4. Parse Autonomous Execution Directives: [TOOL:EXEC]cmd[/TOOL:EXEC]
+      // 3. Parse Autonomous Execution Directives: [TOOL:EXEC]cmd[/TOOL:EXEC]
       const execRegex = /\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g;
       let execMatch;
       while ((execMatch = execRegex.exec(rawText)) !== null) {
@@ -1180,6 +1211,7 @@ code content here
           if (res.ok) {
             if (d.stdout) termOut.innerHTML += `<div class="text-emerald-400">${escapeHtml(d.stdout)}</div>`;
             if (d.stderr) termOut.innerHTML += `<div class="text-rose-400">${escapeHtml(d.stderr)}</div>`;
+            if (!d.stdout && !d.stderr) termOut.innerHTML += `<div class="text-zinc-500">[Exit 0]</div>`;
             if (Array.isArray(d.workspaceFiles)) {
               d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
               localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
@@ -1197,70 +1229,69 @@ code content here
     }
 
     function escapeHtml(str) {
-      return (str || '')
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     function parseAiMarkdown(t) {
       if (!t) return "";
 
+      // 1. Transform Agent Tools into Sleek UI Widgets
       let processed = t.replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
-        return `\`\`\`${f.split('.').pop()}:${f}\n${c}\n\`\`\``;
-      }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '> *Agent removed file: `$1`*')
-        .replace(/\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g, '> *Agent executed terminal command: `$1`*');
+        return `<div class="my-2 p-2.5 bg-surface-950 border-l-2 border-emerald-500 rounded-lg shadow-sm flex items-center gap-2 font-mono text-[11px] text-emerald-400"><i data-lucide="file-edit" class="w-3.5 h-3.5"></i> Agent wrote file: ${f}</div>\n\`\`\`${f.split('.').pop()}:${f}\n${c}\n\`\`\``;
+      }).replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, '<div class="my-2 p-2 bg-surface-950 border-l-2 border-rose-500 rounded-lg shadow-sm flex items-center gap-2 font-mono text-[11px] text-rose-400"><i data-lucide="trash" class="w-3 h-3"></i> Agent deleted file: $1</div>')
+        .replace(/\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g, '<div class="my-2 p-2.5 bg-surface-950 border-l-2 border-cyan-500 rounded-lg shadow-sm flex items-center gap-2 font-mono text-[11px] text-cyan-400"><i data-lucide="terminal" class="w-3.5 h-3.5"></i> Agent executing: $1</div>');
 
+      // 2. Extract standard code blocks safely
       const codeBlocks = [];
       processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
-        const lang = l1 || l2 || "text";
-        const file = f1 || "";
-        const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
-        codeBlocks.push({ lang, file, code });
-        return placeholder;
+        codeBlocks.push({ lang: l1 || l2 || "text", file: f1 || "", code });
+        return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
       });
 
       let safeProse = escapeHtml(processed);
 
+      // 3. Parse Markdown Tables into Tailwind HTML
+      safeProse = safeProse.replace(/(?:\|.*\|\n)+/g, (match) => {
+        const rows = match.trim().split('\n');
+        let tableHtml = '<div class="overflow-x-auto my-4 shadow-lg rounded-xl border border-white/10"><table class="w-full text-left border-collapse text-xs">';
+        rows.forEach((row, i) => {
+          if (row.includes('---')) return; // Skip markdown separator line
+          const cols = row.split('|').filter(c => c.trim() !== '');
+          tableHtml += '<tr class="border-b border-white/5 hover:bg-white/5 transition-colors">';
+          cols.forEach(col => {
+            const tag = i === 0 ? 'th' : 'td';
+            const cls = i === 0 ? 'p-3 bg-cyan-500/10 text-cyan-300 font-bold tracking-wider' : 'p-3 text-zinc-300';
+            tableHtml += `<${tag} class="${cls}">${col.trim()}</${tag}>`;
+          });
+          tableHtml += '</tr>';
+        });
+        return tableHtml + '</table></div>';
+      });
+
+      // 4. Parse Headers and Bold Text
       safeProse = safeProse
+        .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-cyan-300 mt-4 mb-2">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-base font-bold text-white mt-5 mb-2">$1</h2>')
         .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-300">$1</em>')
-        .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono">$1</code>')
+        .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-400">$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
         .replace(/\n/g, '<br/>');
 
+      // 5. Re-inject Code Blocks
       codeBlocks.forEach((item, index) => {
-        const safeCodeText = escapeHtml(item.code);
-        const cleanAttr = escapeHtml(JSON.stringify(item.code));
-
         const htmlCard = `
-          <div class="bg-surface-950 border border-white/10 rounded-xl my-3 overflow-hidden shadow-md">
-            <div class="px-4 py-1.5 bg-surface-900 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center">
+          <div class="bg-surface-950 border border-white/10 rounded-xl my-4 overflow-hidden shadow-lg">
+            <div class="px-4 py-2 bg-surface-900/80 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center">
               <span class="font-bold flex items-center gap-1.5"><i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${escapeHtml(item.file || item.lang)}</span>
-              <div class="flex items-center gap-2">
-                ${item.file ? `<button onclick='applyArtifactSafe("${escapeHtml(item.file)}", ${cleanAttr})' class="text-emerald-400 font-bold hover:underline cursor-pointer">Apply to VFS</button>` : ''}
-                <button onclick="navigator.clipboard.writeText(this.closest('.bg-surface-950').querySelector('code').innerText); showToast('Copied', 'Code block copied');" class="text-zinc-400 hover:text-white cursor-pointer">Copy</button>
-              </div>
+              <button onclick="navigator.clipboard.writeText(this.closest('.bg-surface-950').querySelector('code').innerText); showToast('Copied', 'Code block copied');" class="text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
             </div>
-            <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed"><code>${safeCodeText}</code></pre>
+            <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed custom-scrollbar"><code>${escapeHtml(item.code)}</code></pre>
           </div>
         `;
         safeProse = safeProse.replace(`__CODE_BLOCK_${index}__`, htmlCard);
       });
 
       return safeProse;
-    }
-
-    function applyArtifactSafe(file, content) {
-      vfs[file] = content;
-      localStorage.setItem('lumina_codespace_vfs', JSON.stringify(vfs));
-      renderCodespaceFileTree();
-      renderCodespaceFileTabs();
-      switchCodespaceFile(file);
-      toggleCodespacePane(true);
-      runCodespacePreview();
-      showToast("Artifact Applied", `Saved ${file} securely.`);
     }
 
     function renderAiChat() {
@@ -1285,6 +1316,9 @@ code content here
 
       aiConversation.forEach(m => {
         const isUser = m.role === "user";
+        // Hide verbose auto-feedback from the user's view
+        if (isUser && m.content.startsWith("[SYSTEM AUTO-FEEDBACK]")) return; 
+
         const row = document.createElement("div");
         row.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
         row.innerHTML = `
@@ -1293,7 +1327,7 @@ code content here
           </div>
           <div class="max-w-[85%]">
             <div class="p-4 rounded-2xl text-xs leading-relaxed ${isUser ? 'bg-surface-850 text-white rounded-tr-sm border border-white/5' : 'bg-surface-900/90 text-zinc-200 rounded-tl-sm border border-cyan-500/10'}">
-              ${isUser ? m.content : parseAiMarkdown(m.content)}
+              ${isUser ? escapeHtml(m.content) : parseAiMarkdown(m.content)}
             </div>
           </div>
         `;
@@ -1327,14 +1361,26 @@ code content here
             prompt,
             requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
             webSearch: localStorage.getItem("lumina_web_search") === "true",
-            messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation]
+            messages: [{ role: "system", content: getAiSystemPrompt() }, ...aiConversation],
+            currentVfs: vfs 
           })
         });
 
         const data = await res.json();
         if (res.ok) {
-          const reply = data.choices?.[0]?.message?.content || data.message?.content || data.response || "Task executed.";
+          const reply = data.reply || data.choices?.[0]?.message?.content || "Task executed.";
           aiConversation.push({ role: "assistant", content: reply });
+          
+          // === CLAUDE CODE AUTO-FOCUS ORCHESTRATOR ===
+          if (reply.includes("[TOOL:WRITE_FILE")) {
+            toggleCodespacePane(true);
+            setCodespaceView('code'); // Auto-switch to see the code
+          }
+          if (reply.includes("[TOOL:EXEC]")) {
+            toggleCodespacePane(true);
+            setCodespaceView('terminal'); // Auto-switch to watch the terminal execute
+          }
+
           await parseAndExecuteAgentDirectives(reply);
         } else {
           aiConversation.push({ role: "assistant", content: `**[Engine Fault]:** ${data.error || res.statusText}\n${data.details || ''}` });
