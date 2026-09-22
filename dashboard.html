@@ -192,6 +192,9 @@
                   <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20 items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
                   </span>
+                  <span id="aiAutonomousBadge" class="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Antigravity Autonomous
+                  </span>
                 </div>
                 <p class="text-[10px] text-zinc-400 font-mono mt-0.5" id="aiActivePersonaBadge">Persona: Normal (Default)</p>
               </div>
@@ -221,6 +224,9 @@
             <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
               <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
                 <textarea id="aiPromptTextarea" rows="1" placeholder="Message ai-llm, edit files, execute bash in microVM... (Ctrl+Enter)" class="w-full bg-transparent border-0 outline-none text-[13px] text-white pl-3 pr-2 py-2.5 resize-none max-h-40 custom-scrollbar" style="min-height: 42px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                <button type="button" id="btnAiAbort" onclick="abortAgentLoop()" class="hidden px-2.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-mono font-bold border border-rose-500/30 flex items-center gap-1.5 mb-0.5 mr-1 cursor-pointer transition-colors" title="Abort Autonomous Agent Loop">
+                  <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i> Abort
+                </button>
                 <button type="submit" id="btnAiSend" class="w-9 h-9 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-0.5 mr-0.5 cursor-pointer">
                   <i data-lucide="arrow-up" class="w-4 h-4"></i>
                 </button>
@@ -420,41 +426,68 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 4: WHITEBOARD PRO (Persistent Base64 Storage + Resize Observer)   -->
+      <!-- TAB 4: WHITEBOARD PRO (Advanced Vector & Freehand Studio)            -->
       <!-- ===================================================================== -->
-      <section id="tab-whiteboard" class="tab-pane hidden h-full flex-col space-y-3">
-        <div class="glass-panel rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <section id="tab-whiteboard" class="tab-pane hidden h-full flex flex-col space-y-3 min-h-0">
+        <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           
           <!-- Tool Palette -->
-          <div class="flex items-center gap-1.5 bg-surface-900 p-1.5 rounded-xl border border-white/10 text-xs">
-            <button onclick="setWbTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer" title="Brush / Freehand"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-            <button onclick="setWbTool('line')" id="wbToolLine" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Straight Line"><i data-lucide="minus" class="w-4 h-4"></i></button>
-            <button onclick="setWbTool('arrow')" id="wbToolArrow" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Directional Arrow"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></button>
-            <button onclick="setWbTool('rect')" id="wbToolRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Rectangle"><i data-lucide="square" class="w-4 h-4"></i></button>
-            <button onclick="setWbTool('circle')" id="wbToolCircle" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Circle"><i data-lucide="circle" class="w-4 h-4"></i></button>
-            <button onclick="setWbTool('text')" id="wbToolText" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Text Label"><i data-lucide="type" class="w-4 h-4"></i></button>
-            <button onclick="setWbTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer" title="Eraser"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1.5 rounded-xl border border-white/10 text-xs">
+            <button onclick="setWbTool('select')" id="wbToolSelect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Select / Move"><i data-lucide="mouse-pointer" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer transition-colors" title="Brush / Freehand"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('highlighter')" id="wbToolHighlighter" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Highlighter (Glow Marker)"><i data-lucide="highlighter" class="w-4 h-4"></i></button>
+            <div class="w-px h-5 bg-white/10 mx-0.5"></div>
+            <button onclick="setWbTool('line')" id="wbToolLine" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Straight Line"><i data-lucide="minus" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('arrow')" id="wbToolArrow" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Directional Arrow"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('rect')" id="wbToolRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Rectangle"><i data-lucide="square" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('roundedRect')" id="wbToolRoundedRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Rounded Rectangle"><i data-lucide="rectangle-horizontal" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('circle')" id="wbToolCircle" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Circle / Ellipse"><i data-lucide="circle" class="w-4 h-4"></i></button>
+            <div class="w-px h-5 bg-white/10 mx-0.5"></div>
+            <button onclick="setWbTool('sticky')" id="wbToolSticky" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Sticky Note"><i data-lucide="sticky-note" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('text')" id="wbToolText" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Text Label"><i data-lucide="type" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Eraser"><i data-lucide="eraser" class="w-4 h-4"></i></button>
           </div>
 
-          <!-- Color & Size -->
-          <div class="flex items-center gap-2 bg-surface-900 p-1.5 rounded-xl border border-white/10">
-            <input type="color" id="wbColorPicker" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
-            <input type="range" id="wbSizeSlider" min="1" max="25" value="3" onchange="updateWbSize(this.value)" class="w-20 accent-cyan-400 cursor-pointer" />
-            <span id="wbSizeLabel" class="text-[11px] font-mono text-zinc-400 w-5">3px</span>
+          <!-- Color Presets & Custom Picker -->
+          <div class="flex items-center gap-1.5 bg-surface-900/90 p-1.5 rounded-xl border border-white/10">
+            <button onclick="setWbPresetColor('#00f2fe')" class="w-5 h-5 rounded-full bg-[#00f2fe] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Cyan"></button>
+            <button onclick="setWbPresetColor('#10b981')" class="w-5 h-5 rounded-full bg-[#10b981] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Emerald"></button>
+            <button onclick="setWbPresetColor('#f59e0b')" class="w-5 h-5 rounded-full bg-[#f59e0b] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Amber"></button>
+            <button onclick="setWbPresetColor('#f43f5e')" class="w-5 h-5 rounded-full bg-[#f43f5e] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Rose"></button>
+            <button onclick="setWbPresetColor('#a855f7')" class="w-5 h-5 rounded-full bg-[#a855f7] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Purple"></button>
+            <button onclick="setWbPresetColor('#ffffff')" class="w-5 h-5 rounded-full bg-[#ffffff] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="White"></button>
+            <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+            <input type="color" id="wbColorPicker" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent" title="Custom Color" />
           </div>
 
-          <!-- Canvas State Actions -->
-          <div class="flex items-center gap-2">
-            <button onclick="undoWhiteboard()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Undo"><i data-lucide="undo" class="w-4 h-4"></i></button>
-            <button onclick="redoWhiteboard()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Redo"><i data-lucide="redo" class="w-4 h-4"></i></button>
-            <button onclick="toggleWhiteboardGrid()" id="btnWbGrid" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono text-zinc-300 border border-white/10 cursor-pointer">Grid: On</button>
-            <button onclick="clearWhiteboard()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs cursor-pointer">Clear</button>
-            <button onclick="downloadWhiteboard()" class="btn-gradient px-4 py-1.5 rounded-xl text-xs font-bold text-black cursor-pointer">Export PNG</button>
+          <!-- Stroke Size & Fill Mode -->
+          <div class="flex items-center gap-2 bg-surface-900/90 p-1.5 rounded-xl border border-white/10">
+            <button onclick="updateWbSize(2)" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:text-white cursor-pointer">2px</button>
+            <button onclick="updateWbSize(4)" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:text-white cursor-pointer font-bold">4px</button>
+            <button onclick="updateWbSize(8)" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:text-white cursor-pointer">8px</button>
+            <button onclick="updateWbSize(16)" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:text-white cursor-pointer">16px</button>
+            <input type="range" id="wbSizeSlider" min="1" max="30" value="4" oninput="updateWbSize(this.value)" class="w-16 accent-cyan-400 cursor-pointer hidden sm:block" />
+            <span id="wbSizeLabel" class="text-[11px] font-mono text-cyan-400 w-6">4px</span>
+            <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+            <button onclick="toggleWbFill()" id="btnWbFill" class="px-2.5 py-1 rounded text-[11px] font-mono text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Toggle Shape Fill Mode">Fill: Off</button>
+          </div>
+
+          <!-- Canvas State Actions (Undo, Redo, Grid, Clear, Export) -->
+          <div class="flex items-center gap-1.5">
+            <button onclick="undoWhiteboard()" id="btnWbUndo" class="p-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Undo (Ctrl+Z)"><i data-lucide="undo" class="w-4 h-4"></i></button>
+            <button onclick="redoWhiteboard()" id="btnWbRedo" class="p-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Redo (Ctrl+Y)"><i data-lucide="redo" class="w-4 h-4"></i></button>
+            <button onclick="toggleWhiteboardGrid()" id="btnWbGrid" class="px-3 py-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-xs font-mono text-zinc-300 border border-white/10 cursor-pointer transition-colors">Grid: On</button>
+            <button onclick="clearWhiteboard()" class="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs cursor-pointer transition-colors">Clear</button>
+            <button onclick="copyWhiteboardImage()" class="p-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Copy to Clipboard"><i data-lucide="copy" class="w-4 h-4"></i></button>
+            <button onclick="downloadWhiteboard()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md flex items-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export PNG</button>
           </div>
         </div>
 
-        <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner bg-dot-pattern">
-          <canvas id="whiteboardCanvas" class="absolute top-0 left-0 w-full h-full cursor-crosshair"></canvas>
+        <!-- Canvas Container with Dual-Canvas & Sticky Note Overlay -->
+        <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner bg-dot-pattern min-h-0">
+          <canvas id="whiteboardCanvas" class="absolute inset-0 w-full h-full cursor-crosshair"></canvas>
+          <canvas id="whiteboardTempCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+          <div id="whiteboardStickyContainer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
         </div>
       </section>
 
@@ -550,48 +583,62 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- TAB 9: NOTES VAULT PRO (.txt Uploads Added)                           -->
+      <!-- TAB 9: NOTES MARKDOWN (Notes Vault Pro)                              -->
       <!-- ===================================================================== -->
-      <section id="tab-scratchpad" class="tab-pane space-y-3 hidden h-full flex flex-col">
+      <section id="tab-scratchpad" class="tab-pane space-y-3 hidden h-full flex flex-col min-h-0">
         <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
           
-          <!-- Markdown Tools -->
-          <div class="flex items-center gap-1 bg-surface-900 p-1 rounded-xl border border-white/10 text-xs">
-            <button onclick="insertMd('**', '**')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-bold" title="Bold">B</button>
-            <button onclick="insertMd('*', '*')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white italic" title="Italic">I</button>
-            <button onclick="insertMd('~~', '~~')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white line-through" title="Strikethrough">S</button>
+          <!-- Markdown Formatting Tools -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs">
+            <button onclick="insertMd('**', '**')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-bold cursor-pointer transition-colors" title="Bold (Ctrl+B)">B</button>
+            <button onclick="insertMd('*', '*')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white italic cursor-pointer transition-colors" title="Italic (Ctrl+I)">I</button>
+            <button onclick="insertMd('~~', '~~')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white line-through cursor-pointer transition-colors" title="Strikethrough">S</button>
+            <button onclick="insertMd('`', '`')" class="p-1.5 rounded hover:bg-white/10 text-pink-300 font-mono cursor-pointer transition-colors" title="Inline Code">`c`</button>
             <div class="w-px h-4 bg-white/10 mx-1"></div>
-            <button onclick="insertMd('# ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono" title="Heading 1">H1</button>
-            <button onclick="insertMd('## ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono" title="Heading 2">H2</button>
-            <button onclick="insertMd('### ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono" title="Heading 3">H3</button>
+            <button onclick="insertMd('# ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono font-bold cursor-pointer transition-colors" title="Heading 1">H1</button>
+            <button onclick="insertMd('## ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono font-bold cursor-pointer transition-colors" title="Heading 2">H2</button>
+            <button onclick="insertMd('### ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono cursor-pointer transition-colors" title="Heading 3">H3</button>
             <div class="w-px h-4 bg-white/10 mx-1"></div>
-            <button onclick="insertMd('- [ ] ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white" title="Task Checkbox"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></button>
-            <button onclick="insertMd('```javascript\n', '\n```')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white" title="Code Block"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>
-            <button onclick="insertMd('| Col 1 | Col 2 |\n|---|---|\n| Val 1 | Val 2 |\n')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white" title="Table"><i data-lucide="table" class="w-3.5 h-3.5"></i></button>
+            <button onclick="insertMd('- [ ] ')" class="p-1.5 rounded hover:bg-white/10 text-cyan-400 hover:text-white cursor-pointer transition-colors" title="Interactive Task Checkbox"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></button>
+            <button onclick="insertMd('> ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer transition-colors" title="Blockquote"><i data-lucide="quote" class="w-3.5 h-3.5"></i></button>
+            <button onclick="insertMd('```javascript\n', '\n```')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer transition-colors" title="Code Block"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>
+            <button onclick="insertMd('| Col 1 | Col 2 |\n|---|---|\n| Val 1 | Val 2 |\n')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer transition-colors" title="Table"><i data-lucide="table" class="w-3.5 h-3.5"></i></button>
           </div>
 
-          <!-- Note Stats -->
-          <div class="flex items-center gap-3 text-xs font-mono text-zinc-400">
+          <!-- Note Stats (Words, Chars, Read Time) -->
+          <div class="flex items-center gap-2.5 text-xs font-mono text-zinc-400 bg-surface-900/60 px-3 py-1.5 rounded-xl border border-white/5">
             <span id="noteWordCount">0 words</span>
             <span>•</span>
             <span id="noteCharCount">0 chars</span>
+            <span>•</span>
+            <span id="noteReadTime" class="text-cyan-400">0 min read</span>
+          </div>
+
+          <!-- View Mode Switcher -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs font-mono">
+            <button onclick="setNoteViewMode('split')" id="btnNoteViewSplit" class="px-2.5 py-1 rounded bg-sky-500 text-black font-bold cursor-pointer transition-colors">Split</button>
+            <button onclick="setNoteViewMode('editor')" id="btnNoteViewEditor" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Editor</button>
+            <button onclick="setNoteViewMode('preview')" id="btnNoteViewPreview" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Preview</button>
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5">
             <input type="file" id="noteUploadInput" accept=".txt,.md" class="hidden" onchange="handleNoteUpload(event)" />
-            <button onclick="document.getElementById('noteUploadInput').click()" class="p-1.5 rounded-xl bg-surface-900 text-zinc-300 hover:text-white cursor-pointer" title="Import .txt / .md"><i data-lucide="upload" class="w-4 h-4"></i></button>
-            <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 text-xs font-mono cursor-pointer">+ New Note</button>
-            <button onclick="toggleMarkdownPreview()" class="px-3 py-1.5 rounded-xl bg-surface-900 text-zinc-300 text-xs font-mono cursor-pointer">Preview</button>
-            <button onclick="downloadNoteFile()" class="p-1.5 rounded-xl bg-surface-900 text-zinc-300 hover:text-white cursor-pointer" title="Download .md"><i data-lucide="download" class="w-4 h-4"></i></button>
+            <button onclick="document.getElementById('noteUploadInput').click()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Import .txt / .md"><i data-lucide="upload" class="w-4 h-4"></i></button>
+            <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono cursor-pointer flex items-center gap-1 transition-colors"><i data-lucide="plus" class="w-3.5 h-3.5"></i> New Note</button>
+            <button onclick="renameCurrentNote()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Rename Note"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            <button onclick="deleteCurrentNote()" class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 cursor-pointer transition-colors" title="Delete Note"><i data-lucide="trash" class="w-4 h-4"></i></button>
+            <button onclick="downloadNoteFile()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Download .md"><i data-lucide="download" class="w-4 h-4"></i></button>
           </div>
         </div>
 
+        <!-- Note Tabs List -->
         <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-1 text-xs font-mono shrink-0 custom-scrollbar"></div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-          <textarea id="adminScratchpad" oninput="onNoteContentChange()" class="godx-input w-full p-4 font-mono text-xs resize-none h-full leading-relaxed custom-scrollbar"></textarea>
-          <div id="notePreviewCol" class="hidden bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-xs text-zinc-300 space-y-3 font-sans h-full leading-relaxed custom-scrollbar" id="noteMarkdownRender"></div>
+        <!-- Notes Split / Full Editor & Preview Grid -->
+        <div id="noteLayoutGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+          <textarea id="adminScratchpad" oninput="onNoteContentChange()" placeholder="Type notes here in Markdown... (Markdown formatting supported)" class="godx-input w-full p-4 font-mono text-xs resize-none h-full leading-relaxed custom-scrollbar"></textarea>
+          <div id="notePreviewCol" class="bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-xs text-zinc-300 space-y-3 font-sans h-full leading-relaxed custom-scrollbar select-text"></div>
         </div>
       </section>
 

@@ -25,6 +25,15 @@
         if (window.loadWbState) window.loadWbState();
       }, 50);
     }
+
+    if (id === "tab-scratchpad") {
+      setTimeout(() => {
+        if (window.renderNoteTabs) window.renderNoteTabs();
+        if (window.loadActiveNoteContent) window.loadActiveNoteContent();
+        if (window.updateNoteStats) window.updateNoteStats();
+        if (window.renderMarkdownPreview) window.renderMarkdownPreview();
+      }, 50);
+    }
     
     if (id === "tab-analytics") {
       setTimeout(() => {
@@ -66,7 +75,11 @@
       { label: "Jump to Compilers & SQL", act: () => switchTab('tab-sandbox') },
       { label: "Jump to Whiteboard Pro", act: () => switchTab('tab-whiteboard') },
       { label: "Jump to UI Generator", act: () => switchTab('tab-design') },
+      { label: "Jump to Split Compare", act: () => switchTab('tab-split') },
       { label: "Jump to Quantum Terminal", act: () => switchTab('tab-terminal') },
+      { label: "Jump to Telemetry", act: () => switchTab('tab-analytics') },
+      { label: "Jump to Notes Markdown", act: () => switchTab('tab-scratchpad') },
+      { label: "Jump to Settings", act: () => switchTab('tab-controls') },
       { label: "Configure AI & Personas", act: () => { if (window.openAiConfigModal) window.openAiConfigModal(); } },
       { label: "Toggle Artifact Codespace", act: () => { if (window.toggleCodespacePane) window.toggleCodespacePane(); } },
       { label: "Run Compiler", act: () => { if (window.runSandboxCode) window.runSandboxCode(); } }

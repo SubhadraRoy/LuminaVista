@@ -23,9 +23,12 @@
     if (window.fetchRepoProjects) window.fetchRepoProjects();
     if (window.startSystemClock) window.startSystemClock();
     if (window.initMetricsChart) window.initMetricsChart();
-    if (window.renderNoteTabs) window.renderNoteTabs();
-    if (window.loadActiveNoteContent) window.loadActiveNoteContent();
-    if (window.updateNoteStats) window.updateNoteStats();
+    if (window.initNotes) window.initNotes();
+    else {
+      if (window.renderNoteTabs) window.renderNoteTabs();
+      if (window.loadActiveNoteContent) window.loadActiveNoteContent();
+      if (window.updateNoteStats) window.updateNoteStats();
+    }
     if (window.initWhiteboard) window.initWhiteboard();
     if (window.updateDesignPreview) window.updateDesignPreview();
     if (window.renderAiChat) window.renderAiChat();
