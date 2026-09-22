@@ -54,6 +54,7 @@ window.HTMLCanvasElement.prototype.toDataURL = function() {
 
 // Load modules
 const moduleFiles = [
+  'personas.js',
   'modules/state.js',
   'modules/sidebar.js',
   'modules/ai-studio.js',
@@ -255,6 +256,37 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   window.isAgentAborted = false;
   window.abortAgentLoop();
   assert(window.isAgentRunning === false && window.isAgentAborted === true, "Agent abort signal halts autonomous execution");
+
+  // Suite 5: Multi-Persona Roster & Security Architecture
+  console.log("\n[Test Suite 5: 22 Specialized Technical Personas & Security Infrastructure]");
+  assert(Array.isArray(window.LuminaPersonas) && window.LuminaPersonas.length >= 20, `Personas roster loaded with ${window.LuminaPersonas.length} specialized personas (>=20)`);
+  
+  // Verify persona dropdown rendering
+  window.populatePersonasDropdown();
+  const personaSelect = document.getElementById("modalAiPersonaSelect");
+  assert(personaSelect && personaSelect.options.length >= 21, `Persona select dropdown rendered with ${personaSelect ? personaSelect.options.length : 0} choices`);
+
+  // Verify Provider Mode and Simulation Sandbox
+  window.localStorage.setItem("lumina_ai_provider", "simulation");
+  window.loadAiConfig();
+  const modelBadge = document.getElementById("aiActiveModelBadge");
+  assert(modelBadge && modelBadge.textContent.includes("Autonomous Sandbox"), "Model badge reflects Autonomous Sandbox (Offline)");
+
+  // Test simulation generator
+  const simReply = await window.generateSimulatedAutonomousReply("create an index.html landing page", 1, window.vfs);
+  assert(simReply.includes("[TOOL:WRITE_FILE filename=\"index.html\"]"), "Simulation generator produced WRITE_FILE directive for index.html");
+  assert(simReply.includes("[TOOL:TASK_COMPLETE"), "Simulation generator produced TASK_COMPLETE directive");
+  assert(simReply.includes("<thought_process>"), "Simulation generator produced cognitive thought process block");
+
+  // Verify Security file checks
+  const syncCode = fs.readFileSync(path.join(rootDir, 'api/sync.js'), 'utf8');
+  assert(syncCode.includes("godx_session") && syncCode.includes("status(401)"), "api/sync.js enforces strict session authentication on state writes");
+
+  const logoutCode = fs.readFileSync(path.join(rootDir, 'api/logout.js'), 'utf8');
+  assert(logoutCode.includes("sameSite: 'strict'"), "api/logout.js uses hardened sameSite: strict cookie policy");
+
+  const storageCode = fs.readFileSync(path.join(rootDir, 'api/storage.js'), 'utf8');
+  assert(storageCode.includes("path.posix.normalize"), "api/storage.js uses strict path.posix.normalize sanitization against directory traversal");
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

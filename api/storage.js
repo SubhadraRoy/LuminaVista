@@ -1,16 +1,20 @@
+import path from 'path';
 import { Redis } from '@upstash/redis';
 
 export const maxDuration = 60;
 
 function sanitizeFilePath(userPath) {
   if (!userPath || typeof userPath !== 'string') return '';
-  // Normalize, remove null bytes, and block directory traversal sequences
-  return userPath
+  // Normalize, remove null bytes, and strictly block directory traversal escapes
+  const clean = userPath
     .replace(/\0/g, '')
     .replace(/\\/g, '/')
-    .replace(/\.\.+[/\\]/g, '') // Strips ../ and ..\
-    .replace(/^\/+/, '')
     .trim();
+  const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
+  if (normalized === '..' || normalized.startsWith('../') || normalized.includes('/../')) {
+    return '';
+  }
+  return normalized;
 }
 
 export default async function handler(req, res) {

@@ -196,8 +196,23 @@
   function bundleCodespaceHTML() {
     const vfs = window.vfs || {};
     let main = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
-    if (vfs["style.css"]) main = main.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
-    if (vfs["script.js"]) main = main.replace("</body>", `<script>\n${vfs["script.js"]}\n<\/script></body>`);
+    
+    if (vfs["style.css"]) {
+      if (main.includes('href="style.css"')) {
+        main = main.replace(/<link[^>]*href=["']style\.css["'][^>]*>/gi, `<style>\n${vfs["style.css"]}\n</style>`);
+      } else {
+        main = main.replace("</head>", `<style>\n${vfs["style.css"]}\n</style></head>`);
+      }
+    }
+
+    if (vfs["script.js"]) {
+      if (main.includes('src="script.js"')) {
+        main = main.replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/gi, `<script>\n${vfs["script.js"]}\n<\/script>`);
+      } else {
+        main = main.replace("</body>", `<script>\n${vfs["script.js"]}\n<\/script></body>`);
+      }
+    }
+
     return main;
   }
 

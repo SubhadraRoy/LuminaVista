@@ -50,7 +50,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    let { requestedModel, messages, currentVfs, webSearch, prompt } = req.body;
+    let { requestedModel, messages, currentVfs, webSearch, prompt, customApiKey, customEndpoint } = req.body;
     currentVfs = currentVfs || {};
     messages = messages || [];
     let terminalLogs = [];
@@ -73,12 +73,17 @@ export default async function handler(req, res) {
       loopCount++;
 
       // 1. Call AI Model
-      const aiRes = await fetch(process.env.OLLAMA_ENDPOINT || "https://openrouter.ai/api/v1/chat/completions", {
+      const effectiveApiKey = customApiKey || process.env.OLLAMA_API_KEY || "";
+      const effectiveEndpoint = customEndpoint || process.env.OLLAMA_ENDPOINT || "https://openrouter.ai/api/v1/chat/completions";
+
+      const headers = { "Content-Type": "application/json" };
+      if (effectiveApiKey) {
+        headers["Authorization"] = `Bearer ${effectiveApiKey}`;
+      }
+
+      const aiRes = await fetch(effectiveEndpoint, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OLLAMA_API_KEY || ""}`,
-          "Content-Type": "application/json"
-        },
+        headers,
         body: JSON.stringify({
           model: requestedModel || "gpt-oss:20b",
           messages: messages,

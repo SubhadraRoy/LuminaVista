@@ -90,7 +90,7 @@
           <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v14</p>
         </div>
       </div>
-      <button onclick="toggleSidebarMinimize()" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Toggle Sidebar">
+      <button onclick="toggleSidebarMinimize()" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Toggle Sidebar" aria-label="Toggle Sidebar Navigation">
         <i data-lucide="chevrons-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
       </button>
     </div>
@@ -136,7 +136,7 @@
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
           <span class="font-mono text-[10px] text-zinc-400 sidebar-label whitespace-nowrap">Edge Secured</span>
         </div>
-        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 transition-colors p-1" title="Lock System">
+        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 transition-colors p-1" title="Lock System" aria-label="Lock System and Sign Out">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
       </div>
@@ -686,7 +686,29 @@
         <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
           <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> ai-llm Studio Settings
         </h3>
-        <button onclick="closeAiConfigModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeAiConfigModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Settings"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- Execution Mode Selector -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-mono text-zinc-400">Execution Engine &amp; Provider:</label>
+        <select id="modalAiProviderSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="onModalProviderChange()">
+          <option value="gateway">Cloud Edge Gateway (Vercel Serverless / OpenRouter)</option>
+          <option value="custom">Direct Custom API Key (OpenRouter / OpenAI / Groq / Gemini)</option>
+          <option value="simulation">Autonomous Simulation Sandbox (100% Offline &amp; Fully Reliable)</option>
+        </select>
+      </div>
+
+      <!-- Custom API Key Input (Toggleable) -->
+      <div id="modalCustomAiKeyWrapper" class="hidden space-y-2 p-3 bg-surface-900/80 border border-cyan-500/20 rounded-xl">
+        <div class="space-y-1">
+          <label for="modalCustomAiKey" class="text-xs font-mono text-cyan-300">Custom API Key:</label>
+          <input type="password" id="modalCustomAiKey" placeholder="sk-or-v1-... or sk-..." class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
+        </div>
+        <div class="space-y-1">
+          <label for="modalCustomAiEndpoint" class="text-xs font-mono text-zinc-400">Endpoint URL (Optional):</label>
+          <input type="text" id="modalCustomAiEndpoint" placeholder="https://openrouter.ai/api/v1/chat/completions" class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
+        </div>
       </div>
 
       <!-- Web Search Switch -->
@@ -708,7 +730,7 @@
         </select>
       </div>
 
-      <!-- 20+ Personas Roster (Dynamically populated from personas.js) -->
+      <!-- 22+ Personas Roster (Dynamically populated from personas.js) -->
       <div class="space-y-1.5">
         <label class="text-xs font-mono text-zinc-400">System Persona Roster:</label>
         <select id="modalAiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onModalPersonaChange()"></select>
@@ -722,7 +744,7 @@
 
       <div class="pt-2 flex gap-3">
         <button onclick="checkProviderQuota()" class="flex-1 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-cyan-400 border border-white/10 cursor-pointer">Quota Telemetry</button>
-        <button onclick="closeAiConfigModal()" class="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer">Save & Dismiss</button>
+        <button onclick="closeAiConfigModal()" class="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer">Save &amp; Dismiss</button>
       </div>
     </div>
   </div>

@@ -17,6 +17,13 @@ export default async function handler(req, res) {
   const redis = new Redis({ url, token });
   const sessionKey = "master_workspace_state"; // Centralized state key for your admin dashboard
 
+  // Authenticate caller session
+  const match = (req.headers.cookie || '').match(/godx_session=([^;]+)/);
+  if (!match || !(await redis.get(`session:${match[1]}`))) {
+    return res.status(401).json({ error: 'Session Expired / Unauthorized' });
+  }
+  await redis.expire(`session:${match[1]}`, 1200);
+
   try {
     // GET: Retrieve the workspace state when the dashboard loads
     if (req.method === 'GET') {

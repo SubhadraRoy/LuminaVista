@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Set-Cookie', serialize('godx_session', '', {
-      httpOnly: true, secure: true, sameSite: 'lax', maxAge: -1, path: '/'
+      httpOnly: true, secure: true, sameSite: 'strict', maxAge: -1, path: '/'
     }));
     return res.status(200).json({ success: true });
   } catch (error) {
