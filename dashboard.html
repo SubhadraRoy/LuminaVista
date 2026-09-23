@@ -78,6 +78,9 @@
   <div class="fixed top-[-20%] left-[10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0"></div>
   <div class="fixed bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[180px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 2s;"></div>
 
+  <!-- ROOT APP CONTAINER (Blur-isolated on security lock) -->
+  <div id="app-root" class="flex h-full w-full transition-all duration-300">
+
   <!-- ADJUSTABLE & MINIMIZABLE SIDEBAR -->
   <aside id="mainSidebar" class="border-r border-white/5 bg-surface-950/85 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0 transition-[width] duration-150" style="width: 250px;">
     
@@ -165,6 +168,8 @@
         <span class="text-white">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Anish x</span></span>
         <span class="text-zinc-700">•</span>
         <button onclick="openSourceInspector()" class="p-1.5 hover:text-white transition-colors cursor-pointer" title="View Source"><i data-lucide="code" class="w-4 h-4"></i></button>
+        <span class="text-zinc-700">•</span>
+        <button onclick="lockSession()" class="p-1.5 hover:text-cyan-400 transition-colors cursor-pointer" title="Lock Session (15m Inactivity Lock)" aria-label="Lock Session"><i data-lucide="lock" class="w-4 h-4"></i></button>
       </div>
     </header>
 
@@ -675,6 +680,7 @@
 
     </main>
   </div>
+  </div> <!-- /app-root -->
 
   <!-- ========================================================================= -->
   <!-- FLOATING MODAL: AI-LLM CONFIGURATION (Pop-up via Button)                  -->
@@ -746,6 +752,54 @@
         <button onclick="checkProviderQuota()" class="flex-1 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-cyan-400 border border-white/10 cursor-pointer">Quota Telemetry</button>
         <button onclick="closeAiConfigModal()" class="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer">Save &amp; Dismiss</button>
       </div>
+    </div>
+  </div>
+
+  <!-- SECURITY LOCK MODAL (15-Minute Inactivity Protection) -->
+  <div id="lockModal" style="display: none;" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-2xl flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="glass-panel max-w-md w-full p-8 rounded-3xl border border-cyan-500/30 shadow-[0_0_60px_rgba(0,242,254,0.18)] flex flex-col items-center text-center relative">
+      <div class="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-5 shadow-[0_0_25px_rgba(0,242,254,0.35)]">
+        <i data-lucide="shield-alert" class="w-8 h-8"></i>
+      </div>
+      <h3 class="font-heading font-extrabold text-xl text-white tracking-tight">Security Perimeter Locked</h3>
+      <p class="text-xs text-zinc-400 font-sans mt-2 max-w-xs leading-relaxed">
+        Workspace locked due to 15-minute inactivity timeout. Re-enter your administrator credentials to resume.
+      </p>
+
+      <form onsubmit="unlockSession(event)" class="w-full mt-6 space-y-4">
+        <div class="relative">
+          <input
+            type="password"
+            id="lockPasswordInput"
+            placeholder="Enter Administrator Password..."
+            class="godx-input w-full px-4 py-3 pl-10 text-sm font-mono text-center tracking-wider"
+            autocomplete="current-password"
+            required
+          />
+          <i data-lucide="key" class="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5"></i>
+        </div>
+
+        <div id="lockErrorMessage" class="hidden text-xs text-rose-400 font-mono py-1"></div>
+
+        <div class="flex flex-col gap-2.5 pt-2">
+          <button
+            type="submit"
+            id="lockUnlockBtn"
+            class="w-full py-3 rounded-xl btn-gradient text-xs font-bold text-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20"
+          >
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Unlock Workspace</span>
+          </button>
+          
+          <button
+            type="button"
+            onclick="handleLogout()"
+            class="w-full py-2.5 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono text-zinc-400 hover:text-rose-400 border border-white/5 transition-colors cursor-pointer"
+          >
+            End Session &amp; Sign Out
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

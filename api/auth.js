@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Redis } from '@upstash/redis';
 import { serialize } from 'cookie';
+import { getClientIp, auditLog } from './_lib/auth-guard.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -11,10 +12,11 @@ export default async function handler(req, res) {
   const dbToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
   if (!expectedPassword || !dbUrl || !dbUrl.startsWith('http')) {
+    auditLog('AUTH_MISCONFIG', req, 'Database credentials or admin password missing');
     return res.status(500).json({ success: false, error: 'Server misconfigured. Access blocked.' });
   }
 
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  const clientIp = getClientIp(req);
   const rateLimitKey = `rate_limit:auth:${clientIp}`;
 
   try {
@@ -23,6 +25,7 @@ export default async function handler(req, res) {
     // 1. Enforce IP-based rate limiting (Max 5 attempts / 15 minutes)
     const attempts = await redis.get(rateLimitKey);
     if (attempts && parseInt(attempts, 10) >= 5) {
+      auditLog('AUTH_LOCKOUT', req, `Blocked after ${attempts} failed attempts`);
       return res.status(429).json({
         success: false,
         error: 'Too many failed authentication attempts. Access locked for 15 minutes.'
@@ -31,12 +34,12 @@ export default async function handler(req, res) {
 
     const { password } = req.body;
     
-    // 2. Timing-Safe Hash Comparison
+    // 2. Constant-Time Hash Comparison
     const inputHash = crypto.createHash('sha256').update(password || '').digest();
     const expectedHash = crypto.createHash('sha256').update(expectedPassword).digest();
 
     if (crypto.timingSafeEqual(inputHash, expectedHash)) {
-      // Clear failed attempts on success
+      // Clear failed attempts counter on success
       await redis.del(rateLimitKey);
 
       const sessionId = crypto.randomUUID();
@@ -45,11 +48,12 @@ export default async function handler(req, res) {
       res.setHeader('Set-Cookie', serialize('godx_session', sessionId, {
         httpOnly: true,
         secure: true,
-        sameSite: 'strict', // Hardened from 'lax' to 'strict' to eliminate CSRF
+        sameSite: 'strict',
         maxAge: 1200,
         path: '/'
       }));
 
+      auditLog('AUTH_SUCCESS', req, 'Session granted');
       return res.status(200).json({ success: true, message: 'Welcome to LuminaVista' });
     }
 
@@ -57,10 +61,11 @@ export default async function handler(req, res) {
     await redis.incr(rateLimitKey);
     await redis.expire(rateLimitKey, 900);
 
+    auditLog('AUTH_FAILURE', req, 'Invalid credentials provided');
     return res.status(401).json({ success: false, error: 'Access Denied.' });
 
   } catch (error) {
-    console.error("AUTH ERROR:", error);
+    auditLog('AUTH_CRASH', req, error.message);
     return res.status(502).json({ success: false, error: 'Authentication engine failure.' });
   }
 }

@@ -1,5 +1,12 @@
 import path from 'path';
-import { Redis } from '@upstash/redis';
+import { getRedisClient } from './_lib/redis.js';
+import {
+  validateSession,
+  checkRateLimit,
+  sanitizeError,
+  enforcePayloadLimit,
+  auditLog
+} from './_lib/auth-guard.js';
 
 export const maxDuration = 60;
 
@@ -24,29 +31,39 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-  // Session Authentication
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  
-  try {
-    const redis = new Redis({ url, token });
-    const match = (req.headers.cookie || '').match(/godx_session=([^;]+)/);
-    if (!match || !(await redis.get(`session:${match[1]}`))) {
-      return res.status(401).json({ error: 'Unauthorized Session' });
-    }
-    await redis.expire(`session:${match[1]}`, 1200);
-  } catch (e) {
-    return res.status(500).json({ error: 'Database Validation Failed' });
+  // 1. Enforce payload limit (Max 250KB)
+  if (!enforcePayloadLimit(req, 250000)) {
+    return res.status(413).json({ error: 'Payload Limit Exceeded' });
+  }
+
+  const redis = getRedisClient();
+
+  // 2. Zero-Trust Session Verification
+  const auth = await validateSession(req, redis);
+  if (!auth.valid) {
+    auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/storage');
+    return res.status(auth.status).json({ error: auth.error });
+  }
+
+  // 3. Sliding IP Rate Limiting (30 operations / 5 minutes)
+  const rate = await checkRateLimit(req, redis, 'storage', 30, 300);
+  if (!rate.allowed) {
+    auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/storage');
+    return res.status(rate.status).json({ error: rate.error });
   }
 
   const ghToken = process.env.GITHUB_STORAGE_TOKEN;
   const repo = process.env.GITHUB_STORAGE_REPO;
-  if (!ghToken || !repo) return res.status(500).json({ error: 'Storage credentials missing.' });
+  if (!ghToken || !repo) {
+    auditLog('STORAGE_CONFIG_FAULT', req, 'GitHub credentials missing');
+    return res.status(500).json({ error: 'Storage repository credentials unconfigured.' });
+  }
 
-  const { action, path, content } = req.body;
-  const cleanPath = sanitizeFilePath(path);
+  const { action, path: rawPath, content } = req.body;
+  const cleanPath = sanitizeFilePath(rawPath);
 
   if (action !== 'list' && !cleanPath) {
+    auditLog('SUSPICIOUS_PATH_TRAVERSAL', req, `Path: ${rawPath}`);
     return res.status(400).json({ error: 'Invalid or illegal file path.' });
   }
 
@@ -60,7 +77,7 @@ export default async function handler(req, res) {
   try {
     if (action === 'read') {
       const gitRes = await fetch(baseUrl, { headers: ghHeaders });
-      if (!gitRes.ok) return res.status(gitRes.status).json({ error: 'File not found' });
+      if (!gitRes.ok) return res.status(gitRes.status).json({ error: 'File not found in storage.' });
       const data = await gitRes.json();
       const decodedContent = Buffer.from(data.content, 'base64').toString('utf-8');
       return res.status(200).json({ content: decodedContent });
@@ -83,13 +100,13 @@ export default async function handler(req, res) {
         })
       });
       const putData = await putRes.json();
-      if (!putRes.ok) return res.status(putRes.status).json({ error: putData.message });
-      return res.status(200).json({ success: true, sha: putData.content.sha });
+      if (!putRes.ok) return res.status(putRes.status).json({ error: sanitizeError(putData.message, 'Write failed.') });
+      return res.status(200).json({ success: true, sha: putData.content?.sha });
     }
 
     if (action === 'delete') {
       const checkRes = await fetch(baseUrl, { headers: ghHeaders });
-      if (!checkRes.ok) return res.status(404).json({ error: 'File not found' });
+      if (!checkRes.ok) return res.status(404).json({ error: 'File not found in storage.' });
       const currentSha = (await checkRes.json()).sha;
 
       const delRes = await fetch(baseUrl, {
@@ -102,6 +119,7 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'Unsupported action.' });
   } catch (error) {
-    return res.status(502).json({ error: 'Storage upstream failure', details: error.message });
+    auditLog('STORAGE_UPSTREAM_FAULT', req, error.message);
+    return res.status(502).json({ error: sanitizeError(error, 'Storage upstream synchronization failure.') });
   }
 }

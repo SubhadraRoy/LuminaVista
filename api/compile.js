@@ -1,4 +1,12 @@
 import { Sandbox } from '@e2b/code-interpreter';
+import { getRedisClient } from './_lib/redis.js';
+import {
+  validateSession,
+  checkRateLimit,
+  sanitizeError,
+  enforcePayloadLimit,
+  auditLog
+} from './_lib/auth-guard.js';
 
 export const maxDuration = 60;
 
@@ -15,19 +23,45 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
+  // 1. Enforce payload size limit (Max 100KB)
+  if (!enforcePayloadLimit(req, 100000)) {
+    return res.status(413).json({ error: 'Payload Limit Exceeded (Max 100KB)' });
+  }
+
+  const redis = getRedisClient();
+
+  // 2. Zero-Trust Session Verification
+  const auth = await validateSession(req, redis);
+  if (!auth.valid) {
+    auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/compile');
+    return res.status(auth.status).json({ error: auth.error });
+  }
+
+  // 3. Sliding IP Rate Limiting (20 compilations / 5 minutes)
+  const rate = await checkRateLimit(req, redis, 'compile', 20, 300);
+  if (!rate.allowed) {
+    auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/compile');
+    return res.status(rate.status).json({ error: rate.error });
+  }
+
   const { language, code } = req.body;
-  if (!code) return res.status(400).json({ error: 'No source code provided.' });
-  if (!process.env.E2B_API_KEY) return res.status(500).json({ error: 'E2B_API_KEY missing.' });
+  if (!code || typeof code !== 'string') {
+    return res.status(400).json({ error: 'No valid source code provided.' });
+  }
 
-  const runner = RUNNERS[language.toLowerCase()] || RUNNERS.python;
+  if (!process.env.E2B_API_KEY) {
+    auditLog('COMPILE_CONFIG_FAULT', req, 'E2B_API_KEY missing in environment');
+    return res.status(500).json({ error: 'Cloud compiler infrastructure unconfigured.' });
+  }
 
-  let sbx;
+  const runner = RUNNERS[language ? language.toLowerCase() : 'python'] || RUNNERS.python;
+
+  let sbx = null;
   try {
     sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
     await sbx.files.write(runner.file, code);
 
     const execution = await sbx.commands.run(runner.cmd, { timeoutMs: 15000 });
-    await sbx.kill();
 
     const output = (execution.stdout || '') + (execution.stderr ? (execution.stdout ? '\n' : '') + execution.stderr : '');
     return res.status(200).json({
@@ -35,7 +69,9 @@ export default async function handler(req, res) {
       exitCode: execution.error ? 1 : 0
     });
   } catch (err) {
+    auditLog('COMPILE_EXECUTION_FAULT', req, err.message);
+    return res.status(500).json({ error: sanitizeError(err, 'Cloud compiler execution failed.') });
+  } finally {
     if (sbx) await sbx.kill().catch(() => {});
-    return res.status(500).json({ error: `E2B Execution Failed: ${err.message}` });
   }
 }

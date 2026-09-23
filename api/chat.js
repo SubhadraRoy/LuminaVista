@@ -1,5 +1,12 @@
-import { Redis } from '@upstash/redis';
 import { Sandbox } from '@e2b/code-interpreter';
+import { getRedisClient } from './_lib/redis.js';
+import {
+  validateSession,
+  checkRateLimit,
+  sanitizeError,
+  enforcePayloadLimit,
+  auditLog
+} from './_lib/auth-guard.js';
 
 export const maxDuration = 60; // Max execution time for Vercel
 
@@ -42,11 +49,25 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  let redis = null;
-  if (url && token) {
-    try { redis = new Redis({ url, token }); } catch (ignore) {}
+  // 1. Enforce payload size cap (250 KB)
+  if (!enforcePayloadLimit(req, 250000)) {
+    return res.status(413).json({ error: 'Payload Limit Exceeded (Max 250KB)' });
+  }
+
+  const redis = getRedisClient();
+
+  // 2. Zero-Trust Session Verification
+  const auth = await validateSession(req, redis);
+  if (!auth.valid) {
+    auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/chat');
+    return res.status(auth.status).json({ error: auth.error });
+  }
+
+  // 3. Sliding IP Rate Limiting (30 requests / 5 minutes)
+  const rate = await checkRateLimit(req, redis, 'chat', 30, 300);
+  if (!rate.allowed) {
+    auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/chat');
+    return res.status(rate.status).json({ error: rate.error });
   }
 
   try {
@@ -72,7 +93,7 @@ export default async function handler(req, res) {
     while (!isTaskComplete && loopCount < MAX_LOOPS) {
       loopCount++;
 
-      // 1. Call AI Model
+      // 1. Call AI Model (protects backend Ollama API key and endpoint)
       const effectiveApiKey = customApiKey || process.env.OLLAMA_API_KEY || "";
       const effectiveEndpoint = customEndpoint || process.env.OLLAMA_ENDPOINT || "https://openrouter.ai/api/v1/chat/completions";
 
@@ -81,18 +102,25 @@ export default async function handler(req, res) {
         headers["Authorization"] = `Bearer ${effectiveApiKey}`;
       }
 
-      const aiRes = await fetch(effectiveEndpoint, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: requestedModel || "gpt-oss:20b",
-          messages: messages,
-          stream: false
-        })
-      });
+      let aiRes;
+      try {
+        aiRes = await fetch(effectiveEndpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: requestedModel || "gpt-oss:20b",
+            messages: messages,
+            stream: false
+          })
+        });
+      } catch (netErr) {
+        throw new Error('AI gateway connection timed out or network error.');
+      }
 
       if (!aiRes.ok) {
-        throw new Error(`Provider Gateway Error: ${await aiRes.text()}`);
+        const rawErrText = await aiRes.text().catch(() => '');
+        console.error('[AI_PROVIDER_ERROR]', aiRes.status, sanitizeError(rawErrText));
+        throw new Error(`Provider Gateway Error (HTTP ${aiRes.status})`);
       }
 
       const aiData = await aiRes.json();
@@ -173,7 +201,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // G. Execute Shell Commands in E2B MicroVM
+      // G. Execute Shell Commands in E2B MicroVM with guaranteed cleanup
       const execRegex = /\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g;
       let xMatch;
       let cmdsToRun = [];
@@ -182,50 +210,56 @@ export default async function handler(req, res) {
       }
 
       if (cmdsToRun.length > 0 && process.env.E2B_API_KEY) {
-        terminalLogs.push(`[System]: Booting isolated E2B microVM for execution...`);
-        const sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
-
-        for (const [name, content] of Object.entries(currentVfs)) {
-          await sbx.files.write(name, content);
-        }
-
-        let loopFailed = false;
-        let commandOutputCombined = "";
-
-        for (const cmd of cmdsToRun) {
-          terminalLogs.push(`➜ ${cmd}`);
-          const execution = await sbx.commands.run(cmd, { timeoutMs: 15000 });
-
-          if (execution.stdout) {
-            terminalLogs.push(execution.stdout);
-            commandOutputCombined += `[STDOUT]:\n${execution.stdout}\n`;
-          }
-
-          if (execution.stderr || execution.error) {
-            const errStr = execution.stderr || execution.error.message;
-            terminalLogs.push(`[Crash Detected]: ${errStr}`);
-            commandOutputCombined += `[STDERR / CRASH]:\n${errStr}\n`;
-            loopFailed = true;
-            break;
-          }
-        }
-
+        let sbx = null;
         try {
-          const list = await sbx.files.list('.');
-          for (const item of list) {
-            if (item.type === 'file') currentVfs[item.name] = await sbx.files.read(item.name);
+          terminalLogs.push(`[System]: Booting isolated E2B microVM for execution...`);
+          sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
+
+          for (const [name, content] of Object.entries(currentVfs)) {
+            await sbx.files.write(name, content);
           }
-        } catch (ignore) {}
-        await sbx.kill();
 
-        toolFeedback.push(`[TOOL_RESULT:EXEC]\n${commandOutputCombined || "Command exited with code 0."}\n[/TOOL_RESULT:EXEC]`);
+          let loopFailed = false;
+          let commandOutputCombined = "";
 
-        if (loopFailed) {
-          messages.push({
-            role: "user",
-            content: `[SYSTEM AUTO-FEEDBACK]:\n${toolFeedback.join('\n\n')}\nCommand crashed. Please diagnose the error, modify the files using [TOOL:WRITE_FILE] or [TOOL:EDIT_FILE], and re-test.`
-          });
-          continue; // Continue inner loop
+          for (const cmd of cmdsToRun) {
+            terminalLogs.push(`➜ ${cmd}`);
+            const execution = await sbx.commands.run(cmd, { timeoutMs: 15000 });
+
+            if (execution.stdout) {
+              terminalLogs.push(execution.stdout);
+              commandOutputCombined += `[STDOUT]:\n${execution.stdout}\n`;
+            }
+
+            if (execution.stderr || execution.error) {
+              const errStr = execution.stderr || execution.error.message;
+              terminalLogs.push(`[Crash Detected]: ${sanitizeError(errStr)}`);
+              commandOutputCombined += `[STDERR / CRASH]:\n${sanitizeError(errStr)}\n`;
+              loopFailed = true;
+              break;
+            }
+          }
+
+          try {
+            const list = await sbx.files.list('.');
+            for (const item of list) {
+              if (item.type === 'file') currentVfs[item.name] = await sbx.files.read(item.name);
+            }
+          } catch (ignore) {}
+
+          toolFeedback.push(`[TOOL_RESULT:EXEC]\n${commandOutputCombined || "Command exited with code 0."}\n[/TOOL_RESULT:EXEC]`);
+
+          if (loopFailed) {
+            messages.push({
+              role: "user",
+              content: `[SYSTEM AUTO-FEEDBACK]:\n${toolFeedback.join('\n\n')}\nCommand crashed. Please diagnose the error, modify the files using [TOOL:WRITE_FILE] or [TOOL:EDIT_FILE], and re-test.`
+            });
+            continue; // Continue inner loop
+          }
+        } catch (sbxErr) {
+          terminalLogs.push(`[MicroVM Fault]: ${sanitizeError(sbxErr, 'MicroVM execution error')}`);
+        } finally {
+          if (sbx) await sbx.kill().catch(() => {});
         }
       }
 
@@ -251,6 +285,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    auditLog('CHAT_ERROR', req, error.message);
+    return res.status(500).json({ error: sanitizeError(error, 'Autonomous agent processing failure.') });
   }
 }

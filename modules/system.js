@@ -1,5 +1,4 @@
-// modules/system.js - System Services, Command Palette, Navigation & Clock
-
+// modules/system.js - System Services, Command Palette, Navigation, Clock & 15-Minute Idle Lock
 (function(window) {
   'use strict';
 
@@ -70,6 +69,7 @@
   function handleCmdSearch(e) {
     const q = (e && e.target && e.target.value) ? e.target.value.toLowerCase() : '';
     const list = [
+      { label: "Lock Session (15m Idle Protection)", act: () => lockSession(false) },
       { label: "Jump to ai-llm Studio", act: () => switchTab('tab-ai-studio') },
       { label: "Jump to Projects Explorer", act: () => switchTab('tab-projects') },
       { label: "Jump to Compilers & SQL", act: () => switchTab('tab-sandbox') },
@@ -82,7 +82,8 @@
       { label: "Jump to Settings", act: () => switchTab('tab-controls') },
       { label: "Configure AI & Personas", act: () => { if (window.openAiConfigModal) window.openAiConfigModal(); } },
       { label: "Toggle Artifact Codespace", act: () => { if (window.toggleCodespacePane) window.toggleCodespacePane(); } },
-      { label: "Run Compiler", act: () => { if (window.runSandboxCode) window.runSandboxCode(); } }
+      { label: "Run Compiler", act: () => { if (window.runSandboxCode) window.runSandboxCode(); } },
+      { label: "Terminate Session (Logout)", act: () => handleLogout() }
     ];
     const res = document.getElementById("cmdResults");
     if (!res) return;
@@ -165,9 +166,135 @@
   function startAutonomousSyncPoller() {
     setInterval(async () => {
       try {
-        // Future-proofing: When you map /api/sync fully, this pulls background state
+        // Background poller hook
       } catch (e) {}
     }, 5000);
+  }
+
+  // =========================================================================
+  // 15-MINUTE IDLE INACTIVITY TIMEOUT & SECURITY AUTO-LOCK
+  // =========================================================================
+  let idleTimer = null;
+  const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 Minutes
+  let isSessionLocked = false;
+
+  function resetIdleTimer() {
+    if (idleTimer) clearTimeout(idleTimer);
+    if (isSessionLocked) return;
+
+    idleTimer = setTimeout(() => {
+      lockSession(true);
+    }, IDLE_TIMEOUT_MS);
+  }
+
+  function initIdleTimer() {
+    const activityEvents = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
+    activityEvents.forEach(evt => {
+      window.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
+    resetIdleTimer();
+  }
+
+  function lockSession(isAuto = false) {
+    if (idleTimer) clearTimeout(idleTimer);
+    isSessionLocked = true;
+
+    const lockModal = document.getElementById("lockModal");
+    const appRoot = document.getElementById("app-root");
+    const passInput = document.getElementById("lockPasswordInput");
+    const errEl = document.getElementById("lockErrorMessage");
+
+    if (errEl) errEl.classList.add("hidden");
+    if (passInput) passInput.value = "";
+
+    if (appRoot) {
+      appRoot.classList.add("filter", "blur-lg", "pointer-events-none", "select-none");
+    }
+
+    if (lockModal) {
+      lockModal.classList.remove("hidden");
+      lockModal.style.display = "flex";
+      setTimeout(() => {
+        lockModal.classList.remove("opacity-0");
+        if (passInput) passInput.focus();
+      }, 20);
+    }
+
+    if (window.showToast) {
+      window.showToast("Security Lock", isAuto ? "Session auto-locked due to 15m inactivity." : "Security perimeter locked by administrator.");
+    }
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  }
+
+  async function unlockSession(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const passInput = document.getElementById("lockPasswordInput");
+    const errEl = document.getElementById("lockErrorMessage");
+    const btn = document.getElementById("lockUnlockBtn");
+    if (!passInput) return;
+
+    const password = passInput.value;
+    if (!password) {
+      if (errEl) {
+        errEl.textContent = "Please enter administrator credentials.";
+        errEl.classList.remove("hidden");
+      }
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin inline mr-1"></i> Verifying...`;
+      if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+    }
+
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        const lockModal = document.getElementById("lockModal");
+        const appRoot = document.getElementById("app-root");
+
+        if (lockModal) {
+          lockModal.classList.add("opacity-0");
+          setTimeout(() => {
+            lockModal.classList.add("hidden");
+            lockModal.style.display = "none";
+          }, 300);
+        }
+        if (appRoot) {
+          appRoot.classList.remove("filter", "blur-lg", "pointer-events-none", "select-none");
+        }
+        passInput.value = "";
+        if (errEl) errEl.classList.add("hidden");
+        isSessionLocked = false;
+        resetIdleTimer();
+        if (window.showToast) window.showToast("Perimeter Secure", "Access granted. Session resumed.");
+      } else {
+        if (errEl) {
+          errEl.textContent = data.error || "Authentication failed. Access Denied.";
+          errEl.classList.remove("hidden");
+        }
+        passInput.value = "";
+        passInput.focus();
+      }
+    } catch (err) {
+      if (errEl) {
+        errEl.textContent = "Network error: unable to verify session.";
+        errEl.classList.remove("hidden");
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4 inline mr-1"></i> Unlock Workspace`;
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      }
+    }
   }
 
   // Global key bindings
@@ -175,6 +302,10 @@
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
       openCommandPalette();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "l") {
+      e.preventDefault();
+      lockSession(false);
     }
     if (e.key === "Escape") {
       const cmdModal = document.getElementById("cmdModal");
@@ -196,5 +327,9 @@
   window.showToast = showToast;
   window.initAmbientParticles = initAmbientParticles;
   window.startAutonomousSyncPoller = startAutonomousSyncPoller;
+  window.initIdleTimer = initIdleTimer;
+  window.resetIdleTimer = resetIdleTimer;
+  window.lockSession = lockSession;
+  window.unlockSession = unlockSession;
 
 })(window);

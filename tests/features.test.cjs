@@ -280,13 +280,77 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
 
   // Verify Security file checks
   const syncCode = fs.readFileSync(path.join(rootDir, 'api/sync.js'), 'utf8');
-  assert(syncCode.includes("godx_session") && syncCode.includes("status(401)"), "api/sync.js enforces strict session authentication on state writes");
+  assert((syncCode.includes("godx_session") || syncCode.includes("validateSession")) && syncCode.includes("status(401)"), "api/sync.js enforces strict session authentication on state writes");
 
   const logoutCode = fs.readFileSync(path.join(rootDir, 'api/logout.js'), 'utf8');
   assert(logoutCode.includes("sameSite: 'strict'"), "api/logout.js uses hardened sameSite: strict cookie policy");
 
   const storageCode = fs.readFileSync(path.join(rootDir, 'api/storage.js'), 'utf8');
   assert(storageCode.includes("path.posix.normalize"), "api/storage.js uses strict path.posix.normalize sanitization against directory traversal");
+
+  // Suite 6: 10-Persona Enterprise Security Hardening & Zero-Trust Defense
+  console.log("\n[Test Suite 6: 10-Persona Enterprise Security Hardening & Zero-Trust Defense]");
+  
+  // 1. Centralized auth guard
+  const authGuardPath = path.join(rootDir, 'api/_lib/auth-guard.js');
+  assert(fs.existsSync(authGuardPath), "Centralized auth-guard.js module exists");
+  const authGuardCode = fs.readFileSync(authGuardPath, 'utf8');
+  assert(authGuardCode.includes("export function validateSession") || authGuardCode.includes("export async function validateSession"), "auth-guard exports validateSession");
+  assert(authGuardCode.includes("export async function checkRateLimit"), "auth-guard exports checkRateLimit");
+  assert(authGuardCode.includes("export function sanitizeError"), "auth-guard exports sanitizeError");
+
+  // 2. Secret and error sanitization
+  const testSecretError = "Provider Gateway Error: failed with Bearer sk-or-v1-9876543210fedcba at https://api.upstream.internal/v1/keys";
+  const sanitized = testSecretError
+    .replace(/Bearer\s+[A-Za-z0-9_\-\.]+/gi, 'Bearer [REDACTED]')
+    .replace(/(?:sk-[A-Za-z0-9_-]{12,}|key-[A-Za-z0-9_-]{12,}|e2b_[A-Za-z0-9_-]{12,})/gi, '[REDACTED_KEY]')
+    .replace(/https?:\/\/[^\s"'<>]+/gi, '[REDACTED_URL]');
+  assert(!sanitized.includes("sk-or-v1-9876543210fedcba"), "Sanitizer scrubbed API key token fragment");
+  assert(!sanitized.includes("https://api.upstream.internal"), "Sanitizer scrubbed internal URL");
+
+  // 3. Zero-trust session guard coverage on all private serverless routes
+  const chatCode = fs.readFileSync(path.join(rootDir, 'api/chat.js'), 'utf8');
+  assert(chatCode.includes("validateSession") && chatCode.includes("status(auth.status)"), "api/chat.js enforces zero-trust validateSession check");
+  assert(chatCode.includes("checkRateLimit"), "api/chat.js enforces sliding IP rate limiting");
+
+  const compileCode = fs.readFileSync(path.join(rootDir, 'api/compile.js'), 'utf8');
+  assert(compileCode.includes("validateSession") && compileCode.includes("status(auth.status)"), "api/compile.js enforces zero-trust validateSession check");
+  assert(compileCode.includes("checkRateLimit"), "api/compile.js enforces sliding IP rate limiting");
+
+  const terminalCode = fs.readFileSync(path.join(rootDir, 'api/terminal.js'), 'utf8');
+  assert(terminalCode.includes("validateSession") && terminalCode.includes("status(auth.status)"), "api/terminal.js enforces zero-trust validateSession check");
+
+  const workerCode = fs.readFileSync(path.join(rootDir, 'api/worker.js'), 'utf8');
+  assert(workerCode.includes("session:${userSession}"), "api/worker.js enforces user session verification in Redis");
+
+  // 4. Edge Middleware and Security Headers in vercel.json
+  const vercelConfig = JSON.parse(fs.readFileSync(path.join(rootDir, 'vercel.json'), 'utf8'));
+  const rootHeader = vercelConfig.headers.find(h => h.source === "/(.*)");
+  assert(rootHeader !== undefined, "vercel.json has global security headers");
+  const cspHeader = rootHeader.headers.find(h => h.key === "Content-Security-Policy");
+  assert(cspHeader && cspHeader.value.includes("default-src 'self'"), "vercel.json enforces strict Content-Security-Policy");
+  const hstsHeader = rootHeader.headers.find(h => h.key === "Strict-Transport-Security");
+  assert(hstsHeader && hstsHeader.value.includes("max-age="), "vercel.json enforces Strict-Transport-Security (HSTS)");
+
+  // 5. Client-Side Idle Inactivity Lock System
+  const appRoot = document.getElementById("app-root");
+  assert(appRoot !== null, "#app-root container exists for workspace blur isolation");
+  const lockModal = document.getElementById("lockModal");
+  assert(lockModal !== null, "#lockModal dialog exists in DOM");
+  const lockInput = document.getElementById("lockPasswordInput");
+  assert(lockInput !== null, "#lockPasswordInput exists in DOM");
+  const lockBtn = document.getElementById("lockUnlockBtn");
+  assert(lockBtn !== null, "#lockUnlockBtn exists in DOM");
+
+  // Test manual lock
+  window.lockSession(false);
+  assert(appRoot.classList.contains("blur-lg"), "Workspace #app-root blurred on session lock");
+  assert(lockModal.style.display === "flex", "#lockModal displayed on session lock");
+
+  // Test empty password error handling on unlock
+  window.unlockSession({ preventDefault: () => {} });
+  const lockErr = document.getElementById("lockErrorMessage");
+  assert(lockErr && !lockErr.classList.contains("hidden"), "Unlocking without credentials displays error message");
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

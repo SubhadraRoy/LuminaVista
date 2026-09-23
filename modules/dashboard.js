@@ -59,6 +59,7 @@
     if (window.initCompilerSample) window.initCompilerSample('html');
     if (window.startAutonomousSyncPoller) window.startAutonomousSyncPoller();
     if (window.initAmbientParticles) window.initAmbientParticles();
+    if (window.initIdleTimer) window.initIdleTimer();
   }
 
   if (document.readyState === "loading") {

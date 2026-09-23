@@ -108,12 +108,15 @@ LuminaVista OS features 22 built-in specialized technical personas dynamically p
 
 ## 🔒 Hardened Security & Resilience Model
 
-- **Session Security**: 1200-second (20-minute) sliding window sessions enforced in Upstash Redis.
+- **Zero-Trust API Perimeter**: Centralized `api/_lib/auth-guard.js` enforces session validation (`godx_session`) across all private endpoints (`/api/chat`, `/api/compile`, `/api/terminal`, `/api/storage`, `/api/sync`, `/api/worker`).
+- **Secrets Shielding & Error Masking**: `OLLAMA_API_KEY`, `OLLAMA_ENDPOINT`, `ADMIN_PASSWORD`, and `E2B_API_KEY` are kept strictly in server memory. All errors pass through `sanitizeError` to prevent upstream key reflection.
+- **Session Security & Sliding Expiration**: 1200-second (20-minute) sliding window sessions enforced in Upstash Redis.
+- **15-Minute Client-Side Idle Auto-Lock**: Client-side inactivity detector automatically locks the workspace, blurs `#app-root`, and requires administrator password re-entry.
+- **Multi-Tier Rate Limiting**: IP-based sliding rate-limiting in Redis across all compute and stateful endpoints.
 - **Strict Cookie Policy**: `Set-Cookie: godx_session=...; HttpOnly; Secure; SameSite=Strict; Path=/`.
 - **Timing-Safe Authentication**: Passwords compared via `crypto.timingSafeEqual` over SHA-256 digests to eliminate timing attacks.
+- **Enterprise Headers & CSP**: Modern Content-Security-Policy (CSP), HSTS, and origin-isolated CORS configured in `vercel.json`.
 - **Directory Traversal Defense**: All file paths strictly sanitized via `path.posix.normalize` with parent traversal blocks.
-- **Zero-Trust State Writes**: `/api/sync` validates active session cookies before allowing mutations to `master_workspace_state`.
-- **Autonomous Sandbox Fallback**: If upstream provider keys are unreachable or rate-limited, the system falls back gracefully to local autonomous simulation without interrupting user workflows.
 
 ---
 
@@ -122,10 +125,10 @@ LuminaVista OS features 22 built-in specialized technical personas dynamically p
 LuminaVista OS includes both a headless DOM integration suite and a real-browser Chrome DevTools Protocol (CDP) test runner:
 
 ```bash
-# Run unit & integration test suite (80/80 passing)
+# Run unit & integration test suite (102/102 passing)
 npm test
 
-# Run real Google Chrome headless browser verification (22/22 passing)
+# Run real Google Chrome headless browser verification (24/24 passing)
 npm run test:browser
 
 # Boot local mock/development server

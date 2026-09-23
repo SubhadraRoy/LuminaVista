@@ -172,14 +172,15 @@ async function runBrowserTest() {
   await sendCdp('Log.enable');
 
   console.log(`[Navigation] Navigating to http://127.0.0.1:${PORT}/dashboard.html...`);
-  let pageLoaded = false;
   await sendCdp('Page.navigate', { url: `http://127.0.0.1:${PORT}/dashboard.html` });
 
-  // Wait for load event
-  for (let i = 0; i < 30 && !pageLoaded; i++) {
-    await new Promise(r => setTimeout(r, 200));
+  // Wait until document.readyState === 'complete' and main elements are fully mounted
+  for (let i = 0; i < 40; i++) {
+    const isReady = await evaluate("document.readyState === 'complete' && !!document.getElementById('mainSidebar') && !!document.getElementById('tab-ai-studio')");
+    if (isReady) break;
+    await new Promise(r => setTimeout(r, 250));
   }
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 500));
 
   let testCount = 0;
   let passedCount = 0;
@@ -263,7 +264,15 @@ async function runBrowserTest() {
   const clockText = await evaluate("document.getElementById('systemClock')?.textContent || ''");
   test("System clock running in header", clockText.length > 0);
 
-  // 9. Check for Uncaught Exceptions
+  // 9. Security Lock Perimeter Verification
+  await evaluate("lockSession(false)");
+  const isBlurred = await evaluate("document.getElementById('app-root').classList.contains('blur-lg')");
+  test("Security Lock blurs workspace #app-root", isBlurred);
+  const isLockOpen = await evaluate("document.getElementById('lockModal').style.display === 'flex'");
+  test("Security Lock modal is displayed", isLockOpen);
+  await evaluate("document.getElementById('lockModal').style.display = 'none'; document.getElementById('app-root').classList.remove('blur-lg', 'pointer-events-none');");
+
+  // 10. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {
     console.error("Console Errors logged:", consoleErrors);
