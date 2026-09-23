@@ -1,1 +1,0 @@
-run the code with vscode live server.
