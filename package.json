@@ -4,13 +4,28 @@
   "type": "module",
   "private": true,
   "description": "LuminaVista OS — Sovereign Cloud Workspace, Firecracker MicroVM & Antigravity Autonomous Studio",
+  "author": "Subhadra Roy",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SubhadraRoy/LuminaVista.git"
+  },
+  "keywords": [
+    "cloud-os",
+    "firecracker",
+    "microvm",
+    "autonomous-ai",
+    "antigravity",
+    "zero-trust",
+    "developer-tools"
+  ],
   "scripts": {
     "start": "node tests/server.cjs",
     "test": "node tests/features.test.cjs",
-    "test:browser": "node tests/browser-cdp-test.cjs"
+    "test:browser": "node tests/browser-cdp-test.cjs",
+    "lint": "node tests/lint.cjs"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.500.0",
     "@e2b/code-interpreter": "^1.0.2",
     "@upstash/redis": "^1.28.0",
     "cookie": "^0.6.0"
