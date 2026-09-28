@@ -8,6 +8,11 @@
   }
 
   function toggleCodespacePane(forceOpen = null) {
+    if (window.switchAiSubTab) {
+      const shouldOpen = (forceOpen !== null) ? forceOpen : (window.activeAiSubTab !== 'artifacts');
+      window.switchAiSubTab(shouldOpen ? 'artifacts' : 'chat');
+      return;
+    }
     const pane = document.getElementById("aiCodespaceColumn");
     const btnText = document.getElementById("btnCodespaceToggleText");
     if (!pane) return;
@@ -34,6 +39,8 @@
     const filenames = Object.keys(vfs);
     const countBadge = document.getElementById("vfsFileCount");
     if (countBadge) countBadge.textContent = `${filenames.length} files`;
+    if (window.updateAiSubTabArtifactBadge) window.updateAiSubTabArtifactBadge();
+    if (window.rebuildGraphData) window.rebuildGraphData();
 
     const tree = {};
     filenames.forEach(file => {

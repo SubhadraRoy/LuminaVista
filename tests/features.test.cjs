@@ -350,9 +350,9 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   // Suite 7: Autonomous AI Studio, Multi-Key Failover Pool & 1,500+ Personas Matrix
   console.log("\n[Test Suite 7: Autonomous AI Studio, Multi-Key Failover Pool & 1,500+ Personas Matrix]");
   
-  // 1. 30 Categories & 1,500+ Personas
-  assert(Array.isArray(window.LuminaPersonaCategories) && window.LuminaPersonaCategories.length === 30, `30 Main Persona Categories loaded (Found: ${window.LuminaPersonaCategories ? window.LuminaPersonaCategories.length : 0})`);
-  assert(Array.isArray(window.LuminaPersonas) && window.LuminaPersonas.length >= 1500, `1,500+ Specialists loaded (Found: ${window.LuminaPersonas ? window.LuminaPersonas.length : 0})`);
+  // 1. 35 Categories & 1,800+ Personas
+  assert(Array.isArray(window.LuminaPersonaCategories) && window.LuminaPersonaCategories.length === 35, `35 Main Persona Categories loaded (Found: ${window.LuminaPersonaCategories ? window.LuminaPersonaCategories.length : 0})`);
+  assert(Array.isArray(window.LuminaPersonas) && window.LuminaPersonas.length >= 1800, `1,800+ Specialists loaded (Found: ${window.LuminaPersonas ? window.LuminaPersonas.length : 0})`);
   
   const swPersonas = window.getPersonasForCategory("software_eng");
   assert(Array.isArray(swPersonas) && swPersonas.length === 50, `Category software_eng has exactly 50 specialists (Found: ${swPersonas ? swPersonas.length : 0})`);
@@ -363,7 +363,7 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   // Verify Category Dropdown in DOM
   window.populatePersonasDropdown();
   const categorySelect = document.getElementById("modalAiCategorySelect");
-  assert(categorySelect && categorySelect.options.length === 30, `Category dropdown rendered with 30 domains (Found: ${categorySelect ? categorySelect.options.length : 0})`);
+  assert(categorySelect && categorySelect.options.length === 35, `Category dropdown rendered with 35 domains (Found: ${categorySelect ? categorySelect.options.length : 0})`);
 
   // 2. Multi-Session Conversation Management
   window.initChatSessions();
@@ -436,7 +436,9 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   // Online Cloud & Dashboard Verification
   const dashHtml = fs.readFileSync(path.join(rootDir, 'dashboard.html'), 'utf8');
   assert(!dashHtml.includes('value="local"'), "Dashboard has zero local ollama options (Full Online Cloud)");
-  assert(dashHtml.includes('id="jevTelemetryBadge"'), "Dashboard includes Jev S1 telemetry badge in header");
+  assert(!dashHtml.includes('id="aiAutonomousBadge"') && !dashHtml.includes('id="jevTelemetryBadge"'), "Header badges (Antigravity Autonomous & Jev Telemetry) cleanly removed as requested");
+  assert(dashHtml.includes('id="btnAiSubTabChat"') && dashHtml.includes('id="btnAiSubTabArtifacts"') && dashHtml.includes('id="btnAiSubTabGraphify"'), "Dashboard includes AI Studio sub-tabs (Chat, Artifacts & Files, Graphify Graph)");
+  assert(dashHtml.includes('id="graphifyCanvas"'), "Graphify canvas visualizer embedded in AI Studio");
   assert(chatApiCode.includes("https://ollama.com/v1/chat/completions"), "api/chat.js points Ollama Cloud to official endpoint");
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);

@@ -34,7 +34,8 @@
   // Jev System-1 Sub-50ms Intent Classifier & Safety Guardrail Layer
   function classifyJevIntentClient(prompt = '', vfs = {}) {
     const start = performance.now();
-    const p = (prompt || '').toLowerCase();
+    const pTrim = (prompt || '').trim();
+    const p = pTrim.toLowerCase();
     const vfsFiles = Object.keys(vfs || {});
 
     let route = 'CONVERSATION';
@@ -42,35 +43,57 @@
     let confidence = 0.95;
     let guardrailPassed = true;
 
+    // Destructive command guardrail check
     if (p.includes('rm -rf /') || p.includes(':(){ :|:& };:') || p.includes('mkfs') || p.includes('dd if=/dev/zero')) {
       guardrailPassed = false;
     }
 
-    if (p.includes('search') || p.includes('find out') || p.includes('look up') || p.includes('what is the latest') || p.includes('who is') || p.includes('news about')) {
+    // 1. Web search routing - Explicit search intent
+    if (/^(search|look\s*up|find\s*out|google|browse|web\s*search)\b/i.test(p) || p.startsWith('search for') || p.startsWith('search:')) {
       route = 'SEARCH_WEB';
       confidence = 0.98;
-    } else if (p.includes('run ') || p.includes('exec ') || p.includes('terminal') || p.includes('bash') || p.includes('pip install') || p.includes('npm install') || p.includes('python ') || p.includes('node ')) {
+    }
+    // 2. Terminal execution routing - Explicit command intent
+    else if (/^(run|exec|execute|terminal|bash|sh|cmd)\b/i.test(p) || p.startsWith('python ') || p.startsWith('node ') || p.startsWith('npm ') || p.startsWith('pip ')) {
       route = 'EXEC_COMMAND';
       confidence = 0.96;
-    } else if ((p.includes('edit') || p.includes('replace') || p.includes('change') || p.includes('update') || p.includes('fix')) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
+    }
+    // 3. File editing routing - Target file must exist in VFS
+    else if ((/\b(edit|replace|modify|update|patch|fix)\b/i.test(p)) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
       route = 'EDIT_FILE';
       targetFile = vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0] || 'index.html';
       confidence = 0.94;
-    } else if ((p.includes('view') || p.includes('read') || p.includes('cat ') || p.includes('show code') || p.includes('inspect')) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
+    }
+    // 4. File viewing routing - Target file must exist in VFS
+    else if ((/\b(view|read|cat|inspect|open|show\s*code)\b/i.test(p)) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
       route = 'VIEW_FILE';
       targetFile = vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0];
       confidence = 0.97;
-    } else if (p.includes('create') || p.includes('build') || p.includes('make') || p.includes('write') || p.includes('implement') || p.includes('code') || p.includes('generate') || p.includes('landing') || p.includes('calculator') || p.includes('game') || p.includes('script') || p.includes('html') || p.includes('python') || p.includes('css')) {
+    }
+    // 5. Code & Project Creation routing - Must be an explicit request to create software/files
+    else if (/\b(create|build|write|implement|generate|code|scaffold|develop)\b.*\b(app|application|game|calculator|landing\s*page|website|page|component|script|program|server|tool|dashboard|todo|counter|api|html|python|js|css|sql|file)\b/i.test(p) ||
+             /\b(create|write|generate|add)\s+([a-zA-Z0-9_\-]+\.(html|js|py|css|json|sql|md|txt))\b/i.test(p)) {
       route = 'WRITE_FILE';
       confidence = 0.99;
-      if (p.includes('.py') || p.includes('python')) targetFile = 'main.py';
+
+      const matchFile = p.match(/\b([a-zA-Z0-9_\-]+\.(html|js|py|css|json|sql|md|txt))\b/i);
+      if (matchFile) {
+        targetFile = matchFile[1];
+      } else if (p.includes('.py') || p.includes('python')) targetFile = 'main.py';
       else if (p.includes('.js') || p.includes('javascript') || p.includes('node')) targetFile = 'app.js';
       else if (p.includes('.css')) targetFile = 'style.css';
       else if (p.includes('.json')) targetFile = 'data.json';
       else if (p.includes('.sql')) targetFile = 'query.sql';
       else targetFile = 'index.html';
-    } else if (p.includes('files') || p.includes('directory') || p.includes('tree') || p.includes('list') || p.includes('what files')) {
+    }
+    // 6. Directory / workspace inspection only if asking to list files exclusively
+    else if (/^(ls|dir|list\s*files|tree|what\s*files|workspace\s*files)\b/i.test(p)) {
       route = 'LIST_DIR';
+      confidence = 0.99;
+    }
+    // 7. Conversational intent (Greetings, Q&A, Identity, Advice, Baking, etc.)
+    else {
+      route = 'CONVERSATION';
       confidence = 0.99;
     }
 
@@ -1011,8 +1034,10 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
             <i data-lucide="file-code" class="w-4 h-4 text-emerald-400 shrink-0"></i>
             <span><strong>Created / Updated VFS Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code> (${c.trim().length} bytes)</span>
           </div>
-          <button onclick="window.switchAndOpenFile('${escapeHtml(f)}')" class="px-2 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[10px] border border-emerald-500/40 cursor-pointer">Open</button>
-        </div>\n\`\`\`${f.split('.').pop() || 'text'}:${f}\n${c.trim()}\n\`\`\``;
+          <button onclick="window.switchAiSubTab('artifacts'); window.switchAndOpenFile('${escapeHtml(f)}');" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[11px] font-semibold border border-emerald-500/40 cursor-pointer flex items-center gap-1 transition-colors">
+            <i data-lucide="folder-code" class="w-3.5 h-3.5"></i> Open in Artifacts Tab
+          </button>
+        </div>`;
       })
       .replace(/\[TOOL:EDIT_FILE filename="([^"]+)"\]\s*<target>([\s\S]*?)<\/target>\s*<replacement>([\s\S]*?)<\/replacement>\s*\[\/TOOL:EDIT_FILE\]/g, (m, f, t, r) => {
         return `<div class="my-2 p-3 bg-surface-950/90 border border-amber-500/30 rounded-xl shadow-lg font-mono text-xs text-amber-300 space-y-2">
@@ -1323,8 +1348,75 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       return thoughts + `Auditing the workspace directory tree:\n\n[TOOL:LIST_DIR][/TOOL:LIST_DIR]\n\n[TOOL:TASK_COMPLETE summary="Workspace directory audit complete."][/TOOL:TASK_COMPLETE]`;
     }
 
-    // Default: Tailored conversation specifically addressing their prompt!
-    return thoughts + `I have analyzed your query: "${pTrim}".\n\nOperating within the LuminaVista Sovereign Workspace with ${vfsFiles.length} file(s) mounted.\n\nRegarding your request:\n• **Context**: ${pTrim}\n• **Workspace Status**: Ready for file operations, MicroVM bash execution, and live web discovery.\n\nWould you like me to write an implementation file (HTML, Python, JavaScript) or execute a specific MicroVM script for this?`;
+    // Conversational Intent Handlers
+    // 1. Greetings
+    if (/^(hi+|hello+|hey+|hola|greetings|good\s*(morning|afternoon|evening)|sup|yo)[\s!.,?]*$/i.test(pTrim)) {
+      return thoughts + `Hello! I am LuminaVista OS AI. I am ready to help you write code, manage files in your workspace, run terminal commands in the MicroVM, or explore ideas. What would you like to build or work on today?`;
+    }
+
+    // 2. Identity / Capabilities
+    if (/(what|who)\s*(are|r)\s*(u|you)|introduce yourself|tell me about yourself/i.test(pTrim)) {
+      return thoughts + `I am LuminaVista OS AI, an autonomous software engineering assistant embedded directly inside your sovereign cloud operating system.
+
+Here is what I can do for you:
+- **Write & Edit Code**: Generate full HTML/CSS/JS web applications, Python scripts, API services, and algorithms directly in your Virtual File System (VFS).
+- **Run MicroVM Commands**: Execute bash, Node.js, and Python code inside isolated POSIX microVM sandboxes.
+- **Search the Web**: Discover live documentation, libraries, and real-time knowledge.
+- **Manage Files**: Inspect, refactor, and structure files in the Artifacts IDE.
+- **Graphify Architecture**: Visualize your project's module and dependency graph.
+
+Tell me what you'd like to create or explore, and I will execute it directly!`;
+    }
+
+    // 3. Real-world / Cake / Cooking / Fun Queries
+    if (/\b(cake|bake|cook|recipe|food|pasta|pizza|dessert)\b/i.test(pTrim) && !/\b(code|app|website|html)\b/i.test(pTrim)) {
+      return thoughts + `I cannot bake a physical cake since I am an AI running inside LuminaVista Cloud OS! 🎂
+
+However, I can help you in several creative and technical ways:
+1. **Share an Authentic Recipe**: I can provide an exquisite recipe for classic chocolate fudge cake, moist carrot cake, or New York cheesecake with exact ingredient grams and step-by-step techniques.
+2. **Build an Interactive Cake Designer App**: I can code a 3D bakery configurator or recipe calculator in HTML/Tailwind/JavaScript in your Artifacts tab.
+3. **Write a Baking Utility Script**: A Python module to calculate baking times, temperature conversions, and scaling for different pan sizes.
+
+Which of these would you like to try?`;
+    }
+
+    // 4. Internet status & Workspace file listing
+    if (pLower.includes('internet') || (pLower.includes('files') && pLower.includes('list'))) {
+      const listTable = vfsFiles.length > 0
+        ? vfsFiles.map(f => `| \`${f}\` | ${(vfs[f] || '').length} bytes | Ready |`).join('\n')
+        : '| *(Empty)* | 0 bytes | Workspace initialized |';
+
+      return thoughts + `Yes, I am connected to the internet with live web discovery active! 🌐
+
+Here is the current state of your workspace Virtual File System (VFS):
+
+| File Name | Size | Status |
+| :--- | :--- | :--- |
+${listTable}
+
+• **Live Internet Discovery**: Online (DuckDuckGo Search Engine Enabled)
+• **MicroVM Sandbox**: Active (Python 3.11, Node.js 20, Bash)
+• **Workspace Storage**: ${vfsFiles.length} files mounted in memory
+
+[TOOL:LIST_DIR][/TOOL:LIST_DIR]
+
+[TOOL:TASK_COMPLETE summary="Workspace status audited."][/TOOL:TASK_COMPLETE]
+
+Would you like me to inspect, run, or edit any of these files?`;
+    }
+
+    // Default Natural Conversation Route
+    return thoughts + `I understand your question regarding "${pTrim}".
+
+Operating within the LuminaVista Sovereign Workspace with ${vfsFiles.length} file(s) mounted.
+
+I am equipped to:
+• Write or modify files in your Artifacts IDE
+• Run bash/python commands in the Firecracker MicroVM
+• Search online documentation via live web discovery
+• Provide architectural guidance and code analysis
+
+What specific feature, application, or script would you like to build?`;
   }
 
   // =========================================================================
@@ -1573,11 +1665,6 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
 
     // Client-side Jev System-1 Sub-50ms Classification (<2ms)
     const jevIntent = classifyJevIntentClient(prompt, window.vfs);
-    const jevBadge = document.getElementById("jevTelemetryBadge");
-    if (jevBadge) {
-      jevBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span> ⚡ Jev S1: ${jevIntent.route} (${Math.max(jevIntent.latencyMs, 1)}ms)`;
-      jevBadge.title = `Classified Route: ${jevIntent.route} • Confidence: ${(jevIntent.confidence * 100).toFixed(0)}% • Safety: 100% SECURE`;
-    }
 
     window.isAgentRunning = true;
     window.isAgentAborted = false;
@@ -1591,17 +1678,11 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       btnAbort.classList.remove("hidden");
     }
 
-    const badge = document.getElementById("aiAutonomousBadge");
     const failoverBadge = document.getElementById("failoverIndicatorBadge");
 
     try {
       while (window.isAgentRunning && !window.isAgentAborted && window.currentAgentLoop < MAX_AGENT_LOOPS) {
         window.currentAgentLoop++;
-
-        if (badge) {
-          badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping"></span> Autonomous Step ${window.currentAgentLoop}/${MAX_AGENT_LOOPS}`;
-          badge.className = "px-1.5 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-200 font-mono border border-purple-500/30 flex items-center gap-1";
-        }
 
         const latestUserMsg = window.aiConversation[window.aiConversation.length - 1]?.content || prompt;
         showThinkingIndicator(window.currentAgentLoop, latestUserMsg);
@@ -1658,12 +1739,6 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
             const data = await res.json();
             if (res.ok) {
               reply = data.reply || data.choices?.[0]?.message?.content || data.message?.content || "Action verified.";
-
-              // Update Jev S1 badge with server telemetry
-              if (data.jevTelemetry && jevBadge) {
-                jevBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> ⚡ Jev S1: ${data.jevTelemetry.route} (${data.jevTelemetry.latencyMs}ms)`;
-                jevBadge.title = `Route: ${data.jevTelemetry.route} • Confidence: ${(data.jevTelemetry.confidence * 100).toFixed(0)}% • Safety: Passed`;
-              }
 
               // Handle failover indicator badge
               if (data.activeKeyMeta && failoverBadge) {
@@ -1732,10 +1807,6 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       if (btnAbort) {
         btnAbort.classList.add("hidden");
       }
-      if (badge) {
-        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Antigravity Autonomous`;
-        badge.className = "px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20 flex items-center gap-1";
-      }
       if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
       updateActiveSessionMessages();
       renderAiChat();
@@ -1755,9 +1826,92 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
   }
 
+  // =========================================================================
+  // 9. AI STUDIO SUB-TABS (CHAT | ARTIFACTS & FILES | GRAPHIFY GRAPH)
+  // =========================================================================
+  window.activeAiSubTab = 'chat';
+
+  function switchAiSubTab(tabName = 'chat') {
+    window.activeAiSubTab = tabName;
+    const chatView = document.getElementById("aiChatView");
+    const csCol = document.getElementById("aiCodespaceColumn");
+    const graphCol = document.getElementById("aiGraphifyColumn");
+
+    const btnChat = document.getElementById("btnAiSubTabChat");
+    const btnArtifacts = document.getElementById("btnAiSubTabArtifacts");
+    const btnGraphify = document.getElementById("btnAiSubTabGraphify");
+
+    // Reset button states
+    [btnChat, btnArtifacts, btnGraphify].forEach(btn => {
+      if (btn) {
+        btn.className = "px-3.5 py-1.5 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all";
+      }
+    });
+
+    if (tabName === 'artifacts') {
+      if (chatView) chatView.classList.add("hidden");
+      if (graphCol) {
+        graphCol.classList.add("hidden");
+        graphCol.classList.remove("flex");
+      }
+      if (csCol) {
+        csCol.classList.remove("hidden");
+        csCol.classList.add("flex");
+      }
+      if (btnArtifacts) {
+        btnArtifacts.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm";
+      }
+      if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
+    } else if (tabName === 'graphify') {
+      if (chatView) chatView.classList.add("hidden");
+      if (csCol) {
+        csCol.classList.add("hidden");
+        csCol.classList.remove("flex");
+      }
+      if (graphCol) {
+        graphCol.classList.remove("hidden");
+        graphCol.classList.add("flex");
+      }
+      if (btnGraphify) {
+        btnGraphify.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm";
+      }
+      if (window.initGraphifyGraph) {
+        setTimeout(() => {
+          window.initGraphifyGraph();
+          if (window.rebuildGraphData) window.rebuildGraphData();
+        }, 50);
+      }
+    } else {
+      // Default: 'chat'
+      if (chatView) chatView.classList.remove("hidden");
+      if (csCol) {
+        csCol.classList.add("hidden");
+        csCol.classList.remove("flex");
+      }
+      if (graphCol) {
+        graphCol.classList.add("hidden");
+        graphCol.classList.remove("flex");
+      }
+      if (btnChat) {
+        btnChat.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm";
+      }
+    }
+
+    updateAiSubTabArtifactBadge();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  }
+
+  function updateAiSubTabArtifactBadge() {
+    const badge = document.getElementById("aiSubTabArtifactCount");
+    if (badge) {
+      const count = Object.keys(window.vfs || {}).length;
+      badge.textContent = count;
+    }
+  }
+
   // Switch and open file in Artifacts IDE
   window.switchAndOpenFile = function(filename) {
-    if (window.toggleCodespacePane) window.toggleCodespacePane(true);
+    switchAiSubTab('artifacts');
     if (window.loadCodespaceFileContent) window.loadCodespaceFileContent(filename);
   };
 
@@ -1765,6 +1919,7 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
   document.addEventListener("DOMContentLoaded", () => {
     initChatSessions();
     initScheduledTasks();
+    updateAiSubTabArtifactBadge();
     setTimeout(() => {
       initThinkingOrb("headerThinkingOrb");
       loadAiConfig();
@@ -1794,6 +1949,8 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
   window.setThinkingOrbState = setThinkingOrbState;
   window.initThinkingOrb = initThinkingOrb;
   window.classifyJevIntentClient = classifyJevIntentClient;
+  window.switchAiSubTab = switchAiSubTab;
+  window.updateAiSubTabArtifactBadge = updateAiSubTabArtifactBadge;
 
   // Multi-Session Exports
   window.initChatSessions = initChatSessions;

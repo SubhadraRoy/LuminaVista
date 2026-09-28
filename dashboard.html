@@ -177,196 +177,285 @@
     <main class="flex-1 overflow-hidden p-4 lg:p-5 w-full max-w-[2100px] mx-auto flex flex-col min-h-0 select-text">
       
       <!-- ===================================================================== -->
-      <!-- TAB 1: ai-llm STUDIO (Full-Width Studio + Floating Config Modal)      -->
       <!-- ===================================================================== -->
-      <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-4">
+      <!-- TAB 1: ai-llm STUDIO (Chat, Artifacts & Files, Graphify Graph)        -->
+      <!-- ===================================================================== -->
+      <section id="tab-ai-studio" class="tab-pane h-full flex flex-col gap-3 min-h-0">
         
-        <!-- Left Slide-out Sessions Drawer -->
-        <div id="aiSessionsDrawer" class="hidden w-72 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/10 shadow-2xl h-full transition-all duration-300 shrink-0">
-          <div class="p-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-2">
-              <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
-              <span class="font-heading font-bold text-xs text-white">Chat Sessions</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <button onclick="createNewChatSession()" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[11px] font-bold border border-cyan-500/30 flex items-center gap-1 cursor-pointer transition-colors" title="Start New Conversation">
-                <i data-lucide="plus" class="w-3 h-3"></i> New
-              </button>
-              <button onclick="toggleSessionsDrawer(false)" class="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
-            </div>
+        <!-- AI Studio Top Sub-Navigation Bar -->
+        <div class="glass-panel px-4 py-2 rounded-2xl border border-white/5 flex items-center justify-between shrink-0 backdrop-blur-xl">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <button id="btnAiSubTabChat" onclick="switchAiSubTab('chat')" class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm">
+              <i data-lucide="message-square" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Chat</span>
+            </button>
+            <button id="btnAiSubTabArtifacts" onclick="switchAiSubTab('artifacts')" class="px-3.5 py-1.5 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all">
+              <i data-lucide="folder-code" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Artifacts &amp; Files</span>
+              <span id="aiSubTabArtifactCount" class="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-300 font-mono">0</span>
+            </button>
+            <button id="btnAiSubTabGraphify" onclick="switchAiSubTab('graphify')" class="px-3.5 py-1.5 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all">
+              <i data-lucide="network" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Graphify Graph</span>
+              <span class="px-1.5 py-0.2 rounded text-[9px] bg-purple-500/20 text-purple-300 font-mono">Live</span>
+            </button>
           </div>
-          <div class="p-2 border-b border-white/5 bg-surface-950/60">
-            <div class="relative">
-              <input type="text" id="sessionsSearchInput" oninput="filterSessionsList(this.value)" placeholder="Search conversations..." class="godx-input w-full px-2.5 py-1.5 pl-7 text-[11px] font-sans" />
-              <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2.5 top-2.5"></i>
-            </div>
-          </div>
-          <div id="aiSessionsList" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar"></div>
-        </div>
-
-        <!-- Center Chat Box (Maximized Real Estate) -->
-        <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
-          <!-- ai-llm Header -->
-          <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
-            <div class="flex items-center gap-3">
-              <canvas id="headerThinkingOrb" width="36" height="36" class="shrink-0 cursor-pointer rounded-lg bg-surface-950/80 border border-cyan-500/30 shadow-[0_0_12px_rgba(0,242,254,0.2)]" title="Antigravity Cognitive Engine State"></canvas>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h3 class="font-heading font-bold text-sm text-white leading-tight">ai-llm</h3>
-                  <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
-                  <span id="failoverIndicatorBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-300 font-mono border border-amber-500/30 items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Key #1
-                  </span>
-                  <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20 items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
-                  </span>
-                  <span id="aiAutonomousBadge" class="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20 flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Antigravity Autonomous
-                  </span>
-                  <span id="jevTelemetryBadge" class="px-1.5 py-0.5 rounded text-[9px] bg-indigo-500/15 text-indigo-300 font-mono border border-indigo-500/30 flex items-center gap-1" title="TypeSafe Jev System-1 Sub-50ms Decision Engine">
-                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span> ⚡ Jev S1: READY
-                  </span>
-                </div>
-                <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
-              </div>
-            </div>
-
-            <!-- Action Controls -->
-            <div class="flex items-center gap-2">
-              <button onclick="toggleSessionsDrawer()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Multi-Session History">
-                <i data-lucide="history" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span>Sessions</span>
-                <span id="sessionCountBadge" class="px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono">1</span>
-              </button>
-              <button onclick="openScheduledTasksModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Autonomous Scheduled Tasks">
-                <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-purple-400"></i>
-                <span>Scheduled</span>
-                <span id="scheduledCountBadge" class="hidden px-1.5 py-0.2 rounded-full text-[9px] bg-purple-500 text-white font-mono">0</span>
-              </button>
-              <button onclick="openAiConfigModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors" title="Configure AI & Personas">
-                <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span>Settings</span>
-              </button>
-              <button onclick="toggleCodespacePane()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-2 cursor-pointer transition-colors shadow-sm">
-                <i data-lucide="layout-template" class="w-3.5 h-3.5"></i>
-                <span id="btnCodespaceToggleText">Artifacts IDE</span>
-              </button>
-              <button onclick="clearAiChat()" class="p-1.5 rounded-xl hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors" title="Clear Current Chat">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Chat Conversation Scroll Area -->
-          <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[13px] leading-relaxed relative min-h-0 custom-scrollbar"></div>
-
-          <!-- Floating Input Bar -->
-          <div class="p-4 pt-1 z-10 relative shrink-0">
-            <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
-              <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
-                <textarea id="aiPromptTextarea" rows="1" placeholder="Message ai-llm, edit files, execute bash in microVM... (Ctrl+Enter)" class="w-full bg-transparent border-0 outline-none text-[13px] text-white pl-3 pr-2 py-2.5 resize-none max-h-40 custom-scrollbar" style="min-height: 42px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
-                <button type="button" id="btnAiAbort" onclick="abortAgentLoop()" class="hidden px-2.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-mono font-bold border border-rose-500/30 flex items-center gap-1.5 mb-0.5 mr-1 cursor-pointer transition-colors" title="Abort Autonomous Agent Loop">
-                  <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i> Abort
-                </button>
-                <button type="submit" id="btnAiSend" class="w-9 h-9 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-0.5 mr-0.5 cursor-pointer">
-                  <i data-lucide="arrow-up" class="w-4 h-4"></i>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Right Panel: Advanced Interactive Artifact IDE & Tree Manager -->
-        <div id="aiCodespaceColumn" class="hidden w-full lg:w-[650px] glass-panel rounded-2xl flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl shrink-0 transition-all duration-300 h-full">
-          
-          <!-- IDE Top Header -->
-          <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-2">
-              <i data-lucide="binary" class="w-4 h-4 text-cyan-400"></i>
-              <span class="font-heading font-bold text-xs text-white">Artifact Sovereign Codespace</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
-                <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Preview</button>
-                <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Code</button>
-                <button onclick="setCodespaceView('terminal')" id="btnCsViewTerminal" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Terminal</button>
-                <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Split</button>
-              </div>
-              <button onclick="runActiveFile()" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer" title="Execute Code or Reload HTML">
-                <i data-lucide="play" class="w-3 h-3"></i> Run
-              </button>
-              <button onclick="toggleCodespacePane(false)" class="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
-            </div>
-          </div>
-
-          <!-- Advanced Sub-Bar: Breadcrumbs & Actions -->
-          <div class="px-3 py-1.5 bg-surface-950 border-b border-white/5 flex items-center justify-between text-xs font-mono shrink-0">
-            <div class="flex items-center gap-1.5 text-zinc-400">
-              <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
-              <span>vfs://</span>
-              <span id="csBreadcrumbFile" class="text-white font-bold">index.html</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <button onclick="promptCreateFile()" class="px-2 py-1 rounded hover:bg-white/5 text-cyan-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Create File">
-                <i data-lucide="file-plus" class="w-3 h-3"></i><span>+File</span>
-              </button>
-              <button onclick="renameActiveFile()" class="px-2 py-1 rounded hover:bg-white/5 text-zinc-400 hover:text-white flex items-center gap-1 text-[11px] cursor-pointer" title="Rename File">
-                <i data-lucide="edit-2" class="w-3 h-3"></i>
-              </button>
-              <button onclick="deleteActiveFile()" class="px-2 py-1 rounded hover:bg-rose-500/20 text-rose-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Delete File">
-                <i data-lucide="trash" class="w-3 h-3"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- File Tabs Bar (Horizontal - Open Tabs Only) -->
-          <div class="px-2 pt-1.5 bg-surface-900/60 border-b border-white/5 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 custom-scrollbar" id="codespaceFileTabs"></div>
-
-          <!-- Main Dual Workspace: Explorer Tree + Code/Preview/Terminal -->
-          <div class="flex-1 flex min-h-0 relative bg-surface-950">
-            
-            <!-- Collapsible File Tree Sidebar inside IDE -->
-            <div class="w-44 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
-              <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center">
-                <span>Explorer</span>
-                <span id="vfsFileCount" class="text-cyan-400">0 files</span>
-              </div>
-              <div id="vfsTreeContainer" class="flex-1 p-2 space-y-1 overflow-y-auto custom-scrollbar"></div>
-            </div>
-
-            <!-- Code Editor Column -->
-            <div id="csEditorContainer" class="flex-1 h-full flex-col border-r border-white/5 relative flex">
-              <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-xs text-zinc-200 outline-none resize-none leading-relaxed selection:bg-cyan-500 selection:text-black custom-scrollbar"></textarea>
-            </div>
-
-            <!-- Live Browser Preview Column -->
-            <div id="csPreviewContainer" class="hidden flex-1 h-full bg-white relative">
-              <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
-            </div>
-
-            <!-- Embedded Terminal View (CLAUDE CODE STYLE) -->
-            <div id="csTerminalContainer" class="hidden flex-1 h-full bg-[#0d1117] flex-col relative font-mono text-[11px] overflow-hidden">
-              <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all custom-scrollbar">
-                <div class="text-cyan-400 font-bold">LuminaVista Embedded MicroVM CLI</div>
-                <div class="text-zinc-500">Autonomous loop execution output will stream here.</div>
-              </div>
-              <form onsubmit="handleIdeTerminalCommand(event)" class="border-t border-white/5 bg-black/50 flex items-center p-2 shrink-0">
-                <span class="text-emerald-400 font-bold mr-2">➜</span>
-                <input type="text" id="csTermInput" class="flex-1 bg-transparent outline-none text-white text-xs font-mono" placeholder="Execute terminal command in mounted VFS..." autocomplete="off">
-              </form>
-            </div>
-
-          </div>
-
-          <!-- Codespace Status Footer -->
-          <div class="px-4 py-2 border-t border-white/10 bg-surface-900/90 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0">
-            <span id="csStatusBadge" class="flex items-center gap-1.5 text-emerald-400">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Runtime Synced
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] text-zinc-400 font-mono hidden md:inline-flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+              Lumina Sovereign AI v14.0
             </span>
-            <div class="flex items-center gap-3">
-              <button onclick="exportCodespaceZip()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="download" class="w-3 h-3"></i> Export Bundle</button>
-              <button onclick="openCodespacePopout()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="external-link" class="w-3 h-3"></i> Popout</button>
+          </div>
+        </div>
+
+        <!-- Sub-View Container -->
+        <div class="flex-1 flex min-h-0 relative w-full overflow-hidden">
+          
+          <!-- SUB-VIEW 1: CHAT VIEW (with optional Left Sessions Drawer) -->
+          <div id="aiChatView" class="w-full h-full flex flex-col lg:flex-row gap-4 min-h-0">
+            <!-- Left Slide-out Sessions Drawer -->
+            <div id="aiSessionsDrawer" class="hidden w-72 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/10 shadow-2xl h-full transition-all duration-300 shrink-0">
+              <div class="p-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
+                  <span class="font-heading font-bold text-xs text-white">Chat Sessions</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button onclick="createNewChatSession()" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[11px] font-bold border border-cyan-500/30 flex items-center gap-1 cursor-pointer transition-colors" title="Start New Conversation">
+                    <i data-lucide="plus" class="w-3 h-3"></i> New
+                  </button>
+                  <button onclick="toggleSessionsDrawer(false)" class="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+              <div class="p-2 border-b border-white/5 bg-surface-950/60">
+                <div class="relative">
+                  <input type="text" id="sessionsSearchInput" oninput="filterSessionsList(this.value)" placeholder="Search conversations..." class="godx-input w-full px-2.5 py-1.5 pl-7 text-[11px] font-sans" />
+                  <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2.5 top-2.5"></i>
+                </div>
+              </div>
+              <div id="aiSessionsList" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar"></div>
+            </div>
+
+            <!-- Center Chat Box (Maximized Real Estate) -->
+            <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
+              <!-- ai-llm Header -->
+              <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
+                <div class="flex items-center gap-3">
+                  <canvas id="headerThinkingOrb" width="36" height="36" class="shrink-0 cursor-pointer rounded-lg bg-surface-950/80 border border-cyan-500/30 shadow-[0_0_12px_rgba(0,242,254,0.2)]" title="Antigravity Cognitive Engine State"></canvas>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-heading font-bold text-sm text-white leading-tight">ai-llm</h3>
+                      <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
+                      <span id="failoverIndicatorBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-300 font-mono border border-amber-500/30 items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Key #1
+                      </span>
+                      <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20 items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
+                      </span>
+                    </div>
+                    <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
+                  </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex items-center gap-2">
+                  <button onclick="toggleSessionsDrawer()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Multi-Session History">
+                    <i data-lucide="history" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>Sessions</span>
+                    <span id="sessionCountBadge" class="px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono">1</span>
+                  </button>
+                  <button onclick="openScheduledTasksModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Autonomous Scheduled Tasks">
+                    <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-purple-400"></i>
+                    <span>Scheduled</span>
+                    <span id="scheduledCountBadge" class="hidden px-1.5 py-0.2 rounded-full text-[9px] bg-purple-500 text-white font-mono">0</span>
+                  </button>
+                  <button onclick="openAiConfigModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors" title="Configure AI &amp; Personas">
+                    <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>Settings</span>
+                  </button>
+                  <button onclick="switchAiSubTab('artifacts')" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-2 cursor-pointer transition-colors shadow-sm">
+                    <i data-lucide="folder-code" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span id="btnCodespaceToggleText">Artifacts IDE</span>
+                  </button>
+                  <button onclick="clearAiChat()" class="p-1.5 rounded-xl hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors" title="Clear Current Chat">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Chat Conversation Scroll Area -->
+              <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[13px] leading-relaxed relative min-h-0 custom-scrollbar"></div>
+
+              <!-- Floating Input Bar -->
+              <div class="p-4 pt-1 z-10 relative shrink-0">
+                <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
+                  <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
+                    <textarea id="aiPromptTextarea" rows="1" placeholder="Message ai-llm, edit files, execute bash in microVM... (Ctrl+Enter)" class="w-full bg-transparent border-0 outline-none text-[13px] text-white pl-3 pr-2 py-2.5 resize-none max-h-40 custom-scrollbar" style="min-height: 42px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                    <button type="button" id="btnAiAbort" onclick="abortAgentLoop()" class="hidden px-2.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-mono font-bold border border-rose-500/30 flex items-center gap-1.5 mb-0.5 mr-1 cursor-pointer transition-colors" title="Abort Autonomous Agent Loop">
+                      <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i> Abort
+                    </button>
+                    <button type="submit" id="btnAiSend" class="w-9 h-9 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-0.5 mr-0.5 cursor-pointer">
+                      <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 2: ARTIFACTS & FILES CODESPACE (Full Width) -->
+          <div id="aiCodespaceColumn" class="hidden w-full h-full glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl transition-all duration-300">
+            <!-- IDE Top Header -->
+            <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-2">
+                <i data-lucide="folder-code" class="w-4 h-4 text-emerald-400"></i>
+                <span class="font-heading font-bold text-xs text-white">Artifacts Sovereign Codespace</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
+                  <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Preview</button>
+                  <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Code</button>
+                  <button onclick="setCodespaceView('terminal')" id="btnCsViewTerminal" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Terminal</button>
+                  <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Split</button>
+                </div>
+                <button onclick="runActiveFile()" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer" title="Execute Code or Reload HTML">
+                  <i data-lucide="play" class="w-3 h-3"></i> Run
+                </button>
+                <button onclick="switchAiSubTab('chat')" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer flex items-center gap-1 text-xs" title="Return to Chat">
+                  <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                  <span>Back to Chat</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Advanced Sub-Bar: Breadcrumbs & Actions -->
+            <div class="px-3 py-1.5 bg-surface-950 border-b border-white/5 flex items-center justify-between text-xs font-mono shrink-0">
+              <div class="flex items-center gap-1.5 text-zinc-400">
+                <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>vfs://</span>
+                <span id="csBreadcrumbFile" class="text-white font-bold">index.html</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button onclick="promptCreateFile()" class="px-2 py-1 rounded hover:bg-white/5 text-cyan-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Create File">
+                  <i data-lucide="file-plus" class="w-3 h-3"></i><span>+File</span>
+                </button>
+                <button onclick="renameActiveFile()" class="px-2 py-1 rounded hover:bg-white/5 text-zinc-400 hover:text-white flex items-center gap-1 text-[11px] cursor-pointer" title="Rename File">
+                  <i data-lucide="edit-2" class="w-3 h-3"></i>
+                </button>
+                <button onclick="deleteActiveFile()" class="px-2 py-1 rounded hover:bg-rose-500/20 text-rose-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Delete File">
+                  <i data-lucide="trash" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- File Tabs Bar -->
+            <div class="px-2 pt-1.5 bg-surface-900/60 border-b border-white/5 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 custom-scrollbar" id="codespaceFileTabs"></div>
+
+            <!-- Main Workspace: Explorer Tree + Code/Preview/Terminal -->
+            <div class="flex-1 flex min-h-0 relative bg-surface-950">
+              <!-- File Tree Sidebar -->
+              <div class="w-48 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
+                <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center">
+                  <span>Explorer</span>
+                  <span id="vfsFileCount" class="text-cyan-400">0 files</span>
+                </div>
+                <div id="vfsTreeContainer" class="flex-1 p-2 space-y-1 overflow-y-auto custom-scrollbar"></div>
+              </div>
+
+              <!-- Code Editor Container -->
+              <div id="csEditorContainer" class="flex-1 h-full flex-col border-r border-white/5 relative flex">
+                <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-xs text-zinc-200 outline-none resize-none leading-relaxed selection:bg-cyan-500 selection:text-black custom-scrollbar"></textarea>
+              </div>
+
+              <!-- Live Browser Preview Container -->
+              <div id="csPreviewContainer" class="hidden flex-1 h-full bg-white relative">
+                <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
+              </div>
+
+              <!-- Embedded Terminal Container -->
+              <div id="csTerminalContainer" class="hidden flex-1 h-full bg-[#0d1117] flex-col relative font-mono text-[11px] overflow-hidden">
+                <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all custom-scrollbar">
+                  <div class="text-cyan-400 font-bold">LuminaVista Embedded MicroVM CLI</div>
+                  <div class="text-zinc-500">Autonomous loop execution output will stream here.</div>
+                </div>
+                <form onsubmit="handleIdeTerminalCommand(event)" class="border-t border-white/5 bg-black/50 flex items-center p-2 shrink-0">
+                  <span class="text-emerald-400 font-bold mr-2">➜</span>
+                  <input type="text" id="csTermInput" class="flex-1 bg-transparent outline-none text-white text-xs font-mono" placeholder="Execute terminal command in mounted VFS..." autocomplete="off">
+                </form>
+              </div>
+            </div>
+
+            <!-- Codespace Status Footer -->
+            <div class="px-4 py-2 border-t border-white/10 bg-surface-900/90 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0">
+              <span id="csStatusBadge" class="flex items-center gap-1.5 text-emerald-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Runtime Synced
+              </span>
+              <div class="flex items-center gap-3">
+                <button onclick="exportCodespaceZip()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="download" class="w-3 h-3"></i> Export Bundle</button>
+                <button onclick="openCodespacePopout()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="external-link" class="w-3 h-3"></i> Popout</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 3: GRAPHIFY ARCHITECTURE GRAPH (Full Width) -->
+          <div id="aiGraphifyColumn" class="hidden w-full h-full glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-purple-500/30 shadow-2xl transition-all duration-300">
+            <!-- Graphify Header -->
+            <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
+                  <i data-lucide="network" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-heading font-bold text-xs text-white leading-tight">LuminaVista Graphify Architecture</h3>
+                  <p class="text-[10px] text-zinc-400 font-mono" id="graphifyNodeCount">Loading architecture graph...</p>
+                </div>
+              </div>
+
+              <!-- Filter Pills & Search -->
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[11px] font-mono">
+                  <button onclick="setGraphifyFilter('all')" data-cat="all" class="graphify-filter-btn px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">All</button>
+                  <button onclick="setGraphifyFilter('frontend')" data-cat="frontend" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Frontend</button>
+                  <button onclick="setGraphifyFilter('ai')" data-cat="ai" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">AI</button>
+                  <button onclick="setGraphifyFilter('api')" data-cat="api" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">APIs</button>
+                  <button onclick="setGraphifyFilter('security')" data-cat="security" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Security</button>
+                  <button onclick="setGraphifyFilter('runtime')" data-cat="runtime" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Sandboxes</button>
+                  <button onclick="setGraphifyFilter('vfs')" data-cat="vfs" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">VFS Files</button>
+                </div>
+
+                <div class="relative">
+                  <input type="text" oninput="setGraphifySearch(this.value)" placeholder="Search node..." class="godx-input px-2.5 py-1 pl-7 text-[11px] font-mono w-32 focus:w-44 transition-all" />
+                  <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2 top-2"></i>
+                </div>
+
+                <!-- Zoom & Export Controls -->
+                <div class="flex items-center gap-1">
+                  <button onclick="zoomGraphify(0.15)" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Zoom In"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="zoomGraphify(-0.15)" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Zoom Out"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="resetGraphifyView()" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Reset View"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="exportGraphifyImage()" class="px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer" title="Export PNG Diagram"><i data-lucide="image" class="w-3 h-3"></i> PNG</button>
+                  <button onclick="exportGraphifyJson()" class="px-2 py-1 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer" title="Export Architecture Manifest JSON"><i data-lucide="code" class="w-3 h-3"></i> JSON</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="flex-1 relative min-h-0 bg-[#06080d] overflow-hidden select-none">
+              <canvas id="graphifyCanvas" class="w-full h-full cursor-grab active:cursor-grabbing block"></canvas>
+
+              <!-- Node Inspector Drawer (Slide-out panel) -->
+              <div id="graphifyInspectorDrawer" class="hidden absolute top-3 right-3 w-80 md:w-96 glass-panel rounded-2xl border border-white/15 shadow-2xl z-20 overflow-hidden bg-surface-900/95 backdrop-blur-2xl"></div>
+
+              <!-- Canvas Bottom Legend Bar -->
+              <div class="absolute bottom-3 left-3 bg-surface-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-[10px] font-mono text-zinc-400 flex items-center gap-3">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#00f2fe]"></span> Frontend</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#818cf8]"></span> AI</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#10b981]"></span> APIs</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#f43f5e]"></span> Security</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#c084fc]"></span> Sandboxes</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#2dd4bf]"></span> VFS Files</span>
+              </div>
             </div>
           </div>
 
@@ -953,6 +1042,7 @@
   <script src="./modules/sidebar.js"></script>
   <script src="./modules/ai-studio.js"></script>
   <script src="./modules/codespace.js"></script>
+  <script src="./modules/graphify.js"></script>
   <script src="./modules/compiler.js"></script>
   <script src="./modules/terminal.js"></script>
   <script src="./modules/whiteboard.js"></script>

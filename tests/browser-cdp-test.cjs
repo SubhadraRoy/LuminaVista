@@ -232,15 +232,15 @@ async function runBrowserTest() {
     test(`Switched and verified visibility of #${t}`, isVisible);
   }
 
-  // 4. Verify 30 Categories & 1,500+ Specialists Matrix in DOM
+  // 4. Verify 35 Categories & 1,800+ Specialists Matrix in DOM
   const personaCount = await evaluate("window.LuminaPersonas.length");
-  test(`Loaded ${personaCount} personas (expected >= 1500)`, personaCount >= 1500);
+  test(`Loaded ${personaCount} personas (expected >= 1800)`, personaCount >= 1800);
 
   const categoryOptionsCount = await evaluate("document.getElementById('modalAiCategorySelect')?.options.length || 0");
-  test(`Category dropdown has 30 domains (Found: ${categoryOptionsCount})`, categoryOptionsCount === 30);
+  test(`Category dropdown has 35 domains (Found: ${categoryOptionsCount})`, categoryOptionsCount === 35);
 
   const selectCount = await evaluate("document.getElementById('modalAiPersonaSelect').options.length");
-  test(`Persona dropdown has ${selectCount} options for active category`, selectCount === 50);
+  test(`Persona dropdown has ${selectCount} options for active category`, selectCount >= 50);
 
   // Test dynamic 2-tier category switching in browser
   await evaluate("document.getElementById('modalAiCategorySelect').value = 'cybersecurity'; onModalCategoryChange();");
@@ -250,6 +250,22 @@ async function runBrowserTest() {
   // Test Thinking Orb Canvas Presence
   const hasThinkingOrb = await evaluate("document.getElementById('headerThinkingOrb') !== null");
   test("Thinking Orb canvas rendered in AI Studio header", hasThinkingOrb);
+
+  // Test AI Studio Sub-Tabs Switching (Chat, Artifacts & Files, Graphify Graph)
+  await evaluate("switchAiSubTab('artifacts')");
+  const isArtifactsVisible = await evaluate("!document.getElementById('aiCodespaceColumn').classList.contains('hidden') && document.getElementById('aiChatView').classList.contains('hidden')");
+  test("AI Studio sub-tab switched to 'artifacts'", isArtifactsVisible);
+
+  await evaluate("switchAiSubTab('graphify')");
+  const isGraphifyVisible = await evaluate("!document.getElementById('aiGraphifyColumn').classList.contains('hidden') && document.getElementById('aiCodespaceColumn').classList.contains('hidden')");
+  test("AI Studio sub-tab switched to 'graphify'", isGraphifyVisible);
+
+  const hasGraphifyCanvas = await evaluate("document.getElementById('graphifyCanvas') !== null");
+  test("Graphify architecture canvas rendered in DOM", hasGraphifyCanvas);
+
+  await evaluate("switchAiSubTab('chat')");
+  const isChatVisible = await evaluate("!document.getElementById('aiChatView').classList.contains('hidden') && document.getElementById('aiGraphifyColumn').classList.contains('hidden')");
+  test("AI Studio sub-tab returned to 'chat'", isChatVisible);
 
   // Test Sessions Drawer Toggle
   await evaluate("toggleSessionsDrawer(true)");

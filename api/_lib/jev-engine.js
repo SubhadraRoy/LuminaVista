@@ -20,7 +20,8 @@ function escapeHtml(str) {
  */
 export function jevClassifyIntent(prompt = '', vfs = {}) {
   const start = Date.now();
-  const p = prompt.toLowerCase();
+  const pTrim = (prompt || '').trim();
+  const p = pTrim.toLowerCase();
   const vfsFiles = Object.keys(vfs || {});
 
   let route = 'CONVERSATION';
@@ -33,48 +34,57 @@ export function jevClassifyIntent(prompt = '', vfs = {}) {
     guardrailPassed = false;
   }
 
-  // 1. Web search routing
-  if (p.includes('search') || p.includes('find out') || p.includes('look up') || p.includes('what is the latest') || p.includes('who is') || p.includes('news about')) {
+  // 1. Web search routing - Explicit search intent
+  if (/^(search|look\s*up|find\s*out|google|browse|web\s*search)\b/i.test(p) || p.startsWith('search for') || p.startsWith('search:')) {
     route = 'SEARCH_WEB';
     confidence = 0.98;
   }
-  // 2. Terminal execution routing
-  else if (p.includes('run ') || p.includes('exec ') || p.includes('terminal') || p.includes('bash') || p.includes('pip install') || p.includes('npm install') || p.includes('python ') || p.includes('node ')) {
+  // 2. Terminal execution routing - Explicit command intent
+  else if (/^(run|exec|execute|terminal|bash|sh|cmd)\b/i.test(p) || p.startsWith('python ') || p.startsWith('node ') || p.startsWith('npm ') || p.startsWith('pip ')) {
     route = 'EXEC_COMMAND';
     confidence = 0.96;
   }
-  // 3. File editing routing
-  else if ((p.includes('edit') || p.includes('replace') || p.includes('change') || p.includes('update') || p.includes('fix')) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
+  // 3. File editing routing - Target file must exist in VFS
+  else if ((/\b(edit|replace|modify|update|patch|fix)\b/i.test(p)) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
     route = 'EDIT_FILE';
     targetFile = vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0] || 'index.html';
     confidence = 0.94;
   }
-  // 4. File viewing routing
-  else if ((p.includes('view') || p.includes('read') || p.includes('cat ') || p.includes('show code') || p.includes('inspect')) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
+  // 4. File viewing routing - Target file must exist in VFS
+  else if ((/\b(view|read|cat|inspect|open|show\s*code)\b/i.test(p)) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
     route = 'VIEW_FILE';
     targetFile = vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0];
     confidence = 0.97;
   }
-  // 5. Code & Project Creation routing
-  else if (p.includes('create') || p.includes('build') || p.includes('make') || p.includes('write') || p.includes('implement') || p.includes('code') || p.includes('generate') || p.includes('landing') || p.includes('calculator') || p.includes('game') || p.includes('script') || p.includes('html') || p.includes('python') || p.includes('css')) {
+  // 5. Code & Project Creation routing - Must be an explicit request to create software/files
+  else if (/\b(create|build|write|implement|generate|code|scaffold|develop)\b.*\b(app|application|game|calculator|landing\s*page|website|page|component|script|program|server|tool|dashboard|todo|counter|api|html|python|js|css|sql|file)\b/i.test(p) ||
+           /\b(create|write|generate|add)\s+([a-zA-Z0-9_\-]+\.(html|js|py|css|json|sql|md|txt))\b/i.test(p)) {
     route = 'WRITE_FILE';
     confidence = 0.99;
 
     // Detect target file extension
-    if (p.includes('.py') || p.includes('python')) targetFile = 'main.py';
+    const matchFile = p.match(/\b([a-zA-Z0-9_\-]+\.(html|js|py|css|json|sql|md|txt))\b/i);
+    if (matchFile) {
+      targetFile = matchFile[1];
+    } else if (p.includes('.py') || p.includes('python')) targetFile = 'main.py';
     else if (p.includes('.js') || p.includes('javascript') || p.includes('node')) targetFile = 'app.js';
     else if (p.includes('.css')) targetFile = 'style.css';
     else if (p.includes('.json')) targetFile = 'data.json';
     else if (p.includes('.sql')) targetFile = 'query.sql';
     else targetFile = 'index.html';
   }
-  // 6. Directory and system status routing
-  else if (p.includes('files') || p.includes('directory') || p.includes('tree') || p.includes('list') || p.includes('what files')) {
+  // 6. Directory / workspace inspection only if asking to list files exclusively
+  else if (/^(ls|dir|list\s*files|tree|what\s*files|workspace\s*files)\b/i.test(p)) {
     route = 'LIST_DIR';
     confidence = 0.99;
   }
+  // 7. Conversational intent (Greetings, Q&A, Identity, Advice, Baking, etc.)
+  else {
+    route = 'CONVERSATION';
+    confidence = 0.99;
+  }
 
-  const latencyMs = Date.now() - start;
+  const latencyMs = Math.max(1, Date.now() - start);
 
   return {
     route,
@@ -214,6 +224,75 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}) {
     return thoughts + `Auditing the workspace directory tree:\n\n[TOOL:LIST_DIR][/TOOL:LIST_DIR]\n\n[TOOL:TASK_COMPLETE summary="Workspace directory audit complete."][/TOOL:TASK_COMPLETE]`;
   }
 
-  // Default Conversation Route - Tailored, specific response to the exact question
-  return thoughts + `I have analyzed your query: "${pTrim}".\n\nOperating within the LuminaVista Sovereign Workspace with ${vfsFiles.length} file(s) mounted.\n\nRegarding your request:\n• **Context**: ${pTrim}\n• **Workspace Status**: Ready for file operations, MicroVM bash execution, and live web discovery.\n\nWould you like me to write an implementation file (HTML, Python, JavaScript) or execute a specific MicroVM script for this?`;
+  // Conversational Intent Handlers
+  const pLower = pTrim.toLowerCase();
+
+  // 1. Greetings
+  if (/^(hi+|hello+|hey+|hola|greetings|good\s*(morning|afternoon|evening)|sup|yo)[\s!.,?]*$/i.test(pTrim)) {
+    return thoughts + `Hello! I am LuminaVista OS AI. I am ready to help you write code, manage files in your workspace, run terminal commands in the MicroVM, or explore ideas. What would you like to build or work on today?`;
+  }
+
+  // 2. Identity / Capabilities
+  if (/(what|who)\s*(are|r)\s*(u|you)|introduce yourself|tell me about yourself/i.test(pTrim)) {
+    return thoughts + `I am LuminaVista OS AI, an autonomous software engineering assistant embedded directly inside your sovereign cloud operating system.
+
+Here is what I can do for you:
+- **Write & Edit Code**: Generate full HTML/CSS/JS web applications, Python scripts, API services, and algorithms directly in your Virtual File System (VFS).
+- **Run MicroVM Commands**: Execute bash, Node.js, and Python code inside isolated POSIX microVM sandboxes.
+- **Search the Web**: Discover live documentation, libraries, and real-time knowledge.
+- **Manage Files**: Inspect, refactor, and structure files in the Artifacts IDE.
+- **Graphify Architecture**: Visualize your project's module and dependency graph.
+
+Tell me what you'd like to create or explore, and I will execute it directly!`;
+  }
+
+  // 3. Real-world / Cake / Cooking / Fun Queries
+  if (/\b(cake|bake|cook|recipe|food|pasta|pizza|dessert)\b/i.test(pTrim) && !/\b(code|app|website|html)\b/i.test(pTrim)) {
+    return thoughts + `I cannot bake a physical cake since I am an AI running inside LuminaVista Cloud OS! 🎂
+
+However, I can help you in several creative and technical ways:
+1. **Share an Authentic Recipe**: I can provide an exquisite recipe for classic chocolate fudge cake, moist carrot cake, or New York cheesecake with exact ingredient grams and step-by-step techniques.
+2. **Build an Interactive Cake Designer App**: I can code a 3D bakery configurator or recipe calculator in HTML/Tailwind/JavaScript in your Artifacts tab.
+3. **Write a Baking Utility Script**: A Python module to calculate baking times, temperature conversions, and scaling for different pan sizes.
+
+Which of these would you like to try?`;
+  }
+
+  // 4. Internet status & Workspace file listing
+  if (pLower.includes('internet') || (pLower.includes('files') && pLower.includes('list'))) {
+    const listTable = vfsFiles.length > 0
+      ? vfsFiles.map(f => `| \`${f}\` | ${(vfs[f] || '').length} bytes | Ready |`).join('\n')
+      : '| *(Empty)* | 0 bytes | Workspace initialized |';
+
+    return thoughts + `Yes, I am connected to the internet with live web discovery active! 🌐
+
+Here is the current state of your workspace Virtual File System (VFS):
+
+| File Name | Size | Status |
+| :--- | :--- | :--- |
+${listTable}
+
+• **Live Internet Discovery**: Online (DuckDuckGo Search Engine Enabled)
+• **MicroVM Sandbox**: Active (Python 3.11, Node.js 20, Bash)
+• **Workspace Storage**: ${vfsFiles.length} files mounted in memory
+
+[TOOL:LIST_DIR][/TOOL:LIST_DIR]
+
+[TOOL:TASK_COMPLETE summary="Workspace status audited."][/TOOL:TASK_COMPLETE]
+
+Would you like me to inspect, run, or edit any of these files?`;
+  }
+
+  // Default Natural Conversation Route
+  return thoughts + `I understand your question regarding "${pTrim}".
+
+Operating within the LuminaVista Sovereign Workspace with ${vfsFiles.length} file(s) mounted.
+
+I am equipped to:
+• Write or modify files in your Artifacts IDE
+• Run bash/python commands in the Firecracker MicroVM
+• Search online documentation via live web discovery
+• Provide architectural guidance and code analysis
+
+What specific feature, application, or script would you like to build?`;
 }

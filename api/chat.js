@@ -7,7 +7,7 @@ import {
   enforcePayloadLimit,
   auditLog
 } from './_lib/auth-guard.js';
-import { executeWithFailover } from './_lib/key-pool.js';
+import { executeWithFailover, getKeyPool } from './_lib/key-pool.js';
 import {
   jevClassifyIntent,
   buildLuminaSystemPrompt,
@@ -162,10 +162,19 @@ export default async function handler(req, res) {
         effectiveEndpoint = effectiveEndpoint || 'https://ollama.com/v1/chat/completions';
         defaultModel = defaultModel || 'gpt-oss:20b';
       } else {
-        // Default: ollama_pool (Online Cloud)
-        targetProvider = 'ollama';
-        effectiveEndpoint = effectiveEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions';
-        defaultModel = defaultModel || 'gpt-oss:20b';
+        const oPool = getKeyPool('ollama');
+        const nPool = getKeyPool('nvidia');
+        if (oPool.length === 0 && nPool.length > 0) {
+          targetProvider = 'nvidia';
+          effectiveEndpoint = effectiveEndpoint || 'https://integrate.api.nvidia.com/v1/chat/completions';
+          defaultModel = defaultModel || 'meta/llama-3.3-70b-instruct';
+          terminalLogs.push('[KeyPool Auto-Route]: Auto-routing to NVIDIA NIM Cloud Pool (NVIDIA_API_KEY detected).');
+        } else {
+          // Default: ollama_pool (Online Cloud)
+          targetProvider = 'ollama';
+          effectiveEndpoint = effectiveEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions';
+          defaultModel = defaultModel || 'gpt-oss:20b';
+        }
       }
 
       // 2. Execute Request with Multi-Key Failover Protection
