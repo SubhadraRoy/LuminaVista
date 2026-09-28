@@ -136,67 +136,154 @@ export default async function handler(req, res) {
     const allowTerminal = enableTerminal !== false;
 
     // 0. Initial Web Search Context Injection if permitted and requested
-    if (allowInternet && prompt && loopCount === 0 && (jevTelemetry.route === 'SEARCH_WEB' || prompt.toLowerCase().includes('search'))) {
-      const liveResults = await searchDuckDuckGo(prompt);
+    let liveSearchResultsText = '';
+    if (allowInternet && prompt && loopCount === 0 && (jevTelemetry.route === 'SEARCH_WEB' || prompt.toLowerCase().includes('search') || prompt.toLowerCase().includes('news'))) {
+      const q = prompt.replace(/^(search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '').trim() || prompt;
+      liveSearchResultsText = await searchDuckDuckGo(q);
       messages.push({
         role: "user",
-        content: `[LIVE INTERNET DISCOVERY CONTEXT]:\nSearch query: "${prompt}"\nResults:\n${liveResults}\n\nPlease use this live information in completing your task.`
+        content: `[LIVE INTERNET DISCOVERY CONTEXT]:\nSearch query: "${q}"\nResults:\n${liveSearchResultsText}\n\nPlease use this live information to answer the user's prompt directly and thoroughly.`
       });
+    }
+
+    // Helper to normalize model names for provider endpoints
+    function resolveModelForProvider(model, prov) {
+      const m = (model || '').trim();
+      if (prov === 'nvidia') {
+        if (m === 'deepseek-ai/deepseek-r1' || m.toLowerCase().includes('deepseek')) return 'deepseek-ai/deepseek-r1';
+        if (m.toLowerCase().includes('mistral')) return 'mistralai/mistral-large-2-instruct';
+        return 'meta/llama-3.3-70b-instruct';
+      } else {
+        // Ollama Cloud
+        if (m.toLowerCase().includes('deepseek')) return 'deepseek-r1';
+        if (m.toLowerCase().includes('qwen')) return 'qwen2.5';
+        if (m.toLowerCase().includes('llama')) return 'llama3.3';
+        return 'llama3.3';
+      }
     }
 
     // === AUTONOMOUS AGENT SERVERLESS DISPATCH LOOP ===
     while (!isTaskComplete && loopCount < MAX_LOOPS) {
       loopCount++;
 
-      // 1. Resolve Provider Routing & Endpoint
-      let targetProvider = provider;
-      let effectiveEndpoint = customEndpoint;
-      let defaultModel = requestedModel;
+      // Check available pools
+      const oPool = getKeyPool('ollama');
+      const nPool = getKeyPool('nvidia');
 
-      if (provider === 'nvidia_pool' || provider === 'nvidia') {
-        targetProvider = 'nvidia';
-        effectiveEndpoint = effectiveEndpoint || 'https://integrate.api.nvidia.com/v1/chat/completions';
-        defaultModel = defaultModel || 'meta/llama-3.3-70b-instruct';
-      } else if (provider === 'custom') {
-        targetProvider = 'custom';
-        effectiveEndpoint = effectiveEndpoint || 'https://ollama.com/v1/chat/completions';
-        defaultModel = defaultModel || 'gpt-oss:20b';
-      } else {
-        const oPool = getKeyPool('ollama');
-        const nPool = getKeyPool('nvidia');
-        if (oPool.length === 0 && nPool.length > 0) {
-          targetProvider = 'nvidia';
-          effectiveEndpoint = effectiveEndpoint || 'https://integrate.api.nvidia.com/v1/chat/completions';
-          defaultModel = defaultModel || 'meta/llama-3.3-70b-instruct';
-          terminalLogs.push('[KeyPool Auto-Route]: Auto-routing to NVIDIA NIM Cloud Pool (NVIDIA_API_KEY detected).');
-        } else {
-          // Default: ollama_pool (Online Cloud)
-          targetProvider = 'ollama';
-          effectiveEndpoint = effectiveEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions';
-          defaultModel = defaultModel || 'gpt-oss:20b';
-        }
-      }
+      let failoverResult = null;
+      const preferNvidia = (provider === 'nvidia_pool' || provider === 'nvidia' || (oPool.length === 0 && nPool.length > 0));
 
-      // 2. Execute Request with Multi-Key Failover Protection
-      const failoverResult = await executeWithFailover({
-        provider: targetProvider,
-        customApiKey,
-        makeRequest: async (apiKey, keyMeta) => {
-          const headers = { 'Content-Type': 'application/json' };
-          if (apiKey) {
-            headers['Authorization'] = `Bearer ${apiKey}`;
+      if (provider === 'custom') {
+        failoverResult = await executeWithFailover({
+          provider: 'custom',
+          customApiKey,
+          makeRequest: async (apiKey) => {
+            const headers = { 'Content-Type': 'application/json' };
+            if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+            return fetch(customEndpoint || 'https://ollama.com/v1/chat/completions', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                model: requestedModel || 'llama3.3',
+                messages,
+                stream: false
+              })
+            });
           }
-          return fetch(effectiveEndpoint, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              model: defaultModel,
-              messages,
-              stream: false
-            })
+        });
+      } else if (preferNvidia) {
+        // Primary: NVIDIA NIM
+        const nvidiaModel = resolveModelForProvider(requestedModel, 'nvidia');
+        failoverResult = await executeWithFailover({
+          provider: 'nvidia',
+          customApiKey,
+          makeRequest: async (apiKey) => {
+            return fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              body: JSON.stringify({
+                model: nvidiaModel,
+                messages,
+                stream: false
+              })
+            });
+          }
+        });
+
+        // Cross-pool cascade to Ollama if NVIDIA exhausted/failed
+        if (!failoverResult.success && oPool.length > 0) {
+          allFailoverLogs.push('[Cross-Pool Auto-Failover]: Cascading from NVIDIA NIM to 8x Ollama Cloud pool...');
+          terminalLogs.push('[Cross-Pool Auto-Failover]: Cascading to Ollama Cloud pool...');
+          const ollamaModel = resolveModelForProvider(requestedModel, 'ollama');
+          failoverResult = await executeWithFailover({
+            provider: 'ollama',
+            customApiKey,
+            makeRequest: async (apiKey) => {
+              return fetch(customEndpoint || 'https://ollama.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                  model: ollamaModel,
+                  messages,
+                  stream: false
+                })
+              });
+            }
           });
         }
-      });
+      } else {
+        // Primary: Ollama Cloud (8x Pool)
+        const ollamaModel = resolveModelForProvider(requestedModel, 'ollama');
+        failoverResult = await executeWithFailover({
+          provider: 'ollama',
+          customApiKey,
+          makeRequest: async (apiKey) => {
+            return fetch(customEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              body: JSON.stringify({
+                model: ollamaModel,
+                messages,
+                stream: false
+              })
+            });
+          }
+        });
+
+        // Cross-pool cascade to NVIDIA NIM if Ollama pool exhausted/failed
+        if (!failoverResult.success && nPool.length > 0) {
+          allFailoverLogs.push('[Cross-Pool Auto-Failover]: Ollama Cloud keys exhausted/rate-limited. Cascading to NVIDIA NIM pool...');
+          terminalLogs.push('[Cross-Pool Auto-Failover]: Cascading to NVIDIA NIM pool...');
+          const nvidiaModel = resolveModelForProvider(requestedModel, 'nvidia');
+          failoverResult = await executeWithFailover({
+            provider: 'nvidia',
+            customApiKey,
+            makeRequest: async (apiKey) => {
+              return fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                  model: nvidiaModel,
+                  messages,
+                  stream: false
+                })
+              });
+            }
+          });
+        }
+      }
 
       if (failoverResult.failoverLogs) {
         allFailoverLogs.push(...failoverResult.failoverLogs);
@@ -209,7 +296,7 @@ export default async function handler(req, res) {
       if (!failoverResult.success) {
         // Graceful failover to dynamic Jev bespoke autonomous response if external cloud is completely exhausted
         terminalLogs.push(`[Failover Engine]: ${failoverResult.reason}. Activating Jev Sovereign Autonomous Sandbox.`);
-        aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs);
+        aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
       } else {
         const aiData = failoverResult.data;
         aiReply = aiData?.choices?.[0]?.message?.content || aiData?.message?.content || "Task processed.";
