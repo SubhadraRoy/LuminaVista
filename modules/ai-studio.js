@@ -1002,9 +1002,17 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
   function parseAiMarkdown(t) {
     if (!t) return "";
 
+    const htmlSnippets = [];
+    const codeBlocks = [];
+
+    function storeSnippet(html) {
+      htmlSnippets.push(html);
+      return `__HTML_SNIPPET_${htmlSnippets.length - 1}__`;
+    }
+
     // 1. Thinking / Cognitive Architecture Card with exact requested banner
     let processed = t.replace(/<(?:thought_process|thought)>([\s\S]*?)<\/(?:thought_process|thought)>/gi, (m, thoughts) => {
-      return `
+      return storeSnippet(`
         <details class="thought-card group" open>
           <summary class="thought-summary">
             <span class="flex items-center gap-2">
@@ -1020,31 +1028,31 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
           </summary>
           <div class="thought-content whitespace-pre-wrap leading-relaxed text-cyan-100/80">${escapeHtml(thoughts.trim())}</div>
         </details>
-      `;
+      `);
     });
 
     // 2. Transform Antigravity Autonomous Tools into Sleek Action Cards
     processed = processed
       .replace(/\[TOOL:SEARCH_WEB query="([^"]+)"\]\[\/TOOL:SEARCH_WEB\]/g, (m, q) => {
-        return `<div class="my-2 p-3 bg-surface-950/90 border border-sky-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-sky-300">
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-sky-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-sky-300">
           <i data-lucide="search" class="w-4 h-4 text-sky-400 shrink-0"></i>
           <span><strong>Autonomous Web Search:</strong> "${escapeHtml(q)}"</span>
-        </div>`;
+        </div>`);
       })
       .replace(/\[TOOL:VIEW_FILE filename="([^"]+)"\]\[\/TOOL:VIEW_FILE\]/g, (m, f) => {
-        return `<div class="my-2 p-3 bg-surface-950/90 border border-indigo-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-indigo-300">
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-indigo-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-indigo-300">
           <i data-lucide="file-text" class="w-4 h-4 text-indigo-400 shrink-0"></i>
           <span><strong>Inspecting VFS File:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code></span>
-        </div>`;
+        </div>`);
       })
       .replace(/\[TOOL:LIST_DIR\]\[\/TOOL:LIST_DIR\]/g, () => {
-        return `<div class="my-2 p-2.5 bg-surface-950/90 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-zinc-300">
+        return storeSnippet(`<div class="my-2 p-2.5 bg-surface-950/90 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-zinc-300">
           <i data-lucide="folder" class="w-4 h-4 text-cyan-400 shrink-0"></i>
           <span><strong>Inspecting VFS Directory Tree</strong></span>
-        </div>`;
+        </div>`);
       })
       .replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
-        return `<div class="my-2 p-3 bg-surface-950/90 border border-emerald-500/30 rounded-xl shadow-lg flex items-center justify-between font-mono text-xs text-emerald-300">
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-emerald-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-emerald-300">
           <div class="flex items-center gap-2">
             <i data-lucide="file-code" class="w-4 h-4 text-emerald-400 shrink-0"></i>
             <span><strong>Created / Updated VFS Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code> (${c.trim().length} bytes)</span>
@@ -1052,10 +1060,10 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
           <button onclick="window.switchAiSubTab('artifacts'); window.switchAndOpenFile('${escapeHtml(f)}');" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[11px] font-semibold border border-emerald-500/40 cursor-pointer flex items-center gap-1 transition-colors">
             <i data-lucide="folder-code" class="w-3.5 h-3.5"></i> Open in Artifacts Tab
           </button>
-        </div>`;
+        </div>`);
       })
       .replace(/\[TOOL:EDIT_FILE filename="([^"]+)"\]\s*<target>([\s\S]*?)<\/target>\s*<replacement>([\s\S]*?)<\/replacement>\s*\[\/TOOL:EDIT_FILE\]/g, (m, f, t, r) => {
-        return `<div class="my-2 p-3 bg-surface-950/90 border border-amber-500/30 rounded-xl shadow-lg font-mono text-xs text-amber-300 space-y-2">
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-amber-500/30 rounded-xl shadow-lg font-mono text-xs text-amber-300 space-y-2">
           <div class="flex items-center gap-2">
             <i data-lucide="edit-3" class="w-4 h-4 text-amber-400 shrink-0"></i>
             <span><strong>Targeted Edit on Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code></span>
@@ -1064,23 +1072,23 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
             <div class="text-rose-400 line-through">-${escapeHtml(t.trim().substring(0, 100))}${t.length > 100 ? '...' : ''}</div>
             <div class="text-emerald-400">+${escapeHtml(r.trim().substring(0, 100))}${r.length > 100 ? '...' : ''}</div>
           </div>
-        </div>`;
+        </div>`);
       })
       .replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, (m, f) => {
-        return `<div class="my-2 p-2.5 bg-surface-950/90 border border-rose-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-rose-400">
+        return storeSnippet(`<div class="my-2 p-2.5 bg-surface-950/90 border border-rose-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-rose-400">
           <i data-lucide="trash" class="w-4 h-4 text-rose-500 shrink-0"></i>
           <span><strong>Deleted VFS Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code></span>
-        </div>`;
+        </div>`);
       })
       .replace(/\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g, (m, cmd) => {
-        return `<div class="my-2 p-3 bg-surface-950/90 border border-cyan-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-cyan-300">
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-cyan-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-cyan-300">
           <i data-lucide="terminal" class="w-4 h-4 text-cyan-400 shrink-0"></i>
           <span><strong>MicroVM Terminal Exec:</strong> <code class="text-cyan-200 bg-black/40 px-2 py-0.5 rounded">➜ ${escapeHtml(cmd.trim())}</code></span>
-        </div>`;
+        </div>`);
       })
       .replace(/\[TOOL:TASK_COMPLETE(?: summary="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:TASK_COMPLETE\])?/g, (m, s1, s2) => {
         const sum = s1 || (s2 ? s2.trim() : "All autonomous tasks completed.");
-        return `<div class="my-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl shadow-xl flex items-start gap-3 font-sans text-xs text-emerald-200">
+        return storeSnippet(`<div class="my-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl shadow-xl flex items-start gap-3 font-sans text-xs text-emerald-200">
           <div class="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
             <i data-lucide="check-circle" class="w-4 h-4"></i>
           </div>
@@ -1088,28 +1096,17 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
             <div class="font-bold text-sm text-emerald-300">Autonomous Objective Complete</div>
             <div class="mt-0.5 text-zinc-300 font-mono text-xs">${escapeHtml(sum)}</div>
           </div>
-        </div>`;
+        </div>`);
       });
 
     // 3. Extract code blocks safely
-    const codeBlocks = [];
     processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
       codeBlocks.push({ lang: l1 || l2 || "text", file: f1 || "", code });
       return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
     });
 
-    // 4. Protect pre-generated HTML tags
-    const htmlSnippets = [];
-    processed = processed.replace(/(<details class="thought-card[\s\S]*?<\/details>|<div class="my-[23][\s\S]*?<\/div>)/gi, (match) => {
-      htmlSnippets.push(match);
-      return `__HTML_SNIPPET_${htmlSnippets.length - 1}__`;
-    });
-
+    // 4. Escape remaining raw prose safely
     let safeProse = escapeHtml(processed);
-
-    htmlSnippets.forEach((snippet, index) => {
-      safeProse = safeProse.replace(`__HTML_SNIPPET_${index}__`, snippet);
-    });
 
     // 5. Parse Markdown Tables
     safeProse = safeProse.replace(/(?:^\|.+?\|(?:\r?\n|$))+/gm, (match) => {
@@ -1130,7 +1127,7 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       return tableHtml + '</table></div>';
     });
 
-    // 6. Headers, bold, italics, inline code
+    // 6. Headers, bold, italics, inline code, line breaks
     safeProse = safeProse
       .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-cyan-300 mt-4 mb-2 pb-1 border-b border-white/5">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-base font-bold text-white mt-5 mb-2 pb-1 border-b border-white/10">$1</h2>')
@@ -1169,6 +1166,11 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
         </div>
       `;
       safeProse = safeProse.replace(`__CODE_BLOCK_${index}__`, htmlCard);
+    });
+
+    // 8. Re-inject all protected HTML snippets (Thought cards and tool action cards)
+    htmlSnippets.forEach((snippet, index) => {
+      safeProse = safeProse.replace(`__HTML_SNIPPET_${index}__`, snippet);
     });
 
     return safeProse;

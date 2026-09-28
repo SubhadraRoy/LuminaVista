@@ -230,6 +230,7 @@ assert(parsedTools.includes("Targeted Edit on Artifact"), "Edit file tool UI ren
 assert(parsedTools.includes("Deleted VFS Artifact"), "Delete file tool UI rendered");
 assert(parsedTools.includes("MicroVM Terminal Exec"), "Exec command tool UI rendered");
 assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete tool UI rendered");
+assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "Tool action card buttons are never escaped as raw text");
 
 // Test tool execution engine
 (async () => {
