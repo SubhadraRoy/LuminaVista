@@ -57,6 +57,7 @@ const moduleFiles = [
   'personas.js',
   'modules/state.js',
   'modules/sidebar.js',
+  'modules/calendar.js',
   'modules/ai-studio.js',
   'modules/codespace.js',
   'modules/graphify.js',
@@ -494,6 +495,128 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
 
   window.closeMobileSidebar();
   assert(sb && sb.classList.contains("-translate-x-full"), "closeMobileSidebar() slides sidebar off-canvas");
+
+  // Suite 11: Google Calendar Replica, Autonomous AI Real-Life Scheduler & Universal Two-Way Sync
+  console.log("\n[Test Suite 11: Google Calendar Replica, Autonomous AI Real-Life Scheduler & Universal Two-Way Sync]");
+  assert(document.getElementById("btn-tab-calendar") !== null, "Calendar tab button #btn-tab-calendar exists in navigation");
+  assert(document.getElementById("tab-calendar") !== null, "Calendar container #tab-calendar exists in DOM");
+  assert(typeof window.LuminaCalendar === 'object', "calendar.js exports window.LuminaCalendar");
+  assert(typeof window.LuminaCalendar.init === 'function', "LuminaCalendar exports init()");
+  assert(typeof window.LuminaCalendar.render === 'function', "LuminaCalendar exports render()");
+  assert(typeof window.LuminaCalendar.setView === 'function', "LuminaCalendar exports setView()");
+  assert(typeof window.LuminaCalendar.aiAutoPlanDay === 'function', "LuminaCalendar exports aiAutoPlanDay()");
+  assert(typeof window.LuminaCalendar.aiRescheduleConflicts === 'function', "LuminaCalendar exports aiRescheduleConflicts()");
+  assert(typeof window.LuminaCalendar.exportToIcs === 'function', "LuminaCalendar exports exportToIcs()");
+  assert(typeof window.LuminaCalendar.importFromIcs === 'function', "LuminaCalendar exports importFromIcs()");
+  assert(typeof window.LuminaCalendar.handleAgentDirective === 'function', "LuminaCalendar exports handleAgentDirective()");
+
+  // Test Navigation to Calendar Tab
+  window.switchTab('tab-calendar');
+  assert(!document.getElementById("tab-calendar").classList.contains("hidden"), "switchTab('tab-calendar') activates Calendar pane");
+
+  // Test Calendar Views
+  window.LuminaCalendar.setView('month');
+  const viewContainer = document.getElementById("calendarViewContainer");
+  assert(viewContainer && viewContainer.innerHTML.includes("SUN") && viewContainer.innerHTML.includes("MON"), "Month view renders 7-day columns and weekday headers");
+
+  window.LuminaCalendar.setView('week');
+  assert(viewContainer && viewContainer.innerHTML.includes("calWeekScrollContainer"), "Week view renders 24h scrollable hourly grid");
+  assert(document.getElementById("calCurrentTimeLine") !== null, "Red real-time current time indicator line exists in week view");
+
+  window.LuminaCalendar.setView('day');
+  assert(viewContainer && viewContainer.innerHTML.includes("calDayScrollContainer"), "Day view renders detailed single-day time grid");
+
+  window.LuminaCalendar.setView('agenda');
+  assert(viewContainer && viewContainer.innerHTML.includes("Chronological Agenda"), "Agenda view renders grouped chronological schedule");
+
+  window.LuminaCalendar.setView('year');
+  assert(viewContainer && viewContainer.innerHTML.includes("January") && viewContainer.innerHTML.includes("December"), "Year view renders 12-month grid");
+
+  // Reset to Month view
+  window.LuminaCalendar.setView('month');
+
+  // Test Event Modal & Creation
+  assert(document.getElementById("calendarEventModal") !== null, "Calendar Event Modal #calendarEventModal exists in DOM");
+  window.LuminaCalendar.openEventModal();
+  assert(document.getElementById("calendarEventModal").style.display === 'flex', "openEventModal() opens modal dialog");
+
+  document.getElementById("calEventTitleInput").value = "Quantum Neural Sync Meeting";
+  document.getElementById("calEventStartInput").value = "2026-09-30T10:00";
+  document.getElementById("calEventEndInput").value = "2026-09-30T11:00";
+  document.getElementById("calEventCategorySelect").value = "work";
+  window.LuminaCalendar.saveEventFromModal();
+
+  const allEvents = window.LuminaCalendar.getEvents();
+  const createdEvt = allEvents.find(e => e.title === "Quantum Neural Sync Meeting");
+  assert(createdEvt !== undefined, "saveEventFromModal() added new event to calendar vault");
+  assert(createdEvt && createdEvt.category === "work", "Event category matches selection");
+
+  // Test Event Deletion
+  window.LuminaCalendar.deleteEvent(createdEvt.id);
+  const afterDelete = window.LuminaCalendar.getEvents();
+  assert(!afterDelete.some(e => e.id === createdEvt.id), "deleteEvent() cleanly removed event from calendar vault");
+
+  // Test AI Real-Life Scheduler Engine
+  const autoPlanRes = window.LuminaCalendar.aiAutoPlanDay("2026-10-01");
+  assert(autoPlanRes.success === true, "aiAutoPlanDay() successfully synthesized daily schedule");
+  assert(autoPlanRes.count > 0, `aiAutoPlanDay() created ${autoPlanRes.count} realistic routine events`);
+
+  // Verify Blackout Hours and Meal Protections in AI events
+  const scheduledAiEvents = autoPlanRes.events;
+  const inSleepWindow = scheduledAiEvents.some(e => {
+    const hour = new Date(e.start).getHours();
+    return hour >= 23 || hour < 7;
+  });
+  assert(!inSleepWindow, "AI Real-Life Scheduler strictly respects sleep blackout window (23:00 - 07:00)");
+
+  const lunchEvent = scheduledAiEvents.find(e => e.title.includes("Lunch"));
+  assert(lunchEvent !== undefined, "AI Real-Life Scheduler includes protected lunch meal block");
+
+  // Test Weekend Exclusion
+  window.LuminaCalendar.setSettings({ excludeWeekends: true });
+  const weekendPlan = window.LuminaCalendar.aiAutoPlanDay("2026-10-04"); // 2026-10-04 is Sunday
+  assert(weekendPlan.success === false && weekendPlan.reason === 'weekend_excluded', "AI Scheduler respects weekend exclusion rule");
+
+  // Test Universal RFC 5545 iCalendar Export & Import
+  const icsOutput = window.LuminaCalendar.exportToIcs();
+  assert(icsOutput.includes("BEGIN:VCALENDAR") && icsOutput.includes("END:VCALENDAR"), "exportToIcs() produces valid RFC 5545 VCALENDAR container");
+  assert(icsOutput.includes("BEGIN:VEVENT") && icsOutput.includes("SUMMARY:"), "exportToIcs() includes VEVENT items with SUMMARY");
+
+  const sampleIcs = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'BEGIN:VEVENT',
+    'SUMMARY:External Sync Team Sync',
+    'DTSTART:20261005T090000Z',
+    'DTEND:20261005T100000Z',
+    'CATEGORIES:WORK',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+  const importRes = window.LuminaCalendar.importFromIcs(sampleIcs);
+  assert(importRes.success === true && importRes.count >= 1, "importFromIcs() successfully parsed external .ics file");
+  const importedEvent = window.LuminaCalendar.getEvents().find(e => e.title === "External Sync Team Sync");
+  assert(importedEvent !== undefined, "Imported event is mounted in calendar vault");
+
+  // Test Jev Engine Intent Classification & Agent Directive
+  const jevEngine = await import('../api/_lib/jev-engine.js');
+  const calIntent = jevEngine.jevClassifyIntent("schedule my day tomorrow with deep work and lunch");
+  assert(calIntent.route === 'SCHEDULE_CALENDAR', "Jev Engine classifies calendar scheduling intent as SCHEDULE_CALENDAR");
+
+  const bespokeCalResp = jevEngine.jevGenerateBespokeResponse("auto_plan schedule my day tomorrow", 1, {});
+  assert(bespokeCalResp.includes("[TOOL:SCHEDULE_EVENT action=\"auto_plan\""), "Jev Engine generates [TOOL:SCHEDULE_EVENT action=\"auto_plan\"] directive");
+
+  // Test Agent Directive Handler in LuminaCalendar
+  const directiveResult = window.LuminaCalendar.handleAgentDirective({
+    action: "create",
+    title: "Autonomous Agent Task Block",
+    start: "2026-10-06T14:00:00",
+    end: "2026-10-06T15:30:00",
+    category: "ai_autonomous"
+  });
+  assert(directiveResult.success === true, "handleAgentDirective({ action: 'create' }) succeeds");
+  const agentEvt = window.LuminaCalendar.getEvents().find(e => e.title === "Autonomous Agent Task Block");
+  assert(agentEvt !== undefined && agentEvt.isAutonomous === true, "Directive created autonomous event in calendar store");
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

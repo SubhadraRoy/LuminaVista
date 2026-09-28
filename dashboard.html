@@ -141,6 +141,9 @@
       <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="book-open" class="w-4 h-4 shrink-0 text-sky-400"></i><span class="sidebar-label">Notes Markdown</span>
       </button>
+      <button onclick="switchTab('tab-calendar')" id="btn-tab-calendar" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="calendar" class="w-4 h-4 shrink-0 text-cyan-400"></i><span class="sidebar-label">Calendar</span>
+      </button>
       <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="settings" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Settings</span>
       </button>
@@ -795,6 +798,130 @@
       </section>
 
       <!-- ===================================================================== -->
+      <!-- TAB 11: GOOGLE CALENDAR REPLICA & AI REAL-LIFE SCHEDULER               -->
+      <!-- ===================================================================== -->
+      <section id="tab-calendar" class="tab-pane hidden flex flex-col h-[calc(100vh-105px)] space-y-3">
+        <!-- Top Calendar Header Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-surface-900/80 rounded-2xl border border-white/10 shrink-0 shadow-lg">
+          <!-- Left: Drawer Toggle, Today, Steppers, Month/Year Title -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            <button onclick="LuminaCalendar.toggleMiniSidebar()" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Toggle Drawer" aria-label="Toggle Calendar Drawer">
+              <i data-lucide="panel-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="LuminaCalendar.goToToday()" class="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold border border-white/10 cursor-pointer transition-colors">
+              Today
+            </button>
+            <div class="flex items-center bg-surface-850 rounded-xl border border-white/10 p-0.5">
+              <button onclick="LuminaCalendar.navigateCalendar(-1)" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors" aria-label="Previous">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="LuminaCalendar.navigateCalendar(1)" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors" aria-label="Next">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <h2 id="calHeaderTitle" class="text-sm sm:text-base font-heading font-bold text-white tracking-wide ml-1">September 2026</h2>
+          </div>
+
+          <!-- Center: Search Filter Input -->
+          <div class="relative flex-1 max-w-xs min-w-[160px] hidden md:block">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-2.5"></i>
+            <input type="text" id="calSearchInput" oninput="LuminaCalendar.handleSearchInput(event)" placeholder="Search events..." class="godx-input w-full pl-8 pr-3 py-1.5 text-xs font-mono" />
+          </div>
+
+          <!-- Right: AI Plan, Sync Status, View Selector, + Create Button -->
+          <div class="flex items-center gap-2">
+            <button onclick="LuminaCalendar.aiAutoPlanDay()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all hover:scale-102" title="AI Real-Life Daily Auto-Schedule">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i> <span class="hidden sm:inline">AI Smart Plan</span>
+            </button>
+
+            <!-- Google Sync Badge -->
+            <button onclick="LuminaCalendar.openSyncModal()" id="calSyncStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-surface-850 text-zinc-400 border border-white/10 hover:text-white cursor-pointer transition-colors" title="Google Calendar Sync Settings">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span> <span class="hidden sm:inline">Local Sovereign</span>
+            </button>
+
+            <!-- View Selector Dropdown -->
+            <select id="calViewSelect" onchange="LuminaCalendar.setView(this.value)" class="godx-input px-2.5 py-1.5 text-xs font-mono cursor-pointer font-bold">
+              <option value="month">Month</option>
+              <option value="week">Week</option>
+              <option value="day">Day</option>
+              <option value="fourday">4 Days</option>
+              <option value="agenda">Schedule</option>
+              <option value="year">Year</option>
+            </select>
+
+            <!-- + Create Button -->
+            <button onclick="LuminaCalendar.openEventModal()" class="px-3.5 py-1.5 rounded-xl btn-gradient text-black font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 cursor-pointer transition-all hover:scale-102">
+              <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Create</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Body: Collapsible Left Drawer + Active Calendar View Container -->
+        <div class="flex-1 flex gap-3 min-h-0 overflow-hidden">
+          <!-- Left Collapsible Mini Drawer -->
+          <div id="calMiniSidebar" class="w-64 shrink-0 flex flex-col gap-3 overflow-y-auto custom-scrollbar p-3 bg-surface-900/60 rounded-2xl border border-white/5 transition-all">
+            <!-- Mini Month Calendar -->
+            <div id="calMiniMonthContainer"></div>
+
+            <!-- AI Real-Life Scheduler Controls -->
+            <div class="p-3 bg-surface-950/70 rounded-xl border border-cyan-500/20 space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono font-bold text-cyan-300">
+                <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i> AI Life Scheduler</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Auto</span>
+              </div>
+              
+              <div class="space-y-1.5 text-[11px] font-mono text-zinc-300">
+                <label class="flex items-center justify-between cursor-pointer py-0.5">
+                  <span>Exclude Weekends</span>
+                  <input type="checkbox" id="calCheckExcludeWeekends" checked onchange="LuminaCalendar.setSettings({ excludeWeekends: this.checked })" class="w-3.5 h-3.5 accent-cyan-400 rounded" />
+                </label>
+                <label class="flex items-center justify-between cursor-pointer py-0.5">
+                  <span>Human Jitter (±5m)</span>
+                  <input type="checkbox" id="calCheckJitter" checked onchange="LuminaCalendar.setSettings({ enableHumanJitter: this.checked })" class="w-3.5 h-3.5 accent-cyan-400 rounded" />
+                </label>
+                <div class="flex items-center justify-between text-[10px] text-zinc-500 pt-1 border-t border-white/5">
+                  <span>Sleep Blackout</span>
+                  <span class="text-zinc-400">23:00 – 07:00</span>
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-zinc-500">
+                  <span>Meal Protection</span>
+                  <span class="text-zinc-400">12:30 & 19:30</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- My Calendars Categories -->
+            <div class="p-2.5 bg-surface-950/50 rounded-xl border border-white/5 space-y-1">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold px-2 py-1">My Calendars</div>
+              <div id="calCategoryFiltersContainer" class="space-y-0.5"></div>
+            </div>
+
+            <!-- Sync & Export Actions -->
+            <div class="p-2.5 bg-surface-950/50 rounded-xl border border-white/5 space-y-2 mt-auto text-xs font-mono">
+              <div class="text-[10px] uppercase tracking-wider text-zinc-400 font-bold px-1">Sync &amp; Export</div>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="LuminaCalendar.exportToIcs()" class="p-2 rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 text-[11px] flex items-center justify-center gap-1 cursor-pointer transition-colors" title="Export universal .ics file">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Export .ics
+                </button>
+                <input type="file" id="calIcsFileInput" accept=".ics" class="hidden" onchange="const file = this.files[0]; if (file) { const reader = new FileReader(); reader.onload = e => LuminaCalendar.importFromIcs(e.target.result); reader.readAsText(file); }" />
+                <button onclick="document.getElementById('calIcsFileInput').click()" class="p-2 rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 text-[11px] flex items-center justify-center gap-1 cursor-pointer transition-colors" title="Import universal .ics file">
+                  <i data-lucide="upload" class="w-3.5 h-3.5"></i> Import .ics
+                </button>
+              </div>
+              <button onclick="LuminaCalendar.openSyncModal()" class="w-full py-1.5 px-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                <i data-lucide="link" class="w-3.5 h-3.5"></i> Google Account Sync
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Calendar View Canvas -->
+          <div id="calendarViewContainer" class="flex-1 min-w-0 h-full overflow-hidden">
+            <!-- Dynamic Month / Week / Day / Agenda / Year renders here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
       <!-- TAB 10: SETTINGS                                                      -->
       <!-- ===================================================================== -->
       <section id="tab-controls" class="tab-pane space-y-4 hidden">
@@ -1136,10 +1263,160 @@
   </div>
 
   <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: CALENDAR EVENT CREATE / EDIT (Google Calendar Replica)     -->
+  <!-- ========================================================================= -->
+  <div id="calendarEventModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-lg w-[94vw] sm:w-full p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 id="calModalHeaderTitle" class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-4 h-4 text-cyan-400"></i> Create New Event
+        </h3>
+        <button onclick="LuminaCalendar.closeEventModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Modal">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Title Input -->
+      <div class="space-y-1">
+        <label for="calEventTitleInput" class="text-xs font-mono text-zinc-400">Event Title</label>
+        <input type="text" id="calEventTitleInput" placeholder="Add title (e.g. Architecture Review, Deep Work)" class="godx-input w-full px-3 py-2 text-sm font-semibold" />
+      </div>
+
+      <!-- Date & Time Range -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <label for="calEventStartInput" class="text-xs font-mono text-zinc-400">Start Time</label>
+          <input type="datetime-local" id="calEventStartInput" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+        </div>
+        <div class="space-y-1">
+          <label for="calEventEndInput" class="text-xs font-mono text-zinc-400">End Time</label>
+          <input type="datetime-local" id="calEventEndInput" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between py-1">
+        <label class="flex items-center gap-2 text-xs font-mono text-zinc-300 cursor-pointer">
+          <input type="checkbox" id="calEventAllDayCheck" class="w-4 h-4 accent-cyan-400 rounded" />
+          <span>All Day Event</span>
+        </label>
+        <label class="flex items-center gap-2 text-xs font-mono text-cyan-300 cursor-pointer">
+          <input type="checkbox" id="calEventAutonomousCheck" class="w-4 h-4 accent-cyan-400 rounded" />
+          <span>AI Autonomous Routine</span>
+        </label>
+      </div>
+
+      <!-- Category & Color -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <label for="calEventCategorySelect" class="text-xs font-mono text-zinc-400">Calendar Category</label>
+          <select id="calEventCategorySelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
+            <option value="work">Work</option>
+            <option value="personal">Personal</option>
+            <option value="focus">Focus &amp; Deep Work</option>
+            <option value="ai_autonomous">AI Autonomous Tasks</option>
+            <option value="health">Health &amp; Meals</option>
+            <option value="blackout">Blackout / Rest</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label for="calEventColorSelect" class="text-xs font-mono text-zinc-400">Event Color (Google Palette)</label>
+          <select id="calEventColorSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
+            <option value="#039be5">Peacock (Cyan)</option>
+            <option value="#3f51b5">Blueberry (Blue)</option>
+            <option value="#0b8043">Basil (Green)</option>
+            <option value="#33b679">Sage (Teal)</option>
+            <option value="#f6bf26">Banana (Yellow)</option>
+            <option value="#f4511e">Tangerine (Orange)</option>
+            <option value="#e67c73">Flamingo (Rose)</option>
+            <option value="#d50000">Tomato (Red)</option>
+            <option value="#8e24aa">Grape (Purple)</option>
+            <option value="#7986cb">Lavender (Violet)</option>
+            <option value="#616161">Graphite (Zinc)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Recurrence -->
+      <div class="space-y-1">
+        <label for="calEventRecurrenceSelect" class="text-xs font-mono text-zinc-400">Recurrence</label>
+        <select id="calEventRecurrenceSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
+          <option value="NONE">Does not repeat</option>
+          <option value="DAILY">Daily</option>
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="YEARLY">Yearly</option>
+        </select>
+      </div>
+
+      <!-- Location / Meet Link -->
+      <div class="space-y-1">
+        <label for="calEventLocationInput" class="text-xs font-mono text-zinc-400">Location or Conference Link</label>
+        <input type="text" id="calEventLocationInput" placeholder="e.g. Google Meet, Conference Room A, Home" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+      </div>
+
+      <!-- Description Notes -->
+      <div class="space-y-1">
+        <label for="calEventDescInput" class="text-xs font-mono text-zinc-400">Description &amp; Agenda</label>
+        <textarea id="calEventDescInput" rows="3" placeholder="Add description, agenda items, or autonomous objectives..." class="godx-input w-full px-3 py-2 text-xs font-mono resize-none"></textarea>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex items-center justify-between pt-3 border-t border-white/10">
+        <button id="calBtnDeleteEvent" onclick="LuminaCalendar.deleteEvent()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-mono cursor-pointer transition-colors hidden">
+          Delete
+        </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick="LuminaCalendar.closeEventModal()" class="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-mono cursor-pointer transition-colors">
+            Cancel
+          </button>
+          <button onclick="LuminaCalendar.saveEventFromModal()" class="px-5 py-1.5 rounded-xl btn-gradient text-black font-bold text-xs font-mono cursor-pointer shadow-lg">
+            Save Event
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: GOOGLE CALENDAR ACCOUNT SYNC                               -->
+  <!-- ========================================================================= -->
+  <div id="calendarSyncModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-md w-[94vw] sm:w-full p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="cloud-cog" class="w-4 h-4 text-cyan-400"></i> Google Calendar Two-Way Sync
+        </h3>
+        <button onclick="LuminaCalendar.closeSyncModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Sync Settings">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs font-mono text-zinc-300">
+        <p>Connect your Google Calendar account via official Google Identity Services (GIS) OAuth2 or use universal sovereign iCal files.</p>
+        <div class="p-3 bg-surface-900/80 rounded-xl border border-white/5 space-y-2">
+          <label for="calGoogleClientIdInput" class="text-[11px] text-cyan-300 block font-bold">Google OAuth Client ID</label>
+          <input type="text" id="calGoogleClientIdInput" placeholder="apps.googleusercontent.com Client ID..." class="godx-input w-full px-3 py-2 text-xs font-mono" />
+          <span class="text-[10px] text-zinc-500 block">Scope: https://www.googleapis.com/auth/calendar</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+        <button onclick="LuminaCalendar.closeSyncModal()" class="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-mono cursor-pointer transition-colors">
+          Cancel
+        </button>
+        <button onclick="LuminaCalendar.saveSyncSettingsFromModal()" class="px-5 py-1.5 rounded-xl btn-gradient text-black font-bold text-xs font-mono cursor-pointer shadow-lg">
+          Connect &amp; Sync
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
   <!-- MODULAR JAVASCRIPT LOGIC ENGINE                                            -->
   <!-- ========================================================================= -->
   <script src="./modules/state.js"></script>
   <script src="./modules/sidebar.js"></script>
+  <script src="./modules/calendar.js"></script>
   <script src="./modules/ai-studio.js"></script>
   <script src="./modules/codespace.js"></script>
   <script src="./modules/graphify.js"></script>

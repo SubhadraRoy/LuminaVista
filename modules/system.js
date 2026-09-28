@@ -69,6 +69,12 @@
       }, 50);
     }
 
+    if (id === "tab-calendar") {
+      if (window.LuminaCalendar) {
+        window.LuminaCalendar.init();
+      }
+    }
+
     if (window.lucide && window.lucide.createIcons) {
       window.lucide.createIcons();
     }
@@ -108,6 +114,9 @@
       { label: "Jump to Quantum Terminal", act: () => switchTab('tab-terminal') },
       { label: "Jump to Telemetry", act: () => switchTab('tab-analytics') },
       { label: "Jump to Notes Markdown", act: () => switchTab('tab-scratchpad') },
+      { label: "Jump to Calendar", act: () => switchTab('tab-calendar') },
+      { label: "AI Real-Life Daily Auto-Schedule", act: () => { switchTab('tab-calendar'); if (window.LuminaCalendar) window.LuminaCalendar.aiAutoPlanDay(); } },
+      { label: "Sync Google Calendar", act: () => { if (window.LuminaCalendar) window.LuminaCalendar.openSyncModal(); } },
       { label: "Jump to Settings", act: () => switchTab('tab-controls') },
       { label: "Configure AI & Personas", act: () => { if (window.openAiConfigModal) window.openAiConfigModal(); } },
       { label: "Toggle Artifact Codespace", act: () => { if (window.toggleCodespacePane) window.toggleCodespacePane(); } },

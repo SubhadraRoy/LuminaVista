@@ -58,7 +58,15 @@
       route = 'AUTONOMOUS_TASK';
       confidence = 0.99;
     }
-    // 1. Web search / Live information / News routing
+    // 1. Calendar scheduling & real-life routine intent
+    else if (
+      /\b(schedule|calendar|routine|meeting|appointment|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
+      /\[tool:schedule_event/i.test(p)
+    ) {
+      route = 'SCHEDULE_CALENDAR';
+      confidence = 0.98;
+    }
+    // 2. Web search / Live information / News routing
     else if (
       /\b(news|headlines|weather|stock|crypto|price\s*of|who\s*is|who\s*was|what\s*happened|when\s*did|where\s*is|latest\s*on|updates?\s*on|today'?s?\s*news)\b/i.test(p) ||
       /\b(search|look\s*up|find\s*out|google|browse|web\s*search)\b/i.test(p) ||
@@ -1086,6 +1094,20 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
           <span><strong>MicroVM Terminal Exec:</strong> <code class="text-cyan-200 bg-black/40 px-2 py-0.5 rounded">➜ ${escapeHtml(cmd.trim())}</code></span>
         </div>`);
       })
+      .replace(/\[TOOL:SCHEDULE_EVENT(?: action="([^"]*)")?(?: title="([^"]*)")?(?: start="([^"]*)")?(?: end="([^"]*)")?(?: category="([^"]*)")?(?: date="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:SCHEDULE_EVENT\])?/g, (m, action, title, start, end, cat, date) => {
+        const act = action || 'create';
+        const titleStr = title || 'Calendar Event';
+        const isPlan = act === 'auto_plan';
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-cyan-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-cyan-300">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+            <span><strong>${isPlan ? 'Autonomous Real-Life Day Plan' : 'Calendar Event Scheduled'}:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(isPlan ? (date || 'Today') : titleStr)}</code></span>
+          </div>
+          <button onclick="switchTab('tab-calendar')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 text-[11px] font-semibold border border-cyan-500/40 cursor-pointer flex items-center gap-1 transition-colors">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open in Calendar
+          </button>
+        </div>`);
+      })
       .replace(/\[TOOL:TASK_COMPLETE(?: summary="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:TASK_COMPLETE\])?/g, (m, s1, s2) => {
         const sum = s1 || (s2 ? s2.trim() : "All autonomous tasks completed.");
         return storeSnippet(`<div class="my-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl shadow-xl flex items-start gap-3 font-sans text-xs text-emerald-200">
@@ -1619,7 +1641,37 @@ With **135,200 stars**, \`huggingface/transformers\` remains the undisputed lead
       return generateAutonomousTaskPipelineClient(pTrim, vfs, thoughts);
     }
 
-    // 1. Search Web intent
+    // 1. Calendar scheduling & real-life routine intent
+    if (jev.route === 'SCHEDULE_CALENDAR') {
+      const today = new Date();
+      const dateStr = today.toISOString().slice(0, 10);
+      const isAutoPlan = /\b(auto_?plan|plan\s*my\s*day|schedule\s*my\s*day|realistic\s*schedule|set\s*schedule)\b/i.test(pTrim);
+
+      if (isAutoPlan) {
+        return thoughts +
+          `### Autonomous AI Real-Life Scheduler Active\n\n` +
+          `I have analyzed your daily rhythm, blackout windows (Sleep: 23:00 – 07:00, Lunch: 12:30 – 13:30), ` +
+          `and applied realistic human jitter (±5m) to prevent artificial consecutive bookings.\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="auto_plan" date="${dateStr}"]\n\n` +
+          `**Optimal Day Schedule Synthesized**:\n` +
+          `• **08:05 – 08:50**: Morning Awakening & Cognitive Priming (Health)\n` +
+          `• **09:05 – 09:45**: Daily Standup & Systems Sync (Work)\n` +
+          `• **10:00 – 11:30**: Deep Work Sprint: Core Architecture (Focus)\n` +
+          `• **12:30 – 13:30**: Protected Lunch & Mental Reset (Health)\n` +
+          `• **14:05 – 15:20**: Autonomous MicroVM Pipeline Execution (AI Autonomous)\n` +
+          `• **18:10 – 19:10**: Evening Physical Exercise & Wind-down (Personal)\n\n` +
+          `Your schedule is now active in your Sovereign Calendar tab and ready to sync with Google Calendar.\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Synthesized realistic human schedule with blackouts and jitter"]`;
+      }
+
+      return thoughts +
+        `### Sovereign Calendar Event Scheduled\n\n` +
+        `[TOOL:SCHEDULE_EVENT action="create" title="${escapeHtml(pTrim.replace(/schedule|calendar|add event|create event/gi, '').trim() || 'Focus Session')}" start="${dateStr}T10:00:00" end="${dateStr}T11:30:00" category="focus"]\n\n` +
+        `Event created successfully with conflict-checking and 15-minute buffer enforcement.\n\n` +
+        `[TOOL:TASK_COMPLETE summary="Calendar Event Scheduled"]`;
+    }
+
+    // 2. Search Web intent
     if (jev.route === 'SEARCH_WEB') {
       let cleanQuery = pTrim
         .replace(/^(can (you|i|we) (please )?(give|tell|show|get|provide|bring) (me|us)|could you (please )?|please (give|tell|show|get|provide)|what (is|are) (the )?latest|search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '')
@@ -2013,7 +2065,23 @@ What specific feature, application, or script would you like to build?`;
       results.push(`[TOOL_RESULT:EXEC command="${cmd}"]\n${execRes}\n[/TOOL_RESULT:EXEC]`);
     }
 
-    // 8. Task Complete
+    // 8. Schedule Event
+    const schedRegex = /\[TOOL:SCHEDULE_EVENT(?: action="([^"]*)")?(?: title="([^"]*)")?(?: start="([^"]*)")?(?: end="([^"]*)")?(?: category="([^"]*)")?(?: date="([^"]*)")?\]/g;
+    let calMatch;
+    while ((calMatch = schedRegex.exec(rawText)) !== null) {
+      if (window.LuminaCalendar && window.LuminaCalendar.handleAgentDirective) {
+        const action = calMatch[1] || 'create';
+        const title = calMatch[2] || 'Scheduled Event';
+        const start = calMatch[3];
+        const end = calMatch[4];
+        const category = calMatch[5] || 'work';
+        const date = calMatch[6];
+        const res = window.LuminaCalendar.handleAgentDirective({ action, title, start, end, category, date });
+        results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="${action}" status="${res && res.success ? 'success' : 'failed'}"]`);
+      }
+    }
+
+    // 9. Task Complete
     const completeRegex = /\[TOOL:TASK_COMPLETE(?: summary="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:TASK_COMPLETE\])?/g;
     let cMatch;
     while ((cMatch = completeRegex.exec(rawText)) !== null) {

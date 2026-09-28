@@ -329,7 +329,26 @@ async function runBrowserTest() {
   test("Security Lock modal is displayed", isLockOpen);
   await evaluate("document.getElementById('lockModal').style.display = 'none'; document.getElementById('app-root').classList.remove('blur-lg', 'pointer-events-none');");
 
-  // 10. Check for Uncaught Exceptions
+  // 10. Google Calendar Replica & AI Life Scheduler
+  await evaluate("switchTab('tab-calendar')");
+  const isCalendarOpen = await evaluate("!document.getElementById('tab-calendar').classList.contains('hidden')");
+  test("Navigated to Google Calendar tab", isCalendarOpen);
+
+  const monthViewRendered = await evaluate("document.getElementById('calendarViewContainer')?.innerHTML.includes('SUN')");
+  test("Google Calendar Month View rendered with days", monthViewRendered);
+
+  await evaluate("window.LuminaCalendar.setView('week')");
+  const weekViewRendered = await evaluate("document.getElementById('calWeekScrollContainer') !== null");
+  test("Google Calendar Week View rendered with 24h grid", weekViewRendered);
+
+  await evaluate("window.LuminaCalendar.openEventModal()");
+  const isModalOpen = await evaluate("document.getElementById('calendarEventModal').style.display === 'flex'");
+  test("Event creation modal opened in Chrome", isModalOpen);
+  await evaluate("window.LuminaCalendar.closeEventModal()");
+
+  await evaluate("window.LuminaCalendar.setView('month')");
+
+  // 11. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {
     console.error("Console Errors logged:", consoleErrors);
