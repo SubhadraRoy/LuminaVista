@@ -452,6 +452,34 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   assert(document.getElementById("voiceCanvas") !== null, "Voice audio visualizer #voiceCanvas exists in DOM");
   assert(document.getElementById("voiceContinuousToggleBtn") !== null, "Continuous hands-free conversation loop button exists");
 
+  // Suite 10: Mobile Responsiveness, Off-Canvas Sidebar Drawer & Slider Navigation
+  console.log("\n[Test Suite 10: Mobile Responsiveness, Off-Canvas Sidebar Drawer & Slider Navigation]");
+  assert(document.getElementById("btn-tab-artifacts") !== null, "Artifacts IDE button #btn-tab-artifacts exists in navigation slider");
+  assert(document.getElementById("btn-tab-graphify") !== null, "Graphify Graph button #btn-tab-graphify exists in navigation slider");
+  assert(document.getElementById("aiSubTabsBar") && document.getElementById("aiSubTabsBar").classList.contains("hidden"), "Top tab bar #aiSubTabsBar is cleanly hidden in AI Studio (moved to slider)");
+  assert(typeof window.openMobileSidebar === 'function', "sidebar.js exports openMobileSidebar");
+  assert(typeof window.closeMobileSidebar === 'function', "sidebar.js exports closeMobileSidebar");
+  assert(typeof window.toggleMobileSidebar === 'function', "sidebar.js exports toggleMobileSidebar");
+  assert(document.getElementById("mobileMenuToggleBtn") !== null, "Mobile navigation menu toggle button #mobileMenuToggleBtn exists in top bar");
+  assert(document.getElementById("sidebarBackdrop") !== null, "Mobile sidebar backdrop #sidebarBackdrop exists in DOM");
+
+  // Test slider routing for Artifacts and Graphify
+  window.switchTab('tab-artifacts');
+  const codespaceCol = document.getElementById("aiCodespaceColumn");
+  assert(codespaceCol && !codespaceCol.classList.contains("hidden"), "switchTab('tab-artifacts') routes to Artifacts IDE view");
+
+  window.switchTab('tab-graphify');
+  const graphifyCol = document.getElementById("aiGraphifyColumn");
+  assert(graphifyCol && !graphifyCol.classList.contains("hidden"), "switchTab('tab-graphify') routes to Graphify Graph view");
+
+  // Test mobile drawer toggle state changes
+  window.openMobileSidebar();
+  const sb = document.getElementById("mainSidebar");
+  assert(sb && sb.classList.contains("translate-x-0") && !sb.classList.contains("-translate-x-full"), "openMobileSidebar() slides sidebar into view");
+
+  window.closeMobileSidebar();
+  assert(sb && sb.classList.contains("-translate-x-full"), "closeMobileSidebar() slides sidebar off-canvas");
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

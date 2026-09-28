@@ -81,8 +81,11 @@
   <!-- ROOT APP CONTAINER (Blur-isolated on security lock) -->
   <div id="app-root" class="flex h-full w-full transition-all duration-300">
 
-  <!-- ADJUSTABLE & MINIMIZABLE SIDEBAR -->
-  <aside id="mainSidebar" class="border-r border-white/5 bg-surface-950/85 backdrop-blur-2xl flex flex-col h-full z-40 relative shrink-0 transition-[width] duration-150" style="width: 250px;">
+  <!-- Mobile Sidebar Overlay Backdrop -->
+  <div id="sidebarBackdrop" onclick="closeMobileSidebar()" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
+
+  <!-- ADJUSTABLE & MINIMIZABLE SIDEBAR (Mobile Off-Canvas & Desktop Resizable) -->
+  <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 border-r border-white/5 bg-surface-950/95 backdrop-blur-2xl flex flex-col h-full shrink-0 transition-[width,transform] duration-200 shadow-2xl md:shadow-none" style="width: 250px;">
     
     <!-- Sidebar Header -->
     <div class="p-4 border-b border-white/5 flex items-center justify-between">
@@ -93,15 +96,26 @@
           <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v14</p>
         </div>
       </div>
-      <button onclick="toggleSidebarMinimize()" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Toggle Sidebar" aria-label="Toggle Sidebar Navigation">
-        <i data-lucide="chevrons-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
-      </button>
+      <div class="flex items-center gap-1">
+        <button onclick="closeMobileSidebar()" class="md:hidden p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Close Menu" aria-label="Close Navigation Drawer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleSidebarMinimize()" class="hidden md:inline-flex p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Toggle Sidebar" aria-label="Toggle Sidebar Navigation">
+          <i data-lucide="chevrons-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Navigation Items -->
-    <nav class="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+    <!-- Navigation Items ("The Slider") -->
+    <nav class="flex-1 overflow-y-auto py-4 px-2 space-y-1 custom-scrollbar">
       <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
         <i data-lucide="bot" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">ai-llm Studio</span>
+      </button>
+      <button onclick="switchTab('tab-artifacts')" id="btn-tab-artifacts" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="folder-code" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Artifacts IDE</span>
+      </button>
+      <button onclick="switchTab('tab-graphify')" id="btn-tab-graphify" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+        <i data-lucide="network" class="w-4 h-4 shrink-0 text-purple-400"></i><span class="sidebar-label">Graphify Graph</span>
       </button>
       <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="folder-tree" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Projects</span>
@@ -146,26 +160,30 @@
     </div>
   </aside>
 
-  <!-- DRAGGABLE ADJUSTER -->
-  <div id="sidebarResizer" class="sidebar-resizer h-full z-40 bg-white/5" title="Drag to resize sidebar"></div>
+  <!-- DRAGGABLE ADJUSTER (Desktop Only) -->
+  <div id="sidebarResizer" class="hidden md:block sidebar-resizer h-full z-40 bg-white/5" title="Drag to resize sidebar"></div>
 
   <!-- MAIN VIEWPORT CONTAINER -->
-  <div class="flex-1 flex flex-col h-full relative z-10 min-w-0">
+  <div class="flex-1 flex flex-col h-full relative z-10 min-w-0 overflow-hidden">
     
     <!-- Top System Bar -->
-    <header class="w-full border-b border-white/5 bg-surface-950/60 backdrop-blur-xl px-6 py-3 flex items-center justify-between z-30 shrink-0">
-      <div class="flex items-center gap-3">
-        <button onclick="openCommandPalette()" class="flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 transition-colors cursor-pointer shadow-sm">
+    <header class="w-full border-b border-white/5 bg-surface-950/60 backdrop-blur-xl px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between z-30 shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Mobile Navigation Menu Button -->
+        <button id="mobileMenuToggleBtn" onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-cyan-400 hover:text-white cursor-pointer transition-colors shadow-sm" aria-label="Open Navigation Menu">
+          <i data-lucide="menu" class="w-4 h-4"></i>
+        </button>
+        <button onclick="openCommandPalette()" class="flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 transition-colors cursor-pointer shadow-sm">
           <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span>Command Palette</span>
-          <kbd class="px-1.5 py-0.5 text-[9px] bg-black/40 border border-white/10 rounded font-mono text-zinc-400 ml-2">⌘K</kbd>
+          <span class="hidden sm:inline">Command Palette</span>
+          <kbd class="hidden sm:inline px-1.5 py-0.5 text-[9px] bg-black/40 border border-white/10 rounded font-mono text-zinc-400 ml-1">⌘K</kbd>
         </button>
       </div>
 
-      <div class="flex items-center gap-4 text-xs text-zinc-400 font-mono">
-        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>00:00:00</span>
-        <span class="text-zinc-700">•</span>
-        <span class="text-white">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Anish x</span></span>
+      <div class="flex items-center gap-2.5 sm:gap-4 text-xs text-zinc-400 font-mono">
+        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i><span class="hidden xs:inline">00:00:00</span></span>
+        <span class="text-zinc-700 hidden sm:inline">•</span>
+        <span class="text-white hidden sm:inline">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Anish x</span></span>
         <span class="text-zinc-700">•</span>
         <button onclick="openSourceInspector()" class="p-1.5 hover:text-white transition-colors cursor-pointer" title="View Source"><i data-lucide="code" class="w-4 h-4"></i></button>
         <span class="text-zinc-700">•</span>
@@ -182,8 +200,8 @@
       <!-- ===================================================================== -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col gap-3 min-h-0">
         
-        <!-- AI Studio Top Sub-Navigation Bar -->
-        <div class="glass-panel px-4 py-2 rounded-2xl border border-white/5 flex items-center justify-between shrink-0 backdrop-blur-xl">
+        <!-- AI Studio Top Sub-Navigation Bar (Hidden: Relocated to Navigation Slider) -->
+        <div id="aiSubTabsBar" class="hidden">
           <div class="flex items-center gap-1.5 sm:gap-2">
             <button id="btnAiSubTabChat" onclick="switchAiSubTab('chat')" class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm">
               <i data-lucide="message-square" class="w-3.5 h-3.5 text-cyan-400"></i>
@@ -215,7 +233,7 @@
           <!-- SUB-VIEW 1: CHAT VIEW (with optional Left Sessions Drawer) -->
           <div id="aiChatView" class="w-full h-full flex flex-col lg:flex-row gap-4 min-h-0">
             <!-- Left Slide-out Sessions Drawer -->
-            <div id="aiSessionsDrawer" class="hidden w-72 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/10 shadow-2xl h-full transition-all duration-300 shrink-0">
+            <div id="aiSessionsDrawer" class="hidden w-72 max-w-[85vw] glass-panel rounded-2xl flex flex-col overflow-hidden absolute md:relative z-30 inset-y-0 left-0 border border-white/10 shadow-2xl h-full transition-all duration-300 shrink-0 bg-surface-950/95 md:bg-transparent backdrop-blur-2xl md:backdrop-blur-none">
               <div class="p-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-2">
                   <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
@@ -240,11 +258,11 @@
             <!-- Center Chat Box (Maximized Real Estate) -->
             <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
               <!-- ai-llm Header -->
-              <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
-                <div class="flex items-center gap-3">
+              <div class="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-white/5 bg-surface-900/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 z-10 shrink-0 backdrop-blur-xl">
+                <div class="flex items-center gap-2.5 sm:gap-3">
                   <canvas id="headerThinkingOrb" width="36" height="36" class="shrink-0 cursor-pointer rounded-lg bg-surface-950/80 border border-cyan-500/30 shadow-[0_0_12px_rgba(0,242,254,0.2)]" title="Antigravity Cognitive Engine State"></canvas>
                   <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
                       <h3 class="font-heading font-bold text-sm text-white leading-tight">ai-llm</h3>
                       <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
                       <span id="failoverIndicatorBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-300 font-mono border border-amber-500/30 items-center gap-1">
@@ -254,29 +272,29 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
                       </span>
                     </div>
-                    <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
+                    <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-[170px] xs:max-w-xs sm:max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
                   </div>
                 </div>
 
                 <!-- Action Controls -->
-                <div class="flex items-center gap-2">
-                  <button onclick="toggleSessionsDrawer()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Multi-Session History">
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                  <button onclick="toggleSessionsDrawer()" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Multi-Session History">
                     <i data-lucide="history" class="w-3.5 h-3.5 text-cyan-400"></i>
-                    <span>Sessions</span>
+                    <span class="hidden sm:inline">Sessions</span>
                     <span id="sessionCountBadge" class="px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono">1</span>
                   </button>
-                  <button onclick="openScheduledTasksModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Autonomous Scheduled Tasks">
+                  <button onclick="openScheduledTasksModal()" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Autonomous Scheduled Tasks">
                     <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-purple-400"></i>
-                    <span>Scheduled</span>
+                    <span class="hidden sm:inline">Scheduled</span>
                     <span id="scheduledCountBadge" class="hidden px-1.5 py-0.2 rounded-full text-[9px] bg-purple-500 text-white font-mono">0</span>
                   </button>
-                  <button onclick="openAiConfigModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors" title="Configure AI &amp; Personas">
+                  <button onclick="openAiConfigModal()" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 cursor-pointer transition-colors" title="Configure AI &amp; Personas">
                     <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
-                    <span>Settings</span>
+                    <span class="hidden sm:inline">Settings</span>
                   </button>
-                  <button onclick="switchAiSubTab('artifacts')" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-2 cursor-pointer transition-colors shadow-sm">
+                  <button onclick="switchAiSubTab('artifacts')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Artifacts IDE">
                     <i data-lucide="folder-code" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span id="btnCodespaceToggleText">Artifacts IDE</span>
+                    <span id="btnCodespaceToggleText" class="hidden sm:inline">Artifacts IDE</span>
                   </button>
                   <button onclick="clearAiChat()" class="p-1.5 rounded-xl hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors" title="Clear Current Chat">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -310,24 +328,24 @@
           <!-- SUB-VIEW 2: ARTIFACTS & FILES CODESPACE (Full Width) -->
           <div id="aiCodespaceColumn" class="hidden w-full h-full glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl transition-all duration-300">
             <!-- IDE Top Header -->
-            <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+            <div class="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/10 bg-surface-900/90 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shrink-0">
               <div class="flex items-center gap-2">
                 <i data-lucide="folder-code" class="w-4 h-4 text-emerald-400"></i>
-                <span class="font-heading font-bold text-xs text-white">Artifacts Sovereign Codespace</span>
+                <span class="font-heading font-bold text-xs text-white truncate max-w-[130px] xs:max-w-xs sm:max-w-none">Artifacts Codespace</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
-                  <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Preview</button>
-                  <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Code</button>
-                  <button onclick="setCodespaceView('terminal')" id="btnCsViewTerminal" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Terminal</button>
-                  <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Split</button>
+                  <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Preview</button>
+                  <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2 sm:px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Code</button>
+                  <button onclick="setCodespaceView('terminal')" id="btnCsViewTerminal" class="px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Terminal</button>
+                  <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Split</button>
                 </div>
                 <button onclick="runActiveFile()" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer" title="Execute Code or Reload HTML">
-                  <i data-lucide="play" class="w-3 h-3"></i> Run
+                  <i data-lucide="play" class="w-3 h-3"></i> <span class="hidden xs:inline">Run</span>
                 </button>
                 <button onclick="switchAiSubTab('chat')" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer flex items-center gap-1 text-xs" title="Return to Chat">
                   <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                  <span>Back to Chat</span>
+                  <span class="hidden sm:inline">Back to Chat</span>
                 </button>
               </div>
             </div>
@@ -337,7 +355,7 @@
               <div class="flex items-center gap-1.5 text-zinc-400">
                 <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
                 <span>vfs://</span>
-                <span id="csBreadcrumbFile" class="text-white font-bold">index.html</span>
+                <span id="csBreadcrumbFile" class="text-white font-bold truncate max-w-[140px] sm:max-w-none">index.html</span>
               </div>
               <div class="flex items-center gap-1">
                 <button onclick="promptCreateFile()" class="px-2 py-1 rounded hover:bg-white/5 text-cyan-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Create File">
@@ -358,7 +376,7 @@
             <!-- Main Workspace: Explorer Tree + Code/Preview/Terminal -->
             <div class="flex-1 flex min-h-0 relative bg-surface-950">
               <!-- File Tree Sidebar -->
-              <div class="w-48 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
+              <div class="w-36 sm:w-48 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
                 <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center">
                   <span>Explorer</span>
                   <span id="vfsFileCount" class="text-cyan-400">0 files</span>
@@ -428,7 +446,7 @@
                 </div>
 
                 <div class="relative">
-                  <input type="text" oninput="setGraphifySearch(this.value)" placeholder="Search node..." class="godx-input px-2.5 py-1 pl-7 text-[11px] font-mono w-32 focus:w-44 transition-all" />
+                  <input type="text" oninput="setGraphifySearch(this.value)" placeholder="Search node..." class="godx-input px-2.5 py-1 pl-7 text-[11px] font-mono w-28 sm:w-32 focus:w-44 transition-all" />
                   <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2 top-2"></i>
                 </div>
 
@@ -448,10 +466,10 @@
               <canvas id="graphifyCanvas" class="w-full h-full cursor-grab active:cursor-grabbing block"></canvas>
 
               <!-- Node Inspector Drawer (Slide-out panel) -->
-              <div id="graphifyInspectorDrawer" class="hidden absolute top-3 right-3 w-80 md:w-96 glass-panel rounded-2xl border border-white/15 shadow-2xl z-20 overflow-hidden bg-surface-900/95 backdrop-blur-2xl"></div>
+              <div id="graphifyInspectorDrawer" class="hidden absolute top-3 right-3 w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 max-w-sm glass-panel rounded-2xl border border-white/15 shadow-2xl z-20 overflow-hidden bg-surface-900/95 backdrop-blur-2xl"></div>
 
               <!-- Canvas Bottom Legend Bar -->
-              <div class="absolute bottom-3 left-3 bg-surface-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-[10px] font-mono text-zinc-400 flex items-center gap-3">
+              <div class="absolute bottom-3 left-3 bg-surface-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-[10px] font-mono text-zinc-400 hidden sm:flex items-center gap-3">
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#00f2fe]"></span> Frontend</span>
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#818cf8]"></span> AI</span>
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#10b981]"></span> APIs</span>
@@ -666,9 +684,9 @@
             <select id="splitRightSelect" onchange="updateSplitFrames()" class="godx-input px-3 py-1.5 text-xs cursor-pointer"></select>
           </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
-          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
-          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
+          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
         </div>
       </section>
 
@@ -770,9 +788,9 @@
         <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-1 text-xs font-mono shrink-0 custom-scrollbar"></div>
 
         <!-- Notes Split / Full Editor & Preview Grid -->
-        <div id="noteLayoutGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-          <textarea id="adminScratchpad" oninput="onNoteContentChange()" placeholder="Type notes here in Markdown... (Markdown formatting supported)" class="godx-input w-full p-4 font-mono text-xs resize-none h-full leading-relaxed custom-scrollbar"></textarea>
-          <div id="notePreviewCol" class="bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-xs text-zinc-300 space-y-3 font-sans h-full leading-relaxed custom-scrollbar select-text"></div>
+        <div id="noteLayoutGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+          <textarea id="adminScratchpad" oninput="onNoteContentChange()" placeholder="Type notes here in Markdown... (Markdown formatting supported)" class="godx-input w-full p-4 font-mono text-xs resize-none h-full min-h-[220px] lg:min-h-0 leading-relaxed custom-scrollbar"></textarea>
+          <div id="notePreviewCol" class="bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-xs text-zinc-300 space-y-3 font-sans h-full min-h-[220px] lg:min-h-0 leading-relaxed custom-scrollbar select-text"></div>
         </div>
       </section>
 
@@ -815,7 +833,7 @@
   <!-- FLOATING MODAL: AI-LLM CONFIGURATION (Pop-up via Button)                  -->
   <!-- ========================================================================= -->
   <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-lg w-full p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <div class="glass-panel max-w-lg w-[94vw] sm:w-full p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
       
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
@@ -917,7 +935,7 @@
   <!-- FLOATING MODAL: AUTONOMOUS SCHEDULED TASKS                                -->
   <!-- ========================================================================= -->
   <div id="aiScheduledModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-lg w-full p-6 rounded-3xl border border-purple-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <div class="glass-panel max-w-lg w-[94vw] sm:w-full p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-purple-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
           <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-400"></i> Autonomous Scheduled Tasks
@@ -963,7 +981,7 @@
 
   <!-- SECURITY LOCK MODAL (15-Minute Inactivity Protection) -->
   <div id="lockModal" style="display: none;" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-2xl flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-    <div class="glass-panel max-w-md w-full p-8 rounded-3xl border border-cyan-500/30 shadow-[0_0_60px_rgba(0,242,254,0.18)] flex flex-col items-center text-center relative">
+    <div class="glass-panel max-w-md w-[94vw] sm:w-full p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-[0_0_60px_rgba(0,242,254,0.18)] flex flex-col items-center text-center relative">
       <div class="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-5 shadow-[0_0_25px_rgba(0,242,254,0.35)]">
         <i data-lucide="shield-alert" class="w-8 h-8"></i>
       </div>
@@ -1011,7 +1029,7 @@
 
   <!-- Command Palette Modal (⌘K) -->
   <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-24 p-4 opacity-0 transition-opacity duration-200">
-    <div class="bg-surface-900/90 backdrop-blur-2xl max-w-xl w-full p-2 rounded-2xl border border-white/10 shadow-2xl transform scale-95 transition-transform duration-200">
+    <div class="bg-surface-900/90 backdrop-blur-2xl max-w-xl w-[94vw] sm:w-full p-2 rounded-2xl border border-white/10 shadow-2xl transform scale-95 transition-transform duration-200">
       <div class="flex items-center gap-3 p-3 border-b border-white/5">
         <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
         <input type="text" id="cmdSearchInput" oninput="handleCmdSearch(event)" placeholder="Jump to tab, execute commands, or open files..." class="bg-transparent flex-1 text-sm text-white outline-none font-sans" />
@@ -1029,7 +1047,7 @@
 
   <!-- Source Modal -->
   <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-4xl w-full p-6 rounded-3xl relative flex flex-col max-h-[85vh]">
+    <div class="glass-panel max-w-4xl w-[94vw] sm:w-full p-4 sm:p-6 rounded-2xl sm:rounded-3xl relative flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 class="font-heading font-bold text-base text-white">Source Inspector</h3>
         <button onclick="document.getElementById('sourceModal').style.display='none'" class="p-1.5 text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -1042,7 +1060,7 @@
   <!-- FLOATING MODAL: 100% FREE SOVEREIGN VOICE INTERACTION MODE                -->
   <!-- ========================================================================= -->
   <div id="aiVoiceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-xl w-full p-6 sm:p-8 rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,242,254,0.15)] relative transform scale-95 transition-transform duration-200 flex flex-col items-center text-center space-y-6">
+    <div class="glass-panel max-w-xl w-[94vw] sm:w-full p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,242,254,0.15)] relative transform scale-95 transition-transform duration-200 flex flex-col items-center text-center space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
       
       <!-- Top Bar Controls -->
       <div class="w-full flex items-center justify-between pb-3 border-b border-white/10">

@@ -247,6 +247,86 @@
       const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
       zoom = Math.max(0.3, Math.min(2.5, zoom * zoomFactor));
     };
+
+    // Mobile & Tablet Touch Support (Pan, Node Drag & Pinch-to-Zoom)
+    let initialPinchDist = 0;
+    let initialZoom = 1;
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const touchX = (touch.clientX - rect.left - panX) / zoom;
+        const touchY = (touch.clientY - rect.top - panY) / zoom;
+
+        const hit = nodes.find(n => {
+          const dx = n.x - touchX;
+          const dy = n.y - touchY;
+          return Math.sqrt(dx * dx + dy * dy) <= n.radius + 12; // Touch-friendly radius
+        });
+
+        if (hit) {
+          dragNode = hit;
+          selectedNode = hit;
+          showNodeInspector(hit);
+        } else {
+          isDragging = true;
+        }
+        lastMouseX = touch.clientX;
+        lastMouseY = touch.clientY;
+      } else if (e.touches.length === 2) {
+        isDragging = false;
+        dragNode = null;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialPinchDist = Math.hypot(dx, dy);
+        initialZoom = zoom;
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!canvas) return;
+      if (e.touches.length === 1 && (dragNode || isDragging)) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const touchX = (touch.clientX - rect.left - panX) / zoom;
+        const touchY = (touch.clientY - rect.top - panY) / zoom;
+
+        if (dragNode) {
+          dragNode.x = touchX;
+          dragNode.y = touchY;
+          dragNode.vx = 0;
+          dragNode.vy = 0;
+        } else if (isDragging) {
+          panX += touch.clientX - lastMouseX;
+          panY += touch.clientY - lastMouseY;
+        }
+        lastMouseX = touch.clientX;
+        lastMouseY = touch.clientY;
+      } else if (e.touches.length === 2 && initialPinchDist > 0) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const currentDist = Math.hypot(dx, dy);
+        const factor = currentDist / initialPinchDist;
+        zoom = Math.max(0.3, Math.min(2.5, initialZoom * factor));
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        isDragging = false;
+        dragNode = null;
+        initialPinchDist = 0;
+      }
+    });
+
+    window.addEventListener('touchcancel', () => {
+      isDragging = false;
+      dragNode = null;
+      initialPinchDist = 0;
+    });
   }
 
   function startSimulation() {

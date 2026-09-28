@@ -3,13 +3,30 @@
   'use strict';
 
   function switchTab(id) {
+    if (window.closeMobileSidebar) {
+      window.closeMobileSidebar();
+    }
+
+    let actualTabId = id;
+    let subView = null;
+
+    if (id === 'tab-artifacts') {
+      actualTabId = 'tab-ai-studio';
+      subView = 'artifacts';
+    } else if (id === 'tab-graphify') {
+      actualTabId = 'tab-ai-studio';
+      subView = 'graphify';
+    } else if (id === 'tab-ai-studio') {
+      subView = 'chat';
+    }
+
     document.querySelectorAll(".tab-pane").forEach(p => p.classList.add("hidden"));
     document.querySelectorAll(".tab-btn").forEach(b => {
       b.classList.remove("nav-tab-active");
       b.classList.add("text-zinc-400");
     });
 
-    const targetTab = document.getElementById(id);
+    const targetTab = document.getElementById(actualTabId);
     if (targetTab) {
       targetTab.classList.remove("hidden");
       if (window.gsap) {
@@ -18,6 +35,10 @@
           { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power2.out" }
         );
       }
+    }
+
+    if (subView && window.switchAiSubTab) {
+      window.switchAiSubTab(subView);
     }
 
     const activeBtn = document.getElementById(`btn-${id}`);

@@ -56,7 +56,46 @@
     }
   }
 
+  let isMobileSidebarOpen = false;
+
+  function openMobileSidebar() {
+    const sb = document.getElementById("mainSidebar");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    if (!sb) return;
+    isMobileSidebarOpen = true;
+    sb.classList.remove("-translate-x-full");
+    sb.classList.add("translate-x-0");
+    if (backdrop) {
+      backdrop.classList.remove("opacity-0", "pointer-events-none");
+      backdrop.classList.add("opacity-100", "pointer-events-auto");
+    }
+  }
+
+  function closeMobileSidebar() {
+    const sb = document.getElementById("mainSidebar");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    if (!sb) return;
+    isMobileSidebarOpen = false;
+    sb.classList.remove("translate-x-0");
+    sb.classList.add("-translate-x-full");
+    if (backdrop) {
+      backdrop.classList.remove("opacity-100", "pointer-events-auto");
+      backdrop.classList.add("opacity-0", "pointer-events-none");
+    }
+  }
+
+  function toggleMobileSidebar() {
+    if (isMobileSidebarOpen) {
+      closeMobileSidebar();
+    } else {
+      openMobileSidebar();
+    }
+  }
+
   window.initSidebarResize = initSidebarResize;
   window.toggleSidebarMinimize = toggleSidebarMinimize;
+  window.openMobileSidebar = openMobileSidebar;
+  window.closeMobileSidebar = closeMobileSidebar;
+  window.toggleMobileSidebar = toggleMobileSidebar;
 
 })(window);

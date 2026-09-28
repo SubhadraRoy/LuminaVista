@@ -267,6 +267,27 @@ async function runBrowserTest() {
   const isChatVisible = await evaluate("!document.getElementById('aiChatView').classList.contains('hidden') && document.getElementById('aiGraphifyColumn').classList.contains('hidden')");
   test("AI Studio sub-tab returned to 'chat'", isChatVisible);
 
+  // Test Slider Navigation for Artifacts IDE and Graphify Graph
+  await evaluate("switchTab('tab-artifacts')");
+  const sliderArtifactsActive = await evaluate("!document.getElementById('aiCodespaceColumn').classList.contains('hidden') && document.getElementById('btn-tab-artifacts').classList.contains('nav-tab-active')");
+  test("Slider navigation switches to Artifacts IDE and highlights button", sliderArtifactsActive);
+
+  await evaluate("switchTab('tab-graphify')");
+  const sliderGraphifyActive = await evaluate("!document.getElementById('aiGraphifyColumn').classList.contains('hidden') && document.getElementById('btn-tab-graphify').classList.contains('nav-tab-active')");
+  test("Slider navigation switches to Graphify Graph and highlights button", sliderGraphifyActive);
+
+  const topTabsHidden = await evaluate("document.getElementById('aiSubTabsBar').classList.contains('hidden')");
+  test("Top sub-tabs bar #aiSubTabsBar is hidden (moved to slider)", topTabsHidden);
+
+  // Test Mobile Sidebar Drawer
+  await evaluate("openMobileSidebar()");
+  const isMobileSidebarOpen = await evaluate("document.getElementById('mainSidebar').classList.contains('translate-x-0') && !document.getElementById('mainSidebar').classList.contains('-translate-x-full')");
+  test("Mobile sidebar opened via openMobileSidebar()", isMobileSidebarOpen);
+
+  await evaluate("closeMobileSidebar()");
+  const isMobileSidebarClosed = await evaluate("document.getElementById('mainSidebar').classList.contains('-translate-x-full')");
+  test("Mobile sidebar closed via closeMobileSidebar()", isMobileSidebarClosed);
+
   // Test Sessions Drawer Toggle
   await evaluate("toggleSessionsDrawer(true)");
   const isDrawerOpen = await evaluate("!document.getElementById('aiSessionsDrawer').classList.contains('hidden')");

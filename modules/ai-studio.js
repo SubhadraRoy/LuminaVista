@@ -1949,6 +1949,28 @@ What specific feature, application, or script would you like to build?`;
     }
 
     updateAiSubTabArtifactBadge();
+
+    // Sync sidebar slider button states
+    const sbChat = document.getElementById("btn-tab-ai-studio");
+    const sbArt = document.getElementById("btn-tab-artifacts");
+    const sbGraph = document.getElementById("btn-tab-graphify");
+    [sbChat, sbArt, sbGraph].forEach(b => {
+      if (b) {
+        b.classList.remove("nav-tab-active");
+        b.classList.add("text-zinc-400");
+      }
+    });
+    if (tabName === 'artifacts' && sbArt) {
+      sbArt.classList.add("nav-tab-active");
+      sbArt.classList.remove("text-zinc-400");
+    } else if (tabName === 'graphify' && sbGraph) {
+      sbGraph.classList.add("nav-tab-active");
+      sbGraph.classList.remove("text-zinc-400");
+    } else if (sbChat) {
+      sbChat.classList.add("nav-tab-active");
+      sbChat.classList.remove("text-zinc-400");
+    }
+
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
   }
 
