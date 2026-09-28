@@ -1130,15 +1130,32 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
       .replace(/\n/g, '<br/>');
 
-    // 7. Re-inject Code Blocks
+    // 7. Re-inject Code Blocks with Codex / Antigravity styled text box
     codeBlocks.forEach((item, index) => {
+      const lang = escapeHtml(item.file || item.lang || 'code');
       const htmlCard = `
-        <div class="bg-surface-950 border border-white/10 rounded-xl my-4 overflow-hidden shadow-lg">
-          <div class="px-4 py-2 bg-surface-900/80 border-b border-white/5 text-[11px] text-cyan-400 font-mono flex justify-between items-center">
-            <span class="font-bold flex items-center gap-1.5"><i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${escapeHtml(item.file || item.lang)}</span>
-            <button onclick="navigator.clipboard.writeText(this.closest('.bg-surface-950').querySelector('code').innerText); if(window.showToast) window.showToast('Copied', 'Code block copied');" class="text-zinc-400 hover:text-white cursor-pointer transition-colors"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+        <div class="code-box-container bg-[#090d16] border border-cyan-500/20 rounded-2xl my-4 overflow-hidden shadow-2xl transition-all duration-200 hover:border-cyan-500/40">
+          <div class="px-4 py-2.5 bg-surface-900/90 border-b border-white/10 flex justify-between items-center text-xs font-mono select-none">
+            <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-1.5 mr-1">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block shadow-sm"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block shadow-sm"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block shadow-sm"></span>
+              </div>
+              <span class="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 font-bold text-[11px] border border-cyan-500/30 flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="file-code" class="w-3.5 h-3.5"></i> ${lang}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="if(window.switchAiSubTab) window.switchAiSubTab('artifacts');" class="px-2.5 py-1 rounded-lg text-[11px] bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer transition-colors flex items-center gap-1 border border-white/5" title="View in Artifacts IDE">
+                <i data-lucide="folder-code" class="w-3 h-3 text-cyan-400"></i> Artifacts
+              </button>
+              <button onclick="const c=this.closest('.code-box-container').querySelector('code').innerText; navigator.clipboard.writeText(c); const b=this; b.innerHTML='<i data-lucide=\\'check\\' class=\\'w-3 h-3 text-emerald-400\\'></i><span class=\\'text-emerald-400 font-semibold\\'>Copied!</span>'; if(window.lucide) lucide.createIcons(); setTimeout(()=>{ b.innerHTML='<i data-lucide=\\'copy\\' class=\\'w-3 h-3 text-zinc-400\\'></i><span class=\\'text-zinc-300\\'>Copy</span>'; if(window.lucide) lucide.createIcons(); }, 2000);" class="px-2.5 py-1 rounded-lg text-[11px] bg-white/5 hover:bg-cyan-500/20 text-zinc-300 hover:text-cyan-200 cursor-pointer transition-colors flex items-center gap-1 border border-white/5">
+                <i data-lucide="copy" class="w-3 h-3 text-zinc-400"></i> Copy
+              </button>
+            </div>
           </div>
-          <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-300 leading-relaxed custom-scrollbar"><code>${escapeHtml(item.code)}</code></pre>
+          <pre class="p-4 overflow-x-auto text-[12px] font-mono text-zinc-200 leading-relaxed custom-scrollbar bg-[#060911]"><code>${escapeHtml(item.code)}</code></pre>
         </div>
       `;
       safeProse = safeProse.replace(`__CODE_BLOCK_${index}__`, htmlCard);
