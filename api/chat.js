@@ -137,8 +137,9 @@ export default async function handler(req, res) {
 
     // 0. Initial Web Search Context Injection if permitted and requested
     let liveSearchResultsText = '';
-    if (allowInternet && prompt && loopCount === 0 && (jevTelemetry.route === 'SEARCH_WEB' || prompt.toLowerCase().includes('search') || prompt.toLowerCase().includes('news'))) {
-      const q = prompt.replace(/^(search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '').trim() || prompt;
+    if (allowInternet && prompt && loopCount === 0 && jevTelemetry.route === 'SEARCH_WEB') {
+      let q = prompt.replace(/^(search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '').trim() || prompt;
+      if (q.length > 120) q = q.split('\n')[0].substring(0, 120).trim();
       liveSearchResultsText = await searchDuckDuckGo(q);
       messages.push({
         role: "user",
@@ -151,8 +152,12 @@ export default async function handler(req, res) {
       const m = (model || '').trim();
       if (prov === 'nvidia') {
         if (m === 'deepseek-ai/deepseek-r1' || m.toLowerCase().includes('deepseek')) return 'deepseek-ai/deepseek-r1';
-        if (m.toLowerCase().includes('mistral')) return 'mistralai/mistral-large-2-instruct';
-        return 'meta/llama-3.3-70b-instruct';
+        if (m.toLowerCase().includes('mistral') || m.toLowerCase().includes('codestral')) return 'mistralai/mistral-large-2-instruct';
+        if (m.toLowerCase().includes('gpt-oss-120b') || m.toLowerCase().includes('120b')) return 'openai/gpt-oss-120b';
+        if (m.toLowerCase().includes('gpt-oss') || m.toLowerCase().includes('20b')) return 'openai/gpt-oss-20b';
+        if (m.toLowerCase().includes('nemotron')) return 'nvidia/llama-3.1-nemotron-70b-instruct';
+        if (m.toLowerCase().includes('llama')) return 'nvidia/llama-3.1-nemotron-70b-instruct';
+        return 'nvidia/llama-3.1-nemotron-70b-instruct';
       } else {
         // Ollama Cloud
         if (m.toLowerCase().includes('deepseek')) return 'deepseek-r1';
@@ -207,6 +212,9 @@ export default async function handler(req, res) {
               body: JSON.stringify({
                 model: nvidiaModel,
                 messages,
+                temperature: 0.6,
+                top_p: 0.95,
+                max_tokens: 4096,
                 stream: false
               })
             });
@@ -277,6 +285,9 @@ export default async function handler(req, res) {
                 body: JSON.stringify({
                   model: nvidiaModel,
                   messages,
+                  temperature: 0.6,
+                  top_p: 0.95,
+                  max_tokens: 4096,
                   stream: false
                 })
               });

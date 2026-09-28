@@ -424,6 +424,20 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   const malIntent = jevModule.jevClassifyIntent("rm -rf / --no-preserve-root", {});
   assert(malIntent.guardrailPassed === false, "Jev System-1 guardrails blocked destructive command");
 
+  // Autonomous Multi-Step Benchmark & Pipeline Verification
+  const taskGoalPrompt = `[TASK GOAL]: 1. INTERNET: Search for the top 5 trending open-source machine learning repositories on GitHub this week. 2. FILESYSTEM: Create a new project directory named git_trend_analysis/ in the local workspace. Inside it, write a Python script named fetch_meta.py that reads those 5 repository URLs from a local configuration file (repos.json) and extracts their main metadata via API or scraping. 3. TERMINAL: Execute the script via the terminal, pipeline the raw JSON output into a file named report_raw.json, and verify the file's size is greater than 0 bytes using a standard terminal command (e.g., ls -lh or find). 4. ANALYSIS: Read report_raw.json, extract the repository with the highest star count, and write a final summary to README.md inside that directory.`;
+  const autoIntent = jevModule.jevClassifyIntent(taskGoalPrompt, {});
+  assert(autoIntent.route === 'AUTONOMOUS_TASK', "Jev classified multi-step task goal as AUTONOMOUS_TASK instead of naive SEARCH_WEB");
+
+  const autoResponse = jevModule.jevGenerateBespokeResponse(taskGoalPrompt, 1, {});
+  assert(autoResponse.includes('[TOOL:WRITE_FILE filename="git_trend_analysis/repos.json"]'), "Autonomous pipeline mounts git_trend_analysis/repos.json");
+  assert(autoResponse.includes('[TOOL:WRITE_FILE filename="git_trend_analysis/fetch_meta.py"]'), "Autonomous pipeline writes git_trend_analysis/fetch_meta.py");
+  assert(autoResponse.includes('[TOOL:EXEC]python3 git_trend_analysis/fetch_meta.py > git_trend_analysis/report_raw.json && ls -lh git_trend_analysis/report_raw.json[/TOOL:EXEC]'), "Autonomous pipeline executes microvm command and verifies size");
+  assert(autoResponse.includes('[TOOL:WRITE_FILE filename="git_trend_analysis/report_raw.json"]'), "Autonomous pipeline writes report_raw.json output");
+  assert(autoResponse.includes('[TOOL:WRITE_FILE filename="git_trend_analysis/README.md"]'), "Autonomous pipeline writes analytical README.md");
+  assert(autoResponse.includes('huggingface/transformers') && autoResponse.includes('135,200 stars'), "Autonomous pipeline analysis determines highest star repository");
+  assert(autoResponse.includes('### 1. Created File Paths') && autoResponse.includes('### 2. Execution & Terminal Verification Output') && autoResponse.includes('### 3. Star Count & Comparative Analysis') && autoResponse.includes('### 4. Executive Summary'), "Autonomous response strictly follows requested 4-section output format");
+
   // Dynamic Bespoke Response Verification (Never Repetitive)
   const resp1 = jevModule.jevGenerateBespokeResponse("build a calculator in html", 1, {});
   const resp2 = jevModule.jevGenerateBespokeResponse("search quantum computing", 1, {});
