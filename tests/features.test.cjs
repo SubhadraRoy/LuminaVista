@@ -59,6 +59,8 @@ const moduleFiles = [
   'modules/sidebar.js',
   'modules/ai-studio.js',
   'modules/codespace.js',
+  'modules/graphify.js',
+  'modules/voice-studio.js',
   'modules/compiler.js',
   'modules/terminal.js',
   'modules/whiteboard.js',
@@ -440,6 +442,15 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   assert(dashHtml.includes('id="btnAiSubTabChat"') && dashHtml.includes('id="btnAiSubTabArtifacts"') && dashHtml.includes('id="btnAiSubTabGraphify"'), "Dashboard includes AI Studio sub-tabs (Chat, Artifacts & Files, Graphify Graph)");
   assert(dashHtml.includes('id="graphifyCanvas"'), "Graphify canvas visualizer embedded in AI Studio");
   assert(chatApiCode.includes("https://ollama.com/v1/chat/completions"), "api/chat.js points Ollama Cloud to official endpoint");
+
+  // Suite 9: 100% Free Sovereign Voice Interaction Studio
+  console.log("\n[Test Suite 9: 100% Free Sovereign Voice Interaction Studio]");
+  assert(typeof window.openVoiceInteractionMode === 'function', "voice-studio exports openVoiceInteractionMode");
+  assert(typeof window.toggleVoiceInteractionMode === 'function', "voice-studio exports toggleVoiceInteractionMode");
+  assert(document.getElementById("btnAiVoiceMode") !== null, "Microphone toggle button #btnAiVoiceMode exists in AI Studio");
+  assert(document.getElementById("aiVoiceModal") !== null, "Voice Interaction modal #aiVoiceModal exists in DOM");
+  assert(document.getElementById("voiceCanvas") !== null, "Voice audio visualizer #voiceCanvas exists in DOM");
+  assert(document.getElementById("voiceContinuousToggleBtn") !== null, "Continuous hands-free conversation loop button exists");
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

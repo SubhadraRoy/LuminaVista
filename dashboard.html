@@ -295,6 +295,9 @@
                     <button type="button" id="btnAiAbort" onclick="abortAgentLoop()" class="hidden px-2.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-mono font-bold border border-rose-500/30 flex items-center gap-1.5 mb-0.5 mr-1 cursor-pointer transition-colors" title="Abort Autonomous Agent Loop">
                       <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i> Abort
                     </button>
+                    <button type="button" id="btnAiVoiceMode" onclick="window.toggleVoiceInteractionMode && window.toggleVoiceInteractionMode()" class="w-9 h-9 shrink-0 rounded-xl bg-white/5 hover:bg-cyan-500/20 text-cyan-300 hover:text-white border border-white/10 flex items-center justify-center shadow-lg transition-all mb-0.5 mr-1 cursor-pointer group" title="Full Voice Interaction Mode (100% Free Hands-Free Voice)">
+                      <i data-lucide="mic" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    </button>
                     <button type="submit" id="btnAiSend" class="w-9 h-9 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-0.5 mr-0.5 cursor-pointer">
                       <i data-lucide="arrow-up" class="w-4 h-4"></i>
                     </button>
@@ -1036,6 +1039,82 @@
   </div>
 
   <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: 100% FREE SOVEREIGN VOICE INTERACTION MODE                -->
+  <!-- ========================================================================= -->
+  <div id="aiVoiceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-xl w-full p-6 sm:p-8 rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,242,254,0.15)] relative transform scale-95 transition-transform duration-200 flex flex-col items-center text-center space-y-6">
+      
+      <!-- Top Bar Controls -->
+      <div class="w-full flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+          <h3 class="font-heading font-extrabold text-sm sm:text-base text-white tracking-wide">Sovereign Voice Studio</h3>
+          <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30">100% Free</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="voiceContinuousToggleBtn" onclick="toggleContinuousMode()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-mono font-bold cursor-pointer transition-colors" title="Toggle automatic hands-free conversation loop">
+            Hands-Free Loop: ON
+          </button>
+          <button onclick="closeVoiceInteractionMode()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Audio Orb Visualizer Canvas -->
+      <div class="relative w-56 h-56 flex items-center justify-center">
+        <canvas id="voiceCanvas" width="224" height="224" class="w-full h-full"></canvas>
+      </div>
+
+      <!-- Dynamic Voice Status & HUD -->
+      <div class="flex flex-col items-center space-y-2">
+        <div id="voiceStateBadge" class="px-3.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 shadow-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> Listening
+        </div>
+        <p id="voiceStateLabel" class="text-xs text-zinc-400 font-mono">Speak naturally into your microphone...</p>
+      </div>
+
+      <!-- Live Transcript Cards -->
+      <div class="w-full space-y-3">
+        <!-- User Live Transcript -->
+        <div class="p-3.5 bg-surface-900/90 border border-white/10 rounded-2xl text-left shadow-lg">
+          <div class="text-[10px] uppercase tracking-wider font-mono text-cyan-400 font-bold mb-1 flex items-center gap-1.5">
+            <i data-lucide="mic" class="w-3 h-3"></i> You said:
+          </div>
+          <div id="voiceUserTranscript" class="text-sm text-white font-sans min-h-[24px]">Listening for your voice...</div>
+        </div>
+
+        <!-- AI Voice Output Preview -->
+        <div class="p-3.5 bg-surface-950/90 border border-cyan-500/20 rounded-2xl text-left shadow-lg">
+          <div class="text-[10px] uppercase tracking-wider font-mono text-emerald-400 font-bold mb-1 flex items-center gap-1.5">
+            <i data-lucide="volume-2" class="w-3 h-3"></i> AI Answer:
+          </div>
+          <div id="voiceAiResponse" class="text-xs text-zinc-300 font-sans leading-relaxed min-h-[24px]">Ready.</div>
+        </div>
+      </div>
+
+      <!-- Bottom Voice Controls -->
+      <div class="w-full pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/10 text-xs font-mono">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <i data-lucide="audio-lines" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+          <select id="voiceSelectDropdown" class="godx-input w-full sm:w-60 px-2.5 py-1.5 text-[11px] cursor-pointer" onchange="onVoiceDropdownChange(this.value)">
+            <option value="">Default Neural Voice</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="stopVoiceSpeaking()" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 hover:text-rose-300 text-zinc-400 text-xs cursor-pointer border border-white/10 transition-colors">
+            Interrupt / Stop
+          </button>
+          <button onclick="closeVoiceInteractionMode()" class="px-4 py-1.5 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer shadow-lg">
+            Done
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
   <!-- MODULAR JAVASCRIPT LOGIC ENGINE                                            -->
   <!-- ========================================================================= -->
   <script src="./modules/state.js"></script>
@@ -1043,6 +1122,7 @@
   <script src="./modules/ai-studio.js"></script>
   <script src="./modules/codespace.js"></script>
   <script src="./modules/graphify.js"></script>
+  <script src="./modules/voice-studio.js"></script>
   <script src="./modules/compiler.js"></script>
   <script src="./modules/terminal.js"></script>
   <script src="./modules/whiteboard.js"></script>
