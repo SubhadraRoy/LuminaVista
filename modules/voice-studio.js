@@ -56,9 +56,15 @@
           }
         }
 
+        const currentStream = (finalTranscript || interimTranscript || '').trim();
         const transcriptEl = document.getElementById('voiceUserTranscript');
         if (transcriptEl) {
-          transcriptEl.textContent = (finalTranscript || interimTranscript || 'Listening...').trim();
+          transcriptEl.textContent = currentStream || 'Listening...';
+        }
+
+        // Real-Time Speculative Execution: AI starts formulating immediately on every word!
+        if (currentStream) {
+          onSpeculativeSpeechUpdate(currentStream);
         }
 
         // Reset silence timer on interim speech
@@ -67,12 +73,12 @@
         if (finalTranscript.trim()) {
           handleVoiceInputReceived(finalTranscript.trim());
         } else if (interimTranscript.trim()) {
-          // If paused for 1.4s after speaking, commit interim transcript
+          // If paused for 1.2s after speaking, commit interim transcript
           silenceTimer = setTimeout(() => {
             if (interimTranscript.trim() && isListening && !isThinking && !isSpeaking) {
               handleVoiceInputReceived(interimTranscript.trim());
             }
-          }, 1400);
+          }, 1200);
         }
       };
 
@@ -143,6 +149,51 @@
     loadSpeechVoices();
   }
 
+  // --- REAL-TIME SPECULATIVE PRE-COMPUTATION ENGINE ---
+  let speculativeDebounceTimer = null;
+  let activeSpeculativeTask = null;
+  let cachedSpeculativeResult = null;
+  let lastSpeculativeText = '';
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function onSpeculativeSpeechUpdate(currentTranscript) {
+    const text = currentTranscript.trim();
+    if (!text || text.length < 3 || text === lastSpeculativeText) return;
+    lastSpeculativeText = text;
+
+    // Live In-Flight HUD telemetry: shows AI actively thinking and adjusting route as user speaks
+    const specHud = document.getElementById('voiceSpeculativeStream');
+    const jev = window.classifyJevIntentClient ? window.classifyJevIntentClient(text, window.vfs || {}) : { route: 'CONVERSATION' };
+
+    if (specHud) {
+      const snippet = text.length > 40 ? '...' + text.slice(-38) : text;
+      specHud.innerHTML = `
+        <div class="px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full flex items-center gap-2 text-[11px] text-cyan-300 font-mono animate-fadeIn shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+          <span><strong>In-Flight Speculation:</strong> [${jev.route}] • Pre-drafting: "<em>${escapeHtml(snippet)}</em>"</span>
+        </div>
+      `;
+    }
+
+    if (speculativeDebounceTimer) clearTimeout(speculativeDebounceTimer);
+    speculativeDebounceTimer = setTimeout(async () => {
+      if (!isListening || isThinking || isSpeaking) return;
+      try {
+        activeSpeculativeTask = text;
+        if (window.generateSimulatedAutonomousReply) {
+          const candidate = await window.generateSimulatedAutonomousReply(text);
+          if (activeSpeculativeTask === text) {
+            cachedSpeculativeResult = { text, candidate };
+          }
+        }
+      } catch (e) {}
+    }, 240);
+  }
+
   // 3. Strip Markdown and Code for Natural Spoken Text
   function sanitizeForVoice(text) {
     if (!text) return '';
@@ -166,58 +217,79 @@
       .trim();
   }
 
-  // 4. Speak Natural AI Response
+  function splitIntoSentences(text) {
+    const clean = sanitizeForVoice(text);
+    if (!clean) return [];
+    const matched = clean.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g);
+    return matched ? matched.map(s => s.trim()).filter(Boolean) : [clean];
+  }
+
+  // 4. Speak Natural AI Response via Chunked Sentence Queue (Immediate Audio Dispatch)
   function speakAiResponse(text, onComplete) {
     if (!('speechSynthesis' in window)) {
       if (onComplete) onComplete();
       return;
     }
 
-    const spokenText = sanitizeForVoice(text);
-    if (!spokenText) {
+    const sentences = splitIntoSentences(text);
+    if (!sentences || sentences.length === 0) {
       if (onComplete) onComplete();
       return;
     }
 
     window.speechSynthesis.cancel(); // Cancel any existing speech
+    let currentIdx = 0;
 
-    const utterance = new SpeechSynthesisUtterance(spokenText);
-    if (selectedVoice) utterance.voice = selectedVoice;
-    utterance.rate = speechRate;
-    utterance.pitch = speechPitch;
+    function speakNext() {
+      if (currentIdx >= sentences.length) {
+        isSpeaking = false;
+        setVisualizerState('idle');
+        if (onComplete) onComplete();
 
-    utterance.onstart = () => {
-      isSpeaking = true;
-      updateVoiceStatus('speaking', 'AI Speaking...');
-      setVisualizerState('speaking');
-      // Pause mic while speaking to avoid echo loop
-      if (recognition && isListening) {
-        try { recognition.stop(); } catch (e) {}
+        // Automatically re-arm listening for hands-free loop
+        const modal = document.getElementById('aiVoiceModal');
+        if (modal && modal.style.display !== 'none' && continuousMode) {
+          setTimeout(() => {
+            startListening();
+          }, 350);
+        }
+        return;
       }
-    };
 
-    utterance.onend = () => {
-      isSpeaking = false;
-      setVisualizerState('idle');
-      if (onComplete) onComplete();
-
-      // Automatically re-arm listening for hands-free loop
-      const modal = document.getElementById('aiVoiceModal');
-      if (modal && modal.style.display !== 'none' && continuousMode) {
-        setTimeout(() => {
-          startListening();
-        }, 400);
+      const sentence = sentences[currentIdx++];
+      if (!sentence) {
+        speakNext();
+        return;
       }
-    };
 
-    utterance.onerror = (e) => {
-      console.warn('[VoiceStudio] TTS Error:', e);
-      isSpeaking = false;
-      setVisualizerState('idle');
-      if (onComplete) onComplete();
-    };
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      if (selectedVoice) utterance.voice = selectedVoice;
+      utterance.rate = speechRate;
+      utterance.pitch = speechPitch;
 
-    window.speechSynthesis.speak(utterance);
+      utterance.onstart = () => {
+        isSpeaking = true;
+        updateVoiceStatus('speaking', `AI Speaking (${currentIdx}/${sentences.length})...`);
+        setVisualizerState('speaking');
+        // Pause mic while speaking to avoid echo loop
+        if (recognition && isListening) {
+          try { recognition.stop(); } catch (e) {}
+        }
+      };
+
+      utterance.onend = () => {
+        speakNext();
+      };
+
+      utterance.onerror = (e) => {
+        console.warn('[VoiceStudio] TTS Error:', e);
+        speakNext();
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    speakNext();
   }
 
   function stopSpeaking() {
@@ -232,8 +304,13 @@
     if (!promptText || isThinking) return;
 
     if (silenceTimer) clearTimeout(silenceTimer);
+    if (speculativeDebounceTimer) clearTimeout(speculativeDebounceTimer);
+
+    const specHud = document.getElementById('voiceSpeculativeStream');
+    if (specHud) specHud.innerHTML = '';
+
     isThinking = true;
-    updateVoiceStatus('thinking', 'Formulating cognitive answer...');
+    updateVoiceStatus('thinking', 'Finalizing answer...');
     setVisualizerState('thinking');
 
     const aiBubble = document.getElementById('voiceAiResponse');
@@ -259,33 +336,41 @@
       const category = localStorage.getItem('lumina_ai_category') || 'general';
 
       let aiReply = '';
+      const cleanPrompt = promptText.trim().toLowerCase();
 
-      if (provider === 'simulation') {
-        if (window.generateSimulatedAutonomousReply) {
-          aiReply = await window.generateSimulatedAutonomousReply(promptText);
-        } else {
-          aiReply = "I have processed your voice command within the sovereign workspace.";
-        }
-      } else {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: promptText,
-            messages: window.aiConversation,
-            provider,
-            model,
-            persona,
-            category,
-            currentVfs: window.vfs || {}
-          })
-        });
+      // In-Flight Speculative Hit: Answer was pre-computed while user was speaking!
+      if (cachedSpeculativeResult && cachedSpeculativeResult.text.trim().toLowerCase() === cleanPrompt) {
+        aiReply = cachedSpeculativeResult.candidate;
+      }
 
-        if (res.ok) {
-          const data = await res.json();
-          aiReply = data.reply || data.output || "I have completed your request.";
+      if (!aiReply) {
+        if (provider === 'simulation') {
+          if (window.generateSimulatedAutonomousReply) {
+            aiReply = await window.generateSimulatedAutonomousReply(promptText);
+          } else {
+            aiReply = "I have processed your voice command within the sovereign workspace.";
+          }
         } else {
-          aiReply = "I encountered an upstream network issue, but I am ready for your next voice command.";
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: promptText,
+              messages: window.aiConversation,
+              provider,
+              model,
+              persona,
+              category,
+              currentVfs: window.vfs || {}
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            aiReply = data.reply || data.output || "I have completed your request.";
+          } else {
+            aiReply = "I encountered an upstream network issue, but I am ready for your next voice command.";
+          }
         }
       }
 
