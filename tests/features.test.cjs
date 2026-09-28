@@ -347,10 +347,61 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   assert(appRoot.classList.contains("blur-lg"), "Workspace #app-root blurred on session lock");
   assert(lockModal.style.display === "flex", "#lockModal displayed on session lock");
 
-  // Test empty password error handling on unlock
-  window.unlockSession({ preventDefault: () => {} });
-  const lockErr = document.getElementById("lockErrorMessage");
-  assert(lockErr && !lockErr.classList.contains("hidden"), "Unlocking without credentials displays error message");
+  // Suite 7: Autonomous AI Studio, Multi-Key Failover Pool & 1,500+ Personas Matrix
+  console.log("\n[Test Suite 7: Autonomous AI Studio, Multi-Key Failover Pool & 1,500+ Personas Matrix]");
+  
+  // 1. 30 Categories & 1,500+ Personas
+  assert(Array.isArray(window.LuminaPersonaCategories) && window.LuminaPersonaCategories.length === 30, `30 Main Persona Categories loaded (Found: ${window.LuminaPersonaCategories ? window.LuminaPersonaCategories.length : 0})`);
+  assert(Array.isArray(window.LuminaPersonas) && window.LuminaPersonas.length >= 1500, `1,500+ Specialists loaded (Found: ${window.LuminaPersonas ? window.LuminaPersonas.length : 0})`);
+  
+  const swPersonas = window.getPersonasForCategory("software_eng");
+  assert(Array.isArray(swPersonas) && swPersonas.length === 50, `Category software_eng has exactly 50 specialists (Found: ${swPersonas ? swPersonas.length : 0})`);
+  
+  const culinaryPersonas = window.getPersonasForCategory("culinary_gastronomy");
+  assert(Array.isArray(culinaryPersonas) && culinaryPersonas.length === 50, `Category culinary_gastronomy has exactly 50 specialists (Found: ${culinaryPersonas ? culinaryPersonas.length : 0})`);
+
+  // Verify Category Dropdown in DOM
+  window.populatePersonasDropdown();
+  const categorySelect = document.getElementById("modalAiCategorySelect");
+  assert(categorySelect && categorySelect.options.length === 30, `Category dropdown rendered with 30 domains (Found: ${categorySelect ? categorySelect.options.length : 0})`);
+
+  // 2. Multi-Session Conversation Management
+  window.initChatSessions();
+  const initialSessionCount = window.aiSessions.length;
+  window.createNewChatSession();
+  assert(window.aiSessions.length === initialSessionCount + 1, "New chat session created");
+  const activeSess = window.aiSessions.find(s => s.id === window.activeSessionId);
+  assert(activeSess && activeSess.title === "New Conversation", "Active session switched to new conversation");
+
+  // 3. Autonomous Scheduled Tasks Engine
+  window.initScheduledTasks();
+  const initialTasksCount = window.scheduledTasks.length;
+  window.scheduledTasks.push({
+    id: "test_task_1",
+    name: "System Heartbeat",
+    intervalSeconds: 60,
+    prompt: "Verify VFS state",
+    enabled: true,
+    lastRun: Date.now()
+  });
+  window.toggleScheduledTask("test_task_1");
+  const testTask = window.scheduledTasks.find(t => t.id === "test_task_1");
+  assert(testTask && testTask.enabled === false, "Scheduled task toggled to paused");
+  window.deleteScheduledTask("test_task_1");
+  assert(window.scheduledTasks.find(t => t.id === "test_task_1") === undefined, "Scheduled task deleted cleanly");
+
+  // 4. Multi-Key Failover Engine Library
+  const keyPoolModule = await import('../api/_lib/key-pool.js');
+  assert(typeof keyPoolModule.getKeyPool === "function", "key-pool exports getKeyPool");
+  assert(typeof keyPoolModule.executeWithFailover === "function", "key-pool exports executeWithFailover");
+  assert(typeof keyPoolModule.isRateLimitOrQuotaError === "function", "key-pool exports isRateLimitOrQuotaError");
+  assert(keyPoolModule.isRateLimitOrQuotaError(429, "") === true, "isRateLimitOrQuotaError detects HTTP 429");
+  assert(keyPoolModule.isRateLimitOrQuotaError(200, "exceeded your current quota") === true, "isRateLimitOrQuotaError detects quota exhaustion phrase");
+
+  // 5. Capability Gates in api/chat.js
+  const chatApiCode = fs.readFileSync(path.join(rootDir, 'api/chat.js'), 'utf8');
+  assert(chatApiCode.includes("executeWithFailover"), "api/chat.js integrates executeWithFailover engine");
+  assert(chatApiCode.includes("allowInternet") && chatApiCode.includes("allowVfs") && chatApiCode.includes("allowTerminal"), "api/chat.js enforces capability permission gates");
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

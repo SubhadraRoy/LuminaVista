@@ -232,12 +232,32 @@ async function runBrowserTest() {
     test(`Switched and verified visibility of #${t}`, isVisible);
   }
 
-  // 4. Verify 22 Personas Roster in DOM
+  // 4. Verify 30 Categories & 1,500+ Specialists Matrix in DOM
   const personaCount = await evaluate("window.LuminaPersonas.length");
-  test(`Loaded ${personaCount} personas (expected 22)`, personaCount >= 20);
+  test(`Loaded ${personaCount} personas (expected >= 1500)`, personaCount >= 1500);
+
+  const categoryOptionsCount = await evaluate("document.getElementById('modalAiCategorySelect')?.options.length || 0");
+  test(`Category dropdown has 30 domains (Found: ${categoryOptionsCount})`, categoryOptionsCount === 30);
 
   const selectCount = await evaluate("document.getElementById('modalAiPersonaSelect').options.length");
-  test(`Persona dropdown has ${selectCount} options (roster populated)`, selectCount >= 20);
+  test(`Persona dropdown has ${selectCount} options for active category`, selectCount === 50);
+
+  // Test dynamic 2-tier category switching in browser
+  await evaluate("document.getElementById('modalAiCategorySelect').value = 'cybersecurity'; onModalCategoryChange();");
+  const cyberSpecialistCount = await evaluate("document.getElementById('modalAiPersonaSelect').options.length");
+  test("Switching category to 'cybersecurity' dynamically loads 50 specialists", cyberSpecialistCount === 50);
+
+  // Test Thinking Orb Canvas Presence
+  const hasThinkingOrb = await evaluate("document.getElementById('headerThinkingOrb') !== null");
+  test("Thinking Orb canvas rendered in AI Studio header", hasThinkingOrb);
+
+  // Test Sessions Drawer Toggle
+  await evaluate("toggleSessionsDrawer(true)");
+  const isDrawerOpen = await evaluate("!document.getElementById('aiSessionsDrawer').classList.contains('hidden')");
+  test("Sessions history drawer opened", isDrawerOpen);
+  await evaluate("toggleSessionsDrawer(false)");
+  const isDrawerClosed = await evaluate("document.getElementById('aiSessionsDrawer').classList.contains('hidden')");
+  test("Sessions history drawer closed", isDrawerClosed);
 
   // 5. Whiteboard Pro Canvas & Tool Selection
   await evaluate("switchTab('tab-whiteboard')");

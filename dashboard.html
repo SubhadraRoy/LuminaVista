@@ -181,19 +181,43 @@
       <!-- ===================================================================== -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col lg:flex-row gap-4">
         
+        <!-- Left Slide-out Sessions Drawer -->
+        <div id="aiSessionsDrawer" class="hidden w-72 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/10 shadow-2xl h-full transition-all duration-300 shrink-0">
+          <div class="p-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
+              <span class="font-heading font-bold text-xs text-white">Chat Sessions</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="createNewChatSession()" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[11px] font-bold border border-cyan-500/30 flex items-center gap-1 cursor-pointer transition-colors" title="Start New Conversation">
+                <i data-lucide="plus" class="w-3 h-3"></i> New
+              </button>
+              <button onclick="toggleSessionsDrawer(false)" class="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+          <div class="p-2 border-b border-white/5 bg-surface-950/60">
+            <div class="relative">
+              <input type="text" id="sessionsSearchInput" oninput="filterSessionsList(this.value)" placeholder="Search conversations..." class="godx-input w-full px-2.5 py-1.5 pl-7 text-[11px] font-sans" />
+              <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2.5 top-2.5"></i>
+            </div>
+          </div>
+          <div id="aiSessionsList" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar"></div>
+        </div>
+
         <!-- Center Chat Box (Maximized Real Estate) -->
         <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
           
           <!-- ai-llm Header -->
           <div class="px-5 py-3 border-b border-white/5 bg-surface-900/60 flex items-center justify-between z-10 shrink-0 backdrop-blur-xl">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-black font-bold shadow-md shadow-cyan-500/20">
-                <i data-lucide="bot" class="w-5 h-5"></i>
-              </div>
+              <canvas id="headerThinkingOrb" width="36" height="36" class="shrink-0 cursor-pointer rounded-lg bg-surface-950/80 border border-cyan-500/30 shadow-[0_0_12px_rgba(0,242,254,0.2)]" title="Antigravity Cognitive Engine State"></canvas>
               <div>
                 <div class="flex items-center gap-2">
                   <h3 class="font-heading font-bold text-sm text-white leading-tight">ai-llm</h3>
                   <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
+                  <span id="failoverIndicatorBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-300 font-mono border border-amber-500/30 items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Key #1
+                  </span>
                   <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20 items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
                   </span>
@@ -201,21 +225,31 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Antigravity Autonomous
                   </span>
                 </div>
-                <p class="text-[10px] text-zinc-400 font-mono mt-0.5" id="aiActivePersonaBadge">Persona: Normal (Default)</p>
+                <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
               </div>
             </div>
 
             <!-- Action Controls -->
             <div class="flex items-center gap-2">
+              <button onclick="toggleSessionsDrawer()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Multi-Session History">
+                <i data-lucide="history" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Sessions</span>
+                <span id="sessionCountBadge" class="px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono">1</span>
+              </button>
+              <button onclick="openScheduledTasksModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors shadow-sm" title="Autonomous Scheduled Tasks">
+                <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span>Scheduled</span>
+                <span id="scheduledCountBadge" class="hidden px-1.5 py-0.2 rounded-full text-[9px] bg-purple-500 text-white font-mono">0</span>
+              </button>
               <button onclick="openAiConfigModal()" class="px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-2 cursor-pointer transition-colors" title="Configure AI & Personas">
                 <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span>Configure</span>
+                <span>Settings</span>
               </button>
               <button onclick="toggleCodespacePane()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-2 cursor-pointer transition-colors shadow-sm">
                 <i data-lucide="layout-template" class="w-3.5 h-3.5"></i>
                 <span id="btnCodespaceToggleText">Artifacts IDE</span>
               </button>
-              <button onclick="clearAiChat()" class="p-1.5 rounded-xl hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors" title="Clear Conversation">
+              <button onclick="clearAiChat()" class="p-1.5 rounded-xl hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors" title="Clear Current Chat">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             </div>
@@ -686,7 +720,7 @@
   <!-- FLOATING MODAL: AI-LLM CONFIGURATION (Pop-up via Button)                  -->
   <!-- ========================================================================= -->
   <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
-    <div class="glass-panel max-w-md w-full p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-5">
+    <div class="glass-panel max-w-lg w-full p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
       
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
@@ -697,11 +731,13 @@
 
       <!-- Execution Mode Selector -->
       <div class="space-y-1.5">
-        <label class="text-xs font-mono text-zinc-400">Execution Engine &amp; Provider:</label>
+        <label class="text-xs font-mono text-zinc-400">Execution Engine &amp; Provider Pool:</label>
         <select id="modalAiProviderSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="onModalProviderChange()">
-          <option value="gateway">Cloud Edge Gateway (Vercel Serverless / OpenRouter)</option>
-          <option value="custom">Direct Custom API Key (OpenRouter / OpenAI / Groq / Gemini)</option>
-          <option value="simulation">Autonomous Simulation Sandbox (100% Offline &amp; Fully Reliable)</option>
+          <option value="ollama_pool">Ollama Cloud Pool (8x Auto-Failover)</option>
+          <option value="nvidia_pool">NVIDIA NIM Cloud Pool (Multi-Key Auto-Failover)</option>
+          <option value="local">Local Ollama (http://localhost:11434)</option>
+          <option value="custom">Direct Custom Endpoint &amp; API Key</option>
+          <option value="simulation">Autonomous Sovereign Sandbox (100% Offline)</option>
         </select>
       </div>
 
@@ -709,36 +745,64 @@
       <div id="modalCustomAiKeyWrapper" class="hidden space-y-2 p-3 bg-surface-900/80 border border-cyan-500/20 rounded-xl">
         <div class="space-y-1">
           <label for="modalCustomAiKey" class="text-xs font-mono text-cyan-300">Custom API Key:</label>
-          <input type="password" id="modalCustomAiKey" placeholder="sk-or-v1-... or sk-..." class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
+          <input type="password" id="modalCustomAiKey" placeholder="sk-or-v1-... or nvapi-..." class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
         </div>
         <div class="space-y-1">
           <label for="modalCustomAiEndpoint" class="text-xs font-mono text-zinc-400">Endpoint URL (Optional):</label>
-          <input type="text" id="modalCustomAiEndpoint" placeholder="https://openrouter.ai/api/v1/chat/completions" class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
+          <input type="text" id="modalCustomAiEndpoint" placeholder="https://integrate.api.nvidia.com/v1/chat/completions" class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
         </div>
       </div>
 
-      <!-- Web Search Switch -->
-      <div class="p-3 bg-surface-900/80 border border-white/5 rounded-xl flex items-center justify-between">
-        <div>
-          <label for="modalCheckWebSearch" class="text-xs font-bold text-white cursor-pointer block">Live Internet Access</label>
-          <span class="text-[10px] text-zinc-400">Scrapes DuckDuckGo before LLM answer</span>
+      <!-- Tri-State Capability Toggles -->
+      <div class="space-y-2 p-3 bg-surface-900/80 border border-white/5 rounded-2xl">
+        <div class="text-[11px] font-mono text-cyan-300 uppercase tracking-wider font-bold mb-1">Autonomous Capabilities &amp; Permissions</div>
+        
+        <div class="flex items-center justify-between py-1.5 border-b border-white/5">
+          <div>
+            <label for="modalCheckWebSearch" class="text-xs font-bold text-white cursor-pointer block">Live Internet &amp; Web Search</label>
+            <span class="text-[10px] text-zinc-400">Autonomous DuckDuckGo live knowledge discovery</span>
+          </div>
+          <input type="checkbox" id="modalCheckWebSearch" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
         </div>
-        <input type="checkbox" id="modalCheckWebSearch" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
+
+        <div class="flex items-center justify-between py-1.5 border-b border-white/5">
+          <div>
+            <label for="modalCheckVfs" class="text-xs font-bold text-white cursor-pointer block">Virtual File System (VFS)</label>
+            <span class="text-[10px] text-zinc-400">Read, write, edit, and audit workspace artifacts</span>
+          </div>
+          <input type="checkbox" id="modalCheckVfs" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" checked />
+        </div>
+
+        <div class="flex items-center justify-between py-1.5">
+          <div>
+            <label for="modalCheckTerminal" class="text-xs font-bold text-white cursor-pointer block">Terminal &amp; MicroVM Execution</label>
+            <span class="text-[10px] text-zinc-400">Execute bash &amp; python scripts in Firecracker MicroVM</span>
+          </div>
+          <input type="checkbox" id="modalCheckTerminal" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" checked />
+        </div>
       </div>
 
       <!-- Model Selector -->
       <div class="space-y-1.5">
-        <label class="text-xs font-mono text-zinc-400">Active Ollama Model:</label>
+        <label class="text-xs font-mono text-zinc-400">Active Model:</label>
         <select id="modalAiModelSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfigFromModal()">
           <option value="gpt-oss:20b">gpt-oss:20b (Preferred Default)</option>
           <option value="gpt-oss:120b">gpt-oss:120b (Heavy Reasoning)</option>
+          <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct (NVIDIA NIM)</option>
+          <option value="deepseek-ai/deepseek-r1">deepseek-ai/deepseek-r1 (Reasoning Master)</option>
           <option value="gemma4:31b">gemma4:31b</option>
         </select>
       </div>
 
-      <!-- 22+ Personas Roster (Dynamically populated from personas.js) -->
+      <!-- 2-Tier Personas: Main Category Dropdown -->
       <div class="space-y-1.5">
-        <label class="text-xs font-mono text-zinc-400">System Persona Roster:</label>
+        <label class="text-xs font-mono text-cyan-300 font-bold">1. Main Category (30 Global Domains):</label>
+        <select id="modalAiCategorySelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="onModalCategoryChange()"></select>
+      </div>
+
+      <!-- 2-Tier Personas: Super Specialist Dropdown -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-mono text-cyan-300 font-bold">2. Super Specialist (50 per Category):</label>
         <select id="modalAiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onModalPersonaChange()"></select>
       </div>
 
@@ -751,6 +815,54 @@
       <div class="pt-2 flex gap-3">
         <button onclick="checkProviderQuota()" class="flex-1 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-cyan-400 border border-white/10 cursor-pointer">Quota Telemetry</button>
         <button onclick="closeAiConfigModal()" class="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer">Save &amp; Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: AUTONOMOUS SCHEDULED TASKS                                -->
+  <!-- ========================================================================= -->
+  <div id="aiScheduledModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-lg w-full p-6 rounded-3xl border border-purple-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-400"></i> Autonomous Scheduled Tasks
+        </h3>
+        <button onclick="closeScheduledTasksModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- New Task Form -->
+      <form id="newScheduledTaskForm" onsubmit="handleCreateScheduledTask(event)" class="p-3.5 bg-surface-900/80 border border-purple-500/20 rounded-2xl space-y-3">
+        <div class="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Register Scheduled Task
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="schedTaskName" placeholder="Task Name (e.g. Audit VFS)" required class="godx-input px-3 py-1.5 text-xs font-sans" />
+          <select id="schedTaskInterval" class="godx-input px-3 py-1.5 text-xs font-mono cursor-pointer">
+            <option value="60">Every 1 Minute</option>
+            <option value="300" selected>Every 5 Minutes</option>
+            <option value="900">Every 15 Minutes</option>
+            <option value="1800">Every 30 Minutes</option>
+            <option value="3600">Every 1 Hour</option>
+          </select>
+        </div>
+        <textarea id="schedTaskPrompt" rows="2" placeholder="Autonomous Directive Prompt (e.g. Inspect index.html and verify layout tokens)..." required class="godx-input w-full p-2 text-xs font-mono resize-none custom-scrollbar"></textarea>
+        <button type="submit" class="w-full py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-black text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2">
+          <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> Register Scheduled Task
+        </button>
+      </form>
+
+      <!-- Task List -->
+      <div class="space-y-2">
+        <div class="text-xs font-mono text-zinc-400 flex items-center justify-between">
+          <span>Active Schedules</span>
+          <span id="schedTasksStatusBadge" class="text-[10px] text-purple-300 font-bold">0 Active</span>
+        </div>
+        <div id="schedTasksList" class="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar"></div>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="closeScheduledTasksModal()" class="px-4 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-white border border-white/10 cursor-pointer">Dismiss</button>
       </div>
     </div>
   </div>

@@ -10,7 +10,15 @@
     });
 
     const targetTab = document.getElementById(id);
-    if (targetTab) targetTab.classList.remove("hidden");
+    if (targetTab) {
+      targetTab.classList.remove("hidden");
+      if (window.gsap) {
+        window.gsap.fromTo(targetTab, 
+          { opacity: 0, y: 8, scale: 0.998 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power2.out" }
+        );
+      }
+    }
 
     const activeBtn = document.getElementById(`btn-${id}`);
     if (activeBtn) {
@@ -137,30 +145,82 @@
     if (!ctx) return;
     let w = cv.width = window.innerWidth;
     let h = cv.height = window.innerHeight;
-    const p = Array.from({ length: 30 }, () => ({
+
+    let mouseX = -9999;
+    let mouseY = -9999;
+
+    window.addEventListener("mousemove", (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    }, { passive: true });
+
+    window.addEventListener("mouseleave", () => {
+      mouseX = -9999;
+      mouseY = -9999;
+    }, { passive: true });
+
+    const p = Array.from({ length: 45 }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      r: Math.random() * 1.5 + 0.5
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: Math.random() * 1.6 + 0.8
     }));
+
     function anim() {
       ctx.clearRect(0, 0, w, h);
+
+      // 1. Update & Repulse
       p.forEach(i => {
         i.x = (i.x + i.vx + w) % w;
         i.y = (i.y + i.vy + h) % h;
+
+        // Mouse repulsion physics
+        const dx = i.x - mouseX;
+        const dy = i.y - mouseY;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 130 && dist > 0) {
+          const force = ((130 - dist) / 130) * 1.8;
+          i.x += (dx / dist) * force;
+          i.y += (dy / dist) * force;
+        }
+
+        // Draw particle node
         ctx.beginPath();
         ctx.arc(i.x, i.y, i.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(0, 242, 254, 0.25)";
+        ctx.fillStyle = "rgba(0, 242, 254, 0.4)";
+        ctx.shadowColor = "rgba(0, 242, 254, 0.7)";
+        ctx.shadowBlur = 6;
         ctx.fill();
+        ctx.shadowBlur = 0;
       });
+
+      // 2. Draw Constellation Interconnection Mesh
+      for (let i = 0; i < p.length; i++) {
+        for (let j = i + 1; j < p.length; j++) {
+          const dx = p[i].x - p[j].x;
+          const dy = p[i].y - p[j].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 115) {
+            const alpha = (1 - dist / 115) * 0.22;
+            ctx.strokeStyle = `rgba(0, 242, 254, ${alpha})`;
+            ctx.lineWidth = 0.75;
+            ctx.beginPath();
+            ctx.moveTo(p[i].x, p[i].y);
+            ctx.lineTo(p[j].x, p[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
       requestAnimationFrame(anim);
     }
     anim();
+
     window.addEventListener("resize", () => {
       w = cv.width = window.innerWidth;
       h = cv.height = window.innerHeight;
-    });
+    }, { passive: true });
   }
 
   function startAutonomousSyncPoller() {

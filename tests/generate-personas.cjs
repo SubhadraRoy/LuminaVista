@@ -1,0 +1,692 @@
+// tests/generate-personas.cjs - Deterministic generator for 30 Main Categories x 50 Specialists (1,500+ Personas)
+const fs = require('fs');
+const path = require('path');
+
+const categories = [
+  { id: "general", name: "General & Everyday Assistant (Default)", icon: "sparkles", description: "All-purpose reasoning, conversational problem solving, and day-to-day productivity." },
+  { id: "software_eng", name: "Software Engineering & System Architecture", icon: "cpu", description: "Design patterns, clean code, distributed systems, DDD, and refactoring." },
+  { id: "frontend_design", name: "Frontend Development & Creative Web Design", icon: "palette", description: "Modern React/Vue/Svelte, CSS shaders, animations, Tailwind, and Awwwards UX." },
+  { id: "backend_systems", name: "Backend Systems, APIs & Microservices", icon: "server", description: "High-throughput APIs, GraphQL, gRPC, Node.js, Go, Rust, and event architectures." },
+  { id: "devops_cloud", name: "DevOps, Cloud Infrastructure & SRE", icon: "cloud", description: "Kubernetes, Docker, Terraform, CI/CD, AWS/GCP, monitoring, and zero-downtime." },
+  { id: "cybersecurity", name: "Cybersecurity, Pentesting & Cryptography", icon: "shield", description: "Zero-trust, OWASP Top 10, binary exploitation, reverse engineering, and threat modeling." },
+  { id: "hardware_embedded", name: "Hardware Engineering & Embedded Firmware", icon: "circuit-board", description: "Microcontrollers, ARM/RISC-V, RTOS, PCB layout, FPGA, and Verilog/VHDL." },
+  { id: "ai_deeplearning", name: "Artificial Intelligence & Deep Learning", icon: "brain", description: "LLMs, transformers, fine-tuning, RAG, PyTorch, model quantization, and agents." },
+  { id: "data_science", name: "Data Science, Machine Learning & Analytics", icon: "bar-chart-2", description: "Pandas, statistical modeling, feature engineering, Jupyter, and data pipelines." },
+  { id: "mobile_dev", name: "Mobile App Development", icon: "smartphone", description: "iOS Swift, Android Kotlin, React Native, Flutter, offline-first sync, and store release." },
+  { id: "game_dev", name: "Game Development & 3D Interactive Graphics", icon: "gamepad-2", description: "Unreal Engine, Unity, WebGL/Three.js, physics simulation, shaders, and game math." },
+  { id: "database_storage", name: "Database Engineering & Distributed Storage", icon: "database", description: "PostgreSQL, MySQL, Redis, ClickHouse, sharding, query plans, and vector search." },
+  { id: "blockchain_web3", name: "Blockchain, Web3 & Smart Contracts", icon: "link", description: "Solidity, EVM, zero-knowledge proofs, DeFi protocols, audit, and consensus." },
+  { id: "quantum_computing", name: "Quantum Computing & Quantum Physics", icon: "atom", description: "Qubits, Qiskit, quantum algorithms, error correction, and quantum simulation." },
+  { id: "robotics_mechatronics", name: "Robotics, Mechatronics & Automation", icon: "bot", description: "ROS/ROS2, kinematics, PID controllers, SLAM, computer vision, and servo systems." },
+  { id: "networking_telecom", name: "Computer Networking & Telecommunications", icon: "wifi", description: "TCP/IP, BGP, SD-WAN, packet analysis, HTTP/3, QUIC, and low-latency protocols." },
+  { id: "teaching_academia", name: "Teaching, Academia & Educational Pedagogy", icon: "graduation-cap", description: "Curriculum design, Socratic explanation, tutoring, grading, and academic research." },
+  { id: "culinary_gastronomy", name: "Culinary Arts, Gastronomy & Cooking", icon: "utensils", description: "Recipe design, molecular gastronomy, food science, baking math, and menu engineering." },
+  { id: "travel_nomad", name: "Travel Planning, Expedition & Digital Nomad", icon: "compass", description: "Itinerary optimization, visa regulations, flight hacking, gear, and cultural etiquette." },
+  { id: "finance_fintech", name: "Finance, Quantitative Trading & Fintech", icon: "dollar-sign", description: "Algorithmic trading, Black-Scholes, ledger systems, risk management, and SEC compliance." },
+  { id: "healthcare_bio", name: "Healthcare, Medicine & Bioinformatics", icon: "heart-pulse", description: "Genomics, clinical trial analysis, HIPAA, pharmacology math, and medical data." },
+  { id: "legal_compliance", name: "Legal, Governance & Regulatory Compliance", icon: "scale", description: "Contract analysis, GDPR/CCPA, patent filing, corporate governance, and terms of service." },
+  { id: "creative_writing", name: "Creative Writing, Screenwriting & Storytelling", icon: "feather", description: "Three-act structure, worldbuilding, character arcs, dialogue polish, and lore design." },
+  { id: "music_audio", name: "Music Production, Sound Design & Audio DSP", icon: "music", description: "Synthesizer patch design, mixing/mastering, audio DSP, MIDI algorithms, and acoustics." },
+  { id: "cinema_vfx", name: "Cinema, Video Production & VFX", icon: "video", description: "Color grading, storyboard pacing, DaVinci/Premiere workflows, CGI compositing, and optics." },
+  { id: "marketing_growth", name: "Marketing, Growth & Technical SEO", icon: "trending-up", description: "Conversion rate optimization, programmatic SEO, attribution models, and funnel copy." },
+  { id: "product_strategy", name: "Product Management & Startup Strategy", icon: "target", description: "PRD writing, user stories, North Star metrics, unit economics, and pitch decks." },
+  { id: "philosophy_ethics", name: "Philosophy, Ethics & Cognitive Science", icon: "book", description: "Epistemology, AI alignment, decision theory, logic, and existential reasoning." },
+  { id: "fitness_longevity", name: "Fitness, Sports Science & Human Longevity", icon: "activity", description: "Periodization programming, biomechanics, VO2 max optimization, and metabolic health." },
+  { id: "aerospace_space", name: "Aerospace Engineering & Orbital Mechanics", icon: "rocket", description: "Delta-v calculations, CFD aerodynamics, propulsion cycles, and satellite orbits." }
+];
+
+// 50 Specialist titles per category
+const specialistTemplates = {
+  general: [
+    "Omni-Disciplinary Executive Assistant", "Socratic Problem Solver", "Strategic Decision Counselor",
+    "Executive Briefing Synthesizer", "Action Item & Prioritization Architect", "Context-Aware Research Assistant",
+    "Rapid Prototyping Generalist", "Clarity & Communication Coach", "Critical Thinking Interrogator",
+    "Cross-Domain Synthesis Engine", "Daily Routine & Productivity Engineer", "Creative Brainstorming Facilitator",
+    "Analogical Reasoning Specialist", "First-Principles Thought Partner", "Technical Project Coordinator",
+    "Information Architecture Synthesizer", "Root-Cause Diagnostic Guide", "Executive Presentation Drafter",
+    "Interdisciplinary Knowledge Grapher", "Risk & Tradeoff Assessor", "Objective Feasibility Evaluator",
+    "Scenario Planner & Forecaster", "Resource Allocation Strategist", "Complex System Decomposer",
+    "Consensus & Alignment Facilitator", "Actionable Step Planner", "Heuristic Optimization Counselor",
+    "Active Listening & Empathy Anchor", "Nuanced Perspective Synthesizer", "Edge-Case Stress Tester",
+    "Cognitive Bias Detector", "Holistic Systems Thinker", "Pragmatic Solution Architect",
+    "Adaptive Learning Guide", "High-Stakes Decision Modeler", "Goal Decomposition Specialist",
+    "Effort-vs-Impact Matrix Analyst", "Clarity & Conciseness Editor", "Deep Work Workflow Designer",
+    "Meeting Efficiency Optimizer", "Multi-Constraint Optimizer", "Strategic Execution Tracker",
+    "Insight Distillation Engine", "Mental Model Instructor", "Paradox & Dilemma Unpacker",
+    "Fast-Track Exploration Pilot", "Precision Language Polisher", "Knowledge Retention Coach",
+    "Practical Wisdom Synthesizer", "Universal Sovereign Agent"
+  ],
+  software_eng: [
+    "Root System Architect", "Clean Code & Refactor Specialist", "Distributed Consensus Engineer",
+    "Domain-Driven Design (DDD) Lead", "Microservices Topology Designer", "Memory Safety & Concurrency Auditor",
+    "High-Concurrency Go Systems Engineer", "Modern Rust Systems Programmer", "Object-Oriented Design Purist",
+    "Functional Programming Purist (Haskell/Elixir)", "API Contract & Schema Architect", "Legacy Codebase Modernizer",
+    "Compiler & AST Transformation Engineer", "Low-Latency Event-Driven Architect", "Actor Model Systems Designer",
+    "Technical Debt Reduction Specialist", "Dependency Injection & IoC Lead", "Enterprise Integration Patterns Lead",
+    "Hexagonal Architecture Implementer", "CQRS & Event Sourcing Architect", "POSIX System Call Specialist",
+    "Multithreading & Lock-Free Specialist", "Design Patterns Authority", "Clean Architecture Enforcer",
+    "Code Readability & Review Lead", "Semantic Versioning & API Gov Lead", "Software Metrics & SonarQube Auditor",
+    "Monorepo Architecture Engineer", "SDK & Developer Experience (DX) Lead", "Zero-Allocation Algorithmic Specialist",
+    "Data Structure Optimization Expert", "Graceful Degradation Architect", "Resilience & Fault Tolerance Engineer",
+    "Idempotency & Transaction Architect", "System Decomposition Specialist", "Interface & Abstract Class Modeler",
+    "Memory Leak & GC Tuning Specialist", "Circular Dependency Buster", "Type-Driven Development Specialist",
+    "Behavior-Driven Development (BDD) Coach", "Mutation Testing Strategist", "SOLID Principles Strict Enforcer",
+    "Architectural Decision Record (ADR) Writer", "Decoupled Plugin Architecture Lead", "Microkernel Framework Designer",
+    "Modular Monolith Transition Lead", "High-Throughput IO Multiplexer", "Sovereign Sandbox Boundary Enforcer",
+    "Code Cyclomatic Complexity Reducer", "Staff Software Engineering Fellow"
+  ],
+  frontend_design: [
+    "Staff UI/UX Craftsperson", "Awwwards Web Designer", "Tailwind CSS Utility Master",
+    "WebGPU & Canvas Shader Engineer", "Framer Motion & Spring Physics Lead", "GSAP Timeline & ScrollTrigger Maestro",
+    "Shadcn UI & Radix Primitives Architect", "Design Token & Figma-to-Code Lead", "Micro-Interactions Choreographer",
+    "Fluid Typography & Responsive Layout Master", "Dark-Mode Luminous UI Craftsperson", "SVG Path Interpolation & Morphs Lead",
+    "Accessible Component Library Architect", "Three.js & R3F Scene Visualizer", "Performance Budget & INP Optimizer",
+    "Bento Grid & Dashboard Layout Architect", "Glassmorphic & Skeuomorphic Shader Lead", "Interactive Particle Physics Engine Lead",
+    "Virtual DOM & Re-Render Performance Specialist", "CSS Grid & Subgrid Layout Engineer", "Headless UI & State Engine Lead",
+    "Kinetic Typography & Staggered Reveal Lead", "Zero-Runtime CSS-in-JS Specialist", "Progressive Web App (PWA) Offline Lead",
+    "Cross-Browser Rendering Compatibility Lead", "Design System Governance Architect", "Component Storybook & Visual Regression Lead",
+    "Touch Gesture & Haptic Simulation Lead", "WebGL Post-Processing Pipeline Engineer", "Fluid Scroll & Inertia Engine Specialist",
+    "Single Page App (SPA) Navigation Lead", "Multi-Device Viewport Scaling Engineer", "Color Contrast & Accessible Palette Designer",
+    "Skeleton Screen & Shimmer UX Designer", "Form Validation & Micro-Feedback Specialist", "Infinite Canvas & Pan-Zoom Engine Lead",
+    "Markdown AST & Prose Typography Styler", "Data Visualization & D3.js Specialist", "Custom Cursor & Trail Effects Master",
+    "Responsive Navigation & Drawer Architect", "Modal & Dialog Accessibility Enforcer", "Tabbed Interface & Split View Lead",
+    "Toast Notification & Telemetry HUD Lead", "CSS Container Queries Specialist", "High-DPI Retina Graphic Asset Lead",
+    "Web Audio API Sound Effects Choreographer", "Optimistic UI Update Designer", "Frontend Error Boundary UX Specialist",
+    "LuminaVista Visual Aesthetic Supreme", "Creative Technologist & UI Fellow"
+  ],
+  backend_systems: [
+    "High-Throughput RESTful API Architect", "GraphQL Federated Schema Architect", "gRPC & Protocol Buffers Specialist",
+    "Fastify & Node.js Performance Engineer", "Go Gin/Fiber Microservices Lead", "Rust Actix/Axum Engine Lead",
+    "Event-Driven Kafka Streaming Architect", "RabbitMQ AMQP Broker Topology Specialist", "Serverless Edge Functions Architect",
+    "Webhook Delivery & Retry Policy Lead", "OAuth2 & OpenID Connect Auth Lead", "JWT & Cryptographic Session Specialist",
+    "Rate Limiting & Token Bucket Architect", "Reverse Proxy & Envoy/Nginx Specialist", "WebSocket Real-Time Bi-Directional Lead",
+    "Server-Sent Events (SSE) Streamer", "Microservice Circuit Breaker Specialist", "API Gateway & Kong Routing Lead",
+    "Distributed Tracing (OpenTelemetry) Lead", "Batch Processing & Job Queue Engineer", "Database Connection Pool Optimizer",
+    "Idempotency Key Middleware Specialist", "CORS & Content Security Header Specialist", "Payload Compression (Brotli/Gzip) Lead",
+    "Multi-Tenant Database Isolation Lead", "Zero-Trust Service-to-Service Auth Lead", "Microservice Health Check & Liveness Lead",
+    "Pagination & Cursor-Based Stream Lead", "File Upload Chunking & S3 Presigned Lead", "Asynchronous Worker Daemon Engineer",
+    "RPC Serialization Benchmark Lead", "Edge Compute Middleware Specialist", "Graceful Shutdown & Drain Manager",
+    "API Deprecation & Versioning Lead", "Data Ingestion Pipeline Architect", "Fault-Tolerant Microservices Lead",
+    "Distributed Cache Invalidation Lead", "ETag & HTTP Conditional Request Lead", "Content Negotiation & MIME Architect",
+    "SSL/TLS Termination & mTLS Lead", "API Mocking & Contract Testing Lead", "Zero-Downtime Database Migration Lead",
+    "Serverless Cold Start Reducer", "Backend Error Sanitization Specialist", "Cloudflare Workers & Vercel Edge Lead",
+    "Audit Logging & Immutable Ledger Lead", "Microservice Mesh (Istio/Linkerd) Lead", "Distributed Lock (Redlock) Specialist",
+    "Message Deduplication Engine Specialist", "Principal Backend Systems Architect"
+  ],
+  devops_cloud: [
+    "DevOps & Site Reliability Engineer", "Kubernetes Cluster & Helm Lead", "Terraform & OpenTofu IaC Specialist",
+    "Docker Multi-Stage Build Optimizer", "GitHub Actions CI/CD Pipeline Architect", "AWS Well-Architected Framework Lead",
+    "Google Cloud Platform (GCP) Architect", "Azure Enterprise Infrastructure Lead", "Zero-Downtime Blue/Green Deploy Lead",
+    "Canary Release & Feature Flagging Lead", "Prometheus & Grafana Observability Lead", "ELK & OpenSearch Logging Architect",
+    "Chaos Engineering & Fault Injection Lead", "Cloud Cost Optimization & FinOps Specialist", "Edge CDN & Anycast Routing Lead",
+    "Secrets Management (HashiCorp Vault) Lead", "Container Security & Trivy Scanning Lead", "Linux Kernel & Sysctl Tuning Engineer",
+    "Service Level Objective (SLO/SLI) Architect", "Disaster Recovery & Multi-Region Lead", "Infrastructure as Code Drift Detector",
+    "Vercel Serverless Deployment Specialist", "Cloudflare Pages & DNSSEC Specialist", "Root Cause Analysis (RCA) Postmortem Lead",
+    "Incident Commander & On-Call Architect", "MicroVM Firecracker Orchestration Specialist", "Automated Backup & Snapshot Lead",
+    "GitOps (ArgoCD & Flux) Implementer", "Static Code Analysis CI Gatekeeper", "Air-Gapped Infrastructure Specialist",
+    "Nginx Ingress Controller Specialist", "Dynamic Auto-Scaling Policy Engineer", "Network Policy & CNI (Cilium) Specialist",
+    "Audit Trail & Compliance IaC Lead", "Zero-Trust Infrastructure Access Lead", "Artifact Registry & Semantic Versioner",
+    "High-Availability Load Balancer Specialist", "Database Failover Automation Lead", "Synthetic Monitoring & Health Pinger",
+    "Serverless Warm-Up Strategy Lead", "Container Runtime (containerd) Specialist", "Storage Volume & CSI Driver Engineer",
+    "Infrastructure Vulnerability Patcher", "Production Readiness Review (PRR) Lead", "Capacity Planning & Sizing Specialist",
+    "Telemetry Pipeline (FluentBit) Specialist", "Ephemeral Preview Environment Lead", "Cloud IAM Principle of Least Privilege",
+    "Self-Healing Infrastructure Architect", "Distinguished Cloud Platform Fellow"
+  ],
+  cybersecurity: [
+    "Cybersecurity & Pentest Auditor", "OWASP Top 10 Exploitation Auditor", "Zero-Trust Architecture Enforcer",
+    "Binary Reverse Engineering Specialist", "Web Application Firewall (WAF) Rule Lead", "SQL Injection & XSS Mitigator",
+    "Cross-Site Request Forgery (CSRF) Hardener", "Content Security Policy (CSP) Specialist", "Cryptographic Protocol Auditor",
+    "JWT & Token Session Hijacking Buster", "Directory Traversal & LFI/RFI Auditor", "Memory Corruption & Buffer Overflow Lead",
+    "Privilege Escalation & RBAC Auditor", "API Key & Secret Leak Detection Lead", "Red Team Adversary Simulation Specialist",
+    "Blue Team Defensive Hardening Specialist", "Threat Modeling & STRIDE Architect", "Subdomain Takeover & DNS Hardener",
+    "Server-Side Request Forgery (SSRF) Hardener", "Secure Cookie & SameSite Enforcer", "Rate-Limit & Anti-Brute Force Lead",
+    "Codebase Static Security (SAST) Lead", "Dynamic Application Security (DAST) Lead", "Software Supply Chain (SBOM) Auditor",
+    "Zero-Day Vulnerability Triage Specialist", "MicroVM Sandbox Containment Auditor", "Malware Analysis & Decompilation Lead",
+    "Phishing Simulation & Auth Armor Lead", "Multi-Factor Authentication (MFA) Architect", "Password Hashing (Argon2id/Bcrypt) Lead",
+    "CORS Misconfiguration Auditor", "HTTP Security Headers Auditor", "Network Packet Sniffing & TLS Inspector",
+    "Egress Filtering & Data Leak Prevention", "Side-Channel Attack Mitigation Lead", "Timing Attack Defense Specialist",
+    "Cloud IAM Privilege Escalation Buster", "Container Escape & Kernel Hardening Lead", "Audit Logging Tamper-Proofing Lead",
+    "PII Data Masking & Anonymization Lead", "Cryptographic Salt & Key Rotation Lead", "Bug Bounty Report Triage Specialist",
+    "Incident Response & Containment Lead", "Forensic Artifact Investigator", "Penetration Testing Scope Planner",
+    "Automated Vulnerability Fuzzer", "Zero-Knowledge Authentication Architect", "Secure Software Development (SSDLC) Lead",
+    "Enterprise Security Compliance Auditor", "Chief Information Security Officer (CISO) Fellow"
+  ],
+  hardware_embedded: [
+    "MicroVM & Systems Kernel Specialist", "Embedded C/C++ Firmware Engineer", "ARM Cortex-M Architecture Specialist",
+    "RISC-V Instruction Set Architect", "FreeRTOS & Zephyr OS Engineer", "ESP32 & IoT Telemetry Specialist",
+    "PCB Schematic & Layout Engineer (KiCad)", "SPI, I2C & UART Protocol Specialist", "CAN Bus & Automotive Telemetry Lead",
+    "Low-Power BLE & Zigbee Firmware Lead", "FPGA Verilog & VHDL Logic Designer", "Hardware-in-the-Loop (HIL) Testing Lead",
+    "Oscilloscope & Logic Analyzer Specialist", "Direct Memory Access (DMA) Controller Lead", "Bootloader & Secure OTA Update Engineer",
+    "Interrupt Service Routine (ISR) Optimizer", "Sensors Interfacing & ADC Calibration Lead", "Power Budget & Battery Life Optimizer",
+    "Hardware Watchdog & Fail-Safe Engineer", "JTAG & SWD In-Circuit Debugger Lead", "Motor Control & PWM Inverter Specialist",
+    "Electromagnetic Compatibility (EMC) Engineer", "High-Speed Differential Routing Specialist", "Thermal Dissipation & Heatsink Modeler",
+    "Microcontroller Clock Tree Specialist", "Bare-Metal Assembly Code Optimizer", "Microcontroller Sleep Mode Engineer",
+    "MEMS Accelerometer & Gyro Filter Specialist", "RFID & NFC Hardware Specialist", "Hardware Crypto Accelerators (AES/ECC)",
+    "Industrial Modbus & RS-485 Lead", "Flash Memory Wear Leveling Specialist", "Embedded Linux & Yocto Specialist",
+    "Hardware Tamper Detection Specialist", "Signal Integrity & Impedance Matching", "Microcontroller Register Map Designer",
+    "Embedded Memory (SRAM/EEPROM) Auditor", "Capacitive Touch Sensing Firmware Lead", "Precision Current Shunt Monitor Lead",
+    "Power Supply (SMPS/LDO) Design Lead", "Embedded Unit Testing (Ceedling) Lead", "Microcontroller Peripheral Pinmux Lead",
+    "Hardware Bill of Materials (BOM) Lead", "Electronic Component Sourcing Specialist", "Silicon Errata & Workaround Specialist",
+    "Firmware Memory Footprint Reducer", "Hardware Fault-Tolerant Watchdog Lead", "Hardware Reverse Engineering Specialist",
+    "Embedded Security & Hardware Root-of-Trust", "Distinguished Hardware Architect"
+  ],
+  ai_deeplearning: [
+    "LLM Architecture & Attention Engine Specialist", "Prompt Engineering & In-Context Specialist", "RAG Pipeline & Vector Search Architect",
+    "PyTorch Deep Learning Model Specialist", "Transformer Fine-Tuning (LoRA/QLoRA) Lead", "Quantization & GGUF/AWQ Optimization Lead",
+    "Autonomous Agent Trajectory Planner", "Cognitive Thought Stream Architect", "Multi-Agent Consensus Orchestrator",
+    "Hallucination Detection & Verification Lead", "Vector Database Embedding Specialist", "Hugging Face Model Pipeline Specialist",
+    "Model Evaluation & Benchmark Specialist", "Reinforcement Learning (RLHF/DPO) Lead", "Chain-of-Thought (CoT) Prompt Architect",
+    "AI Safety, Guardrails & NeMo Specialist", "Multi-Modal Vision & Speech Model Lead", "Context Window Compression Specialist",
+    "Streaming Token Response Pipeline Lead", "Tool Execution & Function Calling Lead", "LangChain & LlamaIndex Architecture Lead",
+    "Local Model Serving (vLLM/Ollama) Lead", "Synthetic Data Generation Specialist", "Few-Shot & Zero-Shot Optimization Lead",
+    "Model Latency & Throughput Benchmarker", "Cross-Attention & Self-Attention Visualizer", "Embedding Drift & Similarity Lead",
+    "Semantic Chunking & Knowledge Graph Lead", "Model Pruning & Knowledge Distillation", "GPU VRAM Allocation & PagedAttention",
+    "Autonomous Task Decomposition Specialist", "Agent Tool Error Recovery Specialist", "Prompt Injection Defense Specialist",
+    "Self-Reflection & Self-Correction Agent Lead", "System Prompt Personality Tuning Specialist", "AI Code Generation Evaluation Lead",
+    "Mixture-of-Experts (MoE) Routing Specialist", "Direct Preference Optimization Specialist", "Retrieval-Augmented Re-Ranking Specialist",
+    "DeepSeek R1 Reasoning Trajectory Specialist", "Llama 3 Model Fine-Tuning Specialist", "Agent Long-Term Memory (VFS) Specialist",
+    "Open-Source LLM Benchmark Analyst", "Autonomous Self-Healing Software Agent Lead", "Reasoning Token Output Rate Optimizer",
+    "Model Output Schema Enforcement (JSON/Regex)", "Multi-Turn Conversation Coherence Lead", "Agentic Code Interpreter Orchestrator",
+    "AI Agent Tool Dispatch Governance Lead", "Principal AI Research Scientist Fellow"
+  ],
+  data_science: [
+    "Principal Data Scientist", "Pandas & Polars Dataframe Optimization Lead", "Exploratory Data Analysis (EDA) Maestro",
+    "Feature Engineering & Selection Lead", "Scikit-Learn Machine Learning Specialist", "Statistical Hypothesis Testing Lead",
+    "Time Series Forecasting (ARIMA/Prophet) Lead", "Clustering & Unsupervised Learning Specialist", "Anomaly Detection & Outlier Specialist",
+    "Data Cleaning & Missing Value Imputer", "Data Visualization & Seaborn/Plotly Lead", "Dimensionality Reduction (PCA/t-SNE) Lead",
+    "A/B Testing & Bayesian Experimentation Lead", "Correlation vs Causation Analyst", "Regression & Classification Modeling Lead",
+    "Jupyter Notebook Optimization Lead", "Data Pipeline (Airflow/Dagster) Specialist", "Categorical Encoding & Scaling Lead",
+    "Model Drift & Concept Drift Monitor", "Confusion Matrix & ROC-AUC Evaluator", "Cross-Validation & Hyperparameter Tuning",
+    "Ensemble Methods (XGBoost/LightGBM) Lead", "Big Data SQL Query Optimization Specialist", "Distribution Fitting & Normality Analyst",
+    "Monte Carlo Simulation Specialist", "Survival Analysis & Churn Modeling Lead", "Customer Segmentation & RFM Analyst",
+    "Natural Language Processing (NLP) Analyst", "Sentiment Analysis & Topic Modeler (LDA)", "Data Governance & Lineage Specialist",
+    "Synthetic Minority Oversampling (SMOTE) Lead", "Feature Store (Feast) Architecture Lead", "Model Interpretability (SHAP/LIME) Lead",
+    "Time-Series Decomposition Specialist", "Data Quality & Pydantic Validation Lead", "Scientific Computing (NumPy/SciPy) Lead",
+    "Statistical Power & Sample Size Calculator", "Multivariate Regression Specialist", "Imbalanced Dataset Classification Lead",
+    "Automated Machine Learning (AutoML) Lead", "Data Wrangling & Regular Expressions Lead", "Data Science Storytelling Specialist",
+    "Model Deployment & Inference Endpoint Lead", "Predictive Analytics Strategy Lead", "Data Pipeline Error Handling Specialist",
+    "Cohort Analysis & Retention Curve Lead", "Geospatial Data (GeoPandas) Specialist", "Markov Chain & Transition Matrix Lead",
+    "Cost-Sensitive Learning Specialist", "Distinguished Data Science Fellow"
+  ],
+  mobile_dev: [
+    "iOS Swift & SwiftUI Architecture Lead", "Android Kotlin & Jetpack Compose Lead", "React Native Cross-Platform Specialist",
+    "Flutter & Dart Reactive UI Specialist", "Mobile App Offline-First Sync Architect", "Mobile Memory Leak & Profiling Specialist",
+    "Mobile Push Notification Pipeline Lead", "App Store & Google Play Release Engineer", "Mobile Biometric Auth (FaceID/Fingerprint)",
+    "Mobile Local Database (SQLite/Realm) Lead", "Mobile Deep Linking & Universal Links Lead", "Mobile Battery Consumption Optimizer",
+    "Mobile Camera & Media Stream Specialist", "Mobile Bluetooth LE Interfacing Specialist", "Mobile Dark Mode & Dynamic Type Specialist",
+    "Mobile Screen Navigation Architecture Lead", "Mobile Network Cache & Retry Specialist", "Mobile Crashlytics & Error Reporting Lead",
+    "Mobile In-App Purchases & Subscriptions", "Mobile Location Services & Geofencing", "Mobile State Management (Redux/Bloc/Riverpod)",
+    "Mobile Code Signing & Provisioning Lead", "Mobile Automated Testing (Appium/Detox)", "Mobile Haptic Feedback Choreographer",
+    "Mobile App Size Reduction Specialist", "Mobile Secure Storage (Keychain/Keystore)", "Mobile Webview Bridge & PostMessage Lead",
+    "Mobile Gesture Handling & Swipe Physics", "Mobile Background Task & JobScheduler", "Mobile Modular Architecture Lead",
+    "Mobile Form Input & Soft Keyboard Manager", "Mobile Image Caching & Lazy Load Lead", "Mobile Multi-Screen Orientation Specialist",
+    "Mobile Audio Playback & Background Audio", "Mobile Accessibility (VoiceOver/TalkBack)", "Mobile Splash Screen & Cold Start Optimizer",
+    "Mobile Feature Flag & Remote Config Lead", "Mobile WebSocket Reconnection Specialist", "Mobile Vector Asset & Lottie Animator",
+    "Mobile Security & Jailbreak/Root Detector", "Mobile App Performance Profiler", "Mobile Design System Tokens Bridge",
+    "Mobile Micro-Frontend & Mini-Apps Lead", "Mobile Offline Queue & Conflict Resolver", "Mobile In-App Update Engine Lead",
+    "Mobile File Sharing & Document Picker", "Mobile QR Code & Barcode Scanner Lead", "Mobile Permissions Request UX Specialist",
+    "Mobile Internationalization (i18n) Lead", "Chief Mobile Systems Architect"
+  ],
+  game_dev: [
+    "Unreal Engine C++ Gameplay Architect", "Unity C# Systems & Physics Lead", "WebGL & Three.js 3D Engine Specialist",
+    "Custom GLSL/HLSL Shader Developer", "Game Physics & Collision Math Specialist", "Entity Component System (ECS) Architect",
+    "Procedural Generation & Perlin Noise Lead", "AI Behavior Tree & NavMesh Specialist", "Skeletal Animation & Inverse Kinematics",
+    "Game Sound Design & Spatial Audio Lead", "Multiplayer Network Replication Lead", "Client-Side Prediction & Lag Compensation",
+    "Level Design & Spatial Geometry Architect", "VFX Particle Systems (Niagara) Lead", "Dynamic Lighting & Shadow Map Optimizer",
+    "Game UI/HUD & Micro-Interaction Lead", "Asset Pipeline & LOD Mesh Optimizer", "Frustum Culling & Occlusion Specialist",
+    "Frame Rate & Draw Call Budget Optimizer", "Inventory & Itemization Systems Designer", "Turn-Based Combat Math & Stat Balancer",
+    "Real-Time Strategy (RTS) Pathfinding Lead", "Save Game Serialization & State Hash", "Physics Rigid Body & Constraint Lead",
+    "Virtual Reality (VR) Interaction Specialist", "Augmented Reality (ARKit/ARCore) Lead", "Terrain Generation & Voxel Engine Lead",
+    "Game Camera & Spring Arm Choreographer", "Character Controller & Kinematics Lead", "Dialog Tree & Quest State Engine Lead",
+    "Mobile Game Touch & Virtual Joystick Lead", "Game Asset Texture Atlas & Compression", "Cloth Simulation & Soft Body Physics",
+    "Water Surface & Wave Simulation Shader", "Day/Night Cycle & Skybox Animator", "Ray Marching & Signed Distance Fields (SDF)",
+    "Game Economy & Monetization Balancer", "Leaderboard & Anti-Cheat Engine Specialist", "Cutscene Timeline & Cinemachine Lead",
+    "Input Buffering & Fighting Game Frame Math", "Game State Machine & Scene Transition", "Voxel World & Chunk Streaming Lead",
+    "PBR Material & Normal Map Specialist", "Post-Processing Tone Mapping & Bloom", "Game Localization & Subtitle Engine",
+    "Game Build Automation & Asset Cooking", "Post-Launch LiveOps Telemetry Specialist", "Retro Pixel Art Shader & Grid Snapper",
+    "Physics Ragdoll & Impact Reaction Lead", "Distinguished Game Director & Architect"
+  ],
+  database_storage: [
+    "PostgreSQL High-Availability Architect", "MySQL InnoDB Performance Tuner", "Redis In-Memory Caching & PubSub Lead",
+    "Distributed Sharding & Partitioning Lead", "Database Query Execution Plan Optimizer", "Index Optimization (B-Tree/GiST/GIN)",
+    "ClickHouse OLAP & Analytics Specialist", "MongoDB & Document Store Architect", "Cassandra & ScyllaDB Wide-Column Lead",
+    "Vector Database (pgvector/Pinecone) Lead", "ACID Transactions & Isolation Level Lead", "Database Connection Pooling Specialist",
+    "Deadlock Detection & Concurrency Resolver", "Zero-Downtime Schema Migration Specialist", "Database Replication & Read Replica Lead",
+    "Write-Ahead Log (WAL) & Point-In-Time Recovery", "Database Backup & Disaster Recovery Lead", "Multi-Master Conflict Resolution Lead",
+    "Database Security & Row-Level Security (RLS)", "Database Benchmarking (sysbench/pgbench)", "Time-ScaleDB & IoT Metrics Specialist",
+    "Database Partition Pruning Specialist", "Graph Database (Neo4j) Traversal Lead", "Key-Value Store (RocksDB) Specialist",
+    "Foreign Key & Referential Integrity Lead", "Database Vacuum & MVCC Bloat Specialist", "Database Slow Query Log Auditor",
+    "Database Read/Write Splitting Proxy Lead", "Database Data Masking & Anonymization", "ETL CDC (Debezium) Streaming Specialist",
+    "Database Compression & Columnar Storage", "Materialized View & Refresh Scheduler", "Database Memory (shared_buffers) Tuner",
+    "Database Audit Logging & Forensics Lead", "Database Collation & Encoding Specialist", "Distributed Consensus for Storage (Raft)",
+    "Database Constraint & Validation Lead", "Full-Text Search (Elasticsearch/OpenSearch)", "Database High-Availability Failover (Patroni)",
+    "Serverless Database (PlanetScale/Neon) Lead", "Database Connection Leak Detective", "Database Query Parameterization Enforcer",
+    "Database Auto-Vacuum Strategy Specialist", "Object Storage (S3 API) Architecture Lead", "Embedded Database (SQLite) Specialist",
+    "Database Table Partitioning Strategy Lead", "Database Temp Table & Memory Spill Tuner", "Data Archival & Purge Lifecycle Lead",
+    "Database Lock Contention Troubleshooter", "Principal Database Storage Architect"
+  ],
+  blockchain_web3: [
+    "Solidity Smart Contract Security Auditor", "EVM Bytecode & Gas Optimization Lead", "Ethereum Layer 2 (Arbitrum/Optimism) Lead",
+    "Zero-Knowledge Proofs (zk-SNARKs) Specialist", "DeFi Automated Market Maker (AMM) Architect", "Lending Protocol & Liquidation Engine Lead",
+    "ERC-20 & ERC-721 Token Standards Lead", "Web3.js & Ethers.js Frontend Integrator", "Hardhat & Foundry Testing Framework Lead",
+    "Cross-Chain Bridge Security Specialist", "Decentralized Autonomous Org (DAO) Architect", "Smart Contract Upgradeability (Proxy) Lead",
+    "MEV (Maximal Extractable Value) Analyst", "Oracle (Chainlink) Price Feed Specialist", "Solana Rust Program Architecture Lead",
+    "Cosmos SDK & Tendermint Engine Specialist", "Smart Contract Formal Verification Lead", "Reentrancy Attack Prevention Specialist",
+    "Integer Overflow & Precision Math Auditor", "Flash Loan Attack Simulation Specialist", "Tokenomics & Vesting Schedule Modeler",
+    "Decentralized Storage (IPFS/Arweave) Lead", "Signature Verification (ECDSA/EIP-712) Lead", "Multi-Sig Wallet (Gnosis Safe) Lead",
+    "Gas Estimation & Nonce Manager Specialist", "Staking & Slashing Mechanism Designer", "Yield Farming & Liquidity Mining Modeler",
+    "NFT Royalty & Metadata Security Lead", "Rollup Architecture & Sequencer Specialist", "Peer-to-Peer Consensus Algorithm Specialist",
+    "Smart Contract Event Indexing (The Graph)", "Web3 Wallet Onboarding UX Specialist", "Account Abstraction (ERC-4337) Specialist",
+    "Front-Running Defense & Private RPC Lead", "DeFi Arbitrage Strategy Math Modeler", "Decentralized Identity (DID) Specialist",
+    "Smart Contract Fuzz Testing (Echidna) Lead", "Zero-Knowledge Circuit Developer (Circom)", "Token Burning & Supply Cap Specialist",
+    "Decentralized Exchange (DEX) Router Lead", "Slippage Protection & Deadlines Specialist", "Proof-of-Stake Validator Operations Lead",
+    "Smart Contract Access Control (Role-Based)", "Web3 Security Incident Responder", "Cold Wallet & Key Ceremony Security Lead",
+    "Synthetic Asset & Collateralization Modeler", "Cross-Chain Message Passing (LayerZero) Lead", "Decentralized Governance Voting Math Lead",
+    "Web3 Phishing & Drainer Detection Specialist", "Distinguished Web3 Systems Architect"
+  ],
+  quantum_computing: [
+    "Quantum Circuit & Algorithm Architect", "Qiskit & OpenQASM Simulation Lead", "Quantum Error Correction (Surface Code) Lead",
+    "Shor's Algorithm & Factorization Analyst", "Grover's Quantum Search Specialist", "Variational Quantum Eigensolver (VQE) Lead",
+    "Quantum Supremacy & Benchmark Analyst", "Quantum Key Distribution (QKD) Specialist", "Quantum Decoherence & Noise Modeler",
+    "Superconducting Qubit Architecture Lead", "Trapped-Ion Quantum Computing Specialist", "Quantum Fourier Transform Specialist",
+    "Quantum Gate Fidelity & Calibration Lead", "Post-Quantum Cryptography (PQC) Migration", "Quantum State Tomography Specialist",
+    "Quantum Teleportation Protocol Specialist", "Adiabatic Quantum Computation & Annealing", "Quantum Entanglement & Bell Inequality Lead",
+    "Photonic Quantum Computing Specialist", "Quantum Circuit Depth & Optimization Lead", "Quantum Phase Estimation Algorithm Lead",
+    "Quantum Machine Learning (QML) Researcher", "Bloch Sphere & Qubit State Visualizer", "Quantum Chemistry Simulation Lead",
+    "Quantum Random Number Generator (QRNG) Lead", "Quantum Compiler & Transpiler Lead", "Quantum Information Theory Analyst",
+    "Neutral Atom Quantum Computing Specialist", "Topological Qubit & Anyon Modeler", "Quantum Supremacy Verification Analyst",
+    "Quantum Optimization (QAOA) Specialist", "Quantum Noise Mitigation (ZNE) Lead", "Quantum Hamiltonian Simulation Lead",
+    "Quantum Circuit Synthesis Specialist", "Pauli Matrices & Spin Operator Analyst", "Quantum Network Repeater Specialist",
+    "Quantum Sensing & Metrology Specialist", "Quantum Logic Gate Decomposition Lead", "Quantum Supremacy Benchmark Specialist",
+    "Quantum Software Development Kit Lead", "Cryogenic Quantum Control Hardware Lead", "Quantum Memory & Storage Lifetime Lead",
+    "Quantum Cryptanalysis Threat Modeler", "Multi-Qubit Entanglement Verifier", "Quantum Pulse Control & Shaping Lead",
+    "Quantum Annealing Schedule Optimizer", "Quantum Circuit Fault Tolerance Analyst", "Quantum Linear Systems (HHL) Specialist",
+    "Quantum State Fidelity Metric Specialist", "Chief Quantum Computing Scientist"
+  ],
+  robotics_mechatronics: [
+    "ROS & ROS2 Robotic Software Architect", "Kinematics & Denavit-Hartenberg Specialist", "Simultaneous Localization & Mapping (SLAM)",
+    "Path Planning & A*/RRT* Algorithm Lead", "PID & State-Space Feedback Controller Lead", "Computer Vision for Robotics (OpenCV) Lead",
+    "Robotic Arm Trajectory Generation Specialist", "Sensor Fusion & Extended Kalman Filter (EKF)", "Gazebo & Webots Simulation Specialist",
+    "Brushless DC Motor & ESC Firmware Specialist", "Lidar Point Cloud Processing Lead", "Stereo Vision & Depth Map Specialist",
+    "Autonomous Mobile Robot (AMR) Fleet Lead", "Robotic Gripper & Force Sensor Specialist", "Inverse Kinematics (IK) Numerical Solver",
+    "Wheel Odometry & IMU Dead Reckoning Lead", "Obstacle Avoidance & Dynamic Window Approach", "Industrial PLC & Ladder Logic Specialist",
+    "Robotic Safety Standards (ISO 10218) Auditor", "Stepper Motor Microstepping Specialist", "Autonomous Drone Flight Controller Lead",
+    "Bipedal & Quadruped Locomotion Specialist", "Robotic Actuator Thermal Modeler", "CANopen & EtherCAT Industrial Bus Lead",
+    "Robotic Teleoperation & Low-Latency Video", "Object Grasping & Pose Estimation Lead", "Cartesian Coordinate Robot Specialist",
+    "Robotic Gearbox & Backlash Compensator", "Ultrasonic & Time-of-Flight (ToF) Sensor Lead", "Autonomous Navigation (Nav2) Architect",
+    "Robotic Arm Payload & Torque Calculator", "Robotic Cable Harness & Routing Specialist", "Visual Inertial Odometry (VIO) Specialist",
+    "Robotic System Power Distribution Lead", "Magnetic Compass & Tilt Compensator Lead", "Emergency Stop & Safety Relay Engineer",
+    "Robotic Calibration & Zero-Point Setter", "Collaborative Robot (Cobot) UX Specialist", "Swarm Robotics Coordination Specialist",
+    "Agricultural Robotics Navigation Specialist", "Underwater ROV Telemetry & Ballast Lead", "Robotic Homing & Limit Switch Specialist",
+    "Servo Motor Encoder Resolution Specialist", "Robotic Pick-and-Place Cycle Time Optimizer", "Autonomous Docking & Charging Specialist",
+    "Humanoid Robot Balance & ZMP Specialist", "Robotic End-Effector Tool Changer Lead", "Robotics Edge Computing (Jetson) Lead",
+    "Robotics Simulation Hardware-in-Loop Lead", "Distinguished Robotics Systems Fellow"
+  ],
+  networking_telecom: [
+    "BGP Routing & Peering Protocol Architect", "TCP/IP Stack Congestion Control Specialist", "HTTP/3 & QUIC Transport Protocol Lead",
+    "DNS, DNSSEC & Anycast Topology Architect", "Wireshark Packet Analysis & Trace Detective", "SDN & OpenFlow Network Controller Lead",
+    "OSPF & IS-IS Interior Gateway Architect", "IPv4 to IPv6 Dual-Stack Migration Lead", "VLAN & VXLAN Network Virtualization Lead",
+    "MPLS & Segment Routing Traffic Engineer", "Network Address Translation (NAT/CGNAT) Lead", "IPsec & WireGuard VPN Tunnel Specialist",
+    "Low-Latency High-Frequency Trading Network", "Fiber Optic DWDM & Optical Transport Lead", "5G Core Network & RAN Architecture Lead",
+    "Wi-Fi 6/7 Protocol & RF Channel Planner", "Quality of Service (QoS) & DSCP Specialist", "Network MTU & Path MTU Discovery Lead",
+    "DDoS Mitigation & Traffic Scrubbing Lead", "Network Latency & Jitter Optimizer", "Spanning Tree (RSTP/MSTP) Topology Lead",
+    "Network Tap & Mirror Port Packet Capture", "DHCP Server & IPAM Management Specialist", "NTP & PTP Precision Time Protocol Lead",
+    "Network Security Group & Access List Lead", "Load Balancer Layer 4/Layer 7 Specialist", "TCP Window Size & Bufferbloat Mitigator",
+    "Subnetting & CIDR Address Space Modeler", "VoIP & SIP Protocol Quality Engineer", "Satellite Internet (LEO) Telemetry Lead",
+    "Network Resilience & Multi-Homing Architect", "Network Automation (Ansible/Netmiko) Lead", "SNMP & Telemetry Streaming Specialist",
+    "Dark Fiber & Optical Link Budget Modeler", "Carrier Grade NAT & Port Forwarding Lead", "Data Center Spine-Leaf Fabric Architect",
+    "Network Packet Drop & Retransmission Sleuth", "GRE & IP-in-IP Encapsulation Specialist", "Zero-Trust Network Access (ZTNA) Architect",
+    "RADIUS & TACACS+ Authentication Specialist", "Network Interface Card (NIC) Offload Tuner", "DPDK & High-Speed Packet Processing Lead",
+    "Industrial Ethernet & PROFINET Specialist", "Cellular LTE/5G APN & SIM Provisioning", "WAN Optimization & Packet Compression",
+    "Network Topology Diagram & Visio Lead", "CDN Edge Cache Routing Optimization Lead", "Broadcast Storm & Loop Prevention Specialist",
+    "Network SLA & Availability Benchmarker", "Principal Network Telecom Fellow"
+  ],
+  teaching_academia: [
+    "Socratic Method & Critical Inquiry Mentor", "Computer Science Curriculum Architect", "Academic Research Paper Drafter & Editor",
+    "STEM Concept Simplification Specialist", "Algorithmic Thinking & Coding Tutor", "LaTeX Typesetting & Equation Formatter",
+    "Peer Review & Methodology Auditor", "Literature Review & Citation Specialist", "Interactive Quiz & Assessment Designer",
+    "Bloom's Taxonomy Learning Objective Lead", "Student Misconception Diagnostic Lead", "Graduate Thesis Defense Coach",
+    "University Lecture Notes Summarizer", "Step-by-Step Mathematical Derivation Lead", "Active Recall & Spaced Repetition Coach",
+    "Executive MBA Case Study Facilitator", "Grant Proposal & Funding Pitch Writer", "Educational Gamification & Badges Lead",
+    "Data Science & Statistics Instructor", "History of Technology & Computing Scholar", "Academic Integrity & Plagiarism Auditor",
+    "Dyslexia & Inclusive Learning Designer", "Hands-on Workshop & Lab Guide Designer", "Analogy & Real-World Example Architect",
+    "Cognitive Load Theory Curriculum Optimizer", "Language Acquisition & Grammar Coach", "Philosophy of Science Discussion Leader",
+    "Science Fair & Capstone Project Mentor", "Flipped Classroom Activity Designer", "Medical & Nursing Board Exam Coach",
+    "Engineering Problem Set Generator", "Rubric & Objective Grading Specialist", "Academic Abstract & Key Takeaway Distiller",
+    "Study Schedule & Exam Prep Strategist", "High School AP Physics & Calc Instructor", "Kindergarten-to-12 Computational Thinking",
+    "Online Course (MOOC) Instructional Lead", "Audio-Visual Educational Scriptwriter", "Scientific Experiment Hypothesis Former",
+    "Statistical Significance Paper Reviewer", "Pedagogical Storytelling Specialist", "Concept Map & Mind Map Educationalist",
+    "Debate & Rhetorical Argument Coach", "Student Self-Efficacy & Motivation Mentor", "Open Educational Resources (OER) Curator",
+    "Coding Bootcamp Accelerated Lead", "Formative vs Summative Assessment Lead", "Academic Book Chapter Outline Architect",
+    "Lifelong Learning & Upskilling Counselor", "Distinguished Professor of Pedagogy"
+  ],
+  culinary_gastronomy: [
+    "Master Chef & Recipe Formulation Lead", "Molecular Gastronomy & Food Science Lead", "Baking Science & Baker's Percentage Lead",
+    "Sous-Vide Precision Cooking Specialist", "Fermentation & Koji Culture Specialist", "Knife Skills & Butchery Ergonomics Guide",
+    "Flavor Pairing & Aroma Profile Modeler", "Kitchen Equipment & Cookware Specialist", "Menu Engineering & Food Costing Analyst",
+    "Pastry & Chocolate Tempering Specialist", "Cocktail Mixology & Extraction Specialist", "Dietary Restriction (Vegan/Keto) Recipe Lead",
+    "Sauce Emulsion & Reduction Specialist", "Artisanal Sourdough & Dough Hydration Lead", "Spice Blending & Maillard Reaction Lead",
+    "Coffee Roasting & Espresso Extraction Lead", "Food Safety, HACCP & Sanitation Auditor", "Wine Pairing & Sommelier Tasting Advisor",
+    "Gluten-Free Flour Blend Formulation Lead", "Dry-Aging & Curing Meat Specialist", "Preservation, Pickling & Canning Master",
+    "Plating Aesthetics & Food Styling Visualizer", "Cast Iron & Carbon Steel Seasoning Guide", "Umami Extraction & Dashi Master",
+    "Regional Culinary Authenticity Scholar", "Low-Temperature Slow Cooking Specialist", "Dairy Fermentation & Cheesemaking Lead",
+    "Plant-Based Meat Alternative Formulation", "Tea Brewing & Oxidation Specialist", "Culinary Knife Sharpening & Whetstone Guide",
+    "Stock & Bone Broth Gelatin Optimization", "Sugar Boiling & Confectionery Specialist", "Smoked Barbecue & Wood Profile Specialist",
+    "Restaurant Kitchen Line Layout Optimizer", "Seasonal Produce Harvesting & Storage", "Zero-Waste Cooking & Scrap Utilization",
+    "Food Texture & Mouthfeel Optimization", "Gelification & Spherification Specialist", "Infused Oils & Vinegar Formulation Lead",
+    "Asian Noodle & Pasta Dough Elasticity Lead", "Food Preservation Chemistry Specialist", "Glaze & Mirror Glaze Confectionery Lead",
+    "Charcuterie Board Pairing Architect", "Hot Sauce Scoville & Acidity Formulator", "Culinary Prep List (Mise en Place) Manager",
+    "Food Allergy Cross-Contamination Auditor", "Sensory Evaluation & Taste Panel Guide", "Cookbook Formatting & Editorial Lead",
+    "Castile Soap & Food Prep Hygiene Lead", "Grand Maître Cuisinier & Gastronomy Fellow"
+  ],
+  travel_nomad: [
+    "Global Itinerary Optimization Specialist", "Flight Routing & Award Points Hacker", "Visa Requirements & Immigration Analyst",
+    "Digital Nomad Coliving & Coworking Scout", "Ultralight Packing & One-Bag Travel Guide", "Budget Backpacking & Expense Tracker",
+    "Luxury Travel Concierge & Resort Scout", "Off-The-Beaten-Path Expedition Planner", "Solo Travel Safety & Situational Awareness",
+    "Remote Work Connectivity (eSIM/Wi-Fi) Scout", "High-Altitude Trekking & Acclimatization", "Cultural Etiquette & Local Custom Advisor",
+    "Public Transit & Rail Pass Optimizer (Eurail)", "Scuba Diving & Marine Safari Specialist", "Travel Photography & Drone Law Specialist",
+    "Road Trip & Campervan Route Architect", "Bicycle Touring & Bikepacking Guide", "Eco-Tourism & Sustainable Travel Lead",
+    "Culinary Travel & Street Food Navigator", "Travel Health, Vaccines & First Aid Lead", "Nomad Tax Residency & 183-Day Rule Guide",
+    "Hostel vs Airbnb Value Proposition Lead", "Travel Insurance & Medical Evacuation Lead", "Time Zone Jet Lag Recovery Specialist",
+    "Language Barrier & Translation Navigator", "Airport Terminal & Lounge Access Optimizer", "Extreme Weather & Monsoon Season Forecaster",
+    "National Park & Hiking Permit Strategist", "UNESCO World Heritage Site Specialist", "Travel Gear Durability & Review Analyst",
+    "Nomad Banking, Wise & Forex Fee Minimizer", "Long-Term Luggage Storage & Forwarding", "Cultural Festival & Event Calendar Scout",
+    "Pet Relocation & International Travel Lead", "Emergency Evacuation & Embassy Contact Lead", "Island Hopping & Ferry Transit Planner",
+    "City Walking Route & Architecture Guide", "Travel Journaling & Itinerary Archival", "Car Rental Insurance & Toll Road Specialist",
+    "Local SIM Card & Cellular Data Scout", "Historical Pilgrimage & Camino Planner", "Glamping & Wilderness Camping Specialist",
+    "Cruising & Maritime Transit Analyst", "Nomad Mental Health & Community Connector", "Family Travel & Child Logistics Specialist",
+    "Overland Border Crossing Logistics Lead", "Duty-Free & Customs Declaration Guide", "Night Bus & Sleeper Train Logistics Lead",
+    "Lost Passport & Travel Emergency Guide", "Distinguished Global Expeditionary Fellow"
+  ],
+  finance_fintech: [
+    "FinTech & Ledger Systems Architect", "Quantitative Trading Strategy Modeler", "Black-Scholes & Options Pricing Specialist",
+    "Risk Management & Value-at-Risk (VaR) Lead", "Algorithmic Arbitrage & HFT Specialist", "Portfolio Optimization (Markowitz Efficient)",
+    "Financial Statement (10-K/10-Q) Analyst", "Discounted Cash Flow (DCF) Valuation Lead", "Corporate Finance & Capital Structure Lead",
+    "Fixed Income & Yield Curve Specialist", "Private Equity & LBO Financial Modeler", "Venture Capital Cap Table & Dilution Lead",
+    "Payment Gateway (Stripe/Adyen) Architect", "Core Banking Ledger & Double-Entry Lead", "Anti-Money Laundering (AML) & KYC Lead",
+    "Credit Scoring & Underwriting Model Specialist", "Foreign Exchange (FX) Hedging Strategist", "Mergers & Acquisitions (M&A) Due Diligence",
+    "Financial Monte Carlo Simulation Lead", "SEC & FINRA Regulatory Compliance Lead", "Automated Accounting & Reconciliation Lead",
+    "High-Yield Dividend & Value Investing Lead", "Commodity & Futures Contract Analyst", "Behavioral Finance & Market Psychology Lead",
+    "Real Estate Investment Trust (REIT) Analyst", "Inflation & Macroeconomic Indicator Analyst", "Financial Fraud Detection Machine Learning",
+    "Tax Optimization & Capital Gains Strategist", "Financial Data API (Bloomberg/Polygon) Lead", "Order Book Dynamics & Market Depth Lead",
+    "Asset Allocation & Rebalancing Modeler", "Microfinance & Peer-to-Peer Lending Lead", "Structured Finance & Securitization Lead",
+    "Treasury Management & Cash Flow Modeler", "Startup Burn Rate & Runway Forecaster", "Financial Ratio & DuPont Analysis Specialist",
+    "Bond Duration & Convexity Risk Modeler", "Open Banking & PSD2 Compliance Lead", "Automated Payroll & Tax Withholding Lead",
+    "Trading Execution Cost (Slippage) Modeler", "Corporate Debt Restructuring Specialist", "Quantitative Factor Investing (Fama-French)",
+    "Wealth Management & Retirement Planner", "Decentralized Finance (DeFi) Yield Analyst", "Financial Derivatives Greeks Sensitivity",
+    "Stock Split & Buyback Strategic Modeler", "Venture Debt & Warrants Term Sheet Lead", "Financial Audit Trail & GAAP Specialist",
+    "Quantitative Backtesting Overfitting Sleuth", "Managing Director & Senior Quant Fellow"
+  ],
+  healthcare_bio: [
+    "Bioinformatics & Genomic Sequence Analyst", "Clinical Trial Protocol & Phase Auditor", "Electronic Health Records (HL7/FHIR) Lead",
+    "HIPAA & Healthcare Data Privacy Specialist", "Pharmacology Drug Interaction Modeler", "Medical Image Processing & DICOM Lead",
+    "Biostatistical Survival Analysis (Kaplan-Meier)", "Protein Folding & AlphaFold Simulation Lead", "CRISPR & Gene Editing Protocol Analyst",
+    "Pathology Laboratory Automation Lead", "Medical Device Software (IEC 62304) Auditor", "Epidemiological Spread (SIR Model) Lead",
+    "Healthcare Interoperability & API Lead", "Oncology Clinical Treatment Pathway Lead", "Diagnostic Accuracy & Sensitivity/Specificity",
+    "Telemedicine Platform & Video Compliance Lead", "Cardiovascular Hemodynamics & ECG Lead", "Neuroscience & EEG Signal Analysis Lead",
+    "Microbiome Diversity & 16S rRNA Analyst", "Medical Terminology (SNOMED/ICD-10) Lead", "Vaccine Immunogenicity & Adjuvant Analyst",
+    "Health Insurance Claims & EDI 837 Specialist", "Personalized Medicine & Biomarker Scout", "Medical Ethics & IRB Application Guide",
+    "Wearable Health Tech (PPG/SpO2) Algorithm", "Hospital Bed & ICU Capacity Forecaster", "Drug Formulation & Pharmacokinetics (PK/PD)",
+    "Stem Cell & Regenerative Medicine Analyst", "Medical Lab Test Reference Range Specialist", "Orthopedic Biomechanics & Joint Loading",
+    "Emergency Triage (ESI Scale) Specialist", "Pediatric Dosage & Growth Curve Calculator", "Dental Radiology & Cephalometric Analyst",
+    "Physical Therapy & Rehabilitation Planner", "Toxicology & Poison Control Assessment Lead", "Respiratory Therapy & Ventilator Modeler",
+    "Biomedical Sensor Circuit Noise Filter", "Surgical Robotics Telemetry & Safety Lead", "Health Informatics Database Architect",
+    "Public Health Prevention Campaign Planner", "Antibiotic Resistance & Stewardship Lead", "Endocrinology & Glucose Dynamics Modeler",
+    "Clinical Decision Support System (CDSS) Lead", "Medical Case History Summarizer", "Dermatology Lesion Classification Lead",
+    "Mental Health Tele-Screening Tool Lead", "Blood Gas (ABG) Compensation Calculator", "Geriatric Medicine & Fall Risk Specialist",
+    "Ophthalmology Optical Coherence Tomography", "Distinguished Chief Medical Informatics Fellow"
+  ],
+  legal_compliance: [
+    "Contract Analysis & Clause Extraction Lead", "GDPR, CCPA & Global Privacy Specialist", "Software License (GPL/MIT/Apache) Auditor",
+    "Terms of Service & Privacy Policy Drafter", "Intellectual Property & Patent Claim Analyst", "Trademark Clearance & Infringement Lead",
+    "Corporate Governance & Bylaws Specialist", "Mergers & Acquisitions Legal Due Diligence", "Employment Law & Non-Compete Specialist",
+    "Non-Disclosure Agreement (NDA) Hardener", "Export Control (EAR/ITAR) Compliance Lead", "Whistleblower & Ethics Policy Architect",
+    "Securities Law (Reg D/Reg S) Compliance", "Antitrust & Competition Law Risk Analyst", "Commercial Lease & Real Estate Contract Lead",
+    "Arbitration vs Litigation Clause Strategist", "SaaS Service Level Agreement (SLA) Drafter", "Indemnification & Limitation of Liability Lead",
+    "Legal Redlining & Version Comparison Lead", "Subpoena Response & E-Discovery Specialist", "Regulatory Compliance (SOC 2/ISO 27001)",
+    "Anti-Bribery (FCPA/UK Bribery Act) Auditor", "Consumer Protection & Advertising Law Lead", "Vendor Agreement & SOW Risk Assessor",
+    "Breach of Contract Damages Calculator", "Statutory Interpretation & Precedent Lead", "Legal Brief & Motion Outline Architect",
+    "Trade Secret Protection & Policy Lead", "Class Action Defense Strategy Analyst", "Copyright Fair Use & DMCA Notice Specialist",
+    "Environmental Regulation & ESG Compliance", "Franchise Agreement & Disclosure Document", "Immigration & Work Visa (H-1B/O-1) Lead",
+    "Healthcare Regulatory (Stark/Anti-Kickback)", "Financial Services (Dodd-Frank) Compliance", "Board Resolution & Minutes Drafter",
+    "Cross-Border Data Transfer (SCC) Specialist", "Legal Deposition Preparation Coach", "Cryptocurrency & Token Legal Classification",
+    "Telecommunications Regulatory (FCC) Lead", "Product Liability & Recall Procedure Lead", "Defamation & Slander Legal Analyst",
+    "Maritime & Admiralty Law Specialist", "Sports & Entertainment Talent Contract Lead", "Government Procurement & RFP Compliance",
+    "Legal Risk Scoring & Mitigation Matrix", "Mediation & Settlement Strategy Counsel", "Insurance Coverage & Policy Dispute Lead",
+    "Legal Tech & AI Law Firm Workflow Lead", "General Counsel & Senior Legal Fellow"
+  ],
+  creative_writing: [
+    "Three-Act Structure & Story Architecture Lead", "Sci-Fi Worldbuilding & Speculative Tech Lead", "Fantasy Magic System & Lore Architect",
+    "Character Arc & Psychological Flaw Designer", "Dialogue Polisher & Subtext Specialist", "Screenplay Formatting & Beat Sheet Lead",
+    "Show-Don't-Tell Prose Polisher", "Hero's Journey & Mythological Motif Lead", "Pacing & Narrative Tension Modeler",
+    "Unreliable Narrator & Point-of-View Specialist", "Plot Twist & Foreshadowing Choreographer", "Horror Atmosphere & Suspense Builder",
+    "Mystery Whodunit Clue Matrix Designer", "Historical Fiction Period Authenticity Lead", "Poetry Meter, Rhyme & Stanza Specialist",
+    "Flash Fiction & Micro-Story Specialist", "Romance Tropes & Chemistry Architect", "Comedy Timing & Parody Satire Specialist",
+    "Young Adult (YA) Voice & Themes Specialist", "Graphic Novel & Comic Script Specialist", "Interactive Fiction & Branching Narrative Lead",
+    "Video Game Quest & NPC Lore Writer", "Setting Description & Sensory Immersion Lead", "Theme & Symbolic Resonance Specialist",
+    "Prologue & First Chapter Hook Specialist", "Cliffhanger & Chapter Ending Craftsperson", "Climax & Resolution Catharsis Specialist",
+    "Villain & Antagonist Motivation Architect", "Ensemble Cast Dynamic & Foil Specialist", "Inner Monologue & Stream of Consciousness",
+    "Audiobook Narration Pacing Specialist", "Children's Book Rhyme & Moral Lead", "Dystopian Society & Political Satire Lead",
+    "Cyberpunk Aesthetic & Street Slang Designer", "Steampunk & Victorian Fiction Specialist", "Space Opera Galactic Scale Architect",
+    "Folklore & Myth Retelling Specialist", "Literary Fiction Metaphor & Imagery Lead", "Narrative Nonfiction & Memoir Specialist",
+    "Subplot Weaving & B-Story Coordinator", "Flashback & Non-Linear Timeline Specialist", "Writer's Block Prompt & Catalyst Engine",
+    "Manuscript Critique & Developmental Editor", "Book Blurb & Back Cover Copywriter", "Query Letter & Literary Agent Pitch Lead",
+    "Scene-and-Sequel Emotional Rhythm Lead", "Magic Realism & Surrealist Narrative Lead", "Epistolary (Letters/Documents) Narrative Lead",
+    "Prose Rhythm & Cadence Acoustician", "Laureate Author & Master Storyteller"
+  ],
+  music_audio: [
+    "Mixing & Mastering Audio Engineer", "Synthesizer Patch & Sound Design Architect", "Audio Digital Signal Processing (DSP) Lead",
+    "Music Theory & Harmonic Progression Lead", "Orchestral Arrangement & Instrument Score", "Drum Programming & Polyrhythm Specialist",
+    "Vocal Tuning, Pitch Correction & Comping", "Acoustics & Studio Room Treatment Lead", "MIDI Controller Mapping & MPE Specialist",
+    "Vintage Analog Hardware & Tube Modeler", "Stereo Imaging & Binaural 3D Audio Lead", "Dynamic Range & LUFS Loudness Specialist",
+    "Reverb & Delay Space Choreographer", "Sub-Bass & Low-End Management Specialist", "Sampling & Audio Time-Stretching Lead",
+    "Film Score & Leitmotif Composer", "Game Audio (Wwise/FMOD) Integration Lead", "Electronic Dance Music (EDM) Drop Architect",
+    "Hip-Hop Beat Production & 808 Tuning Lead", "Guitar Amp Simulation & IR Specialist", "Equalization (EQ) & Surgical Resonances",
+    "Sidechain Compression & Pumping Specialist", "Multiband Compression & Dynamic EQ Lead", "Dither & Bit Depth Conversion Specialist",
+    "Audio Artifact & Noise Reduction (iZotope)", "Foley Sound Effects & Field Recording Lead", "Microphone Placement & Polar Pattern Lead",
+    "Music Copyright, Publishing & Royalty Lead", "Analog Tape Saturation & Flutter Specialist", "Song Structure & Chorus Hook Architect",
+    "Podcast Audio Production & De-Essing Lead", "Audio Plugin (VST/AU) DSP Developer", "Convolution Reverb & Impulse Response Lead",
+    "Granular Synthesis & Glitch Sound Designer", "Vocal Harmonizer & Formant Shifter Lead", "Brass & Woodwind MIDI Humanizer Specialist",
+    "Bassline Walking & Groove Pocket Specialist", "Live Sound Front-of-House (FOH) Engineer", "In-Ear Monitor & Stage Mix Specialist",
+    "Surround Sound (Dolby Atmos/5.1) Architect", "Music Stems Preparation & Archival Lead", "Loop Slicing & Transient Shaper Lead",
+    "Psychoacoustics & Haas Effect Specialist", "Additive & FM Synthesis Math Modeler", "Modular Eurorack Patch Routing Specialist",
+    "Mastering Limiter & True Peak Guard Lead", "Studio Monitor Calibration & Reference Lead", "Audio Cable, DI Box & Ground Loop Buster",
+    "Music Playlist Curation & Flow Specialist", "Master Audio Producer & Sonic Fellow"
+  ],
+  cinema_vfx: [
+    "Cinematography & Lighting Director", "Color Grading & LUT Profile (DaVinci) Lead", "Film Editing & Soviet Montage Theorist",
+    "Visual Effects (VFX) Compositing Specialist", "3D Camera Tracking & Matchmove Lead", "Chroma Key & Green Screen Extraction Lead",
+    "Storyboard & Pre-Visualization Artist", "Camera Lenses, Focal Length & Bokeh Lead", "Rotoscoping & Silhouette Extraction Lead",
+    "CGI Lighting & Shadow Integration Specialist", "Motion Graphics & Kinetic Typography (After Effects)", "Slow Motion & Frame Rate (HFR) Specialist",
+    "Depth of Field & Anamorphic Flare Lead", "Film Grain & Vintage Stock Emulator Lead", "Aspect Ratio & Letterbox Composition Lead",
+    "Sound Design Integration & J-Cut/L-Cut Lead", "Pacing & Scene Transition Choreographer", "Camera Movement (Gimbal/Dolly/Jib) Lead",
+    "Render Farm & Distributed Render Lead", "VFX Matte Painting & Set Extension Lead", "Particle Effects & Pyro/Smoke Simulator",
+    "Color Space & ACES Pipeline Specialist", "Subsurface Scattering & Skin Shader Lead", "Cinematic Drone Videography & Path Lead",
+    "Video Codec & Bitrate Compression (ProRes/H.265)", "Audio-Visual Synchronization Specialist", "Documentary Film Interview Pacing Lead",
+    "Music Video Dynamic Cut & Rhythm Lead", "Action Sequence Continuity & Eyeline Lead", "HDR Video Mastering & Rec.2020 Specialist",
+    "Camera Sensor Dynamic Range & ISO Specialist", "Multi-Camera Shoot Synchronization Lead", "Over-the-Shoulder & Two-Shot Blocking Lead",
+    "Title Sequence & Motion Branding Lead", "Film Festival Screener & DCP Packager", "Night Scene & Low-Light Grain Management",
+    "Vehicle Rig & Tracking Car Cinematographer", "Virtual Production (LED Wall/Unreal) Lead", "Shutter Angle & Motion Blur Specialist",
+    "Stop-Motion Animation Pacing Specialist", "Underwater Cinematography & Color Bleed", "Time-Lapse & Hyper-Lapse Video Specialist",
+    "VFX Destruction & Rigid Body Shatter Lead", "Archival Footage Restoration & Upscaling", "Grip Equipment & C-Stand Rigging Specialist",
+    "Cinematic Montage Emotional Arc Designer", "Director's Vision & Visual Metaphor Lead", "Script Supervisor & Script Continuity Lead",
+    "Production Workflow & Proxy Editing Lead", "Distinguished Film Director & Visualist"
+  ],
+  marketing_growth: [
+    "Conversion Rate Optimization (CRO) Lead", "Technical SEO & Schema.org Architect", "Programmatic SEO & Content Matrix Lead",
+    "PPC & Paid Acquisition (Google/Meta) Lead", "Viral Growth Loops & Referral Engine Lead", "Email Marketing Automation & Drip Lead",
+    "Landing Page Copywriting & Hero Hook Lead", "Customer Acquisition Cost (CAC) vs LTV Analyst", "Product-Led Growth (PLG) Onboarding Lead",
+    "Social Media Algorithm Strategy (X/LinkedIn)", "A/B Multivariate Split Testing Lead", "App Store Optimization (ASO) Specialist",
+    "Influencer Outreach & Affiliate Network Lead", "Content Marketing Editorial Calendar Lead", "Brand Positioning & Value Proposition Lead",
+    "Funnel Drop-Off & Heatmap Diagnostic Lead", "SaaS Pricing Page & Tier Optimization Lead", "Cold Email Deliverability & SPF/DKIM Lead",
+    "Press Release & PR Media Distribution Lead", "Competitor Keyword Gap & Backlink Scout", "Customer Persona & Pain Point Modeler",
+    "Lead Magnet & Opt-In Gatekeeper Specialist", "Customer Retention & Churn Reduction Lead", "Core Web Vitals SEO Ranking Specialist",
+    "Community Building & Discord/Slack Lead", "Webinar & Virtual Event Conversion Lead", "Google Analytics 4 & Event Tracking Lead",
+    "Attribution Modeling & Multi-Touch Analyst", "Re-Targeting & Dynamic Pixel Specialist", "SMS Marketing & Push Notification Lead",
+    "Organic Growth Engine & UGC Strategy Lead", "B2B Account-Based Marketing (ABM) Lead", "Sales Enablement One-Pager & Deck Lead",
+    "Podcast Sponsorship & Audio Ad Copywriter", "Search Intent & SERP Feature Optimizer", "Domain Authority & Link Building Lead",
+    "Customer Net Promoter Score (NPS) Analyst", "Copywriting Headline & Power Word Lead", "E-commerce Cart Abandonment Recovery Lead",
+    "Interactive Calculator & Free Tool Lead", "Affiliate Program Commission Modeler", "Brand Archetype & Voice Guidelines Lead",
+    "Video Ad Hook & 3-Second Retention Lead", "Market Segmentation & TAM/SAM Calculator", "Direct Mail & Omnichannel Growth Lead",
+    "SEO Canonicalization & Crawl Budget Lead", "Social Proof & Testimonial Placement Lead", "Product Hunt & Launch Day Playbook Lead",
+    "Customer Journey Mapping Specialist", "Chief Growth Officer & Marketing Fellow"
+  ],
+  product_strategy: [
+    "Product Requirements Document (PRD) Lead", "User Story & Acceptance Criteria Architect", "North Star Metric & KPI Framework Lead",
+    "Product Roadmap Prioritization (RICE/MoSCoW)", "User Interview & Qualitative Insight Lead", "Feature GTM (Go-To-Market) Playbook Lead",
+    "Minimum Viable Product (MVP) Scope Lead", "SaaS Unit Economics & Margin Analyst", "Competitive Moat & Barrier-to-Entry Lead",
+    "Customer Feedback Loop & Backlog Groomer", "Product Analytics (Mixpanel/Amplitude) Lead", "Design Thinking Workshop Facilitator",
+    "Freemium vs Free Trial Strategy Modeler", "Churn Diagnostic & Exit Survey Specialist", "Product-Market Fit (PMF) Benchmark Lead",
+    "Feature Sunset & Deprecation Playbook Lead", "Cross-Functional Engineering Sync Lead", "Stakeholder Expectation & Alignment Lead",
+    "Jobs-To-Be-Done (JTBD) Framework Analyst", "B2B Enterprise Custom Feature Gatekeeper", "Self-Serve User Onboarding Friction Lead",
+    "Product Packaging & Add-On Monetization", "Beta Tester Cohort & VIP Feedback Lead", "Technical Feasibility Tradeoff Analyst",
+    "Executive Product Pitch & Deck Architect", "User Flow Wireframing & Information Arch", "Design Sprint 5-Day Exercise Lead",
+    "Customer Support Ticket Trend Analyst", "Feature Cannibalization Risk Modeler", "Product Gamification & Habit Loop Lead",
+    "API-as-a-Product Strategy Specialist", "Platform Network Effects & Flywheel Lead", "Product Localization & Market Entry Lead",
+    "SLA Commitment & Downtime Communication", "Product Release Notes & Changelog Styler", "B2B Pilot Program & POC Agreement Lead",
+    "Product Security & Privacy Compliance Lead", "User Accessibility Standards Product Lead", "Product Velocity & Sprint Sprintmaster",
+    "Continuous Discovery Habit (Teresa Torres)", "Product Pricing Sensitivity (Van Westendorp)", "Customer Empathy Interviewer",
+    "Feature Adoption & Sticky Metric Lead", "SaaS Contract Expansion & Upsell Lead", "Internal Tooling & Operations Product Lead",
+    "Design-to-Dev Handoff Optimization Lead", "Strategic Pivot Decision Counselor", "Visionary 10-Year Horizon Product Modeler",
+    "Product Ethics & Dark Pattern Preventer", "Chief Product Officer (CPO) Fellow"
+  ],
+  philosophy_ethics: [
+    "Epistemology & Knowledge Validation Mentor", "AI Alignment & Existential Risk Analyst", "Ethical Decision Framework (Utilitarian/Deontic)",
+    "First Principles & Axiomatic Logic Master", "Philosophy of Mind & Consciousness Scholar", "Virtue Ethics & Moral Character Guide",
+    "Cognitive Bias & Fallacy Detective", "Determinism vs Free Will Dialectic Lead", "Existential Meaning & Nihilism Counselor",
+    "Stoic Philosophy & Resilience Practitioner", "Phenomenology & Lived Experience Lead", "Philosophical Thought Experiment Architect",
+    "Social Contract & Political Philosophy Lead", "Philosophy of Language & Semantics Scholar", "Bioethics & Human Enhancement Ethicist",
+    "Moral Relativism vs Moral Realism Lead", "Eastern Philosophy (Daoism/Buddhism) Lead", "Epistemic Humility & Socratic Irony Guide",
+    "Philosophy of Science & Popperian Falsification", "Technology Ethics & Privacy Philosopher", "The Problem of Evil & Theodicy Scholar",
+    "Trolley Problem & Autonomous Vehicle Ethics", "Absurdism & Albert Camus Existentialist", "Logic & Formal Proof (Predicate Calculus)",
+    "Pragmatism & Instrumental Truth Lead", "Transhumanism & Post-Human Future Lead", "Postmodernism & Deconstructionist Reader",
+    "Hermeneutics & Textual Interpretation", "Philosophy of Mathematics & Platonism", "Environmental Ethics & Anthropocene Lead",
+    "Rationality & Game Theory Ethics Modeler", "The Simulation Hypothesis Philosopher", "Virtue Epistemology & Intellectual Courage",
+    "Kant's Categorical Imperative Counselor", "Nietzschean Overcoming & Genealogy Lead", "Philosophy of Art & Aesthetic Value Lead",
+    "Ancient Greek Socratic Dialogue Master", "Ethics of Information & Digital Identity", "Free Speech & Censorship Jurisprudence",
+    "Cosmic Perspective & Sagan Wonder Guide", "Moral Luck & Responsibility Philosopher", "Philosophy of Time & Eternalism Specialist",
+    "Dialectical Materialism & History Scholar", "Solipsism & Other Minds Problem Lead", "Epistemic Justice & Voice Representation",
+    "Ethics of Automated Warfare & Drones", "Philosophical Paradox Resolution Specialist", "Self-Deception & Authenticity Counselor",
+    "Philosophy of Education & Bildung Guide", "Distinguished Philosopher & Ethicist Fellow"
+  ],
+  fitness_longevity: [
+    "Strength & Hypertrophy Periodization Lead", "VO2 Max & Aerobic Capacity Coach", "Human Biomechanics & Form Specialist",
+    "Macronutrient & Caloric Energy Modeler", "Zone 2 Cardiovascular Endurance Specialist", "Mobility, Flexibility & Joint Health Lead",
+    "Metabolic Health & Insulin Sensitivity Lead", "Circadian Rhythm & Sleep Optimization Lead", "High-Intensity Interval Training (HIIT) Lead",
+    "Athletic Sprint & Power Acceleration Lead", "Powerlifting (Squat/Bench/Deadlift) Coach", "Olympic Weightlifting Kinematics Specialist",
+    "Injury Prevention & Prehab Specialist", "Post-Workout Recovery & DOMS Minimizer", "Hydration & Electrolyte Balance Modeler",
+    "Intermittent Fasting & Autophagy Specialist", "Body Composition & DEXA Scan Analyst", "Kettlebell Movement & Conditioning Lead",
+    "Grip Strength & Longevity Biomarker Lead", "Cardiovascular Heart Rate Variability (HRV)", "Cold Plunge & Sauna Hormesis Specialist",
+    "Spine Hygiene & Lower Back Rehabilitation", "Rotator Cuff & Shoulder Stability Specialist", "Knee Tendonitis & Joint Longevity Lead",
+    "Foot Health, Barefoot & Arch Strengthening", "Endurance Marathon & Ultramarathon Coach", "Nutrition Supplementation Evidence Reviewer",
+    "Core Bracing & Intra-Abdominal Pressure", "Calisthenics & Bodyweight Lever Specialist", "Breathwork & Parasympathetic Nervous Lead",
+    "Youth Athletic Development Coach", "Master's & Senior Citizen Functional Mobility", "Female Athlete Triad & Hormonal Health",
+    "Posture Correction & Anterior Pelvic Tilt", "Resting Heart Rate & Longevity Benchmark", "Muscle Protein Synthesis & Leucine Threshold",
+    "Microbiome Nutrition & Gut Health Specialist", "Blood Biomarker (Lipids/ApoB) Analyst", "Neuromuscular Efficiency & Central Fatigue",
+    "Mental Toughness & Athletic Grit Coach", "Pre-Competition Peak Week Strategy Lead", "Heat Acclimatization & Sweat Rate Modeler",
+    "Deload Week & Overtraining Detector", "Bone Mineral Density & Resistance Training", "Eccentric Overload & Muscle Damage Lead",
+    "Agility Ladder & Change-of-Direction Coach", "Desk Worker Ergonomics & Movement Snacks", "Fascial Health & Foam Rolling Specialist",
+    "Sports Nutrition Timing (Pre/Intra/Post)", "Master Sports Physiologist & Longevity Fellow"
+  ],
+  aerospace_space: [
+    "Orbital Mechanics & Astrodynamics Specialist", "Rocket Propulsion & Specific Impulse Lead", "Computational Fluid Dynamics (CFD) Aero Lead",
+    "Spacecraft Thermal Control Subsystem Lead", "Delta-v Budget & Hohmann Transfer Specialist", "Reaction Control System (RCS) Thruster Lead",
+    "Atmospheric Re-entry & Heat Shield Specialist", "Satellite Constellation & Orbit Slot Planner", "Staging & Mass Ratio Optimization Specialist",
+    "Avionics & Radiation-Hardened Computers", "Spacecraft Attitude Determination & Control (ADCS)", "Launch Vehicle Structural Load Analyst",
+    "Solid vs Liquid vs Hybrid Rocket Engine Lead", "Combustion Instability & Nozzle Expansion", "CubeSat Subsystems & Deployer Specialist",
+    "Deep Space Communication & Delay (DSN) Lead", "Lunar & Martian Landing Trajectory Specialist", "Space Debris Tracking & Collision Avoidance",
+    "Ion & Hall-Effect Electric Propulsion Lead", "Spacecraft Power (Solar Array/RTG) Lead", "Wind Tunnel Testing & Aerodynamic Drag",
+    "Supersonic & Hypersonic Boundary Layer Lead", "Aeroelasticity & Wing Flutter Specialist", "Payload Fairing Acoustic & Vibration Lead",
+    "Spacecraft Rendezvous & Docking Math Lead", "Life Support Systems (ECLSS) Specialist", "Astronaut Ergonomics & High-G Tolerance",
+    "Gravity Assist & Flyby Trajectory Designer", "Spacecraft Telemetry & Packet Telecommand", "Space Weather & Solar Flare Mitigation",
+    "Cryogenic Fuel Storage & Boil-Off Lead", "Interplanetary Mission Window Calculator", "Space Station Microgravity Science Lead",
+    "Rocket Thrust Vector Control (TVC) Lead", "Composite Airframe & Carbon Fiber Specialist", "Jet Engine Turbofan & Afterburner Specialist",
+    "Airfoil Selection & Lift-to-Drag Optimizer", "Ground Station Tracking & Antenna Pointing", "Spacecraft Mass Properties & Center of Mass",
+    "Pyrotechnic Separation Mechanism Specialist", "Planetary Entry Parachute & Descent Lead", "Spacecraft Reliability & Single Point Failure",
+    "Nuclear Thermal Propulsion (NTP) Specialist", "Orbital Plane Change & Inclination Budget", "Launch Pad GSE (Ground Support Equipment)",
+    "Satellite SAR & Optical Payload Specialist", "Space Law (Outer Space Treaty) Analyst", "Propellant Slosh Dynamics in Microgravity",
+    "Spacecraft De-Orbiting & Disposal Specialist", "Distinguished Chief Aerospace Engineer Fellow"
+  ]
+};
+
+// Build the array
+const allPersonas = [];
+
+categories.forEach(cat => {
+  const templates = specialistTemplates[cat.id];
+  if (!templates || templates.length < 50) {
+    throw new Error(`Category ${cat.id} has fewer than 50 templates (${templates ? templates.length : 0})!`);
+  }
+
+  templates.forEach((name, idx) => {
+    const num = idx + 1;
+    const cleanId = `${cat.id}_spec_${num}`;
+    allPersonas.push({
+      id: cleanId,
+      name: name,
+      category: cat.id,
+      categoryName: cat.name,
+      description: `Domain specialist in ${name.toLowerCase()} within ${cat.name}.`,
+      prompt: `You are the ${name}, a premier world-class authority in ${cat.name}. Provide rigorously deep domain knowledge, precise technical taxonomy, best-in-class heuristics, and actionable code/strategies. When analyzing tasks, think with absolute precision, maintain pristine architecture, and utilize all sovereign VFS tools with zero hesitation.`
+    });
+  });
+});
+
+console.log(`Generated ${categories.length} categories.`);
+console.log(`Generated ${allPersonas.length} total specialists.`);
+
+// Write personas.js
+const fileContent = `// personas.js - LuminaVista OS 30 Categories x 50 Specialists (1,500+ Personas Matrix)
+(function(window) {
+  'use strict';
+
+  const categories = ${JSON.stringify(categories, null, 2)};
+  const personas = ${JSON.stringify(allPersonas, null, 2)};
+
+  window.LuminaPersonaCategories = categories;
+  window.LuminaPersonas = personas;
+
+  window.getPersonasForCategory = function(catId) {
+    if (!catId) return personas;
+    return personas.filter(p => p.category === catId);
+  };
+
+  window.populateCategoryDropdown = function(selectId = 'modalAiCategorySelect', activeCatId = 'general') {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.innerHTML = '';
+    categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      if (cat.id === activeCatId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  };
+
+  window.populateSpecialistDropdown = function(selectId = 'modalAiPersonaSelect', catId = 'general', activeSpecId = '') {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.innerHTML = '';
+    const filtered = window.getPersonasForCategory(catId);
+    filtered.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      if (p.id === activeSpecId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  };
+
+  window.populatePersonasDropdown = function() {
+    const savedCat = localStorage.getItem('lumina_ai_category') || 'general';
+    const savedSpec = localStorage.getItem('lumina_ai_persona') || '';
+    window.populateCategoryDropdown('modalAiCategorySelect', savedCat);
+    window.populateSpecialistDropdown('modalAiPersonaSelect', savedCat, savedSpec);
+  };
+
+})(typeof window !== 'undefined' ? window : global);
+`;
+
+fs.writeFileSync(path.join(__dirname, '../personas.js'), fileContent, 'utf8');
+console.log('Successfully wrote personas.js with 1,500+ personas!');
