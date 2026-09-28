@@ -17,6 +17,46 @@ import {
 export const maxDuration = 60; // Max execution time for Vercel
 
 async function searchDuckDuckGo(query) {
+  const isNews = /\b(news|headlines|today'?s?|updates?|happened|events?)\b/i.test(query);
+
+  // 1. Live Google News RSS Feed for breaking news and headlines
+  if (isNews) {
+    try {
+      const isTopic = query && !/^(today|latest|news|headlines|world|current)/i.test(query.trim());
+      const url = isTopic 
+        ? `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`
+        : "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en";
+      const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } });
+      if (res.ok) {
+        const xml = await res.text();
+        const items = [];
+        const regex = /<item>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<source[^>]*>([\s\S]*?)<\/source>/g;
+        let m;
+        while ((m = regex.exec(xml)) !== null && items.length < 6) {
+          let t = m[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").replace(/ - [^-]+$/, "").trim();
+          let s = m[2].trim();
+          items.push(`• **${t}** (${s})`);
+        }
+        if (items.length > 0) {
+          return `Top Breaking News & Headlines:\n` + items.join('\n');
+        }
+      }
+    } catch (ignore) {}
+  }
+
+  // 2. Wikipedia Search API for knowledge, entities, and technical documentation
+  try {
+    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&utf8=1`);
+    if (wikiRes.ok) {
+      const data = await wikiRes.json();
+      const results = (data.query?.search || []).slice(0, 3).map(s => {
+        return `• **${s.title}**: ${s.snippet.replace(/<[^>]+>/g, '').trim()}...`;
+      });
+      if (results.length > 0) return results.join('\n\n');
+    }
+  } catch (ignore) {}
+
+  // 3. DuckDuckGo Instant Answer API fallback
   try {
     const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
     if (res.ok) {
@@ -32,23 +72,7 @@ async function searchDuckDuckGo(query) {
     }
   } catch (ignore) {}
 
-  try {
-    const htmlRes = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
-    });
-    if (htmlRes.ok) {
-      const text = await htmlRes.text();
-      const snippets = [];
-      const regex = /<a class="result__snippet[^>]*>([\s\S]*?)<\/a>/g;
-      let m;
-      while ((m = regex.exec(text)) !== null && snippets.length < 3) {
-        snippets.push(m[1].replace(/<[^>]+>/g, '').trim());
-      }
-      if (snippets.length > 0) return snippets.join('\n\n');
-    }
-  } catch (ignore) {}
-
-  return `Live web discovery active for query: "${query}". Top documentation matched.`;
+  return "";
 }
 
 export default async function handler(req, res) {
@@ -138,13 +162,15 @@ export default async function handler(req, res) {
     // 0. Initial Web Search Context Injection if permitted and requested
     let liveSearchResultsText = '';
     if (allowInternet && prompt && loopCount === 0 && jevTelemetry.route === 'SEARCH_WEB') {
-      let q = prompt.replace(/^(search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '').trim() || prompt;
+      let q = prompt.replace(/^(can (you|i|we) (please )?(give|tell|show|get|provide|bring) (me|us)|could you (please )?|please (give|tell|show|get|provide)|what (is|are) (the )?latest|search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '').trim() || prompt;
       if (q.length > 120) q = q.split('\n')[0].substring(0, 120).trim();
       liveSearchResultsText = await searchDuckDuckGo(q);
-      messages.push({
-        role: "user",
-        content: `[LIVE INTERNET DISCOVERY CONTEXT]:\nSearch query: "${q}"\nResults:\n${liveSearchResultsText}\n\nPlease use this live information to answer the user's prompt directly and thoroughly.`
-      });
+      if (liveSearchResultsText && liveSearchResultsText.trim().length > 10) {
+        messages.push({
+          role: "user",
+          content: `[LIVE INTERNET DISCOVERY CONTEXT]:\nSearch query: "${q}"\nResults:\n${liveSearchResultsText}\n\nPlease use this live information to answer the user's prompt directly and thoroughly.`
+        });
+      }
     }
 
     // Helper to normalize model names for provider endpoints
