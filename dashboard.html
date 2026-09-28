@@ -224,6 +224,9 @@
                   <span id="aiAutonomousBadge" class="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Antigravity Autonomous
                   </span>
+                  <span id="jevTelemetryBadge" class="px-1.5 py-0.5 rounded text-[9px] bg-indigo-500/15 text-indigo-300 font-mono border border-indigo-500/30 flex items-center gap-1" title="TypeSafe Jev System-1 Sub-50ms Decision Engine">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span> ⚡ Jev S1: READY
+                  </span>
                 </div>
                 <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
               </div>
@@ -735,7 +738,6 @@
         <select id="modalAiProviderSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="onModalProviderChange()">
           <option value="ollama_pool">Ollama Cloud Pool (8x Auto-Failover)</option>
           <option value="nvidia_pool">NVIDIA NIM Cloud Pool (Multi-Key Auto-Failover)</option>
-          <option value="local">Local Ollama (http://localhost:11434)</option>
           <option value="custom">Direct Custom Endpoint &amp; API Key</option>
           <option value="simulation">Autonomous Sovereign Sandbox (100% Offline)</option>
         </select>

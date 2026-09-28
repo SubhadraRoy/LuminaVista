@@ -403,6 +403,42 @@ assert(parsedTools.includes("Autonomous Objective Complete"), "Task complete too
   assert(chatApiCode.includes("executeWithFailover"), "api/chat.js integrates executeWithFailover engine");
   assert(chatApiCode.includes("allowInternet") && chatApiCode.includes("allowVfs") && chatApiCode.includes("allowTerminal"), "api/chat.js enforces capability permission gates");
 
+  console.log("\n[Test Suite 8: TypeSafe Jev System-1 Decision Layer & Dynamic Cognitive Engine]");
+  const jevModule = await import('../api/_lib/jev-engine.js');
+  assert(typeof jevModule.jevClassifyIntent === 'function', "jev-engine exports jevClassifyIntent");
+  assert(typeof jevModule.buildLuminaSystemPrompt === 'function', "jev-engine exports buildLuminaSystemPrompt");
+  assert(typeof jevModule.jevGenerateBespokeResponse === 'function', "jev-engine exports jevGenerateBespokeResponse");
+
+  // Jev Intent Classification Verification
+  const searchIntent = jevModule.jevClassifyIntent("search latest news on AI agents", {});
+  assert(searchIntent.route === 'SEARCH_WEB' && searchIntent.guardrailPassed === true, "Jev classified SEARCH_WEB route accurately");
+
+  const writeIntent = jevModule.jevClassifyIntent("create a snake game in python", {});
+  assert(writeIntent.route === 'WRITE_FILE' && writeIntent.targetFile === 'main.py', "Jev classified WRITE_FILE with main.py accurately");
+
+  const execIntent = jevModule.jevClassifyIntent("run node -e 'console.log(1)'", {});
+  assert(execIntent.route === 'EXEC_COMMAND', "Jev classified EXEC_COMMAND route accurately");
+
+  const malIntent = jevModule.jevClassifyIntent("rm -rf / --no-preserve-root", {});
+  assert(malIntent.guardrailPassed === false, "Jev System-1 guardrails blocked destructive command");
+
+  // Dynamic Bespoke Response Verification (Never Repetitive)
+  const resp1 = jevModule.jevGenerateBespokeResponse("build a calculator in html", 1, {});
+  const resp2 = jevModule.jevGenerateBespokeResponse("search quantum computing", 1, {});
+  assert(resp1 !== resp2, "Jev generates different bespoke responses for different prompts");
+  assert(resp1.includes("[TOOL:WRITE_FILE filename=\"index.html\"]"), "Bespoke response 1 contains WRITE_FILE for calculator");
+  assert(resp2.includes("[TOOL:SEARCH_WEB"), "Bespoke response 2 contains SEARCH_WEB for quantum computing");
+
+  // System Prompt Environment & VFS Awareness Verification
+  const sysPrompt = jevModule.buildLuminaSystemPrompt({ vfs: { "demo.js": "console.log('hi');" }, category: "Security", specialist: "Lead Cryptographer" });
+  assert(sysPrompt.includes("demo.js") && sysPrompt.includes("Firecracker POSIX MicroVM") && sysPrompt.includes("Lead Cryptographer"), "buildLuminaSystemPrompt injects live VFS files, role, and runtime");
+
+  // Online Cloud & Dashboard Verification
+  const dashHtml = fs.readFileSync(path.join(rootDir, 'dashboard.html'), 'utf8');
+  assert(!dashHtml.includes('value="local"'), "Dashboard has zero local ollama options (Full Online Cloud)");
+  assert(dashHtml.includes('id="jevTelemetryBadge"'), "Dashboard includes Jev S1 telemetry badge in header");
+  assert(chatApiCode.includes("https://ollama.com/v1/chat/completions"), "api/chat.js points Ollama Cloud to official endpoint");
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

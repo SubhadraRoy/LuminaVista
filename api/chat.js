@@ -8,6 +8,11 @@ import {
   auditLog
 } from './_lib/auth-guard.js';
 import { executeWithFailover } from './_lib/key-pool.js';
+import {
+  jevClassifyIntent,
+  buildLuminaSystemPrompt,
+  jevGenerateBespokeResponse
+} from './_lib/jev-engine.js';
 
 export const maxDuration = 60; // Max execution time for Vercel
 
@@ -83,11 +88,40 @@ export default async function handler(req, res) {
       provider = 'ollama_pool',
       enableInternet = true,
       enableVfs = true,
-      enableTerminal = true
+      enableTerminal = true,
+      category = 'General',
+      specialist = 'Omni-Disciplinary Executive Assistant',
+      personaDirective = ''
     } = req.body;
 
     currentVfs = currentVfs || {};
     messages = messages || [];
+    prompt = prompt || (messages.length > 0 ? messages[messages.length - 1].content : '');
+
+    // Jev System-1 Guardrail & Intent Classification (<2ms)
+    const jevTelemetry = jevClassifyIntent(prompt, currentVfs);
+    if (!jevTelemetry.guardrailPassed) {
+      auditLog('SECURITY_GUARDRAIL_TRIGGERED', req, `Blocked malicious payload in prompt: ${(prompt || '').substring(0, 100)}`);
+      return res.status(400).json({
+        error: 'Security Guardrail Violation: Potentially destructive system command blocked by Jev System-1 safety layer.',
+        jevTelemetry
+      });
+    }
+
+    // Build comprehensive LuminaVista OS system prompt with live VFS snapshot and environment awareness
+    const dynamicSystemPrompt = buildLuminaSystemPrompt({
+      vfs: currentVfs,
+      personaDirective,
+      category,
+      specialist
+    });
+
+    if (messages.length > 0 && messages[0].role === 'system') {
+      messages[0].content = dynamicSystemPrompt + (personaDirective ? `\n\n[Persona Directive]:\n${personaDirective}` : '');
+    } else {
+      messages.unshift({ role: 'system', content: dynamicSystemPrompt });
+    }
+
     let terminalLogs = [];
     let allFailoverLogs = [];
     let lastActiveKeyMeta = null;
@@ -102,7 +136,7 @@ export default async function handler(req, res) {
     const allowTerminal = enableTerminal !== false;
 
     // 0. Initial Web Search Context Injection if permitted and requested
-    if (allowInternet && prompt && loopCount === 0) {
+    if (allowInternet && prompt && loopCount === 0 && (jevTelemetry.route === 'SEARCH_WEB' || prompt.toLowerCase().includes('search'))) {
       const liveResults = await searchDuckDuckGo(prompt);
       messages.push({
         role: "user",
@@ -123,18 +157,14 @@ export default async function handler(req, res) {
         targetProvider = 'nvidia';
         effectiveEndpoint = effectiveEndpoint || 'https://integrate.api.nvidia.com/v1/chat/completions';
         defaultModel = defaultModel || 'meta/llama-3.3-70b-instruct';
-      } else if (provider === 'local') {
-        targetProvider = 'custom';
-        effectiveEndpoint = effectiveEndpoint || process.env.LOCAL_OLLAMA_ENDPOINT || 'http://127.0.0.1:11434/v1/chat/completions';
-        defaultModel = defaultModel || 'gpt-oss:20b';
       } else if (provider === 'custom') {
         targetProvider = 'custom';
-        effectiveEndpoint = effectiveEndpoint || 'https://openrouter.ai/api/v1/chat/completions';
+        effectiveEndpoint = effectiveEndpoint || 'https://ollama.com/v1/chat/completions';
         defaultModel = defaultModel || 'gpt-oss:20b';
       } else {
-        // Default: ollama_pool
+        // Default: ollama_pool (Online Cloud)
         targetProvider = 'ollama';
-        effectiveEndpoint = effectiveEndpoint || process.env.OLLAMA_ENDPOINT || 'https://openrouter.ai/api/v1/chat/completions';
+        effectiveEndpoint = effectiveEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions';
         defaultModel = defaultModel || 'gpt-oss:20b';
       }
 
@@ -168,9 +198,9 @@ export default async function handler(req, res) {
       }
 
       if (!failoverResult.success) {
-        // Graceful failover to simulated autonomous response if external cloud is completely exhausted
-        terminalLogs.push(`[Failover Engine]: ${failoverResult.reason}. Activating Sovereign Autonomous Sandbox fallback.`);
-        aiReply = `<thought_process>\n[Autonomous Sandbox Active - Fallback Mode]\nCloud API pool encountered: ${failoverResult.reason}\nSovereign sandbox executing user intent...\n</thought_process>\n\nI have analyzed your request in the sovereign sandbox.\n\n[TOOL:LIST_DIR][/TOOL:LIST_DIR]\n\n[TOOL:TASK_COMPLETE summary="Executed autonomous fallback via sovereign sandbox."][/TOOL:TASK_COMPLETE]`;
+        // Graceful failover to dynamic Jev bespoke autonomous response if external cloud is completely exhausted
+        terminalLogs.push(`[Failover Engine]: ${failoverResult.reason}. Activating Jev Sovereign Autonomous Sandbox.`);
+        aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs);
       } else {
         const aiData = failoverResult.data;
         aiReply = aiData?.choices?.[0]?.message?.content || aiData?.message?.content || "Task processed.";
@@ -365,7 +395,8 @@ export default async function handler(req, res) {
       logs: terminalLogs,
       messages,
       failoverLogs: allFailoverLogs,
-      activeKeyMeta: lastActiveKeyMeta
+      activeKeyMeta: lastActiveKeyMeta,
+      jevTelemetry
     });
 
   } catch (error) {
