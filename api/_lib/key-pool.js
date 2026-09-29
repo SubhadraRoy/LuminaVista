@@ -361,7 +361,7 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
 
         if (data && !data.error && !isRateLimitOrQuotaError(res.status, rawText)) {
           const content = extractCompletionContent(data, rawText);
-          if (content && content !== 'Task processed.') {
+          if (content && content.trim() && content.trim() !== 'Task processed.' && content.trim() !== 'null') {
             return { success: true, data, content, keyMeta: { index: 1, name: 'Custom User Key' }, failoverLogs };
           }
         }
@@ -421,12 +421,12 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
             }
 
             const content = extractCompletionContent(data, rawText);
-            // If the model returned completely blank text or dummy "Task processed.", treat as quota glitch and rotate
-            if (!content || content === 'Task processed.') {
+            // If the model returned completely blank text, null tokens, or dummy "Task processed.", treat as quota glitch and rotate
+            if (!content || !content.trim() || content.trim() === 'Task processed.' || content.trim() === 'null') {
               hadRateLimit = true;
-              markKeyCooldown(keyMeta.key, 15000, keyProv);
+              markKeyCooldown(keyMeta.key, 30000, keyProv);
               const preview = rawText ? rawText.substring(0, 100).replace(/\s+/g, ' ') : '';
-              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned empty completion (${preview}). Rotating to next key...`);
+              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned empty/null completion tokens (${preview}). Rotating to next key...`);
               continue;
             }
 

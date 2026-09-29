@@ -222,6 +222,9 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
   const makeNvidiaFetch = async (apiKey) => {
     const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
     const payloadMessages = sanitizeProviderMessages(messages, prompt);
+    const nModel = (requestedModel && requestedModel.includes('/') && (requestedModel.startsWith('nvidia/') || requestedModel.startsWith('meta/')))
+      ? requestedModel
+      : 'meta/llama-3.3-70b-instruct';
     return fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -229,7 +232,7 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
         'Authorization': `Bearer ${cleanKey}`
       },
       body: JSON.stringify({
-        model: 'nvidia/llama-3.1-nemotron-70b-instruct',
+        model: nModel,
         messages: payloadMessages,
         temperature: 0.6,
         max_tokens: 4096,

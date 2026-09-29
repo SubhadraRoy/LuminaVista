@@ -265,8 +265,12 @@ export default async function handler(req, res) {
       if (prov === 'nvidia') {
         // Direct NIM catalog endpoints in namespace/model format
         if (m.includes('/') && (m.startsWith('nvidia/') || m.startsWith('meta/'))) {
-          if (m === 'nvidia/llama-3.1-nemotron-70b-instruct' ||
+          if (m === 'meta/llama-3.3-70b-instruct' ||
+              m === 'meta/llama-3.1-8b-instruct' ||
+              m === 'meta/llama-3.1-70b-instruct' ||
+              m === 'nvidia/llama-3.1-nemotron-70b-instruct' ||
               m === 'nvidia/llama-3.1-nemotron-51b-instruct' ||
+              m === 'nvidia/nemotron-4-340b-instruct' ||
               m === 'nvidia/nemotron-nano-3-30b-a3b' ||
               m === 'nvidia/nemotron-3-super-120b-a12b' ||
               m === 'nvidia/nemotron-3-ultra-550b-a55b' ||
@@ -275,18 +279,18 @@ export default async function handler(req, res) {
           }
         }
         if (lower.includes('nano') || lower.includes('30b') || lower.includes('20b') || lower.includes('fast') || lower.includes('cheap')) {
-          return 'nvidia/nemotron-nano-3-30b-a3b';
+          return 'meta/llama-3.1-8b-instruct';
         }
         if (lower.includes('ultra') || lower.includes('550b') || lower.includes('deepseek') || lower.includes('heavy')) {
-          return 'nvidia/nemotron-3-ultra-550b-a55b';
+          return 'meta/llama-3.3-70b-instruct';
         }
         if (lower.includes('super') || lower.includes('120b') || lower.includes('medium')) {
-          return 'nvidia/nemotron-3-super-120b-a12b';
+          return 'meta/llama-3.3-70b-instruct';
         }
         if (lower.includes('code') || lower.includes('coder') || lower.includes('dev')) {
           return 'meta/codellama-70b';
         }
-        return 'nvidia/llama-3.1-nemotron-70b-instruct';
+        return 'meta/llama-3.3-70b-instruct';
       } else {
         // Ollama Cloud: preserve exact model tags!
         if (m === 'gemma4:31b' ||
@@ -517,7 +521,7 @@ export default async function handler(req, res) {
       } else {
         const aiData = failoverResult.data;
         aiReply = failoverResult.content || extractCompletionContent(aiData) || "";
-        if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.') {
+        if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.' || aiReply.trim() === 'null') {
           terminalLogs.push('[Response Guard]: Model returned empty or placeholder completion. Falling back to sovereign generator.');
           aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
         }
