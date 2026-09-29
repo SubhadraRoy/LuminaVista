@@ -261,6 +261,7 @@
         window.vfs[window.csActiveFile] = ed.value;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
         updateStorageQuotaMeter();
+        if (window.rebuildGraphData) window.rebuildGraphData();
       }
     }
   }
@@ -388,6 +389,7 @@
         window.vfs[clean] = `// File: ${clean}\n`;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
         switchCodespaceFile(clean);
+        if (window.rebuildGraphData) window.rebuildGraphData();
         if (window.showToast) window.showToast("File Created", clean);
       }
     }
@@ -401,6 +403,7 @@
         window.vfs[clean] = `# ${folder.trim()}`;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
         switchCodespaceFile(clean);
+        if (window.rebuildGraphData) window.rebuildGraphData();
       }
     }
   }
@@ -415,6 +418,7 @@
       window.codespaceOpenTabs = window.codespaceOpenTabs.filter(f => f !== window.csActiveFile);
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       switchCodespaceFile(nextName.trim());
+      if (window.rebuildGraphData) window.rebuildGraphData();
     }
   }
 
@@ -428,6 +432,7 @@
       delete window.vfs[file];
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       removeSpecificTab(file);
+      if (window.rebuildGraphData) window.rebuildGraphData();
       if (window.showToast) window.showToast("Deleted", file);
     }
   }
@@ -521,6 +526,7 @@
     renderCodespaceFileTabs();
     loadCodespaceEditor();
     updateStorageQuotaMeter();
+    if (window.rebuildGraphData) window.rebuildGraphData();
 
     if (window.csActiveFile) {
       if (window.csActiveFile.endsWith('.html') || window.csActiveFile.endsWith('.htm')) {

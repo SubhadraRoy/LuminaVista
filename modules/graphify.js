@@ -106,6 +106,7 @@
   let zoom = 1;
   let panX = 0;
   let panY = 0;
+  let panInitialized = false;
   let isDragging = false;
   let dragNode = null;
   let lastMouseX = 0;
@@ -115,6 +116,8 @@
   let activeFilter = 'all';
   let searchQuery = '';
   let animId = null;
+  let isInitialized = false;
+  let resizeObserver = null;
 
   function initGraphifyGraph() {
     canvas = document.getElementById('graphifyCanvas');
@@ -122,8 +125,18 @@
     ctx = canvas.getContext('2d');
     resizeCanvas();
 
-    window.addEventListener('resize', resizeCanvas);
-    setupInteractions();
+    if (!isInitialized) {
+      window.addEventListener('resize', resizeCanvas);
+      setupInteractions();
+      if (window.ResizeObserver && canvas.parentElement) {
+        resizeObserver = new ResizeObserver(() => {
+          resizeCanvas();
+        });
+        resizeObserver.observe(canvas.parentElement);
+      }
+      isInitialized = true;
+    }
+
     rebuildGraphData();
     startSimulation();
   }
@@ -133,52 +146,81 @@
     const parent = canvas.parentElement;
     if (!parent) return;
     const rect = parent.getBoundingClientRect();
-    width = rect.width || 800;
-    height = rect.height || 600;
+    if (rect.width === 0 || rect.height === 0) return;
+    width = rect.width;
+    height = rect.height;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
-    ctx.scale(dpr, dpr);
-    panX = width / 2;
-    panY = height / 2;
+    if (!panInitialized) {
+      panX = width / 2;
+      panY = height / 2;
+      panInitialized = true;
+    }
   }
 
   function rebuildGraphData() {
-    nodes = BASE_NODES.map(n => ({
-      ...n,
-      x: (Math.random() - 0.5) * 500,
-      y: (Math.random() - 0.5) * 400,
-      vx: 0,
-      vy: 0,
-      radius: n.cat === 'frontend' ? 26 : (n.cat === 'ai' || n.cat === 'api' ? 22 : 18)
-    }));
+    const existingMap = new Map();
+    nodes.forEach(n => {
+      existingMap.set(n.id, { x: n.x, y: n.y, vx: n.vx, vy: n.vy });
+    });
 
-    links = [...BASE_LINKS];
+    const newNodes = BASE_NODES.map(n => {
+      const existing = existingMap.get(n.id);
+      return {
+        ...n,
+        x: existing && Number.isFinite(existing.x) ? existing.x : (Math.random() - 0.5) * 350,
+        y: existing && Number.isFinite(existing.y) ? existing.y : (Math.random() - 0.5) * 280,
+        vx: existing && Number.isFinite(existing.vx) ? existing.vx : 0,
+        vy: existing && Number.isFinite(existing.vy) ? existing.vy : 0,
+        radius: n.cat === 'frontend' ? 26 : (n.cat === 'ai' || n.cat === 'api' ? 22 : 18)
+      };
+    });
+
+    const newLinks = [...BASE_LINKS];
+
+    const vfsHub = newNodes.find(n => n.id === 'VFS');
+    const hubX = vfsHub ? vfsHub.x : 0;
+    const hubY = vfsHub ? vfsHub.y : 0;
 
     // Dynamically inject user VFS files
     const vfs = window.vfs || {};
     Object.keys(vfs).forEach(filename => {
       const vfsId = `vfs://${filename}`;
-      if (!nodes.some(n => n.id === vfsId)) {
-        nodes.push({
-          id: vfsId,
-          label: filename,
-          cat: 'vfs',
-          type: 'Virtual File',
-          loc: (vfs[filename] || '').split('\n').length,
-          size: `${(vfs[filename] || '').length} B`,
-          desc: `Mounted in-memory virtual file system artifact (${filename}).`,
-          x: (Math.random() - 0.5) * 300,
-          y: (Math.random() - 0.5) * 200,
-          vx: 0,
-          vy: 0,
-          radius: 16
-        });
-        links.push({ source: 'VFS', target: vfsId });
-      }
+      const existing = existingMap.get(vfsId);
+      const content = vfs[filename] || '';
+      newNodes.push({
+        id: vfsId,
+        label: filename,
+        cat: 'vfs',
+        type: 'Virtual File',
+        loc: content.split('\n').length,
+        size: `${content.length} B`,
+        desc: `Mounted in-memory virtual file system artifact (${filename}).`,
+        x: existing && Number.isFinite(existing.x) ? existing.x : hubX + (Math.random() - 0.5) * 160,
+        y: existing && Number.isFinite(existing.y) ? existing.y : hubY + (Math.random() - 0.5) * 160,
+        vx: existing && Number.isFinite(existing.vx) ? existing.vx : 0,
+        vy: existing && Number.isFinite(existing.vy) ? existing.vy : 0,
+        radius: 16
+      });
+      newLinks.push({ source: 'VFS', target: vfsId });
     });
+
+    nodes = newNodes;
+    links = newLinks;
+
+    if (selectedNode) {
+      const updatedSelected = nodes.find(n => n.id === selectedNode.id);
+      if (updatedSelected) {
+        selectedNode = updatedSelected;
+      } else {
+        selectedNode = null;
+        const drawer = document.getElementById('graphifyInspectorDrawer');
+        if (drawer) drawer.classList.add('hidden');
+      }
+    }
 
     const countEl = document.getElementById('graphifyNodeCount');
     if (countEl) countEl.textContent = `${nodes.length} Nodes • ${links.length} Links`;
@@ -330,10 +372,20 @@
   }
 
   function startSimulation() {
-    if (animId) cancelAnimationFrame(animId);
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
 
     function step() {
-      // 1. Force calculation (Repulsion between all nodes)
+      // Pause loop if container is hidden
+      const col = document.getElementById('aiGraphifyColumn');
+      if (col && col.classList.contains('hidden')) {
+        animId = null;
+        return;
+      }
+
+      // 1. Force calculation (Coulomb repulsion with softening)
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const na = nodes[i];
@@ -342,16 +394,18 @@
           const dy = nb.y - na.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
           if (dist < 260) {
-            const force = (260 - dist) / dist * 0.6;
-            na.vx -= dx * force * 0.05;
-            na.vy -= dy * force * 0.05;
-            nb.vx += dx * force * 0.05;
-            nb.vy += dy * force * 0.05;
+            const repForce = Math.min(15, (260 - dist) / Math.max(dist, 15)) * 0.35;
+            const fx = (dx / dist) * repForce;
+            const fy = (dy / dist) * repForce;
+            na.vx -= fx;
+            na.vy -= fy;
+            nb.vx += fx;
+            nb.vy += fy;
           }
         }
       }
 
-      // 2. Spring attraction along links
+      // 2. Spring attraction along links (Hooke's law with unit vector)
       links.forEach(l => {
         const na = nodes.find(n => n.id === l.source);
         const nb = nodes.find(n => n.id === l.target);
@@ -360,20 +414,31 @@
           const dy = nb.y - na.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
           const targetDist = 110;
-          const force = (dist - targetDist) * 0.015;
-          na.vx += dx * force * 0.1;
-          na.vy += dy * force * 0.1;
-          nb.vx -= dx * force * 0.1;
-          nb.vy -= dy * force * 0.1;
+          const springForce = (dist - targetDist) * 0.035;
+          const fx = (dx / dist) * springForce;
+          const fy = (dy / dist) * springForce;
+          na.vx += fx;
+          na.vy += fy;
+          nb.vx -= fx;
+          nb.vy -= fy;
         }
       });
 
-      // 3. Center gravity & velocity damping
+      // 3. Center gravity, velocity damping, and clamping
+      const MAX_VELOCITY = 10;
       nodes.forEach(n => {
-        n.vx -= n.x * 0.003;
-        n.vy -= n.y * 0.003;
-        n.vx *= 0.88;
-        n.vy *= 0.88;
+        if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) {
+          n.x = (Math.random() - 0.5) * 200;
+          n.y = (Math.random() - 0.5) * 200;
+          n.vx = 0;
+          n.vy = 0;
+        }
+        n.vx -= n.x * 0.002;
+        n.vy -= n.y * 0.002;
+        n.vx *= 0.86;
+        n.vy *= 0.86;
+        n.vx = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, n.vx));
+        n.vy = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, n.vy));
         if (n !== dragNode) {
           n.x += n.vx;
           n.y += n.vy;
@@ -384,14 +449,17 @@
       animId = requestAnimationFrame(step);
     }
 
-    step();
+    animId = requestAnimationFrame(step);
   }
 
   function render() {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, width, height);
+    if (!ctx || !canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
+    ctx.scale(dpr, dpr);
     ctx.translate(panX, panY);
     ctx.scale(zoom, zoom);
 

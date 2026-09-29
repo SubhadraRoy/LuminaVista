@@ -294,6 +294,35 @@ async function runBrowserTest() {
   const sliderGraphifyActive = await evaluate("!document.getElementById('aiGraphifyColumn').classList.contains('hidden') && document.getElementById('btn-tab-graphify').classList.contains('nav-tab-active')");
   test("Slider navigation switches to Graphify Graph and highlights button", sliderGraphifyActive);
 
+  // Verify Graphify canvas maintains rendered pixels and does not vanish
+  await new Promise(r => setTimeout(r, 600));
+  const graphifyPixels = await evaluate(`
+    (() => {
+      const c = document.getElementById('graphifyCanvas');
+      if (!c) return 0;
+      const ctx = c.getContext('2d');
+      const img = ctx.getImageData(0, 0, c.width, c.height);
+      let filled = 0;
+      for (let i = 3; i < img.data.length; i += 4) {
+        if (img.data[i] > 0) filled++;
+      }
+      return filled;
+    })()
+  `);
+  test("Graphify canvas remains rendered and visible after simulation settles (> 1000px)", graphifyPixels > 1000);
+
+  // Test dynamic real-time graph update when VFS changes
+  const initialNodesText = await evaluate("document.getElementById('graphifyNodeCount')?.textContent || ''");
+  await evaluate(`
+    (() => {
+      window.vfs = window.vfs || {};
+      window.vfs['neural-agent.py'] = 'def run(): pass';
+      if (window.rebuildGraphData) window.rebuildGraphData();
+    })()
+  `);
+  const updatedNodesText = await evaluate("document.getElementById('graphifyNodeCount')?.textContent || ''");
+  test("Graphify graph updates dynamically when VFS files change", updatedNodesText !== initialNodesText);
+
   const topTabsHidden = await evaluate("document.getElementById('aiSubTabsBar').classList.contains('hidden')");
   test("Top sub-tabs bar #aiSubTabsBar is hidden (moved to slider)", topTabsHidden);
 

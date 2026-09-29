@@ -1885,6 +1885,7 @@ What specific feature, application, or script would you like to build?`;
     window.vfs[filename] = content;
     localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
     if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
+    if (window.rebuildGraphData) window.rebuildGraphData();
     if (window.activeCodespaceFile === filename && window.loadCodespaceFileContent) {
       window.loadCodespaceFileContent(filename);
     }
@@ -1905,6 +1906,7 @@ What specific feature, application, or script would you like to build?`;
     if (window.activeCodespaceFile === filename && window.loadCodespaceFileContent) {
       window.loadCodespaceFileContent(filename);
     }
+    if (window.rebuildGraphData) window.rebuildGraphData();
     return `Successfully applied targeted edit to ${filename}`;
   }
 
@@ -1914,6 +1916,7 @@ What specific feature, application, or script would you like to build?`;
       delete window.vfs[filename];
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
+      if (window.rebuildGraphData) window.rebuildGraphData();
       return `Successfully deleted ${filename} from VFS.`;
     }
     return `Error: Cannot delete "${filename}" - file does not exist.`;
@@ -2418,6 +2421,7 @@ What specific feature, application, or script would you like to build?`;
         btnGraphify.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm";
       }
       if (window.initGraphifyGraph) {
+        window.initGraphifyGraph();
         setTimeout(() => {
           window.initGraphifyGraph();
           if (window.rebuildGraphData) window.rebuildGraphData();

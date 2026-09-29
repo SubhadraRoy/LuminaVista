@@ -69,6 +69,13 @@
       }, 50);
     }
 
+    if (id === "tab-graphify") {
+      setTimeout(() => {
+        if (window.initGraphifyGraph) window.initGraphifyGraph();
+        if (window.rebuildGraphData) window.rebuildGraphData();
+      }, 50);
+    }
+
     if (id === "tab-calendar") {
       if (window.LuminaCalendar) {
         window.LuminaCalendar.init();

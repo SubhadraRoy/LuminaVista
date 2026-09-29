@@ -487,6 +487,15 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   window.switchTab('tab-graphify');
   const graphifyCol = document.getElementById("aiGraphifyColumn");
   assert(graphifyCol && !graphifyCol.classList.contains("hidden"), "switchTab('tab-graphify') routes to Graphify Graph view");
+  assert(typeof window.rebuildGraphData === 'function', "graphify.js exports rebuildGraphData as a function");
+  
+  // Test dynamic updating of graph when VFS files change
+  const initialCountText = document.getElementById("graphifyNodeCount") ? document.getElementById("graphifyNodeCount").textContent : "";
+  window.vfs = window.vfs || {};
+  window.vfs["dynamic_test_node.js"] = "console.log('graphify live sync');";
+  window.rebuildGraphData();
+  const updatedCountText = document.getElementById("graphifyNodeCount") ? document.getElementById("graphifyNodeCount").textContent : "";
+  assert(updatedCountText !== initialCountText, "rebuildGraphData dynamically updates node and link counts on VFS changes");
 
   // Test mobile drawer toggle state changes
   window.openMobileSidebar();
