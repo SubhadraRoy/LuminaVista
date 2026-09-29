@@ -256,19 +256,28 @@ export default async function handler(req, res) {
 
       if (prov === 'nvidia') {
         // Direct NIM catalog endpoints in namespace/model format
-        if (m.includes('/') && (m.startsWith('nvidia/') || m.startsWith('meta/') || m.startsWith('deepseek-ai/') || m.startsWith('mistralai/') || m.startsWith('google/'))) {
-          return m;
+        if (m.includes('/') && (m.startsWith('nvidia/') || m.startsWith('meta/'))) {
+          if (m === 'nvidia/llama-3.1-nemotron-70b-instruct' ||
+              m === 'nvidia/llama-3.1-nemotron-51b-instruct' ||
+              m === 'nvidia/nemotron-nano-3-30b-a3b' ||
+              m === 'nvidia/nemotron-3-super-120b-a12b' ||
+              m === 'nvidia/nemotron-3-ultra-550b-a55b' ||
+              m === 'meta/codellama-70b') {
+            return m;
+          }
         }
-        if (lower.includes('nemotron') || lower.includes('nematron')) return 'nvidia/llama-3.1-nemotron-70b-instruct';
-        if (lower.includes('deepseek-r1') || lower.includes('r1')) return 'deepseek-ai/deepseek-r1';
-        if (lower.includes('deepseek-v3') || lower.includes('v3')) return 'deepseek-ai/deepseek-v3';
-        if (lower.includes('mistral') || lower.includes('codestral')) return 'mistralai/mistral-large-2-instruct';
-        if (lower.includes('codellama') || (lower.includes('code') && lower.includes('llama'))) return 'meta/codellama-70b-instruct';
-        if (lower.includes('3.2-3b') || lower.includes('3b')) return 'meta/llama-3.2-3b-instruct';
-        if (lower.includes('gemma-2') || lower.includes('gemma')) return 'google/gemma-2-9b-it';
-        if (lower.includes('llama-3.3') || lower.includes('3.3')) return 'meta/llama-3.3-70b-instruct';
-        if (lower.includes('120b') || lower.includes('ultra')) return 'deepseek-ai/deepseek-r1';
-        if (lower.includes('20b') || lower.includes('nano')) return 'meta/llama-3.2-3b-instruct';
+        if (lower.includes('nano') || lower.includes('30b') || lower.includes('20b') || lower.includes('fast') || lower.includes('cheap')) {
+          return 'nvidia/nemotron-nano-3-30b-a3b';
+        }
+        if (lower.includes('ultra') || lower.includes('550b') || lower.includes('deepseek') || lower.includes('heavy')) {
+          return 'nvidia/nemotron-3-ultra-550b-a55b';
+        }
+        if (lower.includes('super') || lower.includes('120b') || lower.includes('medium')) {
+          return 'nvidia/nemotron-3-super-120b-a12b';
+        }
+        if (lower.includes('code') || lower.includes('coder') || lower.includes('dev')) {
+          return 'meta/codellama-70b';
+        }
         return 'nvidia/llama-3.1-nemotron-70b-instruct';
       } else {
         // Ollama Cloud: preserve exact model tags!
