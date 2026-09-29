@@ -24,6 +24,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/calendar/(.*)", "destination": "/api/calendar?action=$1" },
     { "source": "/", "destination": "/index.html" }
   ]
 }

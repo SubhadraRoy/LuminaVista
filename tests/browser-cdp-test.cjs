@@ -46,7 +46,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (pathname === '/api/calendar/status') {
+  if (pathname === '/api/calendar/status' || pathname === '/api/calendar') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ configured: true, connected: false }));
     return;
