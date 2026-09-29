@@ -380,12 +380,23 @@ async function runBrowserTest() {
 
   await evaluate("window.LuminaCalendar.closeSyncModal()");
 
-  // 12. Artifacts Sovereign Storage Quota Meter
+  // 12. Artifacts Sovereign Storage Quota Meter & Upload
   await evaluate("switchTab('tab-artifacts')");
   const hasStorageMeter = await evaluate("document.getElementById('vfsStorageBar') !== null && document.getElementById('vfsStorageText') !== null");
   test("Sovereign VFS Storage Quota meter rendered in Chrome", hasStorageMeter);
 
-  // 13. Check for Uncaught Exceptions
+  const storageDisplays1Gb = await evaluate("document.getElementById('vfsStorageText')?.textContent.includes('1 GB')");
+  test("Storage meter shows 1 GB free sovereign quota in Chrome", storageDisplays1Gb);
+
+  const hasUploadButton = await evaluate("document.getElementById('vfsUploadInput') !== null");
+  test("VFS upload file input is present in Artifacts tab in Chrome", hasUploadButton);
+
+  // 13. Verify Artifacts button is cleanly removed from AI Studio toolbar
+  await evaluate("switchTab('tab-ai-studio')");
+  const aiChatToolbarHasNoArtifactsBtn = await evaluate("document.getElementById('btnCodespaceToggleText') === null");
+  test("Artifacts button cleanly removed from AI Studio chat toolbar", aiChatToolbarHasNoArtifactsBtn);
+
+  // 14. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {
     console.error("Console Errors logged:", consoleErrors);

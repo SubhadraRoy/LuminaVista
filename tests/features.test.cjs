@@ -628,9 +628,27 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   // Mount test files in VFS and verify quota telemetry calculation
   window.vfs = window.vfs || {};
   window.vfs["test_module.js"] = "console.log('Testing storage limit calculation');";
+  window.vfs["models/agent.py"] = "class Agent: pass";
   if (window.updateStorageQuotaMeter) window.updateStorageQuotaMeter();
   const storageText = document.getElementById("vfsStorageText").textContent;
-  assert(storageText.includes("/ 50 MB"), "Storage text displays usage against 50 MB limit");
+  assert(storageText.includes("/ 1 GB"), "Storage text displays usage against 1 GB free sovereign quota");
+
+  // Verify File Upload & Collapsible Folders
+  assert(document.getElementById("vfsUploadInput") !== null, "#vfsUploadInput file upload input exists in DOM");
+  assert(typeof window.uploadVfsFiles === 'function', "window.uploadVfsFiles is exported as a function");
+  assert(typeof window.toggleFolderCollapse === 'function', "window.toggleFolderCollapse is exported as a function");
+
+  // Verify Collapsible Folder Mechanics
+  window.renderCodespaceFileTree();
+  const treeHtmlBefore = document.getElementById("vfsTreeContainer").innerHTML;
+  assert(treeHtmlBefore.includes("models/"), "models/ folder rendered in file tree");
+  window.toggleFolderCollapse("models");
+  assert(window.csCollapsedFolders.has("models"), "models folder toggled into csCollapsedFolders");
+  window.renderCodespaceFileTree();
+  const treeHtmlAfter = document.getElementById("vfsTreeContainer").innerHTML;
+  assert(treeHtmlAfter.includes("hidden"), "models folder contents are collapsed and hidden");
+  window.toggleFolderCollapse("models");
+  assert(!window.csCollapsedFolders.has("models"), "models folder expanded again cleanly");
 
   // Verify Google Calendar Error 400 Resolution Elements
   assert(document.getElementById("calendarSyncModal") !== null, "#calendarSyncModal exists in DOM");

@@ -55,6 +55,16 @@
       }
     });
 
+    // Initialize or load collapsed folders
+    if (!window.csCollapsedFolders) {
+      try {
+        const saved = (typeof localStorage !== 'undefined') ? localStorage.getItem("lumina_collapsed_folders") : null;
+        window.csCollapsedFolders = saved ? new Set(JSON.parse(saved)) : new Set();
+      } catch (e) {
+        window.csCollapsedFolders = new Set();
+      }
+    }
+
     Object.keys(tree).sort().forEach(key => {
       if (tree[key] === '__FILE__') {
         const isActive = key === window.csActiveFile;
@@ -70,18 +80,43 @@
         item.onclick = () => switchCodespaceFile(key);
         container.appendChild(item);
       } else {
-        // Folder
+        // Collapsible Folder
+        const folder = key;
+        const subFiles = tree[folder] || [];
+        const containsActive = subFiles.some(sub => `${folder}/${sub}` === window.csActiveFile);
+
+        // Auto-expand folder if active file is inside
+        if (containsActive && window.csCollapsedFolders.has(folder)) {
+          window.csCollapsedFolders.delete(folder);
+        }
+
+        const isCollapsed = window.csCollapsedFolders.has(folder);
+
         const folderDiv = document.createElement("div");
         folderDiv.className = "mb-1";
-        folderDiv.innerHTML = `<div class="flex items-center gap-1 text-zinc-400 font-bold py-1 px-1 text-[11px]"><i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i><span>${key}/</span></div>`;
+
+        const folderHeader = document.createElement("button");
+        folderHeader.className = "w-full flex items-center justify-between text-zinc-400 hover:text-white font-bold py-1 px-1.5 text-[11px] cursor-pointer rounded-lg hover:bg-white/5 transition-colors group select-none";
+        folderHeader.title = isCollapsed ? `Expand ${folder}/` : `Collapse ${folder}/`;
+        folderHeader.innerHTML = `
+          <div class="flex items-center gap-1.5 truncate">
+            <i data-lucide="${isCollapsed ? 'folder' : 'folder-open'}" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+            <span class="truncate">${folder}/</span>
+            <span class="text-[9px] text-zinc-500 font-mono">(${subFiles.length})</span>
+          </div>
+          <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3 h-3 text-zinc-500 group-hover:text-cyan-400 shrink-0 transition-transform"></i>
+        `;
+        folderHeader.onclick = () => toggleFolderCollapse(folder);
+        folderDiv.appendChild(folderHeader);
+
         const subContainer = document.createElement("div");
-        subContainer.className = "pl-3 border-l border-white/5 space-y-0.5";
+        subContainer.className = `pl-2.5 ml-1.5 border-l border-white/10 space-y-0.5 mt-0.5 ${isCollapsed ? 'hidden' : ''}`;
         
-        tree[key].forEach(subFile => {
-          const fullPath = `${key}/${subFile}`;
+        subFiles.forEach(subFile => {
+          const fullPath = `${folder}/${subFile}`;
           const isActive = fullPath === window.csActiveFile;
           const item = document.createElement("button");
-          item.className = `w-full px-2.5 py-1.5 rounded-lg flex items-center gap-2 cursor-pointer text-left transition-colors truncate ${isActive ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`;
+          item.className = `w-full px-2 py-1 rounded-lg flex items-center gap-2 cursor-pointer text-left transition-colors truncate text-xs ${isActive ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`;
           
           let iconName = "file-code";
           if (subFile.endsWith(".html")) iconName = "file-code-2";
@@ -97,6 +132,21 @@
       }
     });
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  }
+
+  function toggleFolderCollapse(folderName) {
+    if (!window.csCollapsedFolders) window.csCollapsedFolders = new Set();
+    if (window.csCollapsedFolders.has(folderName)) {
+      window.csCollapsedFolders.delete(folderName);
+    } else {
+      window.csCollapsedFolders.add(folderName);
+    }
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem("lumina_collapsed_folders", JSON.stringify([...window.csCollapsedFolders]));
+      }
+    } catch (e) {}
+    renderCodespaceFileTree();
   }
 
   function renderCodespaceFileTabs() {
@@ -177,20 +227,22 @@
       }
     });
 
-    const MAX_STORAGE_BYTES = 50 * 1024 * 1024; // 50 MB Standard Quota
-    const pct = Math.min(100, Math.max(0.1, (totalBytes / MAX_STORAGE_BYTES) * 100));
+    const MAX_STORAGE_BYTES = 1024 * 1024 * 1024; // 1 GB (1,024 MB) Sovereign Free Tier
+    const pct = Math.min(100, Math.max(0.01, (totalBytes / MAX_STORAGE_BYTES) * 100));
 
     let usedDisplay = "0 B";
     if (totalBytes < 1024) {
       usedDisplay = `${totalBytes} B`;
     } else if (totalBytes < 1024 * 1024) {
       usedDisplay = `${(totalBytes / 1024).toFixed(1)} KB`;
-    } else {
+    } else if (totalBytes < 1024 * 1024 * 1024) {
       usedDisplay = `${(totalBytes / (1024 * 1024)).toFixed(2)} MB`;
+    } else {
+      usedDisplay = `${(totalBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     }
 
     const storageTextEl = document.getElementById("vfsStorageText");
-    if (storageTextEl) storageTextEl.textContent = `${usedDisplay} / 50 MB`;
+    if (storageTextEl) storageTextEl.textContent = `${usedDisplay} / 1 GB (Free)`;
 
     const storageBarEl = document.getElementById("vfsStorageBar");
     if (storageBarEl) storageBarEl.style.width = `${Math.max(1, pct.toFixed(2))}%`;
@@ -438,10 +490,76 @@
     if (out) out.scrollTop = out.scrollHeight;
   }
 
+  async function uploadVfsFiles(files) {
+    if (!files || files.length === 0) return;
+    const fileList = Array.from(files);
+    window.vfs = window.vfs || {};
+
+    let uploadedCount = 0;
+    for (const file of fileList) {
+      try {
+        const text = await readFileAsText(file);
+        const fileName = file.name;
+        window.vfs[fileName] = text;
+        if (!window.codespaceOpenTabs) window.codespaceOpenTabs = [];
+        if (!window.codespaceOpenTabs.includes(fileName)) {
+          window.codespaceOpenTabs.push(fileName);
+        }
+        window.csActiveFile = fileName;
+        uploadedCount++;
+      } catch (err) {
+        console.warn("Failed to read uploaded file:", file.name, err);
+      }
+    }
+
+    try {
+      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+      localStorage.setItem("lumina_open_tabs", JSON.stringify(window.codespaceOpenTabs));
+    } catch (e) {}
+
+    renderCodespaceFileTree();
+    renderCodespaceFileTabs();
+    loadCodespaceEditor();
+    updateStorageQuotaMeter();
+
+    if (window.csActiveFile) {
+      if (window.csActiveFile.endsWith('.html') || window.csActiveFile.endsWith('.htm')) {
+        setCodespaceView('preview');
+        updatePreview();
+      } else {
+        setCodespaceView('code');
+      }
+    }
+
+    if (window.showToast) {
+      window.showToast("Files Uploaded", `${uploadedCount} file(s) mounted in Sovereign VFS.`);
+    }
+
+    // Reset input elements
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(inp => { if (inp.id === 'vfsUploadInput' || inp.getAttribute('onchange')?.includes('uploadVfsFiles')) inp.value = ''; });
+  }
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const isBinary = /\.(png|jpg|jpeg|gif|webp|ico|pdf|wasm|bin)$/i.test(file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(e);
+      if (isBinary) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
+  }
+
   // Export to window
   window.toggleCodespacePane = toggleCodespacePane;
   window.renderCodespaceFileTree = renderCodespaceFileTree;
   window.renderCodespaceFileTabs = renderCodespaceFileTabs;
+  window.toggleFolderCollapse = toggleFolderCollapse;
+  window.uploadVfsFiles = uploadVfsFiles;
   window.removeSpecificTab = removeSpecificTab;
   window.switchCodespaceFile = switchCodespaceFile;
   window.loadCodespaceEditor = loadCodespaceEditor;
