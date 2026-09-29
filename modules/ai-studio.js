@@ -857,12 +857,12 @@
 
   function onModalProviderChange() {
     const providerSelect = document.getElementById("modalAiProviderSelect");
-    const customKeyWrapper = document.getElementById("modalCustomAiKeyWrapper");
-    if (providerSelect && customKeyWrapper) {
+    const endpointRow = document.getElementById("modalCustomEndpointRow");
+    if (providerSelect && endpointRow) {
       if (providerSelect.value === "custom") {
-        customKeyWrapper.classList.remove("hidden");
+        endpointRow.classList.remove("hidden");
       } else {
-        customKeyWrapper.classList.add("hidden");
+        endpointRow.classList.add("hidden");
       }
     }
     saveAiConfigFromModal();
@@ -982,19 +982,34 @@
     onModalPersonaChange();
   }
 
-  function checkProviderQuota() {
+  async function checkProviderQuota() {
     const provider = localStorage.getItem("lumina_ai_provider") || "hybrid_pool";
-    let msg = "";
-    if (provider === "hybrid_pool") {
-      msg = "Universal Hybrid Engine Active: Unified auto-failover across all registered Ollama Cloud keys (including ollamaapi2) and NVIDIA NIM keys with zero-latency cascade.";
-    } else if (provider === "ollama_pool") {
-      msg = "Ollama Cloud Multi-Key Pool: Auto-failover across all registered Ollama Cloud keys active upon HTTP 429.";
-    } else if (provider === "nvidia_pool") {
-      msg = "NVIDIA NIM Cloud Pool: Multi-key rotation configured. High-concurrency models enabled.";
-    } else {
-      msg = `Provider: ${provider}. Gateway limits governed by endpoint provider policies.`;
+    if (window.showToast) window.showToast("Provider Telemetry", "Auditing active platform key pools...");
+
+    try {
+      const res = await fetch("/api/chat?action=telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "telemetry" })
+      });
+      const data = await res.json().catch(() => null);
+
+      if (data && data.success) {
+        const oKeys = (data.pools?.ollama || []).map(k => `${k.name} (${k.keyMasked})`).join(", ") || "None";
+        const nKeys = (data.pools?.nvidia || []).map(k => `${k.name} (${k.keyMasked})`).join(", ") || "None";
+        const gKeys = (data.pools?.groq || []).map(k => `${k.name} (${k.keyMasked})`).join(", ") || "None";
+        const total = data.totalCount || 0;
+
+        const detailMsg = `Universal Hybrid Pool Active (${total} Total Key${total === 1 ? '' : 's'}):\n• Ollama Cloud: ${oKeys}\n• NVIDIA / Nemotron: ${nKeys}${gKeys !== 'None' ? `\n• Groq: ${gKeys}` : ''}\nAutomatic cross-pool failover is armed across all keys.`;
+        if (window.showToast) window.showToast(`Telemetry: ${total} Key(s) Armed`, detailMsg);
+        return;
+      }
+    } catch (e) {
+      console.warn("Live telemetry query error:", e);
     }
-    if (window.showToast) window.showToast("Provider Telemetry", msg);
+
+    const fallbackMsg = "Universal Hybrid Engine Active: Unified auto-failover across all registered Ollama Cloud keys (including ollama2) and NVIDIA/Nemotron keys with zero-latency cascade.";
+    if (window.showToast) window.showToast("Provider Telemetry", fallbackMsg);
   }
 
   function getAiSystemPrompt() {

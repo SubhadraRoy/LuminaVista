@@ -9,54 +9,99 @@ const keyCooldowns = new Map();
  * @param {string} provider - 'ollama' | 'nvidia' | 'groq' | 'openrouter' | 'gemini' | 'deepseek'
  * @returns {Array<{ index: number, key: string, name: string }>}
  */
+/**
+ * Validate that an environment variable string is a genuine API key token rather than configuration text
+ * @param {string} v 
+ * @returns {boolean}
+ */
+function isValidSecretToken(v) {
+  if (!v || typeof v !== 'string') return false;
+  const trimmed = v.trim();
+  if (trimmed.length < 8) return false;
+  if (trimmed.includes(' ')) return false;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return false;
+  if (/^(true|false|cpu|gpu|auto|\d{1,5})$/i.test(trimmed)) return false;
+  return true;
+}
+
+/**
+ * Extract available API keys for a provider from environment variables
+ * @param {string} provider - 'ollama' | 'nvidia' | 'groq' | 'openrouter' | 'gemini' | 'deepseek'
+ * @returns {Array<{ index: number, key: string, name: string, provider: string }>}
+ */
 export function getKeyPool(provider = 'ollama') {
   const pool = [];
   const p = (provider || '').toLowerCase();
 
   const addKey = (name, val, prov = 'ollama') => {
-    if (!val || typeof val !== 'string') return;
+    if (!isValidSecretToken(val)) return;
     const trimmed = val.trim();
-    if (!trimmed) return;
-    if (!pool.some(k => k.key === trimmed)) {
+    if (!pool.some(k => k.key === trimmed && k.provider === prov)) {
       pool.push({ index: pool.length + 1, key: trimmed, name, provider: prov });
     }
   };
 
   if (p === 'ollama' || p === 'ollama_pool') {
-    // 1. Direct indexed keys OLLAMA_API_KEY1..16 and OLLAMA_API_KEY
+    // 1. Direct indexed keys OLLAMA_API_KEY1..16, OLLAMA_KEY1..16, OLLAMA1..16
     for (let i = 1; i <= 16; i++) {
       if (process.env[`OLLAMA_API_KEY${i}`]) addKey(`OLLAMA_API_KEY${i}`, process.env[`OLLAMA_API_KEY${i}`], 'ollama');
+      if (process.env[`OLLAMA_KEY${i}`]) addKey(`OLLAMA_KEY${i}`, process.env[`OLLAMA_KEY${i}`], 'ollama');
+      if (process.env[`OLLAMA${i}`]) addKey(`OLLAMA${i}`, process.env[`OLLAMA${i}`], 'ollama');
+      if (process.env[`ollama${i}`]) addKey(`ollama${i}`, process.env[`ollama${i}`], 'ollama');
+      if (process.env[`ollama_api${i}`]) addKey(`ollama_api${i}`, process.env[`ollama_api${i}`], 'ollama');
+      if (process.env[`ollamaapi${i}`]) addKey(`ollamaapi${i}`, process.env[`ollamaapi${i}`], 'ollama');
     }
     if (process.env.OLLAMA_API_KEY) addKey('OLLAMA_API_KEY', process.env.OLLAMA_API_KEY, 'ollama');
+    if (process.env.OLLAMA_KEY) addKey('OLLAMA_KEY', process.env.OLLAMA_KEY, 'ollama');
+    if (process.env.OLLAMA) addKey('OLLAMA', process.env.OLLAMA, 'ollama');
+    if (process.env.ollama) addKey('ollama', process.env.ollama, 'ollama');
 
-    // 2. Scan all environment variables for flexible patterns (e.g. ollamaapi2, OLLAMAAPI2, ollama_api2, OLLAMA_KEY2)
+    // 2. Scan all environment variables for any variant of 'ollama' (including ollama2, OLLAMA2, ollama_2, etc.)
     for (const [k, v] of Object.entries(process.env)) {
-      const lowerKey = k.toLowerCase();
-      if (/^ollamaapi\d*$/i.test(k) || /^ollama_api\d*$/i.test(k) || (lowerKey.includes('ollama') && (lowerKey.includes('api') || lowerKey.includes('key')))) {
+      const cleaned = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleaned.includes('ollama')) {
+        addKey(k.toUpperCase(), v, 'ollama');
+      }
+      // If user named an Ollama Cloud key for Nemotron
+      if ((cleaned.includes('nematron') || cleaned.includes('nemotron')) && typeof v === 'string' && !v.trim().startsWith('nvapi-')) {
         addKey(k.toUpperCase(), v, 'ollama');
       }
     }
   } else if (p === 'nvidia' || p === 'nvidia_pool') {
-    // 1. Direct indexed keys NVIDIA_API_KEY, NVIDIA_API_KEY1..16, NVAPI_KEY1..16
+    // 1. Direct indexed keys for NVIDIA & Nemotron / Nematron
     if (process.env.NVIDIA_API_KEY) addKey('NVIDIA_API_KEY', process.env.NVIDIA_API_KEY, 'nvidia');
     if (process.env.NVAPI_KEY) addKey('NVAPI_KEY', process.env.NVAPI_KEY, 'nvidia');
+    if (process.env.NEMATRON_API_KEY) addKey('NEMATRON_API_KEY', process.env.NEMATRON_API_KEY, 'nvidia');
+    if (process.env.NEMOTRON_API_KEY) addKey('NEMOTRON_API_KEY', process.env.NEMOTRON_API_KEY, 'nvidia');
+    if (process.env.NEMATRON_KEY) addKey('NEMATRON_KEY', process.env.NEMATRON_KEY, 'nvidia');
+    if (process.env.NEMOTRON_KEY) addKey('NEMOTRON_KEY', process.env.NEMOTRON_KEY, 'nvidia');
+    if (process.env.NEMATRON) addKey('NEMATRON', process.env.NEMATRON, 'nvidia');
+    if (process.env.NEMOTRON) addKey('NEMOTRON', process.env.NEMOTRON, 'nvidia');
+
     for (let i = 1; i <= 16; i++) {
       if (process.env[`NVIDIA_API_KEY${i}`]) addKey(`NVIDIA_API_KEY${i}`, process.env[`NVIDIA_API_KEY${i}`], 'nvidia');
       if (process.env[`NVAPI_KEY${i}`]) addKey(`NVAPI_KEY${i}`, process.env[`NVAPI_KEY${i}`], 'nvidia');
+      if (process.env[`NEMATRON_API_KEY${i}`]) addKey(`NEMATRON_API_KEY${i}`, process.env[`NEMATRON_API_KEY${i}`], 'nvidia');
+      if (process.env[`NEMOTRON_API_KEY${i}`]) addKey(`NEMOTRON_API_KEY${i}`, process.env[`NEMOTRON_API_KEY${i}`], 'nvidia');
+      if (process.env[`NEMATRON${i}`]) addKey(`NEMATRON${i}`, process.env[`NEMATRON${i}`], 'nvidia');
+      if (process.env[`NEMOTRON${i}`]) addKey(`NEMOTRON${i}`, process.env[`NEMOTRON${i}`], 'nvidia');
     }
 
-    // 2. Scan all environment variables for NVIDIA NIM patterns or nvapi- token prefixes
+    // 2. Scan all environment variables for NVIDIA, NVAPI, Nematron, Nemotron, or 'nvapi-' token prefix
     for (const [k, v] of Object.entries(process.env)) {
-      const lowerKey = k.toLowerCase();
-      const isNvKey = (lowerKey.includes('nvidia') || lowerKey.startsWith('nvapi') || lowerKey.startsWith('nv_')) &&
-                      (lowerKey.includes('api') || lowerKey.includes('key'));
+      const cleaned = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const isNvOrNemotron = cleaned.includes('nvidia') ||
+                             cleaned.includes('nematron') ||
+                             cleaned.includes('nemotron') ||
+                             cleaned.startsWith('nvapi') ||
+                             cleaned.startsWith('nv');
       const isNvVal = typeof v === 'string' && v.trim().startsWith('nvapi-');
-      if (isNvKey || isNvVal) {
+      if (isNvOrNemotron || isNvVal) {
         addKey(k.toUpperCase(), v, 'nvidia');
       }
     }
   } else if (p === 'hybrid' || p === 'hybrid_pool') {
-    // Aggregate both Ollama Cloud and NVIDIA NIM key pools
+    // Aggregate both Ollama Cloud and NVIDIA/Nemotron key pools
     const oKeys = getKeyPool('ollama');
     const nKeys = getKeyPool('nvidia');
     return [...oKeys, ...nKeys];
@@ -66,7 +111,8 @@ export function getKeyPool(provider = 'ollama') {
       if (process.env[`GROQ_API_KEY${i}`]) addKey(`GROQ_API_KEY${i}`, process.env[`GROQ_API_KEY${i}`], 'groq');
     }
     for (const [k, v] of Object.entries(process.env)) {
-      if (k.toLowerCase().includes('groq') && (k.toLowerCase().includes('api') || k.toLowerCase().includes('key'))) {
+      const cleaned = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleaned.includes('groq')) {
         addKey(k.toUpperCase(), v, 'groq');
       }
     }
@@ -93,14 +139,16 @@ export function getKeyPool(provider = 'ollama') {
 /**
  * Check if a key is currently on temporary rate-limit cooldown
  * @param {string} key 
+ * @param {string} [provider='']
  * @returns {boolean}
  */
-export function isKeyInCooldown(key) {
+export function isKeyInCooldown(key, provider = '') {
   if (!key) return false;
-  const expiresAt = keyCooldowns.get(key);
+  const id = provider ? `${provider.toLowerCase()}:${key}` : key;
+  const expiresAt = keyCooldowns.get(id);
   if (!expiresAt) return false;
   if (Date.now() > expiresAt) {
-    keyCooldowns.delete(key);
+    keyCooldowns.delete(id);
     return false;
   }
   return true;
@@ -110,10 +158,12 @@ export function isKeyInCooldown(key) {
  * Place a key on temporary cooldown (default 30 seconds)
  * @param {string} key 
  * @param {number} durationMs 
+ * @param {string} [provider='']
  */
-export function markKeyCooldown(key, durationMs = 30000) {
+export function markKeyCooldown(key, durationMs = 30000, provider = '') {
   if (!key) return;
-  keyCooldowns.set(key, Date.now() + durationMs);
+  const id = provider ? `${provider.toLowerCase()}:${key}` : key;
+  keyCooldowns.set(id, Date.now() + durationMs);
 }
 
 /**
@@ -207,12 +257,12 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
 
   // Multi-cycle retry loop across all keys in the pool
   for (let cycle = 1; cycle <= maxCycles; cycle++) {
-    // Filter keys not currently on cooldown
-    let activeKeys = pool.filter(k => !isKeyInCooldown(k.key));
+    // Filter keys not currently on cooldown for this provider
+    let activeKeys = pool.filter(k => !isKeyInCooldown(k.key, k.provider || provider));
 
     if (activeKeys.length === 0) {
       if (cycle < maxCycles) {
-        failoverLogs.push(`[KeyPool Cycle ${cycle}]: All ${pool.length} keys on cooldown. Waiting 1.2s for quota window before retry cycle ${cycle + 1}...`);
+        failoverLogs.push(`[KeyPool Cycle ${cycle}]: All ${pool.length} keys on cooldown for ${provider}. Waiting 1.2s for quota window before retry cycle ${cycle + 1}...`);
         await new Promise(r => setTimeout(r, 1200));
         keyCooldowns.clear();
         activeKeys = pool;
@@ -223,8 +273,9 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
 
     for (let i = 0; i < activeKeys.length; i++) {
       const keyMeta = activeKeys[i];
+      const keyProv = keyMeta.provider || provider;
       try {
-        failoverLogs.push(`[KeyPool Cycle ${cycle}]: Dispatching with ${keyMeta.name} (Key #${keyMeta.index} of ${pool.length})...`);
+        failoverLogs.push(`[KeyPool Cycle ${cycle}]: Dispatching with ${keyMeta.name} (${keyProv}, Key #${keyMeta.index} of ${pool.length})...`);
         const res = await makeRequest(keyMeta.key, keyMeta);
         const rawText = await res.text().catch(() => '');
 
@@ -235,43 +286,43 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
           // Verify that the response is not an error disguised as HTTP 200
           if (data) {
             if (data.error || isRateLimitOrQuotaError(res.status, rawText)) {
-              markKeyCooldown(keyMeta.key, 30000);
-              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} returned rate-limit in JSON. Switching to next key...`);
+              markKeyCooldown(keyMeta.key, 30000, keyProv);
+              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned rate-limit in JSON. Switching to next key...`);
               continue;
             }
 
             const content = data.choices?.[0]?.message?.content || data.message?.content || data.reply || '';
             // If the model returned completely blank text or dummy "Task processed.", treat as quota glitch and rotate
             if (!content || content.trim() === '' || content.trim() === 'Task processed.') {
-              markKeyCooldown(keyMeta.key, 15000);
-              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} returned empty completion. Rotating to next key...`);
+              markKeyCooldown(keyMeta.key, 15000, keyProv);
+              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned empty completion. Rotating to next key...`);
               continue;
             }
 
-            failoverLogs.push(`[KeyPool]: Success from ${keyMeta.name} (HTTP 200).`);
+            failoverLogs.push(`[KeyPool]: Success from ${keyMeta.name} (${keyProv}, HTTP 200).`);
             return { success: true, data, keyMeta, failoverLogs };
           }
         }
 
         // Handle HTTP Rate Limit or Quota
         if (isRateLimitOrQuotaError(res.status, rawText)) {
-          markKeyCooldown(keyMeta.key, 30000);
-          failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} hit rate/quota limit (HTTP ${res.status}). Switching to next key...`);
+          markKeyCooldown(keyMeta.key, 30000, keyProv);
+          failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) hit rate/quota limit (HTTP ${res.status}). Switching to next key...`);
           continue;
         }
 
         // Handle Authentication failure
         if (res.status === 401 || res.status === 403) {
-          markKeyCooldown(keyMeta.key, 300000);
-          failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} auth failure (HTTP ${res.status}). Switching to alternate key...`);
+          markKeyCooldown(keyMeta.key, 300000, keyProv);
+          failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) auth failure (HTTP ${res.status}). Switching to alternate key...`);
           continue;
         }
 
-        failoverLogs.push(`[KeyPool Error]: ${keyMeta.name} returned HTTP ${res.status}: ${rawText.substring(0, 120)}`);
+        failoverLogs.push(`[KeyPool Error]: ${keyMeta.name} (${keyProv}) returned HTTP ${res.status}: ${rawText.substring(0, 120)}`);
         if (i < activeKeys.length - 1) continue;
 
       } catch (netErr) {
-        failoverLogs.push(`[KeyPool]: Network error with ${keyMeta.name}: ${netErr.message}. Attempting failover...`);
+        failoverLogs.push(`[KeyPool]: Network error with ${keyMeta.name} (${keyProv}): ${netErr.message}. Attempting failover...`);
         if (i < activeKeys.length - 1) continue;
       }
     }

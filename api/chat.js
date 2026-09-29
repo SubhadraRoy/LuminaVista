@@ -77,6 +77,29 @@ async function searchDuckDuckGo(query) {
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Live telemetry endpoint (GET /api/chat?action=telemetry or POST with action: 'telemetry')
+  const isTelemetry = (req.method === 'GET' && (req.query?.action === 'telemetry' || req.url?.includes('action=telemetry'))) ||
+                      (req.method === 'POST' && req.body?.action === 'telemetry');
+  if (isTelemetry) {
+    const oPool = getKeyPool('ollama');
+    const nPool = getKeyPool('nvidia');
+    const gPool = getKeyPool('groq');
+    const mask = (k) => (!k || k.length <= 6) ? '***' : `${k.substring(0, 3)}...${k.substring(k.length - 4)}`;
+
+    return res.status(200).json({
+      success: true,
+      provider: 'hybrid_pool',
+      summary: `Universal Hybrid Pool: ${oPool.length} Ollama key(s), ${nPool.length} NVIDIA/Nemotron key(s) detected.`,
+      pools: {
+        ollama: oPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'ollama' })),
+        nvidia: nPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'nvidia' })),
+        groq: gPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'groq' }))
+      },
+      totalCount: oPool.length + nPool.length + gPool.length
+    });
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   // 1. Enforce payload size cap (250 KB)
@@ -183,6 +206,7 @@ export default async function handler(req, res) {
         if (m.includes('/') && (m.startsWith('nvidia/') || m.startsWith('meta/') || m.startsWith('deepseek-ai/') || m.startsWith('mistralai/') || m.startsWith('google/'))) {
           return m;
         }
+        if (lower.includes('nemotron') || lower.includes('nematron')) return 'nvidia/llama-3.1-nemotron-70b-instruct';
         if (lower.includes('deepseek-r1') || lower.includes('r1')) return 'deepseek-ai/deepseek-r1';
         if (lower.includes('deepseek-v3') || lower.includes('v3')) return 'deepseek-ai/deepseek-v3';
         if (lower.includes('mistral') || lower.includes('codestral')) return 'mistralai/mistral-large-2-instruct';
@@ -206,9 +230,9 @@ export default async function handler(req, res) {
             m === 'deepseek-r1') {
           return m;
         }
-        if (lower.includes('nemotron-3-nano') || lower.includes('nano')) return 'nemotron-3-nano:30b';
-        if (lower.includes('nemotron-3-ultra') || lower.includes('ultra')) return 'nemotron-3-ultra';
-        if (lower.includes('nemotron')) return 'nemotron-3-super';
+        if (lower.includes('nemotron-3-nano') || lower.includes('nematron-3-nano') || lower.includes('nano')) return 'nemotron-3-nano:30b';
+        if (lower.includes('nemotron-3-ultra') || lower.includes('nematron-3-ultra') || lower.includes('ultra')) return 'nemotron-3-ultra';
+        if (lower.includes('nemotron') || lower.includes('nematron')) return 'nemotron-3-super';
         if (lower.includes('gemma4') || lower.includes('gemma-4')) return 'gemma4:31b';
         if (lower.includes('gpt-oss-120b') || lower.includes('120b')) return 'gpt-oss:120b';
         if (lower.includes('gpt-oss') || lower.includes('20b')) return 'gpt-oss:20b';
@@ -226,6 +250,10 @@ export default async function handler(req, res) {
       // Check available pools (with flexible env key discovery)
       const oPool = getKeyPool('ollama');
       const nPool = getKeyPool('nvidia');
+
+      if (loopCount === 1) {
+        terminalLogs.push(`[Hybrid Engine]: Discovered ${oPool.length} Ollama key(s) [${oPool.map(k => k.name).join(', ') || 'None'}] and ${nPool.length} NVIDIA/Nemotron key(s) [${nPool.map(k => k.name).join(', ') || 'None'}].`);
+      }
 
       let failoverResult = null;
       const isNvidiaExplicit = (provider === 'nvidia_pool' || provider === 'nvidia');

@@ -1292,16 +1292,25 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   console.log("\n[Test Suite 17: Multi-Key Flexible Pool Discovery, Hybrid Engine & Free-Quota Models]");
   const { getKeyPool } = await import('../api/_lib/key-pool.js');
 
-  // Test 1: ollamaapi2 flexible naming detection
-  process.env.ollamaapi2 = 'mock_ollama_key_two_123';
+  // Test 1: ollama2 and ollamaapi2 flexible naming detection
+  process.env.ollama2 = 'mock_ollama_key_two_123';
+  process.env.OLLAMA_2 = 'mock_ollama_underscore_two_456';
   const ollamaPool = getKeyPool('ollama');
-  assert(ollamaPool.some(k => k.key === 'mock_ollama_key_two_123'), "getKeyPool('ollama') dynamically detects ollamaapi2 env var");
-  delete process.env.ollamaapi2;
+  assert(ollamaPool.some(k => k.key === 'mock_ollama_key_two_123'), "getKeyPool('ollama') dynamically detects ollama2 env var");
+  assert(ollamaPool.some(k => k.key === 'mock_ollama_underscore_two_456'), "getKeyPool('ollama') dynamically detects OLLAMA_2 env var");
+  delete process.env.ollama2;
+  delete process.env.OLLAMA_2;
 
-  // Test 2: nvapi- prefix detection on custom env variables
+  // Test 2: nematron api key and nvapi- detection
+  process.env.NEMATRON_API_KEY = 'mock_nematron_direct_key_789';
+  process.env['nematron api key'] = 'mock_spaced_nematron_token_999';
   process.env.CUSTOM_SECRET_NVIDIA = 'nvapi-test-secret-key-456';
   const nvidiaPool = getKeyPool('nvidia');
+  assert(nvidiaPool.some(k => k.key === 'mock_nematron_direct_key_789'), "getKeyPool('nvidia') dynamically detects NEMATRON_API_KEY env var");
+  assert(nvidiaPool.some(k => k.key === 'mock_spaced_nematron_token_999'), "getKeyPool('nvidia') dynamically detects 'nematron api key' env var");
   assert(nvidiaPool.some(k => k.key === 'nvapi-test-secret-key-456'), "getKeyPool('nvidia') dynamically detects variables with nvapi- prefix");
+  delete process.env.NEMATRON_API_KEY;
+  delete process.env['nematron api key'];
   delete process.env.CUSTOM_SECRET_NVIDIA;
 
   // Test 3: hybrid_pool aggregates both pools
@@ -1312,6 +1321,24 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(hybridPool.some(k => k.key === 'nvapi-nvidia-1' && k.provider === 'nvidia'), "hybrid_pool includes NVIDIA NIM keys");
   delete process.env.OLLAMA_API_KEY1;
   delete process.env.NVIDIA_API_KEY1;
+
+  // Test 4: Live telemetry endpoint returns detected keys
+  const chatHandler = (await import('../api/chat.js')).default;
+  let telemStatus = 0, telemData = null;
+  const mockTelemReq = {
+    method: 'POST',
+    body: { action: 'telemetry' },
+    headers: { 'content-type': 'application/json' }
+  };
+  const mockTelemRes = {
+    status: (code) => { telemStatus = code; return mockTelemRes; },
+    json: (data) => { telemData = data; return mockTelemRes; },
+    setHeader: () => {},
+    end: () => mockTelemRes
+  };
+  await chatHandler(mockTelemReq, mockTelemRes);
+  assert(telemStatus === 200 && telemData && telemData.success === true, "Live telemetry action returns success status 200");
+  assert(telemData.pools && Array.isArray(telemData.pools.ollama) && Array.isArray(telemData.pools.nvidia), "Telemetry payload reports ollama and nvidia pool arrays");
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

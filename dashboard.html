@@ -1014,13 +1014,16 @@
         </select>
       </div>
 
-      <!-- Custom API Key Input (Toggleable) -->
-      <div id="modalCustomAiKeyWrapper" class="hidden space-y-2 p-3 bg-surface-900/80 border border-cyan-500/20 rounded-xl">
+      <!-- Custom / Dedicated Personal API Key Input -->
+      <div id="modalCustomAiKeyWrapper" class="space-y-2 p-3 bg-surface-900/80 border border-cyan-500/20 rounded-xl">
         <div class="space-y-1">
-          <label for="modalCustomAiKey" class="text-xs font-mono text-cyan-300">Custom API Key:</label>
-          <input type="password" id="modalCustomAiKey" placeholder="sk-or-v1-... or nvapi-..." class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
+          <div class="flex items-center justify-between">
+            <label for="modalCustomAiKey" class="text-xs font-mono text-cyan-300">Personal API Key (Optional Override / Direct Key):</label>
+            <span class="text-[10px] text-zinc-400 font-mono">Ollama, Nematron or NVIDIA</span>
+          </div>
+          <input type="password" id="modalCustomAiKey" placeholder="Paste personal ollama2 or nematron / nvapi key..." class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
         </div>
-        <div class="space-y-1">
+        <div id="modalCustomEndpointRow" class="hidden space-y-1">
           <label for="modalCustomAiEndpoint" class="text-xs font-mono text-zinc-400">Endpoint URL (Optional):</label>
           <input type="text" id="modalCustomAiEndpoint" placeholder="https://integrate.api.nvidia.com/v1/chat/completions" class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
         </div>
