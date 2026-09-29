@@ -337,13 +337,33 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   const personaSelect = document.getElementById("modalAiPersonaSelect");
   assert(personaSelect && personaSelect.options.length >= 21, `Persona select dropdown rendered with ${personaSelect ? personaSelect.options.length : 0} choices`);
 
-  // Verify Provider Mode and Simulation Sandbox
-  window.localStorage.setItem("lumina_ai_provider", "simulation");
+  // Verify Universal Hybrid Engine default and removal of simulation option
+  window.localStorage.setItem("lumina_ai_provider", "hybrid_pool");
   window.loadAiConfig();
   const modelBadge = document.getElementById("aiActiveModelBadge");
-  assert(modelBadge && modelBadge.textContent.includes("Autonomous Sandbox"), "Model badge reflects Autonomous Sandbox (Offline)");
+  assert(modelBadge && modelBadge.textContent.includes("Universal Hybrid"), "Model badge reflects Universal Hybrid Engine");
 
-  // Test simulation generator
+  const providerSelect = document.getElementById("modalAiProviderSelect");
+  const providerOptions = Array.from(providerSelect ? providerSelect.options : []).map(o => o.value);
+  assert(providerOptions.includes("hybrid_pool"), "Provider dropdown includes hybrid_pool");
+  assert(!providerOptions.includes("simulation"), "Simulation sandbox option is cleanly removed from provider dropdown");
+
+  // Verify categorized model selector contains all free-quota Ollama and frontier NIM models
+  const modelSelect = document.getElementById("modalAiModelSelect");
+  const modelOptions = Array.from(modelSelect ? modelSelect.querySelectorAll("option") : []).map(o => o.value);
+  const requiredModels = [
+    "gemma4:31b",
+    "gpt-oss:120b",
+    "gpt-oss:20b",
+    "nemotron-3-nano:30b",
+    "nemotron-3-super",
+    "nemotron-3-ultra"
+  ];
+  requiredModels.forEach(m => {
+    assert(modelOptions.includes(m), `Model selector includes requested free-quota model "${m}"`);
+  });
+
+  // Verify simulation generator helper remains operational for offline fallbacks
   const simReply = await window.generateSimulatedAutonomousReply("create an index.html landing page", 1, window.vfs);
   assert(simReply.includes("[TOOL:WRITE_FILE filename=\"index.html\"]"), "Simulation generator produced WRITE_FILE directive for index.html");
   assert(simReply.includes("[TOOL:TASK_COMPLETE"), "Simulation generator produced TASK_COMPLETE directive");
@@ -1267,6 +1287,31 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   const dashJsPath = pathModule.resolve(process.cwd(), 'modules', 'dashboard.js');
   const dashJsContent = fsModule.readFileSync(dashJsPath, 'utf8');
   assert(dashJsContent.includes('window.LuminaCalendar.init()'), "modules/dashboard.js initializes LuminaCalendar on OS boot");
+
+  // Suite 17: Multi-Key Flexible Pool Discovery, Hybrid Engine & Free-Quota Models
+  console.log("\n[Test Suite 17: Multi-Key Flexible Pool Discovery, Hybrid Engine & Free-Quota Models]");
+  const { getKeyPool } = await import('../api/_lib/key-pool.js');
+
+  // Test 1: ollamaapi2 flexible naming detection
+  process.env.ollamaapi2 = 'mock_ollama_key_two_123';
+  const ollamaPool = getKeyPool('ollama');
+  assert(ollamaPool.some(k => k.key === 'mock_ollama_key_two_123'), "getKeyPool('ollama') dynamically detects ollamaapi2 env var");
+  delete process.env.ollamaapi2;
+
+  // Test 2: nvapi- prefix detection on custom env variables
+  process.env.CUSTOM_SECRET_NVIDIA = 'nvapi-test-secret-key-456';
+  const nvidiaPool = getKeyPool('nvidia');
+  assert(nvidiaPool.some(k => k.key === 'nvapi-test-secret-key-456'), "getKeyPool('nvidia') dynamically detects variables with nvapi- prefix");
+  delete process.env.CUSTOM_SECRET_NVIDIA;
+
+  // Test 3: hybrid_pool aggregates both pools
+  process.env.OLLAMA_API_KEY1 = 'mock-ollama-1';
+  process.env.NVIDIA_API_KEY1 = 'nvapi-nvidia-1';
+  const hybridPool = getKeyPool('hybrid_pool');
+  assert(hybridPool.some(k => k.key === 'mock-ollama-1' && k.provider === 'ollama'), "hybrid_pool includes Ollama keys");
+  assert(hybridPool.some(k => k.key === 'nvapi-nvidia-1' && k.provider === 'nvidia'), "hybrid_pool includes NVIDIA NIM keys");
+  delete process.env.OLLAMA_API_KEY1;
+  delete process.env.NVIDIA_API_KEY1;
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

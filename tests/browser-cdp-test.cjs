@@ -265,6 +265,27 @@ async function runBrowserTest() {
   const cyberSpecialistCount = await evaluate("document.getElementById('modalAiPersonaSelect').options.length");
   test("Switching category to 'cybersecurity' dynamically loads 50 specialists", cyberSpecialistCount === 50);
 
+  // Test Universal Hybrid Engine default and removal of simulation option in Chrome
+  const providerOptions = await evaluate("Array.from(document.getElementById('modalAiProviderSelect').options).map(o => o.value)");
+  test("Provider dropdown contains 'hybrid_pool' as top option", providerOptions[0] === 'hybrid_pool');
+  test("Provider dropdown cleanly removed 'simulation' option", !providerOptions.includes('simulation'));
+
+  // Test presence of all requested free-quota Ollama models in Chrome
+  const modelOptions = await evaluate("Array.from(document.getElementById('modalAiModelSelect').querySelectorAll('option')).map(o => o.value)");
+  const hasAllFreeModels = [
+    "gemma4:31b",
+    "gpt-oss:120b",
+    "gpt-oss:20b",
+    "nemotron-3-nano:30b",
+    "nemotron-3-super",
+    "nemotron-3-ultra"
+  ].every(m => modelOptions.includes(m));
+  test("Model selector contains all 6 requested Ollama Cloud free-quota models", hasAllFreeModels);
+
+  // Test presence of multiple categorized optgroups in Chrome
+  const optgroupCount = await evaluate("document.getElementById('modalAiModelSelect').querySelectorAll('optgroup').length");
+  test(`Model selector is structured with clear category optgroups (Found: ${optgroupCount})`, optgroupCount >= 4);
+
   // Test Thinking Orb Canvas Presence
   const hasThinkingOrb = await evaluate("document.getElementById('headerThinkingOrb') !== null");
   test("Thinking Orb canvas rendered in AI Studio header", hasThinkingOrb);

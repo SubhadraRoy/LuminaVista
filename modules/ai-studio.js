@@ -896,10 +896,13 @@
     const personaBadge = document.getElementById("aiActivePersonaBadge");
     const webBadge = document.getElementById("webSearchActiveBadge");
 
-    const pVal = providerSel ? providerSel.value : (localStorage.getItem("lumina_ai_provider") || "ollama_pool");
+    const pVal = providerSel ? providerSel.value : (localStorage.getItem("lumina_ai_provider") || "hybrid_pool");
     if (modelBadge) {
-      if (pVal === "simulation") {
-        modelBadge.textContent = "Autonomous Sandbox (Offline)";
+      if (pVal === "hybrid_pool") {
+        modelBadge.textContent = "Universal Hybrid (Ollama + NIM)";
+        modelBadge.className = "px-1.5 py-0.5 rounded text-[9px] bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 text-cyan-300 font-mono border border-cyan-500/30";
+      } else if (pVal === "simulation") {
+        modelBadge.textContent = "Universal Hybrid (Auto-Failover)";
         modelBadge.className = "px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20";
       } else if (pVal === "nvidia_pool") {
         modelBadge.textContent = "NVIDIA NIM Pool (Multi-Key)";
@@ -951,10 +954,10 @@
     const customEndpointInp = document.getElementById("modalCustomAiEndpoint");
     const customPersonaPrompt = document.getElementById("modalCustomPersonaPrompt");
 
-    let savedProvider = localStorage.getItem("lumina_ai_provider") || "ollama_pool";
-    if (savedProvider === "local") {
-      savedProvider = "ollama_pool";
-      localStorage.setItem("lumina_ai_provider", "ollama_pool");
+    let savedProvider = localStorage.getItem("lumina_ai_provider") || "hybrid_pool";
+    if (savedProvider === "local" || savedProvider === "simulation") {
+      savedProvider = "hybrid_pool";
+      localStorage.setItem("lumina_ai_provider", "hybrid_pool");
     }
     const savedModel = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
     const savedCat = localStorage.getItem("lumina_ai_category") || "general";
@@ -980,14 +983,14 @@
   }
 
   function checkProviderQuota() {
-    const provider = localStorage.getItem("lumina_ai_provider") || "ollama_pool";
+    const provider = localStorage.getItem("lumina_ai_provider") || "hybrid_pool";
     let msg = "";
-    if (provider === "ollama_pool") {
-      msg = "Ollama Cloud Multi-Key Pool: 8 keys registered. Automatic failover active upon HTTP 429.";
+    if (provider === "hybrid_pool") {
+      msg = "Universal Hybrid Engine Active: Unified auto-failover across all registered Ollama Cloud keys (including ollamaapi2) and NVIDIA NIM keys with zero-latency cascade.";
+    } else if (provider === "ollama_pool") {
+      msg = "Ollama Cloud Multi-Key Pool: Auto-failover across all registered Ollama Cloud keys active upon HTTP 429.";
     } else if (provider === "nvidia_pool") {
       msg = "NVIDIA NIM Cloud Pool: Multi-key rotation configured. High-concurrency models enabled.";
-    } else if (provider === "simulation") {
-      msg = "Autonomous Sovereign Sandbox: 100% Offline with infinite local cognitive budget.";
     } else {
       msg = `Provider: ${provider}. Gateway limits governed by endpoint provider policies.`;
     }
@@ -2468,7 +2471,7 @@ What specific feature, application, or script would you like to build?`;
                 }
 
                 // Display failover toast if any failover occurred
-                if (Array.isArray(data.failoverLogs) && data.failoverLogs.some(l => l.includes("Auto-Failover"))) {
+                if (Array.isArray(data.failoverLogs) && data.failoverLogs.some(l => l.includes("Auto-Failover") || l.includes("Hybrid Failover"))) {
                   if (window.showToast) window.showToast("Auto-Failover", "Switched API key to prevent rate-limit.");
                 }
                 break;
@@ -2496,8 +2499,8 @@ What specific feature, application, or script would you like to build?`;
               `LuminaVista automatically made **${MAX_FAILOVER_RETRIES} failover attempts** across all registered key pools, but the upstream providers are currently rate-limiting requests.\n\n` +
               `**How to proceed:**\n` +
               `• **Wait ~30–60 seconds**: Cloud rate-limit windows typically refresh every minute.\n` +
-              `• **Add Your Free API Key**: Click **Configure AI (⚙️)** in the top right to paste a free API key from [Groq](https://console.groq.com) or [NVIDIA NIM](https://build.nvidia.com) for dedicated personal quota.\n` +
-              `• **Offline Sandbox**: Switch the provider to **Autonomous Sovereign Sandbox** in AI Studio config for 100% offline, quota-free operation.\n\n` +
+              `• **Verify Provider Engine**: Ensure your provider is set to **Universal Hybrid Engine** in Configure AI (⚙️) to pool all Ollama Cloud and NVIDIA NIM keys together.\n` +
+              `• **Add Personal Free Key**: In Configure AI (⚙️), paste a free personal key from [NVIDIA NIM](https://build.nvidia.com) or [Groq](https://console.groq.com) for dedicated quota.\n\n` +
               `[TOOL:TASK_COMPLETE summary="All AI provider keys exhausted after ${MAX_FAILOVER_RETRIES} automated failover attempts."][/TOOL:TASK_COMPLETE]`;
 
             if (window.showToast) {

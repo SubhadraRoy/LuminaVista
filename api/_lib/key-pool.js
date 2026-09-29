@@ -13,68 +13,77 @@ export function getKeyPool(provider = 'ollama') {
   const pool = [];
   const p = (provider || '').toLowerCase();
 
-  if (p === 'ollama' || p === 'ollama_pool') {
-    // Check OLLAMA_API_KEY1 through OLLAMA_API_KEY8 (and base OLLAMA_API_KEY)
-    for (let i = 1; i <= 8; i++) {
-      const val = process.env[`OLLAMA_API_KEY${i}`];
-      if (val && val.trim()) {
-        pool.push({ index: i, key: val.trim(), name: `OLLAMA_API_KEY${i}` });
-      }
+  const addKey = (name, val, prov = 'ollama') => {
+    if (!val || typeof val !== 'string') return;
+    const trimmed = val.trim();
+    if (!trimmed) return;
+    if (!pool.some(k => k.key === trimmed)) {
+      pool.push({ index: pool.length + 1, key: trimmed, name, provider: prov });
     }
-    if (process.env.OLLAMA_API_KEY && !pool.some(k => k.key === process.env.OLLAMA_API_KEY.trim())) {
-      pool.push({ index: pool.length + 1, key: process.env.OLLAMA_API_KEY.trim(), name: 'OLLAMA_API_KEY' });
+  };
+
+  if (p === 'ollama' || p === 'ollama_pool') {
+    // 1. Direct indexed keys OLLAMA_API_KEY1..16 and OLLAMA_API_KEY
+    for (let i = 1; i <= 16; i++) {
+      if (process.env[`OLLAMA_API_KEY${i}`]) addKey(`OLLAMA_API_KEY${i}`, process.env[`OLLAMA_API_KEY${i}`], 'ollama');
+    }
+    if (process.env.OLLAMA_API_KEY) addKey('OLLAMA_API_KEY', process.env.OLLAMA_API_KEY, 'ollama');
+
+    // 2. Scan all environment variables for flexible patterns (e.g. ollamaapi2, OLLAMAAPI2, ollama_api2, OLLAMA_KEY2)
+    for (const [k, v] of Object.entries(process.env)) {
+      const lowerKey = k.toLowerCase();
+      if (/^ollamaapi\d*$/i.test(k) || /^ollama_api\d*$/i.test(k) || (lowerKey.includes('ollama') && (lowerKey.includes('api') || lowerKey.includes('key')))) {
+        addKey(k.toUpperCase(), v, 'ollama');
+      }
     }
   } else if (p === 'nvidia' || p === 'nvidia_pool') {
-    // Check base NVIDIA_API_KEY and numbered NVIDIA_API_KEY1..8
-    if (process.env.NVIDIA_API_KEY && process.env.NVIDIA_API_KEY.trim()) {
-      pool.push({ index: 1, key: process.env.NVIDIA_API_KEY.trim(), name: 'NVIDIA_API_KEY' });
+    // 1. Direct indexed keys NVIDIA_API_KEY, NVIDIA_API_KEY1..16, NVAPI_KEY1..16
+    if (process.env.NVIDIA_API_KEY) addKey('NVIDIA_API_KEY', process.env.NVIDIA_API_KEY, 'nvidia');
+    if (process.env.NVAPI_KEY) addKey('NVAPI_KEY', process.env.NVAPI_KEY, 'nvidia');
+    for (let i = 1; i <= 16; i++) {
+      if (process.env[`NVIDIA_API_KEY${i}`]) addKey(`NVIDIA_API_KEY${i}`, process.env[`NVIDIA_API_KEY${i}`], 'nvidia');
+      if (process.env[`NVAPI_KEY${i}`]) addKey(`NVAPI_KEY${i}`, process.env[`NVAPI_KEY${i}`], 'nvidia');
     }
-    for (let i = 1; i <= 8; i++) {
-      const val = process.env[`NVIDIA_API_KEY${i}`];
-      if (val && val.trim() && !pool.some(k => k.key === val.trim())) {
-        pool.push({ index: pool.length + 1, key: val.trim(), name: `NVIDIA_API_KEY${i}` });
+
+    // 2. Scan all environment variables for NVIDIA NIM patterns or nvapi- token prefixes
+    for (const [k, v] of Object.entries(process.env)) {
+      const lowerKey = k.toLowerCase();
+      const isNvKey = (lowerKey.includes('nvidia') || lowerKey.startsWith('nvapi') || lowerKey.startsWith('nv_')) &&
+                      (lowerKey.includes('api') || lowerKey.includes('key'));
+      const isNvVal = typeof v === 'string' && v.trim().startsWith('nvapi-');
+      if (isNvKey || isNvVal) {
+        addKey(k.toUpperCase(), v, 'nvidia');
       }
     }
+  } else if (p === 'hybrid' || p === 'hybrid_pool') {
+    // Aggregate both Ollama Cloud and NVIDIA NIM key pools
+    const oKeys = getKeyPool('ollama');
+    const nKeys = getKeyPool('nvidia');
+    return [...oKeys, ...nKeys];
   } else if (p === 'groq' || p === 'groq_pool') {
-    // Check base GROQ_API_KEY and numbered GROQ_API_KEY1..8
-    if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim()) {
-      pool.push({ index: 1, key: process.env.GROQ_API_KEY.trim(), name: 'GROQ_API_KEY' });
-    }
+    if (process.env.GROQ_API_KEY) addKey('GROQ_API_KEY', process.env.GROQ_API_KEY, 'groq');
     for (let i = 1; i <= 8; i++) {
-      const val = process.env[`GROQ_API_KEY${i}`];
-      if (val && val.trim() && !pool.some(k => k.key === val.trim())) {
-        pool.push({ index: pool.length + 1, key: val.trim(), name: `GROQ_API_KEY${i}` });
+      if (process.env[`GROQ_API_KEY${i}`]) addKey(`GROQ_API_KEY${i}`, process.env[`GROQ_API_KEY${i}`], 'groq');
+    }
+    for (const [k, v] of Object.entries(process.env)) {
+      if (k.toLowerCase().includes('groq') && (k.toLowerCase().includes('api') || k.toLowerCase().includes('key'))) {
+        addKey(k.toUpperCase(), v, 'groq');
       }
     }
   } else if (p === 'openrouter' || p === 'openrouter_pool') {
-    if (process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.trim()) {
-      pool.push({ index: 1, key: process.env.OPENROUTER_API_KEY.trim(), name: 'OPENROUTER_API_KEY' });
-    }
-    for (let i = 1; i <= 4; i++) {
-      const val = process.env[`OPENROUTER_API_KEY${i}`];
-      if (val && val.trim() && !pool.some(k => k.key === val.trim())) {
-        pool.push({ index: pool.length + 1, key: val.trim(), name: `OPENROUTER_API_KEY${i}` });
-      }
+    if (process.env.OPENROUTER_API_KEY) addKey('OPENROUTER_API_KEY', process.env.OPENROUTER_API_KEY, 'openrouter');
+    for (let i = 1; i <= 8; i++) {
+      if (process.env[`OPENROUTER_API_KEY${i}`]) addKey(`OPENROUTER_API_KEY${i}`, process.env[`OPENROUTER_API_KEY${i}`], 'openrouter');
     }
   } else if (p === 'gemini' || p === 'gemini_pool') {
-    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
-      pool.push({ index: 1, key: process.env.GEMINI_API_KEY.trim(), name: 'GEMINI_API_KEY' });
-    }
-    for (let i = 1; i <= 4; i++) {
-      const val = process.env[`GEMINI_API_KEY${i}`];
-      if (val && val.trim() && !pool.some(k => k.key === val.trim())) {
-        pool.push({ index: pool.length + 1, key: val.trim(), name: `GEMINI_API_KEY${i}` });
-      }
+    if (process.env.GEMINI_API_KEY) addKey('GEMINI_API_KEY', process.env.GEMINI_API_KEY, 'gemini');
+    for (let i = 1; i <= 8; i++) {
+      if (process.env[`GEMINI_API_KEY${i}`]) addKey(`GEMINI_API_KEY${i}`, process.env[`GEMINI_API_KEY${i}`], 'gemini');
     }
   } else if (p === 'deepseek' || p === 'deepseek_pool') {
-    if (process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY.trim()) {
-      pool.push({ index: 1, key: process.env.DEEPSEEK_API_KEY.trim(), name: 'DEEPSEEK_API_KEY' });
-    }
-    for (let i = 1; i <= 4; i++) {
-      const val = process.env[`DEEPSEEK_API_KEY${i}`];
-      if (val && val.trim() && !pool.some(k => k.key === val.trim())) {
-        pool.push({ index: pool.length + 1, key: val.trim(), name: `DEEPSEEK_API_KEY${i}` });
-      }
+    if (process.env.DEEPSEEK_API_KEY) addKey('DEEPSEEK_API_KEY', process.env.DEEPSEEK_API_KEY, 'deepseek');
+    for (let i = 1; i <= 8; i++) {
+      if (process.env[`DEEPSEEK_API_KEY${i}`]) addKey(`DEEPSEEK_API_KEY${i}`, process.env[`DEEPSEEK_API_KEY${i}`], 'deepseek');
     }
   }
 
