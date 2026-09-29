@@ -333,10 +333,11 @@ export default async function handler(req, res) {
 
       const makeOllamaFetch = async (apiKey) => {
         const ollamaModel = resolveModelForProvider(requestedModel, 'ollama');
-        const endpoint = normalizeOllamaEndpoint(customEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions');
+        const configuredEndpoint = normalizeOllamaEndpoint(customEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions');
         const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
         const payloadMessages = sanitizeProviderMessages(messages, prompt);
-        return fetch(endpoint, {
+        
+        let res = await fetch(configuredEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -348,6 +349,24 @@ export default async function handler(req, res) {
             stream: false
           })
         });
+
+        // If custom/misconfigured endpoint failed with 404/401 and was not the default /v1, fall back to official /v1 endpoint
+        if (!res.ok && configuredEndpoint !== 'https://ollama.com/v1/chat/completions') {
+          res = await fetch('https://ollama.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(cleanKey ? { 'Authorization': `Bearer ${cleanKey}` } : {})
+            },
+            body: JSON.stringify({
+              model: ollamaModel,
+              messages: payloadMessages,
+              stream: false
+            })
+          });
+        }
+
+        return res;
       };
 
       const makeNvidiaFetch = async (apiKey) => {
@@ -400,6 +419,10 @@ export default async function handler(req, res) {
           customApiKey,
           makeRequest: async (apiKey) => makeNvidiaFetch(apiKey)
         });
+        if (failoverResult.failoverLogs) {
+          allFailoverLogs.push(...failoverResult.failoverLogs);
+          terminalLogs.push(...failoverResult.failoverLogs);
+        }
 
         // Cross-pool cascade to Ollama if NVIDIA exhausted/rate-limited
         if (!failoverResult.success && oPool.length > 0) {
@@ -410,6 +433,10 @@ export default async function handler(req, res) {
             customApiKey,
             makeRequest: async (apiKey) => makeOllamaFetch(apiKey)
           });
+          if (failoverResult.failoverLogs) {
+            allFailoverLogs.push(...failoverResult.failoverLogs);
+            terminalLogs.push(...failoverResult.failoverLogs);
+          }
         }
       } else {
         // Primary: Ollama Cloud Pool (including all discovered ollamaapi keys)
@@ -418,6 +445,10 @@ export default async function handler(req, res) {
           customApiKey,
           makeRequest: async (apiKey) => makeOllamaFetch(apiKey)
         });
+        if (failoverResult.failoverLogs) {
+          allFailoverLogs.push(...failoverResult.failoverLogs);
+          terminalLogs.push(...failoverResult.failoverLogs);
+        }
 
         // Cross-pool cascade to NVIDIA NIM if Ollama pool exhausted/rate-limited
         if (!failoverResult.success && nPool.length > 0) {
@@ -428,6 +459,10 @@ export default async function handler(req, res) {
             customApiKey,
             makeRequest: async (apiKey) => makeNvidiaFetch(apiKey)
           });
+          if (failoverResult.failoverLogs) {
+            allFailoverLogs.push(...failoverResult.failoverLogs);
+            terminalLogs.push(...failoverResult.failoverLogs);
+          }
         }
       }
 
