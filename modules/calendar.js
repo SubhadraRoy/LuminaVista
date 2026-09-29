@@ -921,14 +921,37 @@
     renderCalendar();
   }
 
-  function deleteEvent(id) {
+  async function deleteEvent(id) {
     const targetId = id || editingEventId;
     if (!targetId) return;
+
+    const evt = calendarEvents.find(e => e.id === targetId);
+    if (evt && evt.googleEventId && calendarSettings.googleCalendarConnected) {
+      deleteEventFromGoogle(evt.googleEventId);
+    }
+
+    // Two-way synchronization with AI Studio scheduled tasks
+    if (evt && evt.scheduledTaskId && window.scheduledTasks) {
+      window.scheduledTasks = window.scheduledTasks.filter(t => t.id !== evt.scheduledTaskId);
+      if (window.saveScheduledTasks) window.saveScheduledTasks();
+      if (window.renderScheduledTasksList) window.renderScheduledTasksList();
+    }
 
     calendarEvents = calendarEvents.filter(e => e.id !== targetId);
     saveCalendarEvents();
     closeEventModal();
     renderCalendar();
+  }
+
+  async function deleteEventFromGoogle(googleEventId) {
+    if (!googleEventId) return;
+    try {
+      await fetch(`/api/calendar/sync?eventId=${encodeURIComponent(googleEventId)}`, {
+        method: 'DELETE'
+      });
+    } catch (e) {
+      console.warn('Failed to delete event from Google Calendar:', e);
+    }
   }
 
   function handleDayCellClick(dateStr, event) {
@@ -1282,23 +1305,58 @@
       if (res.ok) {
         const data = await res.json();
         if (data.items && Array.isArray(data.items)) {
-          const gEvents = data.items.map(item => ({
-            id: `gcal_${item.id}`,
-            googleEventId: item.id,
-            title: item.summary || 'Google Calendar Event',
-            description: item.description || '',
-            location: item.location || '',
-            start: (item.start && (item.start.dateTime || item.start.date)) || new Date().toISOString(),
-            end: (item.end && (item.end.dateTime || item.end.date)) || new Date().toISOString(),
-            allDay: !item.start || !item.start.dateTime,
-            category: 'work',
-            color: '#3f51b5',
-            isAutonomous: false
-          }));
+          const activeGoogleEventIds = new Set(data.items.map(item => item.id));
 
-          gEvents.forEach(ge => {
-            const exists = calendarEvents.find(e => e.googleEventId === ge.googleEventId);
-            if (!exists) calendarEvents.push(ge);
+          // 1. Two-Way Delete: If an event was deleted from Google Calendar, remove it here
+          const removedEvents = calendarEvents.filter(e => e.googleEventId && !activeGoogleEventIds.has(e.googleEventId));
+          removedEvents.forEach(delEvt => {
+            if (delEvt.scheduledTaskId && window.scheduledTasks) {
+              window.scheduledTasks = window.scheduledTasks.filter(t => t.id !== delEvt.scheduledTaskId);
+              if (window.saveScheduledTasks) window.saveScheduledTasks();
+              if (window.renderScheduledTasksList) window.renderScheduledTasksList();
+            }
+          });
+
+          calendarEvents = calendarEvents.filter(e => {
+            if (!e.googleEventId) return true; // preserve sovereign local events
+            return activeGoogleEventIds.has(e.googleEventId); // keep only if it still exists in Google Calendar
+          });
+
+          // 2. Two-Way Update & Add from Google Calendar
+          data.items.forEach(item => {
+            const startStr = (item.start && (item.start.dateTime || item.start.date)) || new Date().toISOString();
+            const endStr = (item.end && (item.end.dateTime || item.end.date)) || new Date(Date.now() + 3600000).toISOString();
+            const allDay = !item.start || !item.start.dateTime;
+            const isAiTask = (item.summary || '').includes('[AI Task]') || (item.description || '').includes('[AI Task]');
+
+            const existing = calendarEvents.find(e => e.googleEventId === item.id);
+            if (existing) {
+              existing.title = item.summary || 'Google Calendar Event';
+              existing.description = item.description || '';
+              existing.location = item.location || '';
+              existing.start = startStr;
+              existing.end = endStr;
+              existing.allDay = allDay;
+              if (isAiTask) {
+                existing.category = 'ai_autonomous';
+                existing.color = '#00f2fe';
+                existing.isAutonomous = true;
+              }
+            } else {
+              calendarEvents.push({
+                id: `gcal_${item.id}`,
+                googleEventId: item.id,
+                title: item.summary || 'Google Calendar Event',
+                description: item.description || '',
+                location: item.location || '',
+                start: startStr,
+                end: endStr,
+                allDay: allDay,
+                category: isAiTask ? 'ai_autonomous' : 'work',
+                color: isAiTask ? '#00f2fe' : '#3f51b5',
+                isAutonomous: isAiTask
+              });
+            }
           });
 
           calendarSettings.googleCalendarConnected = true;
@@ -1306,6 +1364,9 @@
           saveCalendarEvents();
           saveCalendarSettings();
           renderCalendar();
+          if (window.showToast) {
+            window.showToast("Google Calendar Synced", `${data.items.length} active events in two-way sync.`);
+          }
         }
       }
     } catch (e) {
@@ -1316,11 +1377,13 @@
   }
 
   async function pushEventToGoogle(evt) {
+    if (!calendarSettings.googleCalendarConnected) return;
     try {
-      await fetch('/api/calendar/sync', {
+      const res = await fetch('/api/calendar/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          googleEventId: evt.googleEventId,
           summary: evt.title,
           description: evt.description || '',
           location: evt.location || '',
@@ -1328,7 +1391,16 @@
           end: { dateTime: new Date(evt.end).toISOString() }
         })
       });
-    } catch (e) {}
+      if (res.ok) {
+        const data = await res.json();
+        if (data.item && data.item.id) {
+          evt.googleEventId = data.item.id;
+          saveCalendarEvents();
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to push event to Google Calendar:', e);
+    }
   }
 
   function updateSyncStatusBadge(isSyncing = false) {
@@ -1711,6 +1783,15 @@
     openSyncModal,
     closeSyncModal,
     copyRedirectUri,
+    deleteEventFromGoogle,
+    pushEventToGoogle,
+    addEvent: function(evt) {
+      if (!evt) return;
+      calendarEvents.push(evt);
+      saveCalendarEvents();
+      renderCalendar();
+      return evt;
+    },
     saveSyncSettingsFromModal: function() {
       connectGoogleAccount();
       closeSyncModal();
@@ -1724,10 +1805,38 @@
     }
   };
 
-  if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => {
-      loadCalendarFromStorage();
+  // Cross-window and OAuth postMessage listener
+  if (typeof window !== 'undefined') {
+    window.addEventListener('message', async (e) => {
+      if (e.data && e.data.type === 'GCAL_AUTH_SUCCESS') {
+        calendarSettings.googleCalendarConnected = true;
+        saveCalendarSettings();
+        updateSyncStatusBadge();
+        await syncGoogleCalendar();
+      }
     });
+
+    if (window.location && window.location.search && window.location.search.includes('gcal_connected=true')) {
+      calendarSettings.googleCalendarConnected = true;
+      saveCalendarSettings();
+      updateSyncStatusBadge();
+      setTimeout(() => syncGoogleCalendar(), 400);
+      try {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('gcal_connected');
+        window.history.replaceState({}, document.title, cleanUrl.toString());
+      } catch (e) {}
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        loadCalendarFromStorage();
+      });
+    } else {
+      loadCalendarFromStorage();
+    }
   }
 
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -670,6 +670,179 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   const monthContainer = document.getElementById('calendarViewContainer');
   assert(monthContainer && monthContainer.innerHTML.includes("TODAY"), "Month view renders highlighted current date box with TODAY badge");
 
+  // Suite 13: Autonomous Offline Cloud Worker & Google Calendar Two-Way Parity
+  console.log("\n[Test Suite 13: Autonomous Offline Cloud Worker & Google Calendar Two-Way Parity]");
+  
+  // 1. Safe Resilient Storage Fallback
+  const { getSafeStorage } = await import('../api/_lib/redis.js');
+  const safeStorage = getSafeStorage();
+  assert(safeStorage !== null && typeof safeStorage.get === 'function', "getSafeStorage() exports resilient key-value interface");
+  
+  await safeStorage.set("test_key_sync", "resilient_val");
+  const storedVal = await safeStorage.get("test_key_sync");
+  assert(storedVal === "resilient_val", "Safe storage set and get operates seamlessly");
+  
+  await safeStorage.set("test_ttl_key", "temporary_val", { ex: 1 });
+  const ttlVal = await safeStorage.get("test_ttl_key");
+  assert(ttlVal === "temporary_val", "Safe storage supports TTL expiration parameter");
+  
+  await safeStorage.del("test_key_sync");
+  const deletedVal = await safeStorage.get("test_key_sync");
+  assert(deletedVal === null, "Safe storage del cleanly removes keys");
+
+  // 2. Google Calendar Controller & OAuth State Encoding
+  process.env.GOOGLE_CLIENT_ID = "mock_client_id.apps.googleusercontent.com";
+  process.env.GOOGLE_CLIENT_SECRET = "mock_secret_key";
+  const calendarController = (await import('../api/calendar.js')).default;
+  assert(typeof calendarController === 'function', "api/calendar.js exports serverless handler function");
+
+  let authStatus = 0;
+  let authData = null;
+  const mockAuthReq = {
+    method: 'GET',
+    url: '/api/calendar/auth?redirect_uri=https://lumina-vista-sigma.vercel.app/api/calendar/callback',
+    query: { redirect_uri: 'https://lumina-vista-sigma.vercel.app/api/calendar/callback' },
+    headers: { host: 'lumina-vista-sigma.vercel.app' }
+  };
+  const mockAuthRes = {
+    status: (code) => { authStatus = code; return mockAuthRes; },
+    json: (data) => { authData = data; return mockAuthRes; },
+    send: () => mockAuthRes
+  };
+  await calendarController(mockAuthReq, mockAuthRes);
+  assert(authStatus === 200 && authData && authData.configured === true, "Calendar controller /auth returns configured status");
+  assert(authData.authUrl.includes("state="), "Calendar OAuth URL encodes state parameter for redirect verification");
+  
+  // Verify state decodes to include matching redirect_uri
+  const stateMatch = authData.authUrl.match(/state=([^&]+)/);
+  const decodedState = JSON.parse(Buffer.from(decodeURIComponent(stateMatch[1]), 'base64').toString('utf8'));
+  assert(decodedState.redirect_uri === 'https://lumina-vista-sigma.vercel.app/api/calendar/callback', "State parameter safely captures client redirect_uri to prevent redirect_uri_mismatch");
+
+  // 3. Two-Way Google Calendar Deletion Parity: Lumina -> Google
+  let lastFetchUrl = '';
+  let lastFetchMethod = '';
+  const originalFetch = window.fetch;
+  window.fetch = async (url, opts = {}) => {
+    lastFetchUrl = url;
+    lastFetchMethod = opts.method || 'GET';
+    if (url.includes('/api/calendar/sync') && opts.method === 'DELETE') {
+      return { ok: true, json: async () => ({ success: true }) };
+    }
+    if (url.includes('/api/calendar/sync') && (!opts.method || opts.method === 'GET')) {
+      return { ok: true, json: async () => ({ items: [] }) };
+    }
+    return originalFetch ? originalFetch(url, opts) : { ok: true, json: async () => ({}) };
+  };
+
+  window.LuminaCalendar.setSettings({ googleCalendarConnected: true });
+  const testGcalEvt = {
+    id: 'evt_sync_mock_1',
+    googleEventId: 'gid_remote_999',
+    scheduledTaskId: 'sched_sync_999',
+    title: 'Bi-Directional Sync Event',
+    start: '2026-10-10T14:00',
+    end: '2026-10-10T15:00',
+    category: 'work',
+    color: '#039be5'
+  };
+  window.LuminaCalendar.addEvent(testGcalEvt);
+  window.scheduledTasks = window.scheduledTasks || [];
+  window.scheduledTasks.push({ id: 'sched_sync_999', name: 'Bi-Directional Sync Task', paused: false });
+
+  // Delete from Lumina: should remove from local calendar, delete linked task, and call DELETE on Google API
+  await window.LuminaCalendar.deleteEvent('evt_sync_mock_1');
+  const foundAfterDel = window.LuminaCalendar.getEvents().find(e => e.id === 'evt_sync_mock_1');
+  const foundTaskAfterDel = window.scheduledTasks.find(t => t.id === 'sched_sync_999');
+  assert(foundAfterDel === undefined, "LuminaCalendar.deleteEvent() removed event from local storage");
+  assert(foundTaskAfterDel === undefined, "LuminaCalendar.deleteEvent() automatically deleted linked scheduled task");
+  assert(lastFetchMethod === 'DELETE' && lastFetchUrl.includes('eventId=gid_remote_999'), "LuminaCalendar.deleteEvent() called Google Calendar DELETE endpoint with remote eventId");
+
+  // 4. Two-Way Google Calendar Deletion Parity: Google -> Lumina
+  // Insert an event that was previously synced from Google
+  const remoteEvtToDelete = {
+    id: 'gcal_remote_to_prune',
+    googleEventId: 'gid_pruned_on_google',
+    scheduledTaskId: 'sched_to_prune',
+    title: 'Deleted from Google Calendar',
+    start: '2026-10-11T09:00',
+    end: '2026-10-11T10:00',
+    category: 'work'
+  };
+  window.LuminaCalendar.addEvent(remoteEvtToDelete);
+  window.scheduledTasks.push({ id: 'sched_to_prune', name: 'Prunable Task', paused: false });
+  
+  // syncGoogleCalendar fetches { items: [] }, meaning gid_pruned_on_google was deleted remotely
+  await window.LuminaCalendar.syncGoogleCalendar();
+  const prunedLocalEvt = window.LuminaCalendar.getEvents().find(e => e.googleEventId === 'gid_pruned_on_google');
+  const prunedSchedTask = window.scheduledTasks.find(t => t.id === 'sched_to_prune');
+  assert(prunedLocalEvt === undefined, "Remote deletion in Google Calendar automatically purged event from Lumina");
+  assert(prunedSchedTask === undefined, "Remote deletion in Google Calendar automatically removed linked scheduled task");
+
+  // 5. Autonomous Cloud Background Worker (/api/worker)
+  const workerHandler = (await import('../api/worker.js')).default;
+  assert(typeof workerHandler === 'function', "api/worker.js exports cloud worker serverless handler");
+
+  let workerStatus = 0;
+  let workerData = null;
+  const mockWorkerPostReq = {
+    method: 'POST',
+    body: {
+      action: 'sync_schedules',
+      schedules: [
+        { id: 'cloud_task_1', name: 'Autonomous Health Monitor', cron: '*/30 * * * *', active: true }
+      ]
+    }
+  };
+  const mockWorkerRes = {
+    status: (code) => { workerStatus = code; return mockWorkerRes; },
+    json: (data) => { workerData = data; return mockWorkerRes; }
+  };
+  await workerHandler(mockWorkerPostReq, mockWorkerRes);
+  assert(workerStatus === 200 && workerData.success === true, "api/worker successfully persisted schedules into cloud storage");
+
+  // Verify schedule stored in safe storage
+  const persistedSchedules = JSON.parse(await safeStorage.get('cloud_scheduled_tasks'));
+  assert(persistedSchedules.length === 1 && persistedSchedules[0].id === 'cloud_task_1', "Cloud worker schedules retrieved from safe storage match payload");
+
+  // 6. Offline Cloud Task Completion Recovery in AI Studio
+  const mockCompletedJobId = 'job_offline_unit_test';
+  await safeStorage.set(`job_state:${mockCompletedJobId}`, JSON.stringify({
+    status: 'completed',
+    reply: 'Offline autonomous computation completed with 0 errors.',
+    vfs: { 'offline_out.txt': 'Autonomous Cloud Worker Result' }
+  }));
+
+  window.localStorage.setItem('lumina_offline_pending_jobs', JSON.stringify([
+    { jobId: mockCompletedJobId, prompt: 'Run autonomous offline data crunching' }
+  ]));
+
+  window.fetch = async (url, opts = {}) => {
+    if (url.includes(`/api/worker?jobId=${mockCompletedJobId}`)) {
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          job: {
+            status: 'completed',
+            reply: 'Offline autonomous computation completed with 0 errors.',
+            vfs: { 'offline_out.txt': 'Autonomous Cloud Worker Result' }
+          }
+        })
+      };
+    }
+    return { ok: true, json: async () => ({ success: true }) };
+  };
+
+  assert(typeof window.checkCompletedOfflineCloudJobs === 'function', "checkCompletedOfflineCloudJobs is exported on window");
+  await window.checkCompletedOfflineCloudJobs();
+
+  const conversation = window.aiConversation || [];
+  const offlineMessage = conversation.find(m => m.content && m.content.includes("Offline autonomous computation completed"));
+  assert(offlineMessage !== undefined, "Offline completed cloud task automatically merged into chat conversation on reconnection");
+  assert(window.vfs["offline_out.txt"] === 'Autonomous Cloud Worker Result', "Offline completed cloud task updated VFS workspace artifacts");
+
+  window.fetch = originalFetch;
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");
@@ -679,3 +852,4 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
     process.exit(1);
   }
 })();
+

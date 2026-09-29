@@ -455,11 +455,40 @@
       prompt,
       enabled: true,
       lastRun: Date.now(),
+      nextRunTime: Date.now() + intervalSeconds * 1000,
       executionCount: 0
     };
 
     window.scheduledTasks.push(newTask);
     saveScheduledTasks();
+
+    // Two-Way Sync to Lumina Calendar & Google Calendar
+    if (window.LuminaCalendar) {
+      const taskEvent = {
+        id: `sched_evt_${newTask.id}`,
+        scheduledTaskId: newTask.id,
+        title: `[AI Task] ${name}`,
+        description: prompt,
+        start: new Date().toISOString(),
+        end: new Date(Date.now() + 3600000).toISOString(),
+        category: 'ai_autonomous',
+        color: '#00f2fe',
+        isAutonomous: true,
+        priority: 'high'
+      };
+      const events = window.LuminaCalendar.getEvents();
+      if (!events.some(e => e.scheduledTaskId === newTask.id)) {
+        events.push(taskEvent);
+        localStorage.setItem('luminavista_calendar_events_v1', JSON.stringify(events));
+        if (window.LuminaCalendar.pushEventToGoogle) {
+          window.LuminaCalendar.pushEventToGoogle(taskEvent);
+        }
+        window.LuminaCalendar.render();
+      }
+    }
+
+    // Sync schedules to Cloud Worker so it runs even if PC is shut down
+    syncSchedulesToCloudWorker();
 
     nameInp.value = "";
     promptInp.value = "";
@@ -471,21 +500,49 @@
     if (!t) return;
     t.enabled = !t.enabled;
     saveScheduledTasks();
+    syncSchedulesToCloudWorker();
     if (window.showToast) window.showToast("Task Toggled", `Task "${t.name}" is now ${t.enabled ? 'Enabled' : 'Paused'}`);
   }
 
   function deleteScheduledTask(id) {
     window.scheduledTasks = window.scheduledTasks.filter(x => x.id !== id);
     saveScheduledTasks();
-    if (window.showToast) window.showToast("Task Removed", "Scheduled task deleted.");
+
+    // Delete associated calendar event and remove from Google Calendar
+    if (window.LuminaCalendar) {
+      window.LuminaCalendar.deleteEvent(`sched_evt_${id}`);
+    }
+
+    syncSchedulesToCloudWorker();
+    if (window.showToast) window.showToast("Task Removed", "Scheduled task deleted and removed from Google Calendar.");
+  }
+
+  async function syncSchedulesToCloudWorker() {
+    if (typeof fetch === 'undefined') return;
+    try {
+      await fetch('/api/worker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sync_schedules',
+          schedules: window.scheduledTasks,
+          currentVfs: window.vfs || {},
+          userSession: localStorage.getItem('lumina_session_id') || 'sovereign_session'
+        })
+      });
+    } catch (e) {
+      console.warn('Failed syncing schedules to cloud worker:', e);
+    }
   }
 
   async function runScheduledTaskNow(id) {
     const t = window.scheduledTasks.find(x => x.id === id);
     if (!t) return;
     t.lastRun = Date.now();
+    t.nextRunTime = Date.now() + (t.intervalSeconds || 3600) * 1000;
     t.executionCount = (t.executionCount || 0) + 1;
     saveScheduledTasks();
+    syncSchedulesToCloudWorker();
 
     if (window.showToast) window.showToast("Running Schedule", `Executing "${t.name}" autonomously...`);
     
@@ -2140,6 +2197,36 @@ What specific feature, application, or script would you like to build?`;
     // Client-side Jev System-1 Sub-50ms Classification (<2ms)
     const jevIntent = classifyJevIntentClient(prompt, window.vfs);
 
+    // Offline resilience: dispatch job to cloud worker so it finishes even if user shuts down PC
+    const offlineJobId = "job_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+    try {
+      const offlineJobs = JSON.parse(localStorage.getItem("lumina_offline_pending_jobs") || "[]");
+      offlineJobs.push({ jobId: offlineJobId, prompt, timestamp: Date.now() });
+      localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify(offlineJobs));
+
+      fetch("/api/worker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: offlineJobId,
+          userSession: localStorage.getItem("lumina_session_id") || "sovereign_session",
+          prompt,
+          requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
+          messages: [{ role: "system", content: getAiSystemPrompt() }, ...window.aiConversation],
+          currentVfs: window.vfs || {}
+        })
+      }).then(res => {
+        if (res.ok) {
+          setTimeout(() => {
+            try {
+              const cur = JSON.parse(localStorage.getItem("lumina_offline_pending_jobs") || "[]");
+              localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify(cur.filter(j => j.jobId !== offlineJobId)));
+            } catch(e) {}
+          }, 8000);
+        }
+      }).catch(() => {});
+    } catch(e) {}
+
     window.isAgentRunning = true;
     window.isAgentAborted = false;
     window.currentAgentLoop = 0;
@@ -2483,11 +2570,80 @@ What specific feature, application, or script would you like to build?`;
     if (window.loadCodespaceFileContent) window.loadCodespaceFileContent(filename);
   };
 
+  // Check and merge any autonomous tasks completed in the cloud while PC was shut down
+  async function checkCompletedOfflineCloudJobs() {
+    if (typeof fetch === 'undefined') return;
+    try {
+      const stored = localStorage.getItem("lumina_offline_pending_jobs");
+      if (!stored) return;
+      const pendingJobs = JSON.parse(stored);
+      if (!Array.isArray(pendingJobs) || pendingJobs.length === 0) return;
+
+      const remainingJobs = [];
+
+      for (const item of pendingJobs) {
+        try {
+          const res = await fetch(`/api/worker?jobId=${encodeURIComponent(item.jobId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.job && data.job.status === 'completed') {
+              const finishedJob = data.job;
+
+              // 1. Merge completed VFS artifacts
+              if (finishedJob.vfs && typeof finishedJob.vfs === 'object') {
+                window.vfs = window.vfs || {};
+                Object.assign(window.vfs, finishedJob.vfs);
+                localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+                if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
+                if (window.rebuildGraphData) window.rebuildGraphData();
+              }
+
+              // 2. Insert AI reply into chat conversation
+              if (finishedJob.reply) {
+                window.aiConversation.push({
+                  role: "assistant",
+                  content: `[AUTONOMOUS CLOUD TASK COMPLETED OFFLINE]\n${finishedJob.reply}`
+                });
+                updateActiveSessionMessages();
+                renderAiChat();
+              }
+
+              // 3. Update Google Calendar task event if present
+              if (window.LuminaCalendar) {
+                const events = window.LuminaCalendar.getEvents();
+                const taskEvt = events.find(e => e.title?.includes(item.prompt?.slice(0, 20) || ''));
+                if (taskEvt) {
+                  taskEvt.title = `[AI Task ✓ Completed] ${taskEvt.title.replace(/^\[AI Task\]\s*/, '')}`;
+                  localStorage.setItem('luminavista_calendar_events_v1', JSON.stringify(events));
+                  if (window.LuminaCalendar.pushEventToGoogle) {
+                    window.LuminaCalendar.pushEventToGoogle(taskEvt);
+                  }
+                  window.LuminaCalendar.render();
+                }
+              }
+
+              if (window.showToast) {
+                window.showToast("Cloud Task Completed", `"${(item.prompt || '').slice(0, 32)}..." finished while your PC was shut down.`);
+              }
+              continue;
+            }
+          }
+        } catch(e) {}
+        remainingJobs.push(item);
+      }
+
+      localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify(remainingJobs));
+    } catch (e) {
+      console.warn("Failed checking offline cloud jobs:", e);
+    }
+  }
+
   // Initialization Hook on DOM Content Loaded
   document.addEventListener("DOMContentLoaded", () => {
     initChatSessions();
     initScheduledTasks();
     updateAiSubTabArtifactBadge();
+    checkCompletedOfflineCloudJobs();
     setTimeout(() => {
       initThinkingOrb("headerThinkingOrb");
       loadAiConfig();
@@ -2540,5 +2696,6 @@ What specific feature, application, or script would you like to build?`;
   window.deleteScheduledTask = deleteScheduledTask;
   window.runScheduledTaskNow = runScheduledTaskNow;
   window.renderScheduledTasksList = renderScheduledTasksList;
+  window.checkCompletedOfflineCloudJobs = checkCompletedOfflineCloudJobs;
 
 })(window);

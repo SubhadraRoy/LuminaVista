@@ -14,12 +14,20 @@ async function handleAuth(req, res) {
     });
   }
 
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+  const rawHost = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+  const host = rawHost.split(',')[0].trim();
   const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || req.query?.redirect_uri || `${proto}://${host}/api/calendar/callback`;
 
+  // Encode redirect_uri into state so the callback exchange is guaranteed to match
+  const stateObj = {
+    redirect_uri: redirectUri,
+    ts: Date.now()
+  };
+  const state = Buffer.from(JSON.stringify(stateObj)).toString('base64');
+
   const scope = encodeURIComponent('https://www.googleapis.com/auth/calendar');
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
 
   return res.status(200).json({
     configured: true,
@@ -30,21 +38,46 @@ async function handleAuth(req, res) {
 
 // 2. OAuth2 Callback & Code Exchange
 async function handleCallback(req, res) {
-  const { code, error } = req.query || {};
+  const { code, error, state } = req.query || {};
   if (error || !code) {
-    return res.redirect(`/dashboard.html?gcal_error=${encodeURIComponent(error || 'Authorization denied')}`);
+    const errorMsg = error || 'Authorization denied';
+    return res.status(400).send(`
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><title>Authentication Failed</title></head>
+      <body style="background:#090d16;color:#f43f5e;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+        <div style="text-align:center;padding:24px;border:1px solid rgba(244,63,94,0.3);border-radius:12px;background:#18121d;max-width:380px;">
+          <h3 style="margin-top:0;">Authentication Cancelled</h3>
+          <p style="color:#a1a1aa;font-size:13px;">${escapeHtml(errorMsg)}</p>
+        </div>
+        <script>
+          try { if (window.opener) window.opener.postMessage({ type: 'GCAL_AUTH_ERROR', error: ${JSON.stringify(errorMsg)} }, '*'); } catch(e) {}
+          setTimeout(function() { window.close(); }, 2500);
+        </script>
+      </body>
+      </html>
+    `);
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return res.redirect('/dashboard.html?gcal_error=Server+missing+Google+OAuth+credentials');
+    return res.status(500).send('Server missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in Vercel environment variables.');
   }
 
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+  let redirectUriFromState = null;
+  if (state) {
+    try {
+      const parsed = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+      if (parsed.redirect_uri) redirectUriFromState = parsed.redirect_uri;
+    } catch (e) {}
+  }
+
+  const rawHost = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+  const host = rawHost.split(',')[0].trim();
   const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || req.query?.redirect_uri || `${proto}://${host}/api/calendar/callback`;
+  const redirectUri = redirectUriFromState || process.env.GOOGLE_REDIRECT_URI || req.query?.redirect_uri || `${proto}://${host}/api/calendar/callback`;
 
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -62,7 +95,8 @@ async function handleCallback(req, res) {
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok) {
       console.error('Google token exchange error:', tokenData);
-      return res.redirect(`/dashboard.html?gcal_error=${encodeURIComponent(tokenData.error_description || 'Token exchange failed')}`);
+      const errMsg = tokenData.error_description || tokenData.error || 'Token exchange failed';
+      return res.status(400).send(`Token exchange failed: ${errMsg}`);
     }
 
     // Store tokens securely in an HttpOnly cookie
@@ -80,10 +114,37 @@ async function handleCallback(req, res) {
       path: '/'
     }));
 
-    return res.redirect('/dashboard.html?gcal_connected=true');
+    // Return smooth popup auto-close & postMessage notification
+    return res.status(200).send(`
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><title>Google Calendar Connected</title></head>
+      <body style="background:#06080d;color:#00f2fe;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;box-sizing:border-box;">
+        <div style="text-align:center;background:#0e131f;padding:32px;border-radius:16px;border:1px solid rgba(0,242,254,0.3);max-width:400px;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+          <div style="font-size:36px;margin-bottom:12px;">✅</div>
+          <h2 style="margin:0 0 8px 0;font-size:18px;color:#fff;">Google Calendar Connected!</h2>
+          <p style="margin:0 0 16px 0;font-size:12px;color:#a1a1aa;">Synchronizing two-way schedule with LuminaVista OS...</p>
+          <div style="font-size:11px;color:#38bdf8;">Window will close automatically.</div>
+        </div>
+        <script>
+          try {
+            if (window.opener) {
+              window.opener.postMessage({ type: 'GCAL_AUTH_SUCCESS' }, '*');
+            }
+          } catch(e) {}
+          setTimeout(function() {
+            window.close();
+            if (!window.closed) {
+              window.location.href = '/dashboard.html?tab=calendar&gcal_connected=true';
+            }
+          }, 1200);
+        </script>
+      </body>
+      </html>
+    `);
   } catch (err) {
     console.error('Google OAuth callback error:', err);
-    return res.redirect('/dashboard.html?gcal_error=Internal+server+error');
+    return res.status(500).send('Internal server error during Google OAuth callback');
   }
 }
 
@@ -92,7 +153,8 @@ async function handleStatus(req, res) {
   const configured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const cookies = cookie.parse(req.headers?.cookie || '');
   const connected = !!cookies.gcal_token;
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+  const rawHost = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+  const host = rawHost.split(',')[0].trim();
   const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || req.query?.redirect_uri || `${proto}://${host}/api/calendar/callback`;
 
@@ -151,7 +213,7 @@ async function getValidAccessToken(req, res) {
   }
 }
 
-// 5. Two-Way Sync (Pull and Push)
+// 5. Two-Way Sync (Pull, Push, and Delete)
 async function handleSync(req, res) {
   const accessToken = await getValidAccessToken(req, res);
 
@@ -166,8 +228,8 @@ async function handleSync(req, res) {
   if (req.method === 'GET') {
     try {
       const now = new Date();
-      const timeMin = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-      const timeMax = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString();
+      const timeMin = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString();
+      const timeMax = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString();
 
       const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=250`;
 
@@ -191,24 +253,42 @@ async function handleSync(req, res) {
     }
   }
 
-  // POST: Push single event to Google Calendar
+  // POST: Push single event or update to Google Calendar
   if (req.method === 'POST') {
     try {
       const body = req.body || {};
-      const gcalRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          summary: body.summary || 'Scheduled Task',
-          description: body.description || '',
-          location: body.location || '',
-          start: body.start || { dateTime: new Date().toISOString() },
-          end: body.end || { dateTime: new Date(Date.now() + 3600000).toISOString() }
-        })
-      });
+      const targetEventId = body.googleEventId || body.eventId;
+      
+      const payload = {
+        summary: body.summary || body.title || 'Scheduled Task',
+        description: body.description || '',
+        location: body.location || '',
+        start: body.start || { dateTime: new Date().toISOString() },
+        end: body.end || { dateTime: new Date(Date.now() + 3600000).toISOString() }
+      };
+
+      let gcalRes;
+      if (targetEventId) {
+        // Update existing event
+        gcalRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(targetEventId)}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Create new event
+        gcalRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      }
 
       if (!gcalRes.ok) {
         const errText = await gcalRes.text();
@@ -226,7 +306,37 @@ async function handleSync(req, res) {
     }
   }
 
+  // DELETE: Delete event from Google Calendar
+  if (req.method === 'DELETE') {
+    try {
+      const eventId = req.query?.eventId || req.body?.eventId;
+      if (!eventId) {
+        return res.status(400).json({ error: 'Missing eventId to delete from Google Calendar' });
+      }
+
+      const gcalRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      if (!gcalRes.ok && gcalRes.status !== 404 && gcalRes.status !== 410) {
+        const errText = await gcalRes.text();
+        return res.status(gcalRes.status).json({ error: 'Failed to delete Google Calendar event', details: errText });
+      }
+
+      return res.status(200).json({ success: true, deletedEventId: eventId });
+    } catch (err) {
+      console.error('Google Calendar Sync DELETE error:', err);
+      return res.status(500).json({ error: 'Failed to delete event from Google Calendar' });
+    }
+  }
+
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
 }
 
 // Master Dispatcher
@@ -253,7 +363,7 @@ export default async function handler(req, res) {
     return handleSync(req, res);
   }
 
-  if (req.method === 'POST') {
+  if (req.method === 'POST' || req.method === 'DELETE') {
     return handleSync(req, res);
   }
   return handleStatus(req, res);
