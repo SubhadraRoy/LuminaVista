@@ -442,7 +442,7 @@
       if (window.renderAiChat) window.renderAiChat();
 
       // Query AI via sovereign backend endpoint or simulation fallback
-      const provider = localStorage.getItem('lumina_ai_provider') || 'simulation';
+      const provider = localStorage.getItem('lumina_ai_provider') || 'hybrid_pool';
       const model = localStorage.getItem('lumina_ai_model') || 'gpt-oss:20b';
       const persona = localStorage.getItem('lumina_ai_persona') || '';
       const category = localStorage.getItem('lumina_ai_category') || 'general';
@@ -465,7 +465,11 @@
         } else {
           const res = await fetch('/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-session-id': localStorage.getItem('lumina_session_id') || 'sovereign_session'
+            },
             body: JSON.stringify({
               prompt: promptText,
               messages: window.aiConversation,

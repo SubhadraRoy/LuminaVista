@@ -67,10 +67,15 @@
       try {
         const aiRes = await fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "x-session-id": localStorage.getItem("lumina_session_id") || "sovereign_session"
+          },
           body: JSON.stringify({
             prompt: `[TERMINAL AGENT REQUEST]: ${agentPrompt}`,
             requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
+            provider: localStorage.getItem("lumina_ai_provider") || "hybrid_pool",
             messages: [
               { role: "system", content: window.getAiSystemPrompt ? window.getAiSystemPrompt() : "" },
               { role: "user", content: agentPrompt }

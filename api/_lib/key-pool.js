@@ -263,6 +263,73 @@ export function normalizeOllamaEndpoint(endpoint) {
 }
 
 /**
+ * Robust extraction of generated content across diverse model formats:
+ * OpenAI chat, Ollama native /api/chat & /api/generate, reasoning/thought models (DeepSeek-R1, Nemotron),
+ * and SSE/NDJSON streaming lines.
+ * 
+ * @param {Object} data 
+ * @param {string} [rawText='']
+ * @returns {string}
+ */
+export function extractCompletionContent(data, rawText = '') {
+  if (!data && rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch (e) {
+      // Check for NDJSON / SSE chunks
+      const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.startsWith('{') || l.startsWith('data: '));
+      let acc = '';
+      for (let line of lines) {
+        if (line.startsWith('data: ')) line = line.substring(6).trim();
+        if (line === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(line);
+          const chunk = parsed.choices?.[0]?.delta?.content ||
+                        parsed.choices?.[0]?.message?.content ||
+                        parsed.message?.content ||
+                        parsed.response || '';
+          acc += chunk;
+        } catch (ignore) {}
+      }
+      if (acc.trim()) return acc.trim();
+    }
+  }
+
+  if (!data || typeof data !== 'object') return '';
+
+  const choice = Array.isArray(data.choices) && data.choices[0] ? data.choices[0] : null;
+  const msg = choice?.message || data.message;
+
+  // 1. Standard chat message content
+  if (msg) {
+    if (typeof msg.content === 'string' && msg.content.trim()) return msg.content.trim();
+    if (Array.isArray(msg.content)) {
+      const parts = msg.content.map(p => typeof p === 'string' ? p : (p?.text || '')).filter(Boolean);
+      if (parts.length > 0) return parts.join('\n').trim();
+    }
+    // Reasoning / Thought fields from DeepSeek R1, Nemotron, etc.
+    if (typeof msg.reasoning_content === 'string' && msg.reasoning_content.trim()) return msg.reasoning_content.trim();
+    if (typeof msg.thought === 'string' && msg.thought.trim()) return msg.thought.trim();
+  }
+
+  // 2. Direct choice text or delta
+  if (choice) {
+    if (typeof choice.text === 'string' && choice.text.trim()) return choice.text.trim();
+    if (typeof choice.delta?.content === 'string' && choice.delta.content.trim()) return choice.delta.content.trim();
+    if (typeof choice.delta?.reasoning_content === 'string' && choice.delta.reasoning_content.trim()) return choice.delta.reasoning_content.trim();
+  }
+
+  // 3. Ollama native generate / chat format (data.response)
+  if (typeof data.response === 'string' && data.response.trim()) return data.response.trim();
+  if (typeof data.reply === 'string' && data.reply.trim()) return data.reply.trim();
+  if (typeof data.content === 'string' && data.content.trim()) return data.content.trim();
+  if (typeof data.text === 'string' && data.text.trim()) return data.text.trim();
+  if (typeof data.reasoning_content === 'string' && data.reasoning_content.trim()) return data.reasoning_content.trim();
+
+  return '';
+}
+
+/**
  * Executes an AI provider request with automatic key rotation and continuous failover.
  * If Key #N encounters rate-limits or empty response, it immediately flags cooldown,
  * switches to Key #(N+1), and continues across multi-round retry cycles.
@@ -272,7 +339,7 @@ export function normalizeOllamaEndpoint(endpoint) {
  * @param {Function} options.makeRequest - async function(apiKey, keyMeta) => Response
  * @param {string} [options.customApiKey]
  * @param {number} [options.maxCycles=2]
- * @returns {Promise<{ success: boolean, data?: any, keyMeta?: object, failoverLogs: string[], reason?: string }>}
+ * @returns {Promise<{ success: boolean, data?: any, content?: string, keyMeta?: object, failoverLogs: string[], reason?: string }>}
  */
 export async function executeWithFailover({ provider = 'ollama', makeRequest, customApiKey = '', maxCycles = 2 }) {
   const failoverLogs = [];
@@ -293,9 +360,9 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
         try { data = JSON.parse(rawText); } catch (e) {}
 
         if (data && !data.error && !isRateLimitOrQuotaError(res.status, rawText)) {
-          const content = data.choices?.[0]?.message?.content || data.message?.content || data.reply || '';
-          if (content && content.trim() !== '' && content.trim() !== 'Task processed.') {
-            return { success: true, data, keyMeta: { index: 1, name: 'Custom User Key' }, failoverLogs };
+          const content = extractCompletionContent(data, rawText);
+          if (content && content !== 'Task processed.') {
+            return { success: true, data, content, keyMeta: { index: 1, name: 'Custom User Key' }, failoverLogs };
           }
         }
       }
@@ -353,17 +420,18 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
               continue;
             }
 
-            const content = data.choices?.[0]?.message?.content || data.message?.content || data.reply || '';
+            const content = extractCompletionContent(data, rawText);
             // If the model returned completely blank text or dummy "Task processed.", treat as quota glitch and rotate
-            if (!content || content.trim() === '' || content.trim() === 'Task processed.') {
+            if (!content || content === 'Task processed.') {
               hadRateLimit = true;
               markKeyCooldown(keyMeta.key, 15000, keyProv);
-              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned empty completion. Rotating to next key...`);
+              const preview = rawText ? rawText.substring(0, 100).replace(/\s+/g, ' ') : '';
+              failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned empty completion (${preview}). Rotating to next key...`);
               continue;
             }
 
             failoverLogs.push(`[KeyPool]: Success from ${keyMeta.name} (${keyProv}, HTTP 200).`);
-            return { success: true, data, keyMeta, failoverLogs };
+            return { success: true, data, content, keyMeta, failoverLogs };
           }
         }
 

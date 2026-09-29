@@ -7,7 +7,7 @@ import {
   enforcePayloadLimit,
   auditLog
 } from './_lib/auth-guard.js';
-import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint } from './_lib/key-pool.js';
+import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
 import {
   jevClassifyIntent,
   buildLuminaSystemPrompt,
@@ -48,6 +48,11 @@ export function sanitizeProviderMessages(rawMessages, fallbackPrompt = '') {
     }
   }
 
+  // If no conversational message (user or assistant) was added, append the fallbackPrompt as a user message
+  if (combined.length === 0 && fallbackPrompt) {
+    combined.push({ role: 'user', content: String(fallbackPrompt) });
+  }
+
   const result = [];
   if (systemParts.length > 0) {
     result.push({ role: 'system', content: systemParts.join('\n\n') });
@@ -55,10 +60,6 @@ export function sanitizeProviderMessages(rawMessages, fallbackPrompt = '') {
 
   for (const msg of combined) {
     result.push(msg);
-  }
-
-  if (result.length === 0 && fallbackPrompt) {
-    result.push({ role: 'user', content: String(fallbackPrompt) });
   }
 
   return result;
@@ -197,6 +198,12 @@ export default async function handler(req, res) {
     currentVfs = currentVfs || {};
     messages = messages || [];
     prompt = prompt || (messages.length > 0 ? messages[messages.length - 1].content : '');
+
+    // Ensure prompt is included as a user message if messages has no conversational turn
+    const hasUserTurn = messages.some(m => m && (m.role === 'user' || !m.role));
+    if (!hasUserTurn && prompt) {
+      messages.push({ role: 'user', content: String(prompt) });
+    }
 
     // Jev System-1 Guardrail & Intent Classification (<2ms)
     const jevTelemetry = jevClassifyIntent(prompt, currentVfs);
@@ -509,7 +516,7 @@ export default async function handler(req, res) {
         aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
       } else {
         const aiData = failoverResult.data;
-        aiReply = aiData?.choices?.[0]?.message?.content || aiData?.message?.content || "";
+        aiReply = failoverResult.content || extractCompletionContent(aiData) || "";
         if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.') {
           terminalLogs.push('[Response Guard]: Model returned empty or placeholder completion. Falling back to sovereign generator.');
           aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);

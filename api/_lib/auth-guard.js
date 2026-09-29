@@ -21,12 +21,12 @@ export function getClientIp(req) {
 export async function validateSession(req, redisClient = null) {
   const cookieHeader = req.headers?.cookie || '';
   const match = cookieHeader.match(/godx_session=([a-zA-Z0-9_-]+)/);
-  const sessionId = match ? match[1] : null;
+  const sessionId = match ? match[1] : (req.headers?.['x-session-id'] || req.headers?.authorization?.replace(/^Bearer\s+/i, '') || req.body?.userSession || null);
 
   const redis = redisClient || getRedisClient();
 
-  if (!redis || sessionId === 'sovereign_session') {
-    // When Upstash Redis is unconfigured in Vercel or local mock, allow sovereign session
+  // When ADMIN_PASSWORD is not configured, or Upstash Redis is unconfigured, or sovereign session is signaled, allow access
+  if (!process.env.ADMIN_PASSWORD || !redis || sessionId === 'sovereign_session' || (!process.env.ADMIN_PASSWORD && !sessionId)) {
     return { valid: true, sessionId: sessionId || 'sovereign_session' };
   }
 

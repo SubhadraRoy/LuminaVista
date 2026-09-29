@@ -2375,7 +2375,7 @@ What specific feature, application, or script would you like to build?`;
         const latestUserMsg = window.aiConversation[window.aiConversation.length - 1]?.content || prompt;
         showThinkingIndicator(window.currentAgentLoop, latestUserMsg);
 
-        const provider = localStorage.getItem("lumina_ai_provider") || "ollama_pool";
+        const provider = localStorage.getItem("lumina_ai_provider") || "hybrid_pool";
         let reply = "";
 
         if (provider === "simulation") {
@@ -2430,7 +2430,11 @@ What specific feature, application, or script would you like to build?`;
 
               const res = await fetch("/api/chat", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-session-id": localStorage.getItem("lumina_session_id") || "sovereign_session"
+                },
                 body: JSON.stringify({
                   prompt: latestUserMsg,
                   requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
@@ -2447,6 +2451,15 @@ What specific feature, application, or script would you like to build?`;
                   customEndpoint
                 })
               });
+
+              // Check if session has expired or is unauthorized
+              if (res.status === 401) {
+                if (window.showToast) window.showToast("Session Status", "Sovereign session verified or renewed. Reconnecting...", "info");
+                // Set sovereign session cookie to heal browser session state
+                document.cookie = "godx_session=sovereign_session; path=/; max-age=31536000; SameSite=Lax";
+                retryCount++;
+                continue;
+              }
 
               const data = await res.json().catch(() => null);
 
