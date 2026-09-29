@@ -141,6 +141,8 @@ export default async function handler(req, res) {
       success: true,
       provider: 'hybrid_pool',
       summary: `Universal Hybrid Pool: ${oPool.length} Ollama key(s), ${nPool.length} NVIDIA/Nemotron key(s) detected.`,
+      endpoint: normalizeOllamaEndpoint(process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions'),
+      configuredModel: process.env.OLLAMA_MODEL || 'gpt-oss:20b',
       pools: {
         ollama: oPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'ollama' })),
         nvidia: nPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'nvidia' })),
@@ -222,6 +224,7 @@ export default async function handler(req, res) {
     let terminalLogs = [];
     let allFailoverLogs = [];
     let lastActiveKeyMeta = null;
+    let failoverResult = null;
     let isTaskComplete = false;
     let loopCount = 0;
     const MAX_LOOPS = 2; // Prevents timeout in single serverless execution
@@ -305,7 +308,7 @@ export default async function handler(req, res) {
         terminalLogs.push(`[Hybrid Engine]: Discovered ${oPool.length} Ollama key(s) [${oPool.map(k => k.name).join(', ') || 'None'}] and ${nPool.length} NVIDIA/Nemotron key(s) [${nPool.map(k => k.name).join(', ') || 'None'}].`);
       }
 
-      let failoverResult = null;
+      failoverResult = null;
       const isNvidiaExplicit = (provider === 'nvidia_pool' || provider === 'nvidia');
       const isOllamaExplicit = (provider === 'ollama_pool' || provider === 'ollama');
       const isNvidiaModelSelected = requestedModel && (

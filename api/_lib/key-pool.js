@@ -71,12 +71,18 @@ export function getKeyPool(provider = 'ollama') {
           const subName = subNames[j];
           const subVal = subVals[j] || subVals[0];
           const cleaned = subName.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (cleaned.includes('model') || cleaned.includes('endpoint') || cleaned.includes('url') || cleaned.includes('host') || cleaned.includes('port')) {
+            continue;
+          }
           if (cleaned.includes('ollama')) {
             addKey(subName.toUpperCase(), subVal, 'ollama');
           }
         }
       }
       const cleaned = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleaned.includes('model') || cleaned.includes('endpoint') || cleaned.includes('url') || cleaned.includes('host') || cleaned.includes('port')) {
+        continue;
+      }
       if (cleaned.includes('ollama')) {
         addKey(k.toUpperCase(), v, 'ollama');
       }
@@ -108,6 +114,9 @@ export function getKeyPool(provider = 'ollama') {
     // 2. Scan all environment variables for NVIDIA, NVAPI, Nematron, Nemotron, or 'nvapi-' token prefix
     for (const [k, v] of Object.entries(process.env)) {
       const cleaned = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleaned.includes('model') || cleaned.includes('endpoint') || cleaned.includes('url') || cleaned.includes('host') || cleaned.includes('port')) {
+        continue;
+      }
       const isNvOrNemotron = cleaned.includes('nvidia') ||
                              cleaned.includes('nematron') ||
                              cleaned.includes('nemotron') ||
