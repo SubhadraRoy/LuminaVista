@@ -945,8 +945,10 @@
 
   async function deleteEventFromGoogle(googleEventId) {
     if (!googleEventId) return;
+    const fetchFn = (typeof window !== 'undefined' && typeof window.fetch === 'function') ? window.fetch : (typeof fetch === 'function' ? fetch : null);
+    if (!fetchFn) return;
     try {
-      await fetch(`/api/calendar/sync?eventId=${encodeURIComponent(googleEventId)}`, {
+      await fetchFn(`/api/calendar/sync?eventId=${encodeURIComponent(googleEventId)}`, {
         method: 'DELETE'
       });
     } catch (e) {
@@ -1378,8 +1380,10 @@
 
   async function pushEventToGoogle(evt) {
     if (!calendarSettings.googleCalendarConnected) return;
+    const fetchFn = (typeof window !== 'undefined' && typeof window.fetch === 'function') ? window.fetch : (typeof fetch === 'function' ? fetch : null);
+    if (!fetchFn) return;
     try {
-      const res = await fetch('/api/calendar/sync', {
+      const res = await fetchFn('/api/calendar/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1522,27 +1526,125 @@
   }
 
   // =========================================================================
-  // AI STUDIO INTENT DIRECTIVE HANDLER
+  // AI STUDIO INTENT DIRECTIVE HANDLER & FUZZY MATCHER
   // =========================================================================
+  function fuzzyFindEvent(identifier) {
+    if (!identifier) return null;
+    const str = String(identifier).toLowerCase().trim();
+
+    // 1. Direct ID or Google ID match
+    let found = calendarEvents.find(e => e.id === identifier || e.googleEventId === identifier);
+    if (found) return found;
+
+    // 2. Exact title match (case insensitive)
+    found = calendarEvents.find(e => e.title && e.title.toLowerCase().trim() === str);
+    if (found) return found;
+
+    // 3. Substring in title
+    found = calendarEvents.find(e => e.title && e.title.toLowerCase().includes(str));
+    if (found) return found;
+
+    // 4. Words match
+    const words = str.split(/\s+/).filter(w => w.length > 2);
+    if (words.length > 0) {
+      found = calendarEvents.find(e => {
+        const t = (e.title || '').toLowerCase();
+        return words.every(w => t.includes(w));
+      });
+      if (found) return found;
+    }
+
+    return null;
+  }
+
   function handleAgentDirective(directive) {
-    if (!directive || typeof directive !== 'object') return { success: false };
+    if (!directive || typeof directive !== 'object') return { success: false, message: 'Invalid directive' };
 
-    const { action } = directive;
+    const action = (directive.action || 'create').toLowerCase();
 
+    // 1. View / List
+    if (action === 'view' || action === 'list') {
+      let targetDateStr = directive.date;
+      const query = (directive.query || directive.search || '').toLowerCase().trim();
+      let matched = [];
+
+      if (targetDateStr) {
+        if (targetDateStr === 'today') {
+          targetDateStr = formatDateKey(new Date());
+        } else if (targetDateStr === 'tomorrow') {
+          const tom = new Date();
+          tom.setDate(tom.getDate() + 1);
+          targetDateStr = formatDateKey(tom);
+        }
+        const dObj = new Date(targetDateStr + 'T00:00:00');
+        if (!isNaN(dObj.getTime())) {
+          matched = getEventsForDate(dObj);
+        } else {
+          matched = [...calendarEvents];
+        }
+      } else if (query) {
+        matched = calendarEvents.filter(e => 
+          (e.title && e.title.toLowerCase().includes(query)) ||
+          (e.description && e.description.toLowerCase().includes(query))
+        );
+      } else {
+        matched = getUpcomingEvents(directive.daysAhead ? parseInt(directive.daysAhead, 10) : 7);
+      }
+
+      if (query && targetDateStr) {
+        matched = matched.filter(e =>
+          (e.title && e.title.toLowerCase().includes(query)) ||
+          (e.description && e.description.toLowerCase().includes(query))
+        );
+      }
+
+      return {
+        success: true,
+        count: matched.length,
+        events: matched,
+        message: `Found ${matched.length} event(s).`
+      };
+    }
+
+    // 2. Auto Plan
     if (action === 'auto_plan') {
       const targetDate = directive.date || formatDateKey(new Date());
       return aiAutoPlanDay(targetDate, directive.tasks);
     }
 
-    if (action === 'create') {
+    // 3. Create / Add
+    if (action === 'create' || action === 'add') {
+      const now = new Date();
+      let startStr = directive.start;
+      let endStr = directive.end;
+      const targetDate = directive.date || formatDateKey(now);
+
+      if (!startStr) {
+        startStr = `${targetDate}T10:00:00`;
+      } else if (startStr.length === 5 && startStr.includes(':')) {
+        startStr = `${targetDate}T${startStr}:00`;
+      }
+
+      if (!endStr) {
+        const sDate = new Date(startStr);
+        endStr = !isNaN(sDate.getTime()) 
+          ? new Date(sDate.getTime() + 3600000).toISOString().slice(0, 19)
+          : `${targetDate}T11:00:00`;
+      } else if (endStr.length === 5 && endStr.includes(':')) {
+        endStr = `${targetDate}T${endStr}:00`;
+      }
+
+      const cat = directive.category || 'ai_autonomous';
       const newEvt = {
-        id: `evt_agent_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        id: directive.id || `evt_agent_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         title: directive.title || 'Scheduled Event',
-        start: directive.start || new Date().toISOString(),
-        end: directive.end || new Date(Date.now() + 3600000).toISOString(),
+        start: startStr,
+        end: endStr,
         allDay: !!directive.allDay,
-        category: directive.category || 'ai_autonomous',
-        color: CATEGORY_META[directive.category] ? CATEGORY_META[directive.category].color : '#00f2fe',
+        category: cat,
+        color: CATEGORY_META[cat] ? CATEGORY_META[cat].color : '#00f2fe',
+        description: directive.description || '',
+        location: directive.location || '',
         isAutonomous: true,
         priority: directive.priority || 'normal',
         reschedulable: directive.reschedulable !== false
@@ -1555,19 +1657,93 @@
       calendarEvents.push(newEvt);
       saveCalendarEvents();
       renderCalendar();
-      return { success: true, event: newEvt };
-    }
 
-    if (action === 'delete') {
-      const id = directive.id;
-      if (id) {
-        calendarEvents = calendarEvents.filter(e => e.id !== id);
-        saveCalendarEvents();
-        renderCalendar();
-        return { success: true };
+      if (calendarSettings.googleCalendarConnected) {
+        pushEventToGoogle(newEvt);
       }
+
+      return {
+        success: true,
+        event: newEvt,
+        message: `Successfully created and scheduled "${newEvt.title}" (${newEvt.start} - ${newEvt.end})`
+      };
     }
 
+    // 4. Edit / Update
+    if (action === 'edit' || action === 'update') {
+      const target = fuzzyFindEvent(directive.id || directive.query || directive.search || directive.title);
+      if (!target) {
+        return {
+          success: false,
+          message: `Could not find an event matching "${directive.id || directive.query || directive.search || directive.title}".`
+        };
+      }
+
+      if (directive.newTitle) {
+        target.title = directive.newTitle;
+      } else if (directive.title && (directive.id || directive.query || directive.search)) {
+        target.title = directive.title;
+      }
+
+      if (directive.start) {
+        target.start = directive.start;
+      }
+      if (directive.end) {
+        target.end = directive.end;
+      }
+      if (directive.category && CATEGORY_META[directive.category]) {
+        target.category = directive.category;
+        target.color = CATEGORY_META[directive.category].color;
+      }
+      if (directive.description !== undefined) {
+        target.description = directive.description;
+      }
+      if (directive.location !== undefined) {
+        target.location = directive.location;
+      }
+      if (directive.priority !== undefined) {
+        target.priority = directive.priority;
+      }
+
+      if (calendarSettings.aiSchedulingEnabled && (directive.start || directive.end)) {
+        aiRescheduleConflicts(target);
+      }
+
+      saveCalendarEvents();
+      renderCalendar();
+
+      if (target.googleEventId && calendarSettings.googleCalendarConnected) {
+        pushEventToGoogle(target);
+      }
+
+      return {
+        success: true,
+        event: target,
+        message: `Successfully updated event "${target.title}" (Start: ${target.start}, End: ${target.end}).`
+      };
+    }
+
+    // 5. Delete / Remove
+    if (action === 'delete' || action === 'remove') {
+      const target = fuzzyFindEvent(directive.id || directive.query || directive.search || directive.title);
+      if (!target) {
+        return {
+          success: false,
+          message: `Could not find an event to delete matching "${directive.id || directive.query || directive.search || directive.title}".`
+        };
+      }
+
+      const deletedTitle = target.title;
+      deleteEvent(target.id);
+
+      return {
+        success: true,
+        deletedEvent: target,
+        message: `Successfully deleted event "${deletedTitle}".`
+      };
+    }
+
+    // 6. Toggle
     if (action === 'toggle') {
       if (directive.state !== undefined) {
         calendarSettings.aiSchedulingEnabled = (directive.state === 'on' || directive.state === true);
@@ -1796,6 +1972,8 @@
       connectGoogleAccount();
       closeSyncModal();
     },
+    fuzzyFindEvent,
+    getUpcomingEvents,
     getEvents: () => [...calendarEvents],
     getSettings: () => ({ ...calendarSettings }),
     setSettings: (s) => {

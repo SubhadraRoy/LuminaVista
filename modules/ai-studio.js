@@ -60,7 +60,7 @@
     }
     // 1. Calendar scheduling & real-life routine intent
     else if (
-      /\b(schedule|calendar|routine|meeting|appointment|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
+      /\b(schedule|calendar|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
       /\[tool:schedule_event/i.test(p)
     ) {
       route = 'SCHEDULE_CALENDAR';
@@ -1013,6 +1013,27 @@
       ? fileKeys.map(k => `  • ${k} (${(vfs[k] || '').length} bytes)`).join('\n')
       : '  (Virtual File System is currently empty)';
 
+    let calStr = '  (No events currently scheduled)';
+    if (window.LuminaCalendar && typeof window.LuminaCalendar.getEvents === 'function') {
+      try {
+        const evts = window.LuminaCalendar.getEvents();
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const endOfTomorrow = startOfToday + (2 * 86400000);
+        const nearEvents = evts.filter(e => {
+          if (!e || !e.start) return false;
+          const t = new Date(e.start).getTime();
+          return !isNaN(t) && t >= startOfToday && t <= endOfTomorrow;
+        }).sort((a, b) => (a.start > b.start ? 1 : -1));
+
+        if (nearEvents.length > 0) {
+          calStr = nearEvents.map(e => 
+            `  • [ID: ${e.id}] "${e.title}" | ${e.start} -> ${e.end} | Cat: ${e.category}${e.googleEventId ? ' (Google Synced)' : ''}`
+          ).join('\n');
+        }
+      } catch (err) {}
+    }
+
     const isoTime = new Date().toISOString();
 
     return `You are LuminaVista Sovereign Autonomous OS Agent (v14.0 Enterprise).
@@ -1027,8 +1048,12 @@ Specialist Directive: ${personaDirective}
 - Active Workspace Files:
 ${fileListStr}
 
+=== UPCOMING SCHEDULE & CALENDAR ===
+Active user calendar schedule for today & next 48 hours:
+${calStr}
+
 === AUTONOMOUS CAPABILITIES & TOOL CALLING CONVENTIONS ===
-You have full access to an in-memory Virtual File System (VFS) and MicroVM terminal.
+You have full access to an in-memory Virtual File System (VFS), MicroVM terminal, and sovereign calendar engine.
 Always format your reasoning inside:
 <thought_process>
 [Reasoning & Plan]
@@ -1054,7 +1079,18 @@ When taking action, output the appropriate tool directives:
    [TOOL:DELETE_FILE filename="..."][/TOOL:DELETE_FILE]
 7. Execute shell command in MicroVM:
    [TOOL:EXEC]bash command[/TOOL:EXEC]
-8. Complete objective:
+8. Manage Calendar & Schedule (Full CRUD - View, Add, Edit, Delete):
+   - View events:
+     [TOOL:SCHEDULE_EVENT action="view" date="YYYY-MM-DD" query="optional search term"][/TOOL:SCHEDULE_EVENT]
+   - Add/Create event:
+     [TOOL:SCHEDULE_EVENT action="create" title="..." start="YYYY-MM-DDTHH:mm:ss" end="YYYY-MM-DDTHH:mm:ss" category="work|personal|ai_autonomous|focus|health"][/TOOL:SCHEDULE_EVENT]
+   - Edit/Update event (reschedule, rename, or update category):
+     [TOOL:SCHEDULE_EVENT action="edit" query="Meeting Name" newTitle="Updated Name" start="YYYY-MM-DDTHH:mm:ss" end="YYYY-MM-DDTHH:mm:ss" category="..."][/TOOL:SCHEDULE_EVENT]
+     (Can also specify target by id="evt_id")
+   - Delete/Cancel event:
+     [TOOL:SCHEDULE_EVENT action="delete" query="Meeting Name"][/TOOL:SCHEDULE_EVENT]
+     (Can also specify target by id="evt_id")
+9. Complete objective:
    [TOOL:TASK_COMPLETE summary="..."][/TOOL:TASK_COMPLETE]
 
 === ARTIFACT QUALITY & CLEANLINESS MANDATE ===
@@ -1735,9 +1771,56 @@ With **135,200 stars**, \`huggingface/transformers\` remains the undisputed lead
           `[TOOL:TASK_COMPLETE summary="Synthesized realistic human schedule with blackouts and jitter"]`;
       }
 
+      // Check view intent
+      const isView = /\b(view|show|check|list|what\s*(is|are|do|have)|upcoming|get|find|inspect)\b/i.test(pTrim) && !/\b(create|add|edit|update|reschedule|move|delete|cancel|clear|remove)\b/i.test(pTrim);
+      if (isView) {
+        let targetDate = dateStr;
+        if (pLower.includes('tomorrow')) {
+          const tom = new Date();
+          tom.setDate(tom.getDate() + 1);
+          targetDate = tom.toISOString().slice(0, 10);
+        }
+        return thoughts +
+          `### Inspecting Sovereign Calendar Schedule\n\n` +
+          `Querying scheduled events for ${targetDate}...\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="view" date="${targetDate}"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Calendar events retrieved for ${targetDate}."][/TOOL:TASK_COMPLETE]`;
+      }
+
+      // Check edit/reschedule intent
+      const isEdit = /\b(edit|update|reschedule|move|shift|change|rename)\b/i.test(pTrim);
+      if (isEdit) {
+        let targetQuery = '';
+        const editMatch = pTrim.match(/(?:reschedule|edit|update|move|change|shift)\s+(?:the\s+|my\s+)?(?:event|meeting|task|session|appointment)?\s*["']?([^"'\n]+?)["']?\s+(?:to|at|from|for|into)\s+/i);
+        if (editMatch && editMatch[1]) {
+          targetQuery = editMatch[1].replace(/\b(event|meeting|task|session|appointment)\b/gi, '').trim();
+        }
+        if (!targetQuery) {
+          targetQuery = pTrim.replace(/\b(edit|update|reschedule|move|shift|change|rename|event|meeting|task|my|the|calendar)\b/gi, '').trim().split(/\s+(?:to|at)\s+/i)[0] || 'Meeting';
+        }
+        return thoughts +
+          `### Rescheduling Sovereign Calendar Event\n\n` +
+          `Modifying calendar event matching "${escapeHtml(targetQuery)}":\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="edit" query="${escapeHtml(targetQuery)}" start="${dateStr}T14:00:00" end="${dateStr}T15:00:00"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(targetQuery)}' rescheduled and synchronized."][/TOOL:TASK_COMPLETE]`;
+      }
+
+      // Check delete/cancel intent
+      const isDelete = /\b(delete|cancel|remove|drop|clear)\b/i.test(pTrim);
+      if (isDelete) {
+        const delTarget = pTrim.replace(/\b(delete|cancel|remove|drop|clear|my|the|calendar|event|meeting|task|appointment|from)\b/gi, '').trim() || 'Scheduled Event';
+        return thoughts +
+          `### Sovereign Calendar Event Cancellation\n\n` +
+          `Removing scheduled event matching "${escapeHtml(delTarget)}":\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="delete" query="${escapeHtml(delTarget)}"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(delTarget)}' removed."][/TOOL:TASK_COMPLETE]`;
+      }
+
+      // Single event creation or custom rule
+      const cleanTitle = pTrim.replace(/\b(schedule|calendar|add event|create event|book a slot|remind me to|set up a meeting|add|create|book)\b/gi, '').trim() || 'Focus Session';
       return thoughts +
         `### Sovereign Calendar Event Scheduled\n\n` +
-        `[TOOL:SCHEDULE_EVENT action="create" title="${escapeHtml(pTrim.replace(/schedule|calendar|add event|create event/gi, '').trim() || 'Focus Session')}" start="${dateStr}T10:00:00" end="${dateStr}T11:30:00" category="focus"]\n\n` +
+        `[TOOL:SCHEDULE_EVENT action="create" title="${escapeHtml(cleanTitle)}" start="${dateStr}T10:00:00" end="${dateStr}T11:30:00" category="focus"]\n\n` +
         `Event created successfully with conflict-checking and 15-minute buffer enforcement.\n\n` +
         `[TOOL:TASK_COMPLETE summary="Calendar Event Scheduled"]`;
     }
@@ -2139,19 +2222,45 @@ What specific feature, application, or script would you like to build?`;
       results.push(`[TOOL_RESULT:EXEC command="${cmd}"]\n${execRes}\n[/TOOL_RESULT:EXEC]`);
     }
 
-    // 8. Schedule Event
-    const schedRegex = /\[TOOL:SCHEDULE_EVENT(?: action="([^"]*)")?(?: title="([^"]*)")?(?: start="([^"]*)")?(?: end="([^"]*)")?(?: category="([^"]*)")?(?: date="([^"]*)")?\]/g;
+    // 8. Schedule Event (Full CRUD - View, Add/Create, Edit/Update, Delete/Remove)
+    const schedRegex = /\[TOOL:SCHEDULE_EVENT([^\]]*)\](?:([\s\S]*?)\[\/TOOL:SCHEDULE_EVENT\])?/g;
     let calMatch;
     while ((calMatch = schedRegex.exec(rawText)) !== null) {
       if (window.LuminaCalendar && window.LuminaCalendar.handleAgentDirective) {
-        const action = calMatch[1] || 'create';
-        const title = calMatch[2] || 'Scheduled Event';
-        const start = calMatch[3];
-        const end = calMatch[4];
-        const category = calMatch[5] || 'work';
-        const date = calMatch[6];
-        const res = window.LuminaCalendar.handleAgentDirective({ action, title, start, end, category, date });
-        results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="${action}" status="${res && res.success ? 'success' : 'failed'}"]`);
+        setThinkingOrbState("solving");
+        const attrStr = calMatch[1] || '';
+        const attrs = {};
+        const attrRegex = /([a-zA-Z0-9_\-]+)="([^"]*)"/g;
+        let aMatch;
+        while ((aMatch = attrRegex.exec(attrStr)) !== null) {
+          attrs[aMatch[1]] = aMatch[2];
+        }
+
+        const action = (attrs.action || 'create').toLowerCase();
+        const res = window.LuminaCalendar.handleAgentDirective(attrs);
+
+        if (res && res.success) {
+          if (action === 'view' || action === 'list') {
+            const evts = res.events || [];
+            const listStr = evts.length > 0
+              ? evts.map(e => `  • [ID: ${e.id}] "${e.title}" | ${e.start} -> ${e.end} | Category: ${e.category}${e.googleEventId ? ' (Google Synced)' : ''}`).join('\n')
+              : '  (No events found matching query)';
+            results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="view" status="success" count="${res.count}"]\nFound ${res.count} scheduled event(s):\n${listStr}\n[/TOOL_RESULT:SCHEDULE_EVENT]`);
+          } else if (action === 'create' || action === 'add') {
+            const e = res.event || {};
+            results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="create" status="success"]\nCreated and scheduled event "${e.title}" [ID: ${e.id}] from ${e.start} to ${e.end} (Category: ${e.category}). Synced to calendar.\n[/TOOL_RESULT:SCHEDULE_EVENT]`);
+          } else if (action === 'edit' || action === 'update') {
+            const e = res.event || {};
+            results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="edit" status="success"]\nUpdated event "${e.title}" [ID: ${e.id}] (Start: ${e.start}, End: ${e.end}, Category: ${e.category}). Synced to calendar.\n[/TOOL_RESULT:SCHEDULE_EVENT]`);
+          } else if (action === 'delete' || action === 'remove') {
+            const e = res.deletedEvent || {};
+            results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="delete" status="success"]\nDeleted event "${e.title || attrs.query || attrs.id}". Removed from calendar and Google Calendar.\n[/TOOL_RESULT:SCHEDULE_EVENT]`);
+          } else {
+            results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="${action}" status="success"]\n${res.message || 'Calendar directive executed successfully.'}\n[/TOOL_RESULT:SCHEDULE_EVENT]`);
+          }
+        } else {
+          results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="${action}" status="failed"]\nError: ${res && res.message ? res.message : 'Directive failed'}\n[/TOOL_RESULT:SCHEDULE_EVENT]`);
+        }
       }
     }
 

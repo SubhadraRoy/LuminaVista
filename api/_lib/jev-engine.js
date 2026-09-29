@@ -46,7 +46,7 @@ export function jevClassifyIntent(prompt = '', vfs = {}) {
   }
   // 1. Calendar scheduling & real-life routine intent
   else if (
-    /\b(schedule|calendar|routine|meeting|appointment|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
+    /\b(schedule|calendar|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
     /\[tool:schedule_event/i.test(p)
   ) {
     route = 'SCHEDULE_CALENDAR';
@@ -170,7 +170,18 @@ You are fully autonomous and must directly execute actions using the following e
    [TOOL:DELETE_FILE filename="..."][/TOOL:DELETE_FILE]
 7. Execute shell command in MicroVM:
    [TOOL:EXEC]command[/TOOL:EXEC]
-8. Complete objective:
+8. Manage Calendar & Schedule (Full CRUD - View, Add, Edit, Delete):
+   - View events:
+     [TOOL:SCHEDULE_EVENT action="view" date="YYYY-MM-DD" query="optional search term"][/TOOL:SCHEDULE_EVENT]
+   - Add/Create event:
+     [TOOL:SCHEDULE_EVENT action="create" title="..." start="YYYY-MM-DDTHH:mm:ss" end="YYYY-MM-DDTHH:mm:ss" category="work|personal|ai_autonomous|focus|health"][/TOOL:SCHEDULE_EVENT]
+   - Edit/Update event (reschedule, rename, or update category):
+     [TOOL:SCHEDULE_EVENT action="edit" query="Meeting Name" newTitle="Updated Name" start="YYYY-MM-DDTHH:mm:ss" end="YYYY-MM-DDTHH:mm:ss" category="..."][/TOOL:SCHEDULE_EVENT]
+     (Can also specify target by id="evt_id")
+   - Delete/Cancel event:
+     [TOOL:SCHEDULE_EVENT action="delete" query="Meeting Name"][/TOOL:SCHEDULE_EVENT]
+     (Can also specify target by id="evt_id")
+9. Complete objective:
    [TOOL:TASK_COMPLETE summary="..."][/TOOL:TASK_COMPLETE]
 
 === ARTIFACT QUALITY & CLEANLINESS MANDATE ===
@@ -494,6 +505,7 @@ With **135,200 stars**, \`huggingface/transformers\` remains the undisputed lead
 export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, liveSearchResults = '') {
   const { route, targetFile } = jevClassifyIntent(prompt, vfs);
   const pTrim = prompt.trim();
+  const pLower = pTrim.toLowerCase();
   const vfsFiles = Object.keys(vfs || {});
 
   let thoughts = `<thought_process>\n[Jev System-1 Active - Route: ${route}]\nUser Intent: "${pTrim}"\nWorkspace State: ${vfsFiles.length} file(s) registered in VFS.\nFormulating tailored autonomous architecture and tool trajectory for prompt...\n</thought_process>\n\n`;
@@ -526,10 +538,56 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
         `[TOOL:TASK_COMPLETE summary="Synthesized realistic human schedule with blackouts and jitter"]`;
     }
 
+    // Check view intent
+    const isView = /\b(view|show|check|list|what\s*(is|are|do|have)|upcoming|get|find|inspect)\b/i.test(pTrim) && !/\b(create|add|edit|update|reschedule|move|delete|cancel|clear|remove)\b/i.test(pTrim);
+    if (isView) {
+      let targetDate = dateStr;
+      if (pLower.includes('tomorrow')) {
+        const tom = new Date();
+        tom.setDate(tom.getDate() + 1);
+        targetDate = tom.toISOString().slice(0, 10);
+      }
+      return thoughts +
+        `### Inspecting Sovereign Calendar Schedule\n\n` +
+        `Querying scheduled events for ${targetDate}...\n\n` +
+        `[TOOL:SCHEDULE_EVENT action="view" date="${targetDate}"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+        `[TOOL:TASK_COMPLETE summary="Calendar events retrieved for ${targetDate}."][/TOOL:TASK_COMPLETE]`;
+    }
+
+    // Check edit/reschedule intent
+    const isEdit = /\b(edit|update|reschedule|move|shift|change|rename)\b/i.test(pTrim);
+    if (isEdit) {
+      let targetQuery = '';
+      const editMatch = pTrim.match(/(?:reschedule|edit|update|move|change|shift)\s+(?:the\s+|my\s+)?(?:event|meeting|task|session|appointment)?\s*["']?([^"'\n]+?)["']?\s+(?:to|at|from|for|into)\s+/i);
+      if (editMatch && editMatch[1]) {
+        targetQuery = editMatch[1].replace(/\b(event|meeting|task|session|appointment)\b/gi, '').trim();
+      }
+      if (!targetQuery) {
+        targetQuery = pTrim.replace(/\b(edit|update|reschedule|move|shift|change|rename|event|meeting|task|my|the|calendar)\b/gi, '').trim().split(/\s+(?:to|at)\s+/i)[0] || 'Meeting';
+      }
+      return thoughts +
+        `### Rescheduling Sovereign Calendar Event\n\n` +
+        `Modifying calendar event matching "${escapeHtml(targetQuery)}":\n\n` +
+        `[TOOL:SCHEDULE_EVENT action="edit" query="${escapeHtml(targetQuery)}" start="${dateStr}T14:00:00" end="${dateStr}T15:00:00"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+        `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(targetQuery)}' rescheduled and synchronized."][/TOOL:TASK_COMPLETE]`;
+    }
+
+    // Check delete/cancel intent
+    const isDelete = /\b(delete|cancel|remove|drop|clear)\b/i.test(pTrim);
+    if (isDelete) {
+      const delTarget = pTrim.replace(/\b(delete|cancel|remove|drop|clear|my|the|calendar|event|meeting|task|appointment|from)\b/gi, '').trim() || 'Scheduled Event';
+      return thoughts +
+        `### Sovereign Calendar Event Cancellation\n\n` +
+        `Removing scheduled event matching "${escapeHtml(delTarget)}":\n\n` +
+        `[TOOL:SCHEDULE_EVENT action="delete" query="${escapeHtml(delTarget)}"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+        `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(delTarget)}' removed."][/TOOL:TASK_COMPLETE]`;
+    }
+
     // Single event creation or custom rule
+    const cleanTitle = pTrim.replace(/\b(schedule|calendar|add event|create event|book a slot|remind me to|set up a meeting|add|create|book)\b/gi, '').trim() || 'Focus Session';
     return thoughts +
       `### Sovereign Calendar Event Scheduled\n\n` +
-      `[TOOL:SCHEDULE_EVENT action="create" title="${escapeHtml(pTrim.replace(/schedule|calendar|add event|create event/gi, '').trim() || 'Focus Session')}" start="${dateStr}T10:00:00" end="${dateStr}T11:30:00" category="focus"]\n\n` +
+      `[TOOL:SCHEDULE_EVENT action="create" title="${escapeHtml(cleanTitle)}" start="${dateStr}T10:00:00" end="${dateStr}T11:30:00" category="focus"]\n\n` +
       `Event created successfully with conflict-checking and 15-minute buffer enforcement.\n\n` +
       `[TOOL:TASK_COMPLETE summary="Calendar Event Scheduled"]`;
   }
@@ -634,8 +692,6 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
   }
 
   // Conversational Intent Handlers
-  const pLower = pTrim.toLowerCase();
-
   // 1. Greetings
   if (/^(hi+|hello+|hey+|hola|greetings|good\s*(morning|afternoon|evening)|sup|yo)[\s!.,?]*$/i.test(pTrim)) {
     return thoughts + `Hello! I am LuminaVista OS AI. I am ready to help you write code, manage files in your workspace, run terminal commands in the MicroVM, or explore ideas. What would you like to build or work on today?`;

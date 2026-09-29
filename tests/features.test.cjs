@@ -910,6 +910,136 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
 
   window.fetch = originalFetch;
 
+  // =========================================================================
+  // TEST SUITE 14: AI Calendar Full CRUD & Graphify Architecture Verification
+  // =========================================================================
+  console.log("\n[Test Suite 14: Comprehensive AI Calendar Access (View, Add, Edit, Delete) & Graphify Architecture]");
+
+  // 1. AI Directive: View / List
+  const viewAllDirective = window.LuminaCalendar.handleAgentDirective({ action: 'view' });
+  assert(viewAllDirective.success === true, "handleAgentDirective({ action: 'view' }) succeeds");
+  assert(Array.isArray(viewAllDirective.events), "Directive returns events array");
+
+  const viewDateDirective = window.LuminaCalendar.handleAgentDirective({ action: 'view', date: '2026-10-05' });
+  assert(viewDateDirective.success === true, "handleAgentDirective({ action: 'view', date: '...' }) succeeds");
+  assert(viewDateDirective.events.some(e => e.title === "External Sync Team Sync"), "View directive finds event on target date");
+
+  const viewQueryDirective = window.LuminaCalendar.handleAgentDirective({ action: 'view', query: 'External Sync' });
+  assert(viewQueryDirective.success === true && viewQueryDirective.count >= 1, "handleAgentDirective({ action: 'view', query: '...' }) returns search results");
+
+  // 2. AI Directive: Create / Add
+  const createDirective = window.LuminaCalendar.handleAgentDirective({
+    action: 'create',
+    title: 'Autonomous System Refactor',
+    start: '2026-10-08T14:00:00',
+    end: '2026-10-08T15:30:00',
+    category: 'focus'
+  });
+  assert(createDirective.success === true && createDirective.event, "handleAgentDirective({ action: 'create' }) creates event");
+  const createdRefactorEvt = createDirective.event;
+  assert(createdRefactorEvt.title === 'Autonomous System Refactor', "Created event has expected title");
+  assert(createdRefactorEvt.category === 'focus', "Created event has expected category");
+  assert(window.LuminaCalendar.getEvents().some(e => e.id === createdRefactorEvt.id), "Created event registered in calendar vault");
+
+  // 3. AI Directive: Edit / Update by query (fuzzy match)
+  const editDirective = window.LuminaCalendar.handleAgentDirective({
+    action: 'edit',
+    query: 'Autonomous System Refactor',
+    newTitle: 'Autonomous System Architecture Refactor',
+    start: '2026-10-08T15:00:00',
+    end: '2026-10-08T16:30:00'
+  });
+  assert(editDirective.success === true, "handleAgentDirective({ action: 'edit' }) succeeds with fuzzy query");
+  assert(editDirective.event.title === 'Autonomous System Architecture Refactor', "Edited event updated title");
+  assert(editDirective.event.start === '2026-10-08T15:00:00', "Edited event updated start time");
+
+  // 4. AI Directive: Edit by exact ID
+  const editByIdDirective = window.LuminaCalendar.handleAgentDirective({
+    action: 'edit',
+    id: createdRefactorEvt.id,
+    category: 'work'
+  });
+  assert(editByIdDirective.success === true && editByIdDirective.event.category === 'work', "handleAgentDirective({ action: 'edit', id: '...' }) updates category");
+
+  // 5. AI Directive: Delete / Remove by query
+  const deleteDirective = window.LuminaCalendar.handleAgentDirective({
+    action: 'delete',
+    query: 'Autonomous System Architecture Refactor'
+  });
+  assert(deleteDirective.success === true, "handleAgentDirective({ action: 'delete' }) succeeds with fuzzy title match");
+  assert(!window.LuminaCalendar.getEvents().some(e => e.id === createdRefactorEvt.id), "Deleted event purged from calendar vault");
+
+  // 6. Fuzzy Find Helper
+  assert(typeof window.LuminaCalendar.fuzzyFindEvent === 'function', "LuminaCalendar exports fuzzyFindEvent helper");
+  const foundFuzzy = window.LuminaCalendar.fuzzyFindEvent('Team Sync');
+  assert(foundFuzzy && foundFuzzy.title === "External Sync Team Sync", "fuzzyFindEvent resolves substring title match");
+  const notFoundFuzzy = window.LuminaCalendar.fuzzyFindEvent('totally nonexistent nonmatching query');
+  assert(notFoundFuzzy === null, "fuzzyFindEvent returns null for non-matching queries");
+
+  // 7. parseAndExecuteAgentDirectives integration
+  const toolCreateRes = await window.parseAndExecuteAgentDirectives(`
+    [TOOL:SCHEDULE_EVENT action="create" title="AI Security Audit" start="2026-10-09T10:00:00" end="2026-10-09T11:00:00" category="work"][/TOOL:SCHEDULE_EVENT]
+  `);
+  assert(toolCreateRes.results.some(r => r.includes('SCHEDULE_EVENT action="create" status="success"')), "parseAndExecuteAgentDirectives executes SCHEDULE_EVENT create");
+  const auditEvt = window.LuminaCalendar.getEvents().find(e => e.title === "AI Security Audit");
+  assert(auditEvt !== undefined, "Calendar event created via agent tool directive is present in vault");
+
+  const toolViewRes = await window.parseAndExecuteAgentDirectives(`
+    [TOOL:SCHEDULE_EVENT action="view" date="2026-10-09"][/TOOL:SCHEDULE_EVENT]
+  `);
+  assert(toolViewRes.results.some(r => r.includes('AI Security Audit')), "parseAndExecuteAgentDirectives returns formatted event list on view");
+
+  const toolEditRes = await window.parseAndExecuteAgentDirectives(`
+    [TOOL:SCHEDULE_EVENT action="edit" query="AI Security Audit" start="2026-10-09T11:00:00" end="2026-10-09T12:00:00"][/TOOL:SCHEDULE_EVENT]
+  `);
+  assert(toolEditRes.results.some(r => r.includes('SCHEDULE_EVENT action="edit" status="success"')), "parseAndExecuteAgentDirectives executes SCHEDULE_EVENT edit");
+  assert(auditEvt.start === '2026-10-09T11:00:00', "Event updated in vault via agent directive");
+
+  const toolDeleteRes = await window.parseAndExecuteAgentDirectives(`
+    [TOOL:SCHEDULE_EVENT action="delete" query="AI Security Audit"][/TOOL:SCHEDULE_EVENT]
+  `);
+  assert(toolDeleteRes.results.some(r => r.includes('SCHEDULE_EVENT action="delete" status="success"')), "parseAndExecuteAgentDirectives executes SCHEDULE_EVENT delete");
+  assert(!window.LuminaCalendar.getEvents().some(e => e.title === "AI Security Audit"), "Event deleted from vault via agent directive");
+
+  // 8. Jev Engine CRUD Intent and Bespoke Response Generation
+  const viewIntent = jevEngine.jevClassifyIntent("what are my meetings today?");
+  assert(viewIntent.route === 'SCHEDULE_CALENDAR', "Jev Engine classifies calendar view intent as SCHEDULE_CALENDAR");
+  const viewBespoke = jevEngine.jevGenerateBespokeResponse("what are my meetings today?");
+  assert(viewBespoke.includes('[TOOL:SCHEDULE_EVENT action="view"'), "Jev generates SCHEDULE_EVENT view directive for query");
+
+  const editIntent = jevEngine.jevClassifyIntent("reschedule my team meeting to 3pm");
+  assert(editIntent.route === 'SCHEDULE_CALENDAR', "Jev Engine classifies calendar reschedule intent as SCHEDULE_CALENDAR");
+  const editBespoke = jevEngine.jevGenerateBespokeResponse("reschedule my team meeting to 3pm");
+  assert(editBespoke.includes('[TOOL:SCHEDULE_EVENT action="edit"'), "Jev generates SCHEDULE_EVENT edit directive for reschedule");
+
+  const delIntent = jevEngine.jevClassifyIntent("cancel my appointment tomorrow");
+  assert(delIntent.route === 'SCHEDULE_CALENDAR', "Jev Engine classifies calendar cancel intent as SCHEDULE_CALENDAR");
+  const delBespoke = jevEngine.jevGenerateBespokeResponse("cancel my appointment tomorrow");
+  assert(delBespoke.includes('[TOOL:SCHEDULE_EVENT action="delete"'), "Jev generates SCHEDULE_EVENT delete directive for cancellation");
+
+  // 9. Graphify Architecture Completeness
+  assert(typeof window.getGraphifyBaseNodes === 'function', "graphify.js exports getGraphifyBaseNodes helper");
+  assert(typeof window.getGraphifyBaseLinks === 'function', "graphify.js exports getGraphifyBaseLinks helper");
+  const baseNodes = window.getGraphifyBaseNodes();
+  const baseLinks = window.getGraphifyBaseLinks();
+
+  assert(baseNodes.some(n => n.id === 'modules/calendar.js'), "Graphify includes modules/calendar.js node");
+  assert(baseNodes.some(n => n.id === 'api/calendar.js'), "Graphify includes api/calendar.js node");
+  assert(baseNodes.some(n => n.id === 'modules/codespace.js'), "Graphify includes modules/codespace.js node");
+  assert(baseNodes.some(n => n.id === 'modules/sidebar.js'), "Graphify includes modules/sidebar.js node");
+  assert(baseNodes.some(n => n.id === 'modules/system.js'), "Graphify includes modules/system.js node");
+  assert(baseNodes.some(n => n.id === 'modules/state.js'), "Graphify includes modules/state.js node");
+  assert(baseNodes.some(n => n.id === 'modules/voice-studio.js'), "Graphify includes modules/voice-studio.js node");
+  assert(baseNodes.some(n => n.id === 'middleware.js'), "Graphify includes middleware.js node");
+  assert(baseNodes.some(n => n.id === 'api/auth.js'), "Graphify includes api/auth.js node");
+  assert(baseNodes.some(n => n.id === 'api/logout.js'), "Graphify includes api/logout.js node");
+  assert(baseNodes.some(n => n.id === 'Google Calendar API'), "Graphify includes Google Calendar API cloud node");
+
+  assert(baseLinks.some(l => l.source === 'dashboard.html' && l.target === 'modules/calendar.js'), "Graphify links dashboard.html to modules/calendar.js");
+  assert(baseLinks.some(l => l.source === 'modules/ai-studio.js' && l.target === 'modules/calendar.js'), "Graphify links modules/ai-studio.js to modules/calendar.js");
+  assert(baseLinks.some(l => l.source === 'modules/calendar.js' && l.target === 'api/calendar.js'), "Graphify links modules/calendar.js to api/calendar.js");
+  assert(baseLinks.some(l => l.source === 'api/calendar.js' && l.target === 'Google Calendar API'), "Graphify links api/calendar.js to Google Calendar API");
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

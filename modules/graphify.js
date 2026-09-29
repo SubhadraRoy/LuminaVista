@@ -17,18 +17,21 @@
   // Base Architecture Graph Definition
   const BASE_NODES = [
     // Frontend Core
-    { id: 'dashboard.html', label: 'dashboard.html', cat: 'frontend', type: 'HTML/Shell', loc: 980, size: '84 KB', desc: 'Main LuminaVista OS desktop, tabbed workspaces, top system bar, and dialog modals.' },
+    { id: 'dashboard.html', label: 'dashboard.html', cat: 'frontend', type: 'HTML/Shell', loc: 1530, size: '84 KB', desc: 'Main LuminaVista OS desktop, tabbed workspaces, top system bar, and dialog modals.' },
     { id: 'index.html', label: 'index.html', cat: 'frontend', type: 'Landing Page', loc: 420, size: '36 KB', desc: 'Marketing landing page showcasing features, live preview, and quick launch.' },
-    { id: 'login.html', label: 'login.html', cat: 'frontend', type: 'Auth Page', loc: 210, size: '18 KB', desc: 'Zero-trust cryptographic PIN login interface with session lock.' },
+    { id: 'modules/sidebar.js', label: 'sidebar.js', cat: 'frontend', type: 'Navigation Core', loc: 320, size: '14 KB', desc: 'Responsive off-canvas sidebar drawer, workspace switcher, and mobile drawer controls.' },
+    { id: 'modules/system.js', label: 'system.js', cat: 'frontend', type: 'System Core', loc: 430, size: '15 KB', desc: 'Command palette (Ctrl+K), zero-trust cryptographic lock screen, and system clock.' },
+    { id: 'modules/state.js', label: 'state.js', cat: 'frontend', type: 'State Bus', loc: 210, size: '9 KB', desc: 'Central reactive state store, active tab routing, and session state persistence.' },
 
     // AI & Inference Engine
-    { id: 'modules/ai-studio.js', label: 'ai-studio.js', cat: 'ai', type: 'Core Module', loc: 1820, size: '83 KB', desc: 'Autonomous AI Studio, cognitive thinking engine, tool protocol execution, and multi-session chat.' },
+    { id: 'modules/ai-studio.js', label: 'ai-studio.js', cat: 'ai', type: 'Core Module', loc: 2700, size: '128 KB', desc: 'Autonomous AI Studio, cognitive thinking engine, tool protocol execution, multi-session chat, and calendar CRUD.' },
     { id: 'personas.js', label: 'personas.js', cat: 'ai', type: 'Persona Matrix', loc: 3600, size: '190 KB', desc: '1,800+ specialized technical persona directives categorized across 35 engineering disciplines.' },
     { id: 'api/_lib/key-pool.js', label: 'key-pool.js', cat: 'ai', type: 'Failover Engine', loc: 200, size: '8 KB', desc: '8x Ollama Cloud & NVIDIA NIM multi-key pool with automated 429 rate-limit failover.' },
-    { id: 'api/_lib/jev-engine.js', label: 'jev-engine.js', cat: 'ai', type: 'S1 Decision Layer', loc: 280, size: '15 KB', desc: 'TypeSafe Jev System-1 sub-50ms intent classifier, safety guardrails, and dynamic cognitive synthesis.' },
+    { id: 'api/_lib/jev-engine.js', label: 'jev-engine.js', cat: 'ai', type: 'S1 Decision Layer', loc: 710, size: '37 KB', desc: 'TypeSafe Jev System-1 sub-50ms intent classifier, safety guardrails, dynamic cognitive synthesis, and calendar directives.' },
 
     // Serverless APIs
     { id: 'api/chat.js', label: 'api/chat.js', cat: 'api', type: 'Serverless API', loc: 410, size: '17 KB', desc: 'Autonomous serverless agent loop with multi-key cloud failover, tool calling, and live VFS injection.' },
+    { id: 'api/calendar.js', label: 'api/calendar.js', cat: 'api', type: 'Serverless API', loc: 370, size: '14 KB', desc: 'Consolidated Google Calendar OAuth2 flow, webhook handlers, and two-way synchronization controller.' },
     { id: 'api/terminal.js', label: 'api/terminal.js', cat: 'api', type: 'Serverless API', loc: 180, size: '7 KB', desc: 'E2B Firecracker POSIX microVM execution endpoint with sandbox timeout guards.' },
     { id: 'api/compile.js', label: 'api/compile.js', cat: 'api', type: 'Serverless API', loc: 160, size: '6 KB', desc: 'Zero-downtime multi-language compiler for Python, C++, Java, and Node.js.' },
     { id: 'api/sync.js', label: 'api/sync.js', cat: 'api', type: 'Serverless API', loc: 140, size: '5 KB', desc: 'Encrypted remote workspace synchronization with zero-trust session validation.' },
@@ -36,6 +39,9 @@
     { id: 'api/worker.js', label: 'api/worker.js', cat: 'api', type: 'Serverless API', loc: 190, size: '8 KB', desc: 'Autonomous scheduled task runner and heartbeat cron worker.' },
 
     // Security & Auth
+    { id: 'middleware.js', label: 'middleware.js', cat: 'security', type: 'Edge Middleware', loc: 90, size: '4 KB', desc: 'Edge runtime security headers, CSP policies, and zero-trust session validation.' },
+    { id: 'api/auth.js', label: 'api/auth.js', cat: 'security', type: 'Auth API', loc: 110, size: '5 KB', desc: 'Cryptographic PIN authentication, session token generation, and secure cookie issuance.' },
+    { id: 'api/logout.js', label: 'api/logout.js', cat: 'security', type: 'Auth API', loc: 40, size: '2 KB', desc: 'Zero-trust session revocation, cookie scrubbing, and cache clearing.' },
     { id: 'api/_lib/auth-guard.js', label: 'auth-guard.js', cat: 'security', type: 'Security Guard', loc: 130, size: '5 KB', desc: 'Zero-trust session authorization, sliding IP rate limiting, and error sanitization.' },
     { id: 'api/_lib/redis.js', label: 'redis.js', cat: 'security', type: 'KV Store Client', loc: 20, size: '1 KB', desc: 'Upstash Redis REST client initialization with graceful offline degradation.' },
 
@@ -44,36 +50,61 @@
     { id: 'E2B MicroVM', label: 'Firecracker MicroVM', cat: 'runtime', type: 'Cloud Linux Sandbox', loc: 'N/A', size: 'POSIX', desc: 'Isolated POSIX Linux microVM sandbox executing Node.js 20, Python 3.11, and Bash.' },
     { id: 'Ollama Cloud 8x', label: 'Ollama Cloud Pool', cat: 'runtime', type: 'Cloud Inference', loc: 'N/A', size: '8 Keys', desc: '8-Key pooled cloud inference gateway supporting Llama 3.3, DeepSeek, and Qwen.' },
     { id: 'NVIDIA NIM Pool', label: 'NVIDIA NIM Pool', cat: 'runtime', type: 'Cloud Inference', loc: 'N/A', size: 'Multi-Key', desc: 'High-throughput enterprise AI gateway hosted on NVIDIA accelerated compute.' },
+    { id: 'Google Calendar API', label: 'Google Calendar API', cat: 'runtime', type: 'Cloud Calendar', loc: 'N/A', size: 'REST OAuth2', desc: 'Google Calendar API v3 primary calendar endpoint for real-time two-way synchronization.' },
 
     // Workspaces & Tools
-    { id: 'modules/whiteboard.js', label: 'whiteboard.js', cat: 'workspace', type: 'Canvas Engine', loc: 560, size: '24 KB', desc: 'Whiteboard Pro vector drawing studio with dual-canvas layer preview and sticky notes.' },
+    { id: 'modules/calendar.js', label: 'calendar.js', cat: 'workspace', type: 'Scheduler & Cal', loc: 1840, size: '77 KB', desc: 'Google Calendar sovereign replica with 6 calendar views, AI auto-planning, conflict resolution, and two-way sync.' },
+    { id: 'modules/codespace.js', label: 'codespace.js', cat: 'workspace', type: 'Artifacts IDE', loc: 850, size: '36 KB', desc: 'In-browser Monaco/Ace Artifacts IDE, multi-tab file editor, live preview engine, and collapsible VFS tree.' },
+    { id: 'modules/whiteboard.js', label: 'whiteboard.js', cat: 'workspace', type: 'Canvas Engine', loc: 560, size: '24 KB', desc: 'Whiteboard Pro vector drawing studio with touchscreen pointer events, dual-canvas preview, and sticky notes.' },
     { id: 'modules/notes.js', label: 'notes.js', cat: 'workspace', type: 'Markdown Studio', loc: 420, size: '18 KB', desc: 'Multi-document Markdown notes vault with split real-time HTML preview.' },
     { id: 'modules/projects.js', label: 'projects.js', cat: 'workspace', type: 'Explorer Module', loc: 310, size: '13 KB', desc: 'Interactive projects directory with multi-device viewport frame switcher.' },
-    { id: 'modules/compilers.js', label: 'compilers.js', cat: 'workspace', type: 'IDE Module', loc: 380, size: '15 KB', desc: 'Code runner with Monaco/Ace editors, SQL schemas, and stdin input buffer.' },
-    { id: 'modules/telemetry.js', label: 'telemetry.js', cat: 'workspace', type: 'Telemetry Module', loc: 240, size: '10 KB', desc: 'Real-time Web Audio API waveform visualizer and system health metrics.' },
+    { id: 'modules/compiler.js', label: 'compiler.js', cat: 'workspace', type: 'IDE Module', loc: 380, size: '15 KB', desc: 'Code runner with Monaco/Ace editors, SQL schemas, and stdin input buffer.' },
+    { id: 'modules/telemetry-theme.js', label: 'telemetry-theme.js', cat: 'workspace', type: 'Telemetry Module', loc: 240, size: '10 KB', desc: 'Real-time Web Audio API waveform visualizer and system health metrics.' },
     { id: 'modules/terminal.js', label: 'terminal.js', cat: 'workspace', type: 'Shell Client', loc: 290, size: '12 KB', desc: 'Interactive terminal emulator connected to Firecracker MicroVM API.' },
-    { id: 'modules/graphify.js', label: 'graphify.js', cat: 'workspace', type: 'Visualizer Module', loc: 400, size: '16 KB', desc: 'Dynamic project architecture and dependency graph visualizer.' },
+    { id: 'modules/voice-studio.js', label: 'voice-studio.js', cat: 'workspace', type: 'Voice Engine', loc: 480, size: '20 KB', desc: '100% Free Sovereign Voice Studio with Web Speech recognition, audio visualizer, and speech synthesis.' },
+    { id: 'modules/graphify.js', label: 'graphify.js', cat: 'workspace', type: 'Visualizer Module', loc: 660, size: '29 KB', desc: 'Dynamic project architecture and dependency graph visualizer.' },
 
     // Testing Infrastructure
-    { id: 'tests/features.test.cjs', label: 'features.test.cjs', cat: 'tests', type: 'Unit Test Suite', loc: 460, size: '24 KB', desc: '131-point comprehensive test suite covering DOM, sandboxes, tools, and security.' },
+    { id: 'tests/features.test.cjs', label: 'features.test.cjs', cat: 'tests', type: 'Unit Test Suite', loc: 600, size: '30 KB', desc: '240+ assertion comprehensive test suite covering DOM, sandboxes, tools, calendar, and security.' },
     { id: 'tests/browser-cdp-test.cjs', label: 'browser-cdp-test.cjs', cat: 'tests', type: 'Browser Test Suite', loc: 220, size: '11 KB', desc: 'Headless Google Chrome automation testing via DevTools Protocol (CDP).' }
   ];
 
   const BASE_LINKS = [
     { source: 'dashboard.html', target: 'modules/ai-studio.js' },
+    { source: 'dashboard.html', target: 'modules/calendar.js' },
+    { source: 'dashboard.html', target: 'modules/codespace.js' },
     { source: 'dashboard.html', target: 'modules/whiteboard.js' },
     { source: 'dashboard.html', target: 'modules/notes.js' },
     { source: 'dashboard.html', target: 'modules/projects.js' },
-    { source: 'dashboard.html', target: 'modules/compilers.js' },
-    { source: 'dashboard.html', target: 'modules/telemetry.js' },
+    { source: 'dashboard.html', target: 'modules/compiler.js' },
+    { source: 'dashboard.html', target: 'modules/telemetry-theme.js' },
     { source: 'dashboard.html', target: 'modules/terminal.js' },
+    { source: 'dashboard.html', target: 'modules/voice-studio.js' },
     { source: 'dashboard.html', target: 'modules/graphify.js' },
-    { source: 'dashboard.html', target: 'login.html' },
+    { source: 'dashboard.html', target: 'modules/sidebar.js' },
+    { source: 'dashboard.html', target: 'modules/system.js' },
+    { source: 'dashboard.html', target: 'modules/state.js' },
+    { source: 'dashboard.html', target: 'middleware.js' },
 
     { source: 'modules/ai-studio.js', target: 'api/chat.js' },
     { source: 'modules/ai-studio.js', target: 'api/terminal.js' },
     { source: 'modules/ai-studio.js', target: 'personas.js' },
     { source: 'modules/ai-studio.js', target: 'VFS' },
+    { source: 'modules/ai-studio.js', target: 'modules/codespace.js' },
+    { source: 'modules/ai-studio.js', target: 'modules/calendar.js' },
+    { source: 'modules/ai-studio.js', target: 'modules/voice-studio.js' },
+
+    { source: 'modules/calendar.js', target: 'api/calendar.js' },
+    { source: 'api/calendar.js', target: 'Google Calendar API' },
+    { source: 'api/worker.js', target: 'api/calendar.js' },
+
+    { source: 'modules/compiler.js', target: 'api/compile.js' },
+    { source: 'modules/terminal.js', target: 'api/terminal.js' },
+
+    { source: 'middleware.js', target: 'api/_lib/auth-guard.js' },
+    { source: 'api/auth.js', target: 'api/_lib/auth-guard.js' },
+    { source: 'api/auth.js', target: 'api/_lib/redis.js' },
+    { source: 'api/logout.js', target: 'api/_lib/auth-guard.js' },
 
     { source: 'api/chat.js', target: 'api/_lib/key-pool.js' },
     { source: 'api/chat.js', target: 'api/_lib/jev-engine.js' },
@@ -91,7 +122,9 @@
     { source: 'api/worker.js', target: 'api/chat.js' },
 
     { source: 'tests/features.test.cjs', target: 'dashboard.html' },
+    { source: 'tests/features.test.cjs', target: 'modules/calendar.js' },
     { source: 'tests/features.test.cjs', target: 'api/chat.js' },
+    { source: 'tests/features.test.cjs', target: 'api/calendar.js' },
     { source: 'tests/features.test.cjs', target: 'api/_lib/jev-engine.js' },
     { source: 'tests/browser-cdp-test.cjs', target: 'dashboard.html' }
   ];
@@ -657,5 +690,7 @@
   window.exportGraphifyImage = exportGraphifyImage;
   window.exportGraphifyJson = exportGraphifyJson;
   window.rebuildGraphData = rebuildGraphData;
+  window.getGraphifyBaseNodes = () => [...BASE_NODES];
+  window.getGraphifyBaseLinks = () => [...BASE_LINKS];
 
 })(typeof window !== 'undefined' ? window : global);
