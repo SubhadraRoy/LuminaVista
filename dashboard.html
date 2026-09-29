@@ -110,7 +110,7 @@
     <!-- Navigation Items ("The Slider") -->
     <nav class="flex-1 overflow-y-auto py-4 px-2 space-y-1 custom-scrollbar">
       <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
-        <i data-lucide="bot" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">ai-llm Studio</span>
+        <i data-lucide="bot" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">AI-Studio</span>
       </button>
       <button onclick="switchTab('tab-artifacts')" id="btn-tab-artifacts" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
         <i data-lucide="folder-code" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Artifacts IDE</span>
@@ -267,7 +267,7 @@
                   <canvas id="headerThinkingOrb" width="36" height="36" class="shrink-0 cursor-pointer rounded-lg bg-surface-950/80 border border-cyan-500/30 shadow-[0_0_12px_rgba(0,242,254,0.2)]" title="Antigravity Cognitive Engine State"></canvas>
                   <div>
                     <div class="flex items-center gap-1.5 sm:gap-2">
-                      <h3 class="font-heading font-bold text-sm text-white leading-tight">ai-llm</h3>
+                      <h3 class="font-heading font-bold text-sm text-white leading-tight">AI-Studio</h3>
                       <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
                       <span id="failoverIndicatorBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-300 font-mono border border-amber-500/30 items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Key #1
@@ -308,8 +308,24 @@
               <!-- Floating Input Bar -->
               <div class="p-4 pt-1 z-10 relative shrink-0">
                 <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
+                  <!-- Antigravity Quoted Message Context Banner -->
+                  <div id="aiQuoteBanner" class="hidden mb-2 px-3 py-2 rounded-xl bg-surface-900/90 border border-cyan-500/30 flex items-center justify-between text-xs text-zinc-300 shadow-xl">
+                    <div class="flex items-center gap-2 overflow-hidden flex-1 mr-2">
+                      <div class="p-1 rounded-md bg-cyan-500/10 text-cyan-400 shrink-0">
+                        <i data-lucide="quote" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div class="truncate font-mono text-[11px] text-zinc-400">
+                        <span class="text-cyan-300 font-bold mr-1" id="aiQuoteRoleLabel">Replying:</span>
+                        <span id="aiQuotePreviewText" class="italic text-zinc-300"></span>
+                      </div>
+                    </div>
+                    <button type="button" onclick="clearQuotedMessage()" class="text-zinc-500 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" title="Cancel Quote">
+                      <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+
                   <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
-                    <textarea id="aiPromptTextarea" rows="1" placeholder="Message ai-llm, edit files, execute bash in microVM... (Ctrl+Enter)" class="w-full bg-transparent border-0 outline-none text-[13px] text-white pl-3 pr-2 py-2.5 resize-none max-h-40 custom-scrollbar" style="min-height: 42px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                    <textarea id="aiPromptTextarea" rows="1" placeholder="Message AI-Studio, edit files, execute bash in microVM... (Ctrl+Enter)" class="w-full bg-transparent border-0 outline-none text-[13px] text-white pl-3 pr-2 py-2.5 resize-none max-h-40 custom-scrollbar" style="min-height: 42px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
                     <button type="button" id="btnAiAbort" onclick="abortAgentLoop()" class="hidden px-2.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-mono font-bold border border-rose-500/30 flex items-center gap-1.5 mb-0.5 mr-1 cursor-pointer transition-colors" title="Abort Autonomous Agent Loop">
                       <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i> Abort
                     </button>
@@ -998,7 +1014,7 @@
       
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
-          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> ai-llm Studio Settings
+          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> AI-Studio Settings
         </h3>
         <button onclick="closeAiConfigModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Settings"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
@@ -1467,7 +1483,7 @@
             Sign in &amp; Sync with Google
           </button>
           
-          <button onclick="LuminaCalendar.syncGoogleCalendar()" class="w-full py-2 px-4 rounded-xl bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/30 font-mono text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors">
+          <button onclick="LuminaCalendar.syncGoogleCalendar(true)" class="w-full py-2 px-4 rounded-xl bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/30 font-mono text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Trigger Immediate Sync
           </button>
         </div>

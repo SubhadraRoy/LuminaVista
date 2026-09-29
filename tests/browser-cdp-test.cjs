@@ -347,6 +347,40 @@ async function runBrowserTest() {
   const topTabsHidden = await evaluate("document.getElementById('aiSubTabsBar').classList.contains('hidden')");
   test("Top sub-tabs bar #aiSubTabsBar is hidden (moved to slider)", topTabsHidden);
 
+  // Test AI-Studio Tab Renaming, Antigravity Quoting, Prompt Edit/Copy in Chrome
+  const sidebarBtnText = await evaluate("document.getElementById('btn-tab-ai-studio')?.textContent || ''");
+  test("Sidebar tab button labeled 'AI-Studio'", sidebarBtnText.includes("AI-Studio"));
+
+  const promptPlaceholder = await evaluate("document.getElementById('aiPromptTextarea')?.placeholder || ''");
+  test("Prompt textarea placeholder set to 'Message AI-Studio...'", promptPlaceholder.includes("AI-Studio"));
+
+  const hasQuoteBanner = await evaluate("document.getElementById('aiQuoteBanner') !== null");
+  test("Antigravity quoted message context banner present in Chrome", hasQuoteBanner);
+
+  // Test quoting interaction in Chrome
+  await evaluate(`
+    window.aiConversation = [{ role: 'assistant', content: 'Here is sample code to inspect.' }];
+    window.quoteChatMessage(0, 'assistant');
+  `);
+  const isBannerVisible = await evaluate("!document.getElementById('aiQuoteBanner').classList.contains('hidden')");
+  test("Quote banner activates and becomes visible on quoteChatMessage", isBannerVisible);
+
+  await evaluate("window.clearQuotedMessage()");
+  const isBannerHidden = await evaluate("document.getElementById('aiQuoteBanner').classList.contains('hidden')");
+  test("Quote banner hides on clearQuotedMessage", isBannerHidden);
+
+  // Test prompt edit interaction in Chrome
+  await evaluate(`
+    window.aiConversation = [{ role: 'user', content: 'What is WebGL?' }, { role: 'assistant', content: 'WebGL is a JavaScript API.' }];
+    window.startEditingPrompt(0);
+  `);
+  const hasInlineEditor = await evaluate("document.getElementById('inlineEditPromptTextarea_0') !== null");
+  test("Inline prompt editor renders on startEditingPrompt", hasInlineEditor);
+
+  await evaluate("window.cancelEditingPrompt()");
+  const isEditorCleared = await evaluate("document.getElementById('inlineEditPromptTextarea_0') === null");
+  test("Inline prompt editor clears on cancelEditingPrompt", isEditorCleared);
+
   // Test Mobile Sidebar Drawer
   await evaluate("openMobileSidebar()");
   const isMobileSidebarOpen = await evaluate("document.getElementById('mainSidebar').classList.contains('translate-x-0') && !document.getElementById('mainSidebar').classList.contains('-translate-x-full')");

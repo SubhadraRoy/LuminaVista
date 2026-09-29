@@ -6,8 +6,9 @@
 import { Sandbox } from '@e2b/code-interpreter';
 import { getRedisClient, getSafeStorage } from './_lib/redis.js';
 import { sanitizeError, auditLog, validateSession } from './_lib/auth-guard.js';
-import { executeWithFailover } from './_lib/key-pool.js';
+import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
 import { jevGenerateBespokeResponse } from './_lib/jev-engine.js';
+import { sanitizeProviderMessages } from './chat.js';
 
 export const maxDuration = 60;
 
@@ -96,7 +97,7 @@ export default async function handler(req, res) {
   // 2. POST Requests: Dispatch autonomous job or sync scheduled tasks
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-  const { action, jobId, userSession, prompt, requestedModel, messages, currentVfs, schedules } = req.body || {};
+  const { action, jobId, userSession, prompt, requestedModel, provider, messages, currentVfs, schedules } = req.body || {};
 
   // Action: Sync user's scheduled tasks to cloud
   if (action === 'sync_schedules') {
@@ -149,6 +150,7 @@ export default async function handler(req, res) {
       messages: messages || [{ role: 'user', content: prompt || 'Autonomous Task' }],
       currentVfs: currentVfs || {},
       requestedModel: requestedModel || 'gpt-oss:20b',
+      provider: provider || 'hybrid_pool',
       storage,
       req
     });
@@ -167,7 +169,7 @@ export default async function handler(req, res) {
  * Core Autonomous Cloud Task Execution Logic
  * Continues running on the cloud server even if client shuts down.
  */
-async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs, requestedModel, storage, req = null }) {
+async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs, requestedModel, provider = 'hybrid_pool', storage, req = null }) {
   // Mark job as processing
   await storage.set(`job_state:${jobId}`, JSON.stringify({
     status: 'processing',
@@ -181,32 +183,82 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
   let terminalLogs = [`[Worker] Autonomous processing initiated for Job ${jobId}`];
   let aiReply = '';
 
-  // 1. Execute with multi-key failover across Ollama Cloud, NVIDIA NIM, Groq, OpenRouter, and Gemini
-  const failoverResult = await executeWithFailover({
-    provider: 'ollama',
-    makeRequest: async (apiKey, keyMeta) => {
-      const endpoint = process.env.OLLAMA_ENDPOINT || 'https://openrouter.ai/api/v1/chat/completions';
-      return fetch(endpoint, {
+  const oPool = getKeyPool('ollama');
+  const nPool = getKeyPool('nvidia');
+
+  const makeOllamaFetch = async (apiKey) => {
+    const configuredEndpoint = normalizeOllamaEndpoint(process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions');
+    const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
+    const payloadMessages = sanitizeProviderMessages(messages, prompt);
+    let res = await fetch(configuredEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cleanKey ? { 'Authorization': `Bearer ${cleanKey}` } : {})
+      },
+      body: JSON.stringify({
+        model: requestedModel || 'gpt-oss:20b',
+        messages: payloadMessages,
+        stream: false
+      })
+    });
+    if (!res.ok && configuredEndpoint !== 'https://ollama.com/v1/chat/completions') {
+      res = await fetch('https://ollama.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(cleanKey ? { 'Authorization': `Bearer ${cleanKey}` } : {})
         },
         body: JSON.stringify({
           model: requestedModel || 'gpt-oss:20b',
-          messages: messages,
+          messages: payloadMessages,
           stream: false
         })
       });
-    },
-    maxCycles: 2
-  });
+    }
+    return res;
+  };
 
-  if (failoverResult.success && failoverResult.data) {
-    aiReply = failoverResult.data.choices?.[0]?.message?.content || failoverResult.data.message?.content || failoverResult.data.reply || '';
+  const makeNvidiaFetch = async (apiKey) => {
+    const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
+    const payloadMessages = sanitizeProviderMessages(messages, prompt);
+    return fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cleanKey}`
+      },
+      body: JSON.stringify({
+        model: 'nvidia/llama-3.1-nemotron-70b-instruct',
+        messages: payloadMessages,
+        temperature: 0.6,
+        max_tokens: 4096,
+        stream: false
+      })
+    });
+  };
+
+  let failoverResult = null;
+  if (oPool.length > 0) {
+    failoverResult = await executeWithFailover({
+      provider: 'ollama',
+      makeRequest: makeOllamaFetch,
+      maxCycles: 2
+    });
+  }
+
+  if ((!failoverResult || !failoverResult.success) && nPool.length > 0) {
+    failoverResult = await executeWithFailover({
+      provider: 'nvidia',
+      makeRequest: makeNvidiaFetch,
+      maxCycles: 2
+    });
+  }
+
+  if (failoverResult && failoverResult.success) {
+    aiReply = failoverResult.content || extractCompletionContent(failoverResult.data) || '';
     terminalLogs.push(`[Worker] Generated autonomous output using ${failoverResult.keyMeta?.name || 'Cloud Pool'}`);
   } else {
-    // If external API keys are not present or exhausted in environment, synthesize bespoke autonomous response
     terminalLogs.push('[Worker] Using Jev Autonomous Synthesis Engine for offline completion...');
     aiReply = jevGenerateBespokeResponse(prompt, updatedVfs);
   }

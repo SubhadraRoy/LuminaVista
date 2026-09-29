@@ -11,6 +11,8 @@
   window.aiSessions = [];
   window.activeSessionId = null;
   window.scheduledTasks = [];
+  window.editingPromptIndex = -1;
+  window.activeQuotedMessage = null;
 
   // VFS Initialization
   if (!window.vfs) {
@@ -1274,7 +1276,7 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       return tableHtml + '</table></div>';
     });
 
-    // 6. Headers, bold, italics, inline code, line breaks
+    // 6. Headers, bold, italics, inline code, blockquotes, line breaks
     safeProse = safeProse
       .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-cyan-300 mt-4 mb-2 pb-1 border-b border-white/5">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-base font-bold text-white mt-5 mb-2 pb-1 border-b border-white/10">$1</h2>')
@@ -1282,6 +1284,14 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em class="italic text-zinc-400">$1</em>')
       .replace(/`([^`]+)`/g, '<code class="bg-surface-800 text-pink-300 px-1.5 py-0.5 rounded text-[11px] font-mono border border-white/5">$1</code>')
+      .replace(/(?:^&gt;\s*.*(?:\r?\n|$))+/gm, (match) => {
+        const inner = match
+          .split(/\r?\n/)
+          .map(l => l.replace(/^&gt;\s*/, ''))
+          .filter(l => l.trim().length > 0)
+          .join('<br/>');
+        return `<blockquote class="border-l-2 border-cyan-400 pl-3 py-1.5 my-2.5 bg-cyan-500/5 rounded-r-xl text-zinc-300 text-xs italic font-mono leading-relaxed"><i data-lucide="quote" class="w-3 h-3 text-cyan-400 inline mr-1.5"></i>${inner}</blockquote>`;
+      })
       .replace(/\n/g, '<br/>');
 
     // 7. Re-inject Code Blocks with Codex / Antigravity styled text box
@@ -1323,6 +1333,158 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
     return safeProse;
   }
 
+  function formatUserMessageContent(content) {
+    if (!content) return "";
+    const escaped = escapeHtml(content);
+    return escaped.replace(/(?:^&gt;\s*.*(?:\r?\n|$))+/gm, (match) => {
+      const inner = match
+        .split(/\r?\n/)
+        .map(l => l.replace(/^&gt;\s*/, ''))
+        .filter(l => l.trim().length > 0)
+        .join('<br/>');
+      return `<div class="border-l-2 border-cyan-400/80 pl-2.5 py-1.5 mb-2 bg-white/5 rounded-r-xl text-zinc-300 text-[11px] font-mono leading-relaxed"><i data-lucide="quote" class="w-3 h-3 text-cyan-400 inline mr-1.5"></i>${inner}</div>`;
+    }).replace(/\n/g, '<br/>');
+  }
+
+  // --- Quoted Message Management (Antigravity-Style) ---
+  function quoteChatMessage(index, role, explicitText) {
+    let text = explicitText;
+    if (!text) {
+      const selection = (typeof window.getSelection === 'function') ? window.getSelection().toString().trim() : '';
+      if (selection) {
+        text = selection;
+      } else if (window.aiConversation && window.aiConversation[index]) {
+        text = window.aiConversation[index].content;
+      }
+    }
+    if (!text) return;
+
+    window.activeQuotedMessage = {
+      index,
+      role: role || (window.aiConversation[index] ? window.aiConversation[index].role : 'assistant'),
+      text
+    };
+
+    const banner = document.getElementById("aiQuoteBanner");
+    const roleLabel = document.getElementById("aiQuoteRoleLabel");
+    const previewText = document.getElementById("aiQuotePreviewText");
+    const textarea = document.getElementById("aiPromptTextarea");
+
+    if (banner && roleLabel && previewText) {
+      roleLabel.textContent = (window.activeQuotedMessage.role === 'user' ? 'Replying to you:' : 'Replying to AI-Studio:');
+      const cleanSnippet = text
+        .replace(/\[TOOL:[^\]]+\][\s\S]*?\[\/TOOL:[^\]]+\]/g, '')
+        .replace(/<thought_process>[\s\S]*?<\/thought_process>/g, '')
+        .replace(/\[AUTONOMOUS CLOUD TASK COMPLETED OFFLINE\]/g, '')
+        .trim();
+      previewText.textContent = cleanSnippet.length > 85 ? (cleanSnippet.substring(0, 85) + '...') : cleanSnippet;
+      banner.classList.remove("hidden");
+      banner.classList.add("flex");
+    }
+
+    if (textarea) {
+      textarea.focus();
+    }
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  }
+
+  function clearQuotedMessage() {
+    window.activeQuotedMessage = null;
+    const banner = document.getElementById("aiQuoteBanner");
+    if (banner) {
+      banner.classList.add("hidden");
+      banner.classList.remove("flex");
+    }
+  }
+
+  // --- Prompt Edit & Copy Management (ChatGPT / Claude / Gemini Style) ---
+  async function copyPromptText(index) {
+    const msg = window.aiConversation && window.aiConversation[index];
+    if (!msg || !msg.content) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(msg.content);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+      if (window.showToast) window.showToast("Copied", "User prompt copied to clipboard.");
+    } catch (e) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = msg.content;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (window.showToast) window.showToast("Copied", "User prompt copied to clipboard.");
+      } catch (err) {}
+    }
+  }
+
+  async function copyAssistantResponse(index) {
+    const msg = window.aiConversation && window.aiConversation[index];
+    if (!msg || !msg.content) return;
+    const clean = msg.content
+      .replace(/<thought_process>[\s\S]*?<\/thought_process>/g, '')
+      .replace(/\[AUTONOMOUS CLOUD TASK COMPLETED OFFLINE\]/g, '')
+      .trim();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(clean || msg.content);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+      if (window.showToast) window.showToast("Copied", "Assistant response copied to clipboard.");
+    } catch (e) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = clean || msg.content;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (window.showToast) window.showToast("Copied", "Assistant response copied to clipboard.");
+      } catch (err) {}
+    }
+  }
+
+  function startEditingPrompt(index) {
+    window.editingPromptIndex = index;
+    renderAiChat();
+    setTimeout(() => {
+      const el = document.getElementById(`inlineEditPromptTextarea_${index}`);
+      if (el) {
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+      }
+    }, 50);
+  }
+
+  function cancelEditingPrompt() {
+    window.editingPromptIndex = -1;
+    renderAiChat();
+  }
+
+  function saveAndSubmitEditedPrompt(index) {
+    const el = document.getElementById(`inlineEditPromptTextarea_${index}`);
+    if (!el) return;
+    const newPrompt = el.value.trim();
+    if (!newPrompt) return;
+
+    // Truncate conversation from this turn onward (ChatGPT / Claude / Gemini branching behavior)
+    window.aiConversation = (window.aiConversation || []).slice(0, index);
+    window.editingPromptIndex = -1;
+    updateActiveSessionMessages();
+    renderAiChat();
+
+    const mainInput = document.getElementById("aiPromptTextarea");
+    if (mainInput) {
+      mainInput.value = newPrompt;
+      autoResizeTextarea(mainInput);
+    }
+    handleSendAiPrompt();
+  }
+
   function renderAiChat() {
     const box = document.getElementById("aiChatHistory");
     if (!box) return;
@@ -1346,22 +1508,82 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       return;
     }
 
-    conversation.forEach(m => {
+    conversation.forEach((m, index) => {
       const isUser = m.role === "user";
       if (isUser && m.content.startsWith("[SYSTEM AUTO-FEEDBACK]")) return;
 
       const row = document.createElement("div");
-      row.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
-      row.innerHTML = `
-        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold ${isUser ? 'bg-surface-850 text-white border border-white/10 shadow-md' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 shadow-md shadow-cyan-500/10'}">
-          ${isUser ? 'ME' : '<i data-lucide="bot" class="w-4 h-4"></i>'}
-        </div>
-        <div class="max-w-[85%]">
-          <div class="p-4 rounded-2xl text-[13px] leading-relaxed ${isUser ? 'bg-surface-850 text-white rounded-tr-sm border border-white/5' : 'bg-surface-900/90 text-zinc-200 rounded-tl-sm border border-cyan-500/10'}">
-            ${isUser ? escapeHtml(m.content) : parseAiMarkdown(m.content)}
+      row.className = `group flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+
+      if (isUser && window.editingPromptIndex === index) {
+        // Inline prompt editor
+        row.innerHTML = `
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-md">
+            ME
           </div>
-        </div>
-      `;
+          <div class="max-w-[85%] w-full">
+            <div class="p-3.5 rounded-2xl bg-surface-900 border border-cyan-500/50 shadow-2xl space-y-2.5">
+              <div class="text-[11px] font-mono text-cyan-300 font-semibold flex items-center justify-between">
+                <span class="flex items-center gap-1.5"><i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit your prompt</span>
+                <span class="text-[10px] text-zinc-400 font-normal">Subsequent turns will be regenerated</span>
+              </div>
+              <textarea id="inlineEditPromptTextarea_${index}" class="w-full bg-surface-950/90 border border-white/10 rounded-xl p-3 text-[13px] text-white outline-none focus:border-cyan-500/60 resize-none custom-scrollbar leading-relaxed" rows="3" onkeydown="if((event.ctrlKey || event.metaKey || (!event.shiftKey && event.key === 'Enter')) && event.key === 'Enter'){ event.preventDefault(); window.saveAndSubmitEditedPrompt(${index}); } else if(event.key === 'Escape'){ window.cancelEditingPrompt(); }">${escapeHtml(m.content)}</textarea>
+              <div class="flex items-center justify-end gap-2 pt-1">
+                <button type="button" onclick="window.cancelEditingPrompt()" class="px-3 py-1.5 rounded-xl text-xs text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
+                  Cancel
+                </button>
+                <button type="button" onclick="window.saveAndSubmitEditedPrompt(${index})" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Save &amp; Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (isUser) {
+        // User message bubble with actions
+        row.innerHTML = `
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold bg-surface-850 text-white border border-white/10 shadow-md">
+            ME
+          </div>
+          <div class="max-w-[85%] flex flex-col items-end">
+            <div class="p-4 rounded-2xl text-[13px] leading-relaxed bg-surface-850 text-white rounded-tr-sm border border-white/5 shadow-md">
+              ${formatUserMessageContent(m.content)}
+            </div>
+            <div class="flex items-center gap-1.5 mt-1 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+              <button type="button" onclick="window.copyPromptText(${index})" class="px-2 py-0.5 rounded-lg text-[10px] font-mono text-zinc-400 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1 cursor-pointer" title="Copy prompt">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+              </button>
+              <button type="button" onclick="window.startEditingPrompt(${index})" class="px-2 py-0.5 rounded-lg text-[10px] font-mono text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors flex items-center gap-1 cursor-pointer" title="Edit prompt">
+                <i data-lucide="pencil" class="w-3 h-3"></i> Edit
+              </button>
+              <button type="button" onclick="window.quoteChatMessage(${index}, 'user')" class="px-2 py-0.5 rounded-lg text-[10px] font-mono text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors flex items-center gap-1 cursor-pointer" title="Quote in message">
+                <i data-lucide="quote" class="w-3 h-3"></i> Quote
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        // Assistant message bubble with actions
+        row.innerHTML = `
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 shadow-md shadow-cyan-500/10">
+            <i data-lucide="bot" class="w-4 h-4"></i>
+          </div>
+          <div class="max-w-[85%] flex flex-col items-start w-full">
+            <div class="p-4 rounded-2xl text-[13px] leading-relaxed bg-surface-900/90 text-zinc-200 rounded-tl-sm border border-cyan-500/10 shadow-md w-full">
+              ${parseAiMarkdown(m.content)}
+            </div>
+            <div class="flex items-center gap-1.5 mt-1 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+              <button type="button" onclick="window.copyAssistantResponse(${index})" class="px-2 py-0.5 rounded-lg text-[10px] font-mono text-zinc-400 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1 cursor-pointer" title="Copy response">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+              </button>
+              <button type="button" onclick="window.quoteChatMessage(${index}, 'assistant')" class="px-2 py-0.5 rounded-lg text-[10px] font-mono text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors flex items-center gap-1 cursor-pointer" title="Quote in message">
+                <i data-lucide="quote" class="w-3 h-3"></i> Quote
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
       box.appendChild(row);
     });
 
@@ -2310,10 +2532,23 @@ What specific feature, application, or script would you like to build?`;
     if (e) e.preventDefault();
     const inp = document.getElementById("aiPromptTextarea");
     if (!inp) return;
-    const prompt = inp.value.trim();
+    let prompt = inp.value.trim();
     const btn = document.getElementById("btnAiSend");
     const btnAbort = document.getElementById("btnAiAbort");
     if (!prompt) return;
+
+    // Check if there is an active quoted message
+    if (window.activeQuotedMessage && window.activeQuotedMessage.text) {
+      const qRole = window.activeQuotedMessage.role === 'user' ? 'You' : 'AI-Studio';
+      const cleanSnippet = window.activeQuotedMessage.text
+        .replace(/\[TOOL:[^\]]+\][\s\S]*?\[\/TOOL:[^\]]+\]/g, '')
+        .replace(/<thought_process>[\s\S]*?<\/thought_process>/g, '')
+        .replace(/\[AUTONOMOUS CLOUD TASK COMPLETED OFFLINE\]/g, '')
+        .trim();
+      const quotedLines = cleanSnippet.split('\n').map(l => `> ${l}`).join('\n');
+      prompt = `> [Quoted from ${qRole}]:\n${quotedLines}\n\n${prompt}`;
+      clearQuotedMessage();
+    }
 
     window.aiConversation.push({ role: "user", content: prompt });
     inp.value = "";
@@ -2324,33 +2559,27 @@ What specific feature, application, or script would you like to build?`;
     // Client-side Jev System-1 Sub-50ms Classification (<2ms)
     const jevIntent = classifyJevIntentClient(prompt, window.vfs);
 
-    // Offline resilience: dispatch job to cloud worker so it finishes even if user shuts down PC
+    // Offline resilience: dispatch job to cloud worker with keepalive: true so it finishes even if user shuts down PC
     const offlineJobId = "job_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
     try {
       const offlineJobs = JSON.parse(localStorage.getItem("lumina_offline_pending_jobs") || "[]");
-      offlineJobs.push({ jobId: offlineJobId, prompt, timestamp: Date.now() });
+      offlineJobs.push({ jobId: offlineJobId, prompt, sessionId: window.activeSessionId, timestamp: Date.now() });
       localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify(offlineJobs));
+      localStorage.setItem("lumina_active_job", JSON.stringify({ jobId: offlineJobId, prompt, sessionId: window.activeSessionId, timestamp: Date.now() }));
 
       fetch("/api/worker", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           jobId: offlineJobId,
           userSession: localStorage.getItem("lumina_session_id") || "sovereign_session",
           prompt,
           requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
+          provider: localStorage.getItem("lumina_ai_provider") || "hybrid_pool",
           messages: [{ role: "system", content: getAiSystemPrompt() }, ...window.aiConversation],
           currentVfs: window.vfs || {}
         })
-      }).then(res => {
-        if (res.ok) {
-          setTimeout(() => {
-            try {
-              const cur = JSON.parse(localStorage.getItem("lumina_offline_pending_jobs") || "[]");
-              localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify(cur.filter(j => j.jobId !== offlineJobId)));
-            } catch(e) {}
-          }, 8000);
-        }
       }).catch(() => {});
     } catch(e) {}
 
@@ -2570,6 +2799,16 @@ What specific feature, application, or script would you like to build?`;
       window.aiConversation.push({ role: "assistant", content: `**[Network Error]:** ${err.message}` });
       window.isAgentRunning = false;
     } finally {
+      // Clear this completed job from pending offline queue if foreground finished
+      try {
+        const cur = JSON.parse(localStorage.getItem("lumina_offline_pending_jobs") || "[]");
+        localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify(cur.filter(j => j.jobId !== offlineJobId)));
+        const active = JSON.parse(localStorage.getItem("lumina_active_job") || "null");
+        if (active && active.jobId === offlineJobId) {
+          localStorage.removeItem("lumina_active_job");
+        }
+      } catch(e) {}
+
       hideThinkingIndicator();
       window.isAgentRunning = false;
       if (btn) {
@@ -2710,13 +2949,24 @@ What specific feature, application, or script would you like to build?`;
     if (window.loadCodespaceFileContent) window.loadCodespaceFileContent(filename);
   };
 
-  // Check and merge any autonomous tasks completed in the cloud while PC was shut down
+  // Check and merge any autonomous tasks completed in the cloud while PC was shut down or user was away
   async function checkCompletedOfflineCloudJobs() {
     if (typeof fetch === 'undefined') return;
     try {
-      const stored = localStorage.getItem("lumina_offline_pending_jobs");
-      if (!stored) return;
-      const pendingJobs = JSON.parse(stored);
+      let pendingJobs = [];
+      try {
+        const stored = localStorage.getItem("lumina_offline_pending_jobs");
+        if (stored) pendingJobs = JSON.parse(stored);
+      } catch(e) {}
+
+      // Also incorporate active job if not already in list
+      try {
+        const activeJob = JSON.parse(localStorage.getItem("lumina_active_job") || "null");
+        if (activeJob && !pendingJobs.some(j => j.jobId === activeJob.jobId)) {
+          pendingJobs.push(activeJob);
+        }
+      } catch(e) {}
+
       if (!Array.isArray(pendingJobs) || pendingJobs.length === 0) return;
 
       const remainingJobs = [];
@@ -2738,14 +2988,38 @@ What specific feature, application, or script would you like to build?`;
                 if (window.rebuildGraphData) window.rebuildGraphData();
               }
 
-              // 2. Insert AI reply into chat conversation
+              // 2. Insert AI reply into chat conversation / target session
               if (finishedJob.reply) {
-                window.aiConversation.push({
-                  role: "assistant",
-                  content: `[AUTONOMOUS CLOUD TASK COMPLETED OFFLINE]\n${finishedJob.reply}`
-                });
-                updateActiveSessionMessages();
-                renderAiChat();
+                const targetSession = (window.aiSessions && item.sessionId)
+                  ? window.aiSessions.find(s => s.id === item.sessionId)
+                  : getActiveSession();
+
+                if (targetSession) {
+                  targetSession.messages = targetSession.messages || [];
+                  const isAlreadyPresent = targetSession.messages.some(m => m.content === finishedJob.reply || (m.role === 'assistant' && finishedJob.reply.includes(m.content)));
+                  if (!isAlreadyPresent) {
+                    targetSession.messages.push({
+                      role: "assistant",
+                      content: finishedJob.reply
+                    });
+                    targetSession.updatedAt = Date.now();
+                    saveChatSessions();
+                    if (targetSession.id === window.activeSessionId) {
+                      syncActiveSessionToConversation();
+                      renderAiChat();
+                    }
+                  }
+                } else {
+                  const isAlreadyPresent = (window.aiConversation || []).some(m => m.content === finishedJob.reply);
+                  if (!isAlreadyPresent) {
+                    window.aiConversation.push({
+                      role: "assistant",
+                      content: finishedJob.reply
+                    });
+                    updateActiveSessionMessages();
+                    renderAiChat();
+                  }
+                }
               }
 
               // 3. Update Google Calendar task event if present
@@ -2762,9 +3036,21 @@ What specific feature, application, or script would you like to build?`;
                 }
               }
 
+              // Clear from active job if matches
+              try {
+                const activeJob = JSON.parse(localStorage.getItem("lumina_active_job") || "null");
+                if (activeJob && activeJob.jobId === item.jobId) {
+                  localStorage.removeItem("lumina_active_job");
+                }
+              } catch(e) {}
+
               if (window.showToast) {
-                window.showToast("Cloud Task Completed", `"${(item.prompt || '').slice(0, 32)}..." finished while your PC was shut down.`);
+                window.showToast("Task Continuation Completed", `"${(item.prompt || '').slice(0, 32)}..." finished while you were away.`);
               }
+              continue;
+            } else if (data && data.job && data.job.status === 'processing') {
+              // Still processing in cloud
+              remainingJobs.push(item);
               continue;
             }
           }
@@ -2773,12 +3059,16 @@ What specific feature, application, or script would you like to build?`;
       }
 
       localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify(remainingJobs));
+      if (remainingJobs.length > 0) {
+        // Poll again in 2.5s while cloud job completes
+        setTimeout(checkCompletedOfflineCloudJobs, 2500);
+      }
     } catch (e) {
       console.warn("Failed checking offline cloud jobs:", e);
     }
   }
 
-  // Initialization Hook on DOM Content Loaded
+  // Initialization Hook on DOM Content Loaded and Page Focus/Visibility Return
   document.addEventListener("DOMContentLoaded", () => {
     initChatSessions();
     initScheduledTasks();
@@ -2789,6 +3079,17 @@ What specific feature, application, or script would you like to build?`;
       loadAiConfig();
     }, 100);
   });
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        checkCompletedOfflineCloudJobs();
+      }
+    });
+    window.addEventListener("focus", () => {
+      checkCompletedOfflineCloudJobs();
+    });
+  }
 
   // Window Exports for Global Callers & Test Harness
   window.escapeHtml = escapeHtml;
@@ -2805,6 +3106,7 @@ What specific feature, application, or script would you like to build?`;
   window.getAiSystemPrompt = getAiSystemPrompt;
   window.parseAndExecuteAgentDirectives = parseAndExecuteAgentDirectives;
   window.parseAiMarkdown = parseAiMarkdown;
+  window.formatUserMessageContent = formatUserMessageContent;
   window.renderAiChat = renderAiChat;
   window.handleSendAiPrompt = handleSendAiPrompt;
   window.clearAiChat = clearAiChat;
@@ -2815,6 +3117,17 @@ What specific feature, application, or script would you like to build?`;
   window.classifyJevIntentClient = classifyJevIntentClient;
   window.switchAiSubTab = switchAiSubTab;
   window.updateAiSubTabArtifactBadge = updateAiSubTabArtifactBadge;
+
+  // Quoted Message Exports
+  window.quoteChatMessage = quoteChatMessage;
+  window.clearQuotedMessage = clearQuotedMessage;
+
+  // Prompt Edit & Copy Exports
+  window.copyPromptText = copyPromptText;
+  window.copyAssistantResponse = copyAssistantResponse;
+  window.startEditingPrompt = startEditingPrompt;
+  window.cancelEditingPrompt = cancelEditingPrompt;
+  window.saveAndSubmitEditedPrompt = saveAndSubmitEditedPrompt;
 
   // Multi-Session Exports
   window.initChatSessions = initChatSessions;

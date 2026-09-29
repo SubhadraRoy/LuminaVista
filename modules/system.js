@@ -112,7 +112,7 @@
     const q = (e && e.target && e.target.value) ? e.target.value.toLowerCase() : '';
     const list = [
       { label: "Lock Session (15m Idle Protection)", act: () => lockSession(false) },
-      { label: "Jump to ai-llm Studio", act: () => switchTab('tab-ai-studio') },
+      { label: "Jump to AI-Studio", act: () => switchTab('tab-ai-studio') },
       { label: "Jump to Projects Explorer", act: () => switchTab('tab-projects') },
       { label: "Jump to Compilers & SQL", act: () => switchTab('tab-sandbox') },
       { label: "Jump to Whiteboard Pro", act: () => switchTab('tab-whiteboard') },

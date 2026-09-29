@@ -1402,6 +1402,112 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(commaPool.some(k => k.key === 'mock_token_one_xyz' && k.name === 'OLLAMA_API_KEY1'), "Discovered second token from comma-joined env var as OLLAMA_API_KEY1");
   delete process.env['OLLAMA_API_KEY2,OLLAMA_API_KEY1'];
 
+  // Test Suite 18: AI-Studio Renaming, Antigravity Quoting, Prompt Editing & Offline Continuation
+  console.log("\n[Test Suite 18: AI-Studio Renaming, Antigravity Quoting, Prompt Editing & Offline Continuation]");
+
+  // 1. Tab Renaming
+  const aiStudioBtn = document.getElementById("btn-tab-ai-studio");
+  assert(aiStudioBtn && aiStudioBtn.textContent.includes("AI-Studio"), "Sidebar navigation label renamed to 'AI-Studio'");
+
+  const aiStudioTextarea = document.getElementById("aiPromptTextarea");
+  assert(aiStudioTextarea && aiStudioTextarea.getAttribute("placeholder").includes("AI-Studio"), "AI chat textarea placeholder updated to 'Message AI-Studio...'");
+
+  // 2. Antigravity Quoted Message Context Banner
+  const quoteBanner = document.getElementById("aiQuoteBanner");
+  assert(quoteBanner !== null, "Antigravity quoted message context banner exists in DOM");
+
+  window.aiConversation = [
+    { role: "assistant", content: "This is a reference code explanation for quantum algorithms." }
+  ];
+  window.quoteChatMessage(0, "assistant", "This is a reference code explanation for quantum algorithms.");
+  assert(window.activeQuotedMessage !== null, "window.activeQuotedMessage populated upon quoteChatMessage()");
+  assert(!quoteBanner.classList.contains("hidden"), "Quote banner is visible after quoteChatMessage()");
+  const quotePreview = document.getElementById("aiQuotePreviewText");
+  assert(quotePreview && quotePreview.textContent.includes("quantum algorithms"), "Quote preview text contains snippet");
+
+  window.clearQuotedMessage();
+  assert(window.activeQuotedMessage === null, "window.clearQuotedMessage() resets activeQuotedMessage to null");
+  assert(quoteBanner.classList.contains("hidden"), "Quote banner is hidden after clearQuotedMessage()");
+
+  // 3. User Message Blockquote Card Rendering
+  const formattedMsg = window.formatUserMessageContent("> [Quoted from AI-Studio]:\n> Previous reference line\n\nHere is my continuation prompt.");
+  assert(formattedMsg.includes("border-l-2 border-cyan-400"), "User message quote rendered with Antigravity blockquote card");
+
+  // 4. Prompt Edit & Copy (ChatGPT / Claude Style)
+  assert(typeof window.copyPromptText === "function", "window.copyPromptText is exported");
+  assert(typeof window.copyAssistantResponse === "function", "window.copyAssistantResponse is exported");
+  assert(typeof window.startEditingPrompt === "function", "window.startEditingPrompt is exported");
+  assert(typeof window.cancelEditingPrompt === "function", "window.cancelEditingPrompt is exported");
+  assert(typeof window.saveAndSubmitEditedPrompt === "function", "window.saveAndSubmitEditedPrompt is exported");
+
+  window.aiConversation = [
+    { role: "user", content: "Turn 1: Initial query" },
+    { role: "assistant", content: "Turn 1: Assistant reply" },
+    { role: "user", content: "Turn 2: Followup query" },
+    { role: "assistant", content: "Turn 2: Assistant reply" }
+  ];
+  window.startEditingPrompt(2);
+  assert(window.editingPromptIndex === 2, "startEditingPrompt(2) sets editingPromptIndex to 2");
+  window.cancelEditingPrompt();
+  assert(window.editingPromptIndex === -1, "cancelEditingPrompt() resets editingPromptIndex to -1");
+
+  // 5. Calendar Silent Auto-Sync vs Manual Sync Confirmation
+  let toastLogged = [];
+  const origToast = window.showToast;
+  window.showToast = (title, msg) => { toastLogged.push({ title, msg }); };
+
+  // Mock calendar sync endpoint
+  const origFetch = window.fetch;
+  window.fetch = async (url) => {
+    if (typeof url === 'string' && url.includes('/api/calendar/sync')) {
+      return {
+        ok: true,
+        json: async () => ({ success: true, items: [{ id: 'evt1', title: 'Test Evt', start: '2026-09-30T10:00:00Z', end: '2026-09-30T11:00:00Z' }] })
+      };
+    }
+    if (typeof url === 'string' && url.includes('/api/worker')) {
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          job: {
+            status: 'completed',
+            prompt: 'Offline background task',
+            reply: 'Offline autonomous completion output verified.',
+            vfs: { 'generated_offline.py': 'print("Done")' }
+          }
+        })
+      };
+    }
+    return { ok: false, status: 404, json: async () => ({}) };
+  };
+
+  // Automatic sync (isManual = false)
+  await window.LuminaCalendar.syncGoogleCalendar(false);
+  assert(toastLogged.length === 0, "syncGoogleCalendar(false) executes silently without popup toast");
+
+  // Manual sync (isManual = true)
+  await window.LuminaCalendar.syncGoogleCalendar(true);
+  assert(toastLogged.some(t => t.title.includes("Google Calendar Synced")), "syncGoogleCalendar(true) shows confirmation toast");
+
+  // 6. Offline Background Execution & Chat Continuation
+  toastLogged = [];
+  window.localStorage.setItem("lumina_offline_pending_jobs", JSON.stringify([
+    { jobId: 'job_test_offline_99', prompt: 'Offline background task', timestamp: Date.now() }
+  ]));
+  window.aiConversation = [];
+  await window.checkCompletedOfflineCloudJobs();
+
+  assert(window.aiConversation.some(m => m.content.includes("Offline autonomous completion output verified")), "Completed offline cloud job hydrated into chat conversation continuation");
+  assert(window.vfs && window.vfs['generated_offline.py'] === 'print("Done")', "Completed offline cloud job merged generated VFS artifacts into workspace");
+  assert(toastLogged.some(t => t.title.includes("Task Continuation Completed")), "Task continuation notification displayed on return");
+
+  // Cleanup
+  window.fetch = origFetch;
+  window.showToast = origToast;
+  window.localStorage.removeItem("lumina_offline_pending_jobs");
+  window.localStorage.removeItem("lumina_active_job");
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

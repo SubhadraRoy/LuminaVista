@@ -1337,7 +1337,7 @@
     }
   }
 
-  async function syncGoogleCalendar() {
+  async function syncGoogleCalendar(isManual = false) {
     updateSyncStatusBadge(true);
     try {
       const res = await fetch('/api/calendar/sync');
@@ -1409,7 +1409,8 @@
           saveCalendarEvents();
           saveCalendarSettings();
           renderCalendar();
-          if (window.showToast) {
+          // Only show toast if triggered manually by user; keep background auto-updates completely silent
+          if (isManual && window.showToast) {
             window.showToast("Google Calendar Synced", `${data.items.length} active events in two-way sync.`);
           }
         }
