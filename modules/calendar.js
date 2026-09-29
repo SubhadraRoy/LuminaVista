@@ -1,7 +1,6 @@
 // modules/calendar.js - Google Calendar Sovereign Replica & Autonomous AI Real-Life Scheduler
-// Provides high-fidelity Google Calendar views (Month, Week, Day, 4-Day, Agenda, Year),
-// an Autonomous AI Real-Life Scheduler with human heuristics (blackouts, jitter, conflict resolution),
-// and two-way Google Calendar OAuth2 & Universal RFC 5545 iCal (.ics) sync.
+// Fully elevated modern UI with Google segmented controls, 6 calendar views,
+// zero-frontend-credentials backend Google Calendar OAuth sync, and real-life AI heuristics.
 
 (function(window) {
   'use strict';
@@ -52,7 +51,7 @@
   let editingEventId = null;
   let redTimeLineTimer = null;
 
-  // Real-Life AI Scheduling Settings
+  // Real-Life AI Scheduling Settings (Zero frontend credentials policy)
   let calendarSettings = {
     aiSchedulingEnabled: true,
     excludeWeekends: true,
@@ -68,13 +67,12 @@
     maxFocusDurationMinutes: 90,
     restBufferMinutes: 15,
     googleCalendarConnected: false,
-    googleClientId: '',
     googleAccountEmail: '',
     lastSyncedAt: null
   };
 
   // =========================================================================
-  // STORAGE & INITIALIZATION
+  // STORAGE & INITIALIZATION (Permanently Pristine - No Seeded Dummy Events)
   // =========================================================================
   function loadCalendarFromStorage() {
     try {
@@ -86,6 +84,23 @@
       calendarEvents = [];
     }
 
+    // Permanently purge any legacy pre-seeded mock events
+    if (Array.isArray(calendarEvents)) {
+      calendarEvents = calendarEvents.filter(e => 
+        e && e.id &&
+        !e.id.startsWith('evt_routine_') && 
+        !e.id.startsWith('evt_work_standup') && 
+        !e.id.startsWith('evt_focus_deepwork') && 
+        !e.id.startsWith('evt_health_lunch') && 
+        !e.id.startsWith('evt_ai_task_pipeline') && 
+        !e.id.startsWith('evt_personal_evening') && 
+        !e.id.startsWith('evt_tomorrow_planning')
+      );
+      saveCalendarEvents();
+    } else {
+      calendarEvents = [];
+    }
+
     try {
       const savedSettings = localStorage.getItem('luminavista_calendar_settings_v1');
       if (savedSettings) {
@@ -93,11 +108,8 @@
       }
     } catch (e) {}
 
-    // Seed realistic real-life events if empty
-    if (!Array.isArray(calendarEvents) || calendarEvents.length === 0) {
-      calendarEvents = generateDefaultRealLifeEvents();
-      saveCalendarEvents();
-    }
+    // Check backend connection status asynchronously
+    checkBackendConnectionStatus();
   }
 
   function saveCalendarEvents() {
@@ -112,126 +124,12 @@
     } catch (e) {}
   }
 
-  function generateDefaultRealLifeEvents() {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    const dateStr = `${y}-${m}-${d}`;
-
-    const pad = (n) => String(n).padStart(2, '0');
-
-    // Tomorrow string
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tmY = tomorrow.getFullYear();
-    const tmM = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const tmD = String(tomorrow.getDate()).padStart(2, '0');
-    const tomorrowStr = `${tmY}-${tmM}-${tmD}`;
-
-    return [
-      {
-        id: 'evt_routine_morning',
-        title: 'Morning Awakening & Meditation',
-        description: 'Hydration, light stretching, and cognitive priming',
-        start: `${dateStr}T07:15:00`,
-        end: `${dateStr}T08:00:00`,
-        allDay: false,
-        category: 'health',
-        color: '#0b8043',
-        isAutonomous: true,
-        priority: 'high',
-        reschedulable: false,
-        recurrence: { freq: 'DAILY', interval: 1 }
-      },
-      {
-        id: 'evt_work_standup',
-        title: 'LuminaVista Core Sync & Standup',
-        description: 'Review microVM telemetry, active pipelines, and team roadmaps',
-        start: `${dateStr}T09:00:00`,
-        end: `${dateStr}T09:45:00`,
-        allDay: false,
-        category: 'work',
-        color: '#3f51b5',
-        isAutonomous: false,
-        priority: 'high',
-        location: 'Google Meet (meet.google.com/lum-core)',
-        recurrence: { freq: 'WEEKLY', interval: 1, daysOfWeek: [1, 2, 3, 4, 5] }
-      },
-      {
-        id: 'evt_focus_deepwork',
-        title: 'Deep Work Sprint: Sovereign AI Engine',
-        description: 'Uninterrupted cognitive focus block: calendar sync & AI scheduler',
-        start: `${dateStr}T10:05:00`,
-        end: `${dateStr}T11:45:00`,
-        allDay: false,
-        category: 'focus',
-        color: '#8e24aa',
-        isAutonomous: true,
-        priority: 'high',
-        reschedulable: true,
-        bufferMinutesBefore: 15,
-        bufferMinutesAfter: 15
-      },
-      {
-        id: 'evt_health_lunch',
-        title: 'Nutritious Lunch & Rest Buffer',
-        description: 'Protected meal window. Screen downtime and light walk',
-        start: `${dateStr}T12:35:00`,
-        end: `${dateStr}T13:30:00`,
-        allDay: false,
-        category: 'health',
-        color: '#0b8043',
-        isAutonomous: true,
-        priority: 'urgent',
-        reschedulable: false
-      },
-      {
-        id: 'evt_ai_task_pipeline',
-        title: 'Autonomous Benchmark & Trend Analysis',
-        description: 'Execute Firecracker MicroVM benchmark on top ML repos',
-        start: `${dateStr}T14:10:00`,
-        end: `${dateStr}T15:30:00`,
-        allDay: false,
-        category: 'ai_autonomous',
-        color: '#039be5',
-        isAutonomous: true,
-        priority: 'normal',
-        reschedulable: true
-      },
-      {
-        id: 'evt_personal_evening',
-        title: 'Evening Sunset Walk & Wind-down',
-        description: 'Physical exercise, disconnection from digital screens',
-        start: `${dateStr}T18:15:00`,
-        end: `${dateStr}T19:15:00`,
-        allDay: false,
-        category: 'personal',
-        color: '#f4511e',
-        isAutonomous: false,
-        priority: 'normal',
-        reschedulable: true
-      },
-      {
-        id: 'evt_tomorrow_planning',
-        title: 'Strategic Architecture Review',
-        description: 'Next sprint planning and Google Workspace integration',
-        start: `${tomorrowStr}T11:00:00`,
-        end: `${tomorrowStr}T12:15:00`,
-        allDay: false,
-        category: 'work',
-        color: '#3f51b5',
-        isAutonomous: false,
-        priority: 'high'
-      }
-    ];
-  }
-
   // =========================================================================
   // VIEW RENDER CONTROLLER
   // =========================================================================
   function renderCalendar() {
     updateHeaderTitle();
+    updateViewSelectorPills();
     renderMiniCalendar();
     renderCategoryFilters();
     updateSyncStatusBadge();
@@ -262,11 +160,26 @@
 
   function setView(viewName) {
     currentView = viewName;
-    const viewSelect = document.getElementById('calViewSelect');
-    if (viewSelect && viewSelect.value !== viewName) {
-      viewSelect.value = viewName;
-    }
+    updateViewSelectorPills();
     renderCalendar();
+  }
+
+  function updateViewSelectorPills() {
+    // Update select dropdown if present
+    const viewSelect = document.getElementById('calViewSelect');
+    if (viewSelect && viewSelect.value !== currentView) {
+      viewSelect.value = currentView;
+    }
+
+    // Update segmented buttons
+    document.querySelectorAll('.cal-view-tab-btn').forEach(btn => {
+      const v = btn.id.replace('btnCalView-', '');
+      if (v === currentView) {
+        btn.className = 'cal-view-tab-btn px-3 py-1.5 rounded-lg text-black font-bold btn-gradient shadow-md shadow-cyan-500/20 transition-all cursor-pointer';
+      } else {
+        btn.className = 'cal-view-tab-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer font-medium';
+      }
+    });
   }
 
   function navigateCalendar(delta) {
@@ -311,7 +224,7 @@
   }
 
   // =========================================================================
-  // 1. MONTH VIEW
+  // 1. MONTH VIEW (Polished Google-Style Grid)
   // =========================================================================
   function renderMonthView(container) {
     const year = currentDate.getFullYear();
@@ -324,13 +237,13 @@
     const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
     let html = `
-      <div class="flex flex-col h-full bg-surface-950/80 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none">
+      <div class="flex flex-col h-full bg-surface-950/90 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none backdrop-blur-xl">
         <!-- Day Names Header -->
         <div class="grid grid-cols-7 border-b border-white/10 bg-surface-900/90 text-center py-2.5 text-[11px] font-mono font-bold text-zinc-400">
-          ${dayNames.map(d => `<div>${d}</div>`).join('')}
+          ${dayNames.map(d => `<div class="tracking-wider">${d}</div>`).join('')}
         </div>
         
-        <!-- Month Grid (7 cols x 5 or 6 rows) -->
+        <!-- Month Grid -->
         <div class="grid grid-cols-7 flex-1 min-h-0 auto-rows-fr divide-x divide-y divide-white/5 overflow-y-auto custom-scrollbar">
     `;
 
@@ -362,23 +275,22 @@
       const cellDateStr = formatDateKey(cellDate);
       const isToday = isThisMonth && isCurrentMonth && cellDay === today.getDate();
 
-      // Find events matching this day
       const dayEvents = getEventsForDate(cellDate);
 
       html += `
-        <div class="group relative p-1.5 flex flex-col min-h-[90px] transition-colors hover:bg-white/[0.02] cursor-pointer"
+        <div class="group relative p-2 flex flex-col min-h-[90px] transition-all hover:bg-white/[0.03] cursor-pointer"
              onclick="LuminaCalendar.handleDayCellClick('${cellDateStr}', event)">
           <div class="flex items-center justify-between mb-1">
-            <span class="inline-flex items-center justify-center text-xs font-mono font-semibold w-6 h-6 rounded-full transition-transform ${
+            <span class="inline-flex items-center justify-center text-xs font-mono font-bold w-6 h-6 rounded-full transition-transform ${
               isToday 
-                ? 'bg-cyan-400 text-black font-bold shadow-md shadow-cyan-400/40' 
+                ? 'bg-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/40 ring-2 ring-cyan-400/30' 
                 : isCurrentMonth 
                   ? 'text-zinc-200 group-hover:bg-white/10' 
                   : 'text-zinc-600'
             }">
               ${cellDay === 1 ? `${cellDate.toLocaleString('default', { month: 'short' })} ${cellDay}` : cellDay}
             </span>
-            ${dayEvents.length > 3 ? `<span class="text-[9px] font-mono text-cyan-400 font-bold px-1 rounded bg-cyan-500/10">+${dayEvents.length - 3}</span>` : ''}
+            ${dayEvents.length > 3 ? `<span class="text-[9px] font-mono text-cyan-400 font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">+${dayEvents.length - 3}</span>` : ''}
           </div>
 
           <!-- Event Chips -->
@@ -386,11 +298,11 @@
             ${dayEvents.slice(0, 3).map(evt => {
               const timeStr = evt.allDay ? 'All Day' : formatShortTime(evt.start);
               return `
-                <div class="truncate text-[11px] px-2 py-0.5 rounded font-sans font-medium flex items-center gap-1 shadow-sm transition-all pointer-events-auto hover:brightness-125"
+                <div class="truncate text-[11px] px-2 py-0.5 rounded-md font-sans font-medium flex items-center gap-1.5 shadow-sm transition-all pointer-events-auto hover:brightness-125 border border-black/20"
                      style="background-color: ${evt.color || '#039be5'}; color: #ffffff;"
                      onclick="event.stopPropagation(); LuminaCalendar.openEventModal('${evt.id}')"
                      title="${evt.title} (${timeStr})">
-                  <span class="text-[9px] font-mono opacity-85 shrink-0">${timeStr}</span>
+                  <span class="text-[9px] font-mono opacity-85 shrink-0 font-semibold">${timeStr}</span>
                   <span class="truncate">${escapeHtml(evt.title)}</span>
                 </div>
               `;
@@ -409,7 +321,7 @@
   }
 
   // =========================================================================
-  // 2. WEEK VIEW (Google Calendar 24h Hourly Grid + Real-time Red Line)
+  // 2. WEEK VIEW (24h Hourly Grid + Live Red Hairline)
   // =========================================================================
   function renderWeekView(container) {
     const startOfWeek = getStartOfWeek(currentDate);
@@ -424,17 +336,17 @@
     const todayStr = formatDateKey(today);
 
     let html = `
-      <div class="flex flex-col h-full bg-surface-950/80 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none">
+      <div class="flex flex-col h-full bg-surface-950/90 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none backdrop-blur-xl">
         <!-- Week Header (Days + Dates) -->
-        <div class="grid grid-cols-[64px_repeat(7,1fr)] border-b border-white/10 bg-surface-900/90 text-center py-2 text-xs font-mono divide-x divide-white/5">
-          <div class="text-[10px] text-zinc-500 font-bold pt-2">GMT+5:30</div>
+        <div class="grid grid-cols-[64px_repeat(7,1fr)] border-b border-white/10 bg-surface-900/90 text-center py-2.5 text-xs font-mono divide-x divide-white/5">
+          <div class="text-[10px] text-zinc-500 font-bold pt-2">TIME</div>
           ${weekDays.map(d => {
             const isToday = formatDateKey(d) === todayStr;
             const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
             return `
               <div class="py-1 cursor-pointer hover:bg-white/5 rounded-lg transition-colors" onclick="LuminaCalendar.jumpToDate('${formatDateKey(d)}')">
-                <div class="text-[10px] font-bold ${isToday ? 'text-cyan-400 font-extrabold' : 'text-zinc-400'}">${dayName}</div>
-                <div class="inline-flex items-center justify-center w-7 h-7 text-sm font-bold rounded-full mt-0.5 ${isToday ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/30' : 'text-zinc-200'}">
+                <div class="text-[10px] font-bold tracking-wider ${isToday ? 'text-cyan-400 font-extrabold' : 'text-zinc-400'}">${dayName}</div>
+                <div class="inline-flex items-center justify-center w-7 h-7 text-sm font-bold rounded-full mt-0.5 ${isToday ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/40 ring-2 ring-cyan-400/30' : 'text-zinc-200'}">
                   ${d.getDate()}
                 </div>
               </div>
@@ -447,12 +359,12 @@
           <div class="relative grid grid-cols-[64px_repeat(7,1fr)] divide-x divide-white/5 min-h-[1152px]">
             <!-- Red Real-Time Indicator Line -->
             <div id="calCurrentTimeLine" class="hidden absolute left-0 right-0 z-20 pointer-events-none flex items-center">
-              <span class="w-3 h-3 rounded-full bg-rose-500 ring-2 ring-rose-400/40 -ml-1.5 shadow-md shadow-rose-500/50"></span>
-              <div class="flex-1 h-[2px] bg-rose-500 shadow-sm shadow-rose-500"></div>
+              <span class="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-400/30 -ml-1.5 shadow-lg shadow-rose-500/80 animate-pulse"></span>
+              <div class="flex-1 h-[2px] bg-rose-500 shadow-md shadow-rose-500"></div>
             </div>
 
             <!-- Hour Labels Column (00:00 - 23:00) -->
-            <div class="bg-surface-950/60 text-right pr-2 text-[10px] font-mono text-zinc-500 select-none divide-y divide-transparent">
+            <div class="bg-surface-950/60 text-right pr-2.5 text-[10px] font-mono text-zinc-500 select-none divide-y divide-transparent">
               ${Array.from({ length: 24 }).map((_, h) => `
                 <div class="h-12 -mt-2.5 pt-0.5">${formatHourLabel(h)}</div>
               `).join('')}
@@ -466,12 +378,9 @@
                 <div class="relative h-[1152px] transition-colors hover:bg-white/[0.015]"
                      data-date="${dStr}"
                      onclick="LuminaCalendar.handleTimeGridClick('${dStr}', event)">
-                  <!-- 24 Hour slot dividers -->
                   ${Array.from({ length: 24 }).map((_, h) => `
                     <div class="h-12 border-b border-white/[0.03]" data-hour="${h}"></div>
                   `).join('')}
-
-                  <!-- Events Positioned Absolutely -->
                   ${dayEvts.map(evt => renderTimeGridEvent(evt)).join('')}
                 </div>
               `;
@@ -496,11 +405,11 @@
     const dayEvts = getEventsForDate(currentDate);
 
     let html = `
-      <div class="flex flex-col h-full bg-surface-950/80 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none">
+      <div class="flex flex-col h-full bg-surface-950/90 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none backdrop-blur-xl">
         <!-- Day Banner -->
-        <div class="flex items-center justify-between border-b border-white/10 bg-surface-900/90 px-6 py-3 text-xs font-mono">
+        <div class="flex items-center justify-between border-b border-white/10 bg-surface-900/90 px-6 py-3.5 text-xs font-mono">
           <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${isToday ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/30' : 'bg-surface-800 text-white'}">
+            <span class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${isToday ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/40 ring-2 ring-cyan-400/30' : 'bg-surface-800 text-white'}">
               ${currentDate.getDate()}
             </span>
             <div>
@@ -508,17 +417,16 @@
               <div class="text-[10px] text-zinc-400">${currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
             </div>
           </div>
-          <span class="text-[11px] text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full font-mono">${dayEvts.length} Scheduled Events</span>
+          <span class="text-[11px] text-cyan-400 bg-cyan-500/10 px-3.5 py-1 rounded-full font-mono border border-cyan-500/20">${dayEvts.length} Scheduled Events</span>
         </div>
 
         <!-- 24h Hourly Day Grid -->
         <div id="calDayScrollContainer" class="flex-1 overflow-y-auto relative custom-scrollbar">
           <div class="relative grid grid-cols-[80px_1fr] divide-x divide-white/5 min-h-[1152px]">
-            <!-- Red Real-Time Indicator Line -->
             ${isToday ? `
               <div id="calCurrentTimeLine" class="absolute left-0 right-0 z-20 pointer-events-none flex items-center">
-                <span class="w-3.5 h-3.5 rounded-full bg-rose-500 ring-2 ring-rose-400/40 -ml-1.5 shadow-md shadow-rose-500/50"></span>
-                <div class="flex-1 h-[2px] bg-rose-500 shadow-sm shadow-rose-500"></div>
+                <span class="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-400/30 -ml-1.5 shadow-lg shadow-rose-500/80 animate-pulse"></span>
+                <div class="flex-1 h-[2px] bg-rose-500 shadow-md shadow-rose-500"></div>
               </div>
             ` : ''}
 
@@ -536,7 +444,6 @@
               ${Array.from({ length: 24 }).map((_, h) => `
                 <div class="h-12 border-b border-white/[0.03]" data-hour="${h}"></div>
               `).join('')}
-
               ${dayEvts.map(evt => renderTimeGridEvent(evt)).join('')}
             </div>
           </div>
@@ -563,16 +470,16 @@
     const todayStr = formatDateKey(new Date());
 
     let html = `
-      <div class="flex flex-col h-full bg-surface-950/80 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none">
-        <div class="grid grid-cols-[64px_repeat(4,1fr)] border-b border-white/10 bg-surface-900/90 text-center py-2 text-xs font-mono divide-x divide-white/5">
-          <div class="text-[10px] text-zinc-500 font-bold pt-2">4-Day</div>
+      <div class="flex flex-col h-full bg-surface-950/90 rounded-2xl border border-white/10 overflow-hidden shadow-2xl select-none backdrop-blur-xl">
+        <div class="grid grid-cols-[64px_repeat(4,1fr)] border-b border-white/10 bg-surface-900/90 text-center py-2.5 text-xs font-mono divide-x divide-white/5">
+          <div class="text-[10px] text-zinc-500 font-bold pt-2">TIME</div>
           ${days.map(d => {
             const isToday = formatDateKey(d) === todayStr;
             const dayName = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
             return `
               <div class="py-1">
-                <div class="text-[10px] font-bold ${isToday ? 'text-cyan-400' : 'text-zinc-400'}">${dayName}</div>
-                <div class="inline-flex items-center justify-center w-7 h-7 text-sm font-bold rounded-full mt-0.5 ${isToday ? 'bg-cyan-400 text-black' : 'text-zinc-200'}">
+                <div class="text-[10px] font-bold tracking-wider ${isToday ? 'text-cyan-400 font-extrabold' : 'text-zinc-400'}">${dayName}</div>
+                <div class="inline-flex items-center justify-center w-7 h-7 text-sm font-bold rounded-full mt-0.5 ${isToday ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/30' : 'text-zinc-200'}">
                   ${d.getDate()}
                 </div>
               </div>
@@ -582,7 +489,7 @@
 
         <div class="flex-1 overflow-y-auto relative custom-scrollbar">
           <div class="relative grid grid-cols-[64px_repeat(4,1fr)] divide-x divide-white/5 min-h-[1152px]">
-            <div class="bg-surface-950/60 text-right pr-2 text-[10px] font-mono text-zinc-500 select-none">
+            <div class="bg-surface-950/60 text-right pr-2.5 text-[10px] font-mono text-zinc-500 select-none">
               ${Array.from({ length: 24 }).map((_, h) => `
                 <div class="h-12 -mt-2.5 pt-0.5">${formatHourLabel(h)}</div>
               `).join('')}
@@ -614,37 +521,37 @@
   // 5. AGENDA / SCHEDULE VIEW
   // =========================================================================
   function renderAgendaView(container) {
-    // Show events for the next 30 days
     const upcomingEvents = getUpcomingEvents(30);
 
     let html = `
-      <div class="flex flex-col h-full bg-surface-950/80 rounded-2xl border border-white/10 overflow-hidden shadow-2xl p-6 custom-scrollbar overflow-y-auto">
+      <div class="flex flex-col h-full bg-surface-950/90 rounded-2xl border border-white/10 overflow-hidden shadow-2xl p-6 custom-scrollbar overflow-y-auto backdrop-blur-xl">
         <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
           <h2 class="text-base font-bold text-white flex items-center gap-2">
             <i data-lucide="list-ordered" class="w-5 h-5 text-cyan-400"></i> Chronological Agenda &amp; Routines
           </h2>
-          <span class="text-xs font-mono text-zinc-400">${upcomingEvents.length} items upcoming</span>
+          <span class="text-xs font-mono text-zinc-400 px-3 py-1 rounded-full bg-surface-900 border border-white/5">${upcomingEvents.length} items upcoming</span>
         </div>
 
         ${upcomingEvents.length === 0 ? `
-          <div class="text-center py-16 text-zinc-500 font-mono text-xs">
-            <i data-lucide="calendar-off" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
-            No upcoming events found for this filter.
+          <div class="text-center py-20 text-zinc-500 font-mono text-xs space-y-2">
+            <i data-lucide="calendar-check" class="w-12 h-12 mx-auto mb-2 text-zinc-600"></i>
+            <div class="text-zinc-400 font-bold text-sm">Your schedule is completely clear!</div>
+            <p class="text-zinc-600">Click <strong>+ Create</strong> or <strong>AI Smart Plan</strong> to schedule your day.</p>
           </div>
         ` : `
           <div class="space-y-6">
             ${groupEventsByDate(upcomingEvents).map(group => `
               <div class="space-y-3">
-                <div class="sticky top-0 z-10 bg-surface-950/90 backdrop-blur py-1.5 flex items-center gap-3 border-b border-white/5">
+                <div class="sticky top-0 z-10 bg-surface-950/95 backdrop-blur-md py-1.5 flex items-center gap-3 border-b border-white/5">
                   <span class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">${group.dateFormatted}</span>
                   <span class="text-[10px] text-zinc-500 font-mono">• ${group.relativeDay}</span>
                 </div>
                 <div class="space-y-2">
                   ${group.events.map(evt => `
-                    <div class="p-3.5 rounded-xl border border-white/5 hover:border-cyan-500/30 bg-surface-900/60 hover:bg-surface-850/80 transition-all flex items-start justify-between group cursor-pointer"
+                    <div class="p-3.5 rounded-xl border border-white/5 hover:border-cyan-500/30 bg-surface-900/60 hover:bg-surface-850/80 transition-all flex items-start justify-between group cursor-pointer shadow-sm hover:shadow-cyan-500/5"
                          onclick="LuminaCalendar.openEventModal('${evt.id}')">
                       <div class="flex items-start gap-3">
-                        <span class="w-3 h-3 rounded-full mt-1 shrink-0" style="background-color: ${evt.color || '#039be5'};"></span>
+                        <span class="w-3 h-3 rounded-full mt-1 shrink-0 ring-2 ring-black/40" style="background-color: ${evt.color || '#039be5'};"></span>
                         <div>
                           <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">${escapeHtml(evt.title)}</div>
                           <div class="text-[11px] font-mono text-zinc-400 mt-0.5">
@@ -656,7 +563,7 @@
                       </div>
                       <div class="flex items-center gap-2">
                         ${evt.isAutonomous ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">AI Scheduled</span>` : ''}
-                        <button onclick="event.stopPropagation(); LuminaCalendar.deleteEvent('${evt.id}')" class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-rose-500/20 text-rose-400 transition-opacity" title="Delete Event">
+                        <button onclick="event.stopPropagation(); LuminaCalendar.deleteEvent('${evt.id}')" class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-500/20 text-rose-400 transition-opacity" title="Delete Event">
                           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         </button>
                       </div>
@@ -674,7 +581,7 @@
   }
 
   // =========================================================================
-  // 6. YEAR VIEW (12 Mini Month Grids)
+  // 6. YEAR VIEW (12 Month Cards)
   // =========================================================================
   function renderYearView(container) {
     const year = currentDate.getFullYear();
@@ -684,7 +591,7 @@
     ];
 
     let html = `
-      <div class="h-full bg-surface-950/80 rounded-2xl border border-white/10 overflow-y-auto p-6 shadow-2xl custom-scrollbar">
+      <div class="h-full bg-surface-950/90 rounded-2xl border border-white/10 overflow-y-auto p-6 shadow-2xl custom-scrollbar backdrop-blur-xl">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           ${monthNames.map((name, mIndex) => {
             const firstDay = new Date(year, mIndex, 1).getDay();
@@ -693,10 +600,10 @@
             const isThisM = today.getFullYear() === year && today.getMonth() === mIndex;
 
             return `
-              <div class="p-3 bg-surface-900/60 rounded-xl border border-white/5 hover:border-cyan-500/20 transition-all cursor-pointer"
+              <div class="p-3.5 bg-surface-900/60 rounded-xl border border-white/5 hover:border-cyan-500/30 transition-all cursor-pointer shadow-sm hover:scale-[1.01]"
                    onclick="LuminaCalendar.jumpToMonth(${mIndex})">
-                <div class="text-xs font-mono font-bold text-white mb-2 text-center">${name}</div>
-                <div class="grid grid-cols-7 text-[9px] font-mono text-zinc-500 text-center mb-1">
+                <div class="text-xs font-mono font-bold text-white mb-2.5 text-center">${name}</div>
+                <div class="grid grid-cols-7 text-[9px] font-mono text-zinc-500 text-center mb-1 font-bold">
                   <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                 </div>
                 <div class="grid grid-cols-7 text-[10px] font-mono text-center gap-y-1">
@@ -705,7 +612,7 @@
                     const dayNum = dIdx + 1;
                     const isToday = isThisM && dayNum === today.getDate();
                     return `
-                      <span class="inline-flex items-center justify-center w-5 h-5 rounded-full ${isToday ? 'bg-cyan-400 text-black font-bold' : 'text-zinc-300 hover:bg-white/10'}">
+                      <span class="inline-flex items-center justify-center w-5 h-5 rounded-full ${isToday ? 'bg-cyan-400 text-black font-extrabold shadow-sm' : 'text-zinc-300 hover:bg-white/10'}">
                         ${dayNum}
                       </span>
                     `;
@@ -738,14 +645,14 @@
     const monthName = currentDate.toLocaleString('default', { month: 'short' });
 
     let html = `
-      <div class="p-2.5 bg-surface-900/80 rounded-xl border border-white/5 select-none">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-mono font-bold text-white">${monthName} ${y}</span>
+      <div class="p-3 bg-surface-950/70 rounded-xl border border-white/5 select-none shadow-sm">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-xs font-mono font-bold text-white tracking-wide">${monthName} ${y}</span>
           <div class="flex items-center gap-1">
-            <button onclick="LuminaCalendar.navigateMiniMonth(-1)" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors" aria-label="Previous Month">
+            <button onclick="LuminaCalendar.navigateMiniMonth(-1)" class="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors" aria-label="Previous Month">
               <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
             </button>
-            <button onclick="LuminaCalendar.navigateMiniMonth(1)" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors" aria-label="Next Month">
+            <button onclick="LuminaCalendar.navigateMiniMonth(1)" class="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors" aria-label="Next Month">
               <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -764,7 +671,7 @@
             return `
               <button onclick="LuminaCalendar.jumpToDate('${y}-${String(m+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}')"
                       class="inline-flex items-center justify-center w-5 h-5 mx-auto rounded-full transition-transform ${
-                        isToday ? 'bg-cyan-400 text-black font-bold' : isSel ? 'bg-white/20 text-white font-bold' : 'text-zinc-300 hover:bg-white/10'
+                        isToday ? 'bg-cyan-400 text-black font-extrabold shadow-sm ring-1 ring-cyan-300' : isSel ? 'bg-white/20 text-white font-bold' : 'text-zinc-300 hover:bg-white/10'
                       }">
                 ${dayNum}
               </button>
@@ -787,9 +694,9 @@
     el.innerHTML = Object.entries(CATEGORY_META).map(([key, meta]) => {
       const checked = activeCategories[key] !== false;
       return `
-        <label class="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white/5 cursor-pointer text-xs font-mono transition-colors">
+        <label class="flex items-center justify-between py-1 px-2.5 rounded-lg hover:bg-white/5 cursor-pointer text-xs font-mono transition-colors">
           <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${meta.color};"></span>
+            <span class="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/40" style="background-color: ${meta.color};"></span>
             <span class="text-zinc-300 select-none">${meta.label}</span>
           </div>
           <input type="checkbox" ${checked ? 'checked' : ''} onchange="LuminaCalendar.toggleCategory('${key}', this.checked)" class="w-3.5 h-3.5 accent-cyan-400 cursor-pointer rounded" />
@@ -804,23 +711,23 @@
   }
 
   // =========================================================================
-  // TIME-GRID EVENT ELEMENT RENDERER (Week / Day view positioning)
+  // TIME-GRID EVENT ELEMENT RENDERER
   // =========================================================================
   function renderTimeGridEvent(evt) {
     const { top, height } = computeEventPosition(evt.start, evt.end);
     const timeLabel = `${formatShortTime(evt.start)} - ${formatShortTime(evt.end)}`;
 
     return `
-      <div class="absolute left-1 right-1 z-10 rounded-lg p-1.5 shadow-md border border-black/20 overflow-hidden cursor-pointer transition-all hover:brightness-110 hover:z-20 group"
-           style="top: ${top}px; height: ${Math.max(height, 22)}px; background-color: ${evt.color || '#039be5'}; color: #ffffff;"
+      <div class="absolute left-1 right-1 z-10 rounded-lg p-1.5 shadow-md border border-black/30 overflow-hidden cursor-pointer transition-all hover:brightness-110 hover:z-20 hover:scale-[1.01] group backdrop-blur-sm"
+           style="top: ${top}px; height: ${Math.max(height, 24)}px; background-color: ${evt.color || '#039be5'}; color: #ffffff;"
            onclick="event.stopPropagation(); LuminaCalendar.openEventModal('${evt.id}')"
            title="${evt.title} (${timeLabel})">
         <div class="flex items-start justify-between gap-1 leading-tight">
-          <div class="truncate font-sans font-semibold text-[11px]">${escapeHtml(evt.title)}</div>
-          ${evt.isAutonomous ? `<span class="shrink-0 text-[8px] font-mono px-1 rounded bg-black/30">AI</span>` : ''}
+          <div class="truncate font-sans font-semibold text-[11px] drop-shadow-sm">${escapeHtml(evt.title)}</div>
+          ${evt.isAutonomous ? `<span class="shrink-0 text-[8px] font-mono px-1 rounded bg-black/40 border border-white/20">AI</span>` : ''}
         </div>
-        ${height >= 36 ? `<div class="text-[9px] font-mono opacity-85 mt-0.5 truncate">${timeLabel}</div>` : ''}
-        ${height >= 56 && evt.location ? `<div class="text-[9px] font-sans opacity-75 truncate">${escapeHtml(evt.location)}</div>` : ''}
+        ${height >= 36 ? `<div class="text-[9px] font-mono opacity-90 mt-0.5 truncate">${timeLabel}</div>` : ''}
+        ${height >= 56 && evt.location ? `<div class="text-[9px] font-sans opacity-80 truncate">${escapeHtml(evt.location)}</div>` : ''}
       </div>
     `;
   }
@@ -830,9 +737,9 @@
     const e = new Date(endIso);
     const startHour = s.getHours() + (s.getMinutes() / 60);
     let endHour = e.getHours() + (e.getMinutes() / 60);
-    if (endHour <= startHour) endHour = startHour + 0.5; // minimum 30 min display
+    if (endHour <= startHour) endHour = startHour + 0.5;
 
-    const top = Math.round(startHour * 48); // 48px per hour
+    const top = Math.round(startHour * 48);
     const height = Math.round((endHour - startHour) * 48);
     return { top, height };
   }
@@ -990,12 +897,16 @@
         createdAt: new Date().toISOString()
       };
 
-      // Check collision and auto-resolve conflicts
       if (calendarSettings.aiSchedulingEnabled) {
         aiRescheduleConflicts(newEvent);
       }
 
       calendarEvents.push(newEvent);
+
+      // Push to Google Calendar in background if connected
+      if (calendarSettings.googleCalendarConnected) {
+        pushEventToGoogle(newEvent);
+      }
     }
 
     saveCalendarEvents();
@@ -1022,7 +933,7 @@
     const rect = event.currentTarget.getBoundingClientRect();
     const clickY = event.clientY - rect.top;
     const hour = Math.floor(clickY / 48);
-    const minute = Math.floor((clickY % 48) / 12) * 15; // round to 15m
+    const minute = Math.floor((clickY % 48) / 12) * 15;
 
     const startStr = `${dateStr}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     const endStr = `${dateStr}T${String(Math.min(23, hour + 1)).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
@@ -1033,18 +944,11 @@
   // =========================================================================
   // AUTONOMOUS AI REAL-LIFE SCHEDULER ENGINE
   // =========================================================================
-
-  /**
-   * Automatically plans an optimal, realistic day schedule for a given date.
-   * Respects sleep window (23:00-07:00), lunch buffer (12:30-13:30),
-   * fatigue limits (90m max focus), and applies organic human jitter (±5m).
-   */
   function aiAutoPlanDay(targetDateInput, customTasks) {
     const targetDate = targetDateInput ? new Date(targetDateInput) : (selectedDate || new Date());
     const dateKey = formatDateKey(targetDate);
-    const dayOfWeek = targetDate.getDay(); // 0 = Sun, 6 = Sat
+    const dayOfWeek = targetDate.getDay();
 
-    // Weekend exclusion check
     if (calendarSettings.excludeWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
       console.log(`[AI Scheduler]: Weekend exclusion active for ${dateKey}.`);
       return { success: false, reason: 'weekend_excluded', message: 'Weekend scheduling excluded by user rule.' };
@@ -1060,30 +964,27 @@
     ];
 
     const plannedEvents = [];
-    let currentHour = 8; // start morning at 08:00
+    let currentHour = 8;
     let currentMinute = 0;
 
     for (const task of defaultTasks) {
-      // 1. Check fixed time tasks (e.g. Lunch)
       if (task.fixedTime) {
         const [fh, fm] = task.fixedTime.split(':').map(Number);
         currentHour = fh;
         currentMinute = fm;
       }
 
-      // 2. Blackout window check (23:00 - 07:00)
       if (currentHour >= 23 || currentHour < 7) {
-        break; // Stop scheduling into sleep
+        break;
       }
 
-      // 3. Human jitter calculation (±3-8 minutes)
       let jitter = 0;
       if (calendarSettings.enableHumanJitter && !task.fixedTime) {
         jitter = Math.floor(Math.random() * (calendarSettings.jitterMinutes * 2 + 1)) - calendarSettings.jitterMinutes;
       }
 
       let startMinTotal = currentHour * 60 + currentMinute + jitter;
-      if (startMinTotal < 7 * 60) startMinTotal = 7 * 60; // never before 7 AM
+      if (startMinTotal < 7 * 60) startMinTotal = 7 * 60;
       const startH = Math.floor(startMinTotal / 60);
       const startM = startMinTotal % 60;
 
@@ -1114,14 +1015,12 @@
 
       plannedEvents.push(evt);
 
-      // Advance clock with transition buffer (10-15 mins)
       const buffer = calendarSettings.restBufferMinutes || 15;
       const nextMinTotal = endMinTotal + buffer;
       currentHour = Math.floor(nextMinTotal / 60);
       currentMinute = nextMinTotal % 60;
     }
 
-    // Merge planned events into vault
     calendarEvents.push(...plannedEvents);
     saveCalendarEvents();
     renderCalendar();
@@ -1134,10 +1033,6 @@
     };
   }
 
-  /**
-   * Dynamic Conflict Resolution: Shifts flexible lower-priority AI tasks
-   * forward when a new hard meeting or event is added.
-   */
   function aiRescheduleConflicts(newEvent) {
     if (!newEvent || !newEvent.start || !newEvent.end) return;
 
@@ -1146,14 +1041,12 @@
 
     calendarEvents.forEach(evt => {
       if (evt.id === newEvent.id) return;
-      if (!evt.reschedulable) return; // Do not move hard events
+      if (!evt.reschedulable) return;
 
       const evtStart = new Date(evt.start).getTime();
       const evtEnd = new Date(evt.end).getTime();
 
-      // Check collision
       if (newStart < evtEnd && newEnd > evtStart) {
-        // Shift flexible task after newEvent end + buffer
         const shiftDuration = evtEnd - evtStart;
         const bufferMs = (calendarSettings.restBufferMinutes || 15) * 60 * 1000;
         const shiftedStart = new Date(newEnd + bufferMs);
@@ -1167,7 +1060,7 @@
   }
 
   // =========================================================================
-  // UNIVERSAL RFC 5545 iCALENDAR (.ICS) ENGINE (Google / Apple / Outlook Sync)
+  // UNIVERSAL RFC 5545 iCALENDAR (.ICS) ENGINE
   // =========================================================================
   function exportToIcs() {
     let ics = [
@@ -1204,7 +1097,6 @@
     ics.push('END:VCALENDAR');
     const icsContent = ics.join('\r\n');
 
-    // Trigger Browser Download
     if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' && typeof document !== 'undefined' && document.body) {
       try {
         const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
@@ -1275,7 +1167,6 @@
   }
 
   function parseIcsDate(str) {
-    // Basic iCal timestamp: YYYYMMDDTHHMMSSZ or YYYYMMDD
     if (/^\d{8}T\d{6}Z?$/.test(str)) {
       const y = str.slice(0, 4);
       const m = str.slice(4, 6);
@@ -1299,46 +1190,77 @@
   }
 
   // =========================================================================
-  // GOOGLE IDENTITY SERVICES (GIS) TWO-WAY SYNC
+  // ZERO-FRONTEND-SECRETS BACKEND GOOGLE CALENDAR SYNC
   // =========================================================================
-  function initGoogleCalendarSync(clientId) {
-    if (clientId) calendarSettings.googleClientId = clientId;
-    saveCalendarSettings();
-
-    if (!calendarSettings.googleClientId) {
-      openSyncModal();
-      return;
-    }
-
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      alert('Google Identity Services SDK is loading or blocked. You can still use sovereign iCal export/import anytime!');
-      return;
-    }
-
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: calendarSettings.googleClientId,
-      scope: 'https://www.googleapis.com/auth/calendar',
-      callback: async (tokenResponse) => {
-        if (tokenResponse && tokenResponse.access_token) {
-          calendarSettings.googleCalendarConnected = true;
-          calendarSettings.lastSyncedAt = new Date().toISOString();
-          saveCalendarSettings();
-          updateSyncStatusBadge();
-          await fetchGoogleEvents(tokenResponse.access_token);
-        }
+  async function checkBackendConnectionStatus() {
+    try {
+      const res = await fetch('/api/calendar/status');
+      if (res.ok) {
+        const data = await res.json();
+        calendarSettings.googleCalendarConnected = !!data.connected;
+        updateSyncStatusBadge();
       }
-    });
-
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    } catch (e) {}
   }
 
-  async function fetchGoogleEvents(accessToken) {
+  async function connectGoogleAccount() {
     try {
-      const now = new Date();
-      const timeMin = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&singleEvents=true&maxResults=100`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const statusRes = await fetch('/api/calendar/status');
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        if (statusData.connected) {
+          calendarSettings.googleCalendarConnected = true;
+          saveCalendarSettings();
+          updateSyncStatusBadge();
+          await syncGoogleCalendar();
+          return;
+        }
+      }
+
+      // Fetch OAuth initiation authUrl from backend
+      const authRes = await fetch('/api/calendar/auth');
+      const authData = await authRes.json();
+
+      if (!authData.configured || !authData.authUrl) {
+        alert("Google Calendar backend is not configured yet on Vercel.\n\nPlease add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your Vercel Project Settings > Environment Variables, then redeploy!");
+        return;
+      }
+
+      // Open OAuth in centered popup
+      const width = 560, height = 680;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      const popup = window.open(authData.authUrl, 'google_oauth_popup', `width=${width},height=${height},left=${left},top=${top}`);
+
+      const checkInterval = setInterval(async () => {
+        try {
+          if (!popup || popup.closed) {
+            clearInterval(checkInterval);
+            const checkRes = await fetch('/api/calendar/status');
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              if (checkData.connected) {
+                calendarSettings.googleCalendarConnected = true;
+                calendarSettings.lastSyncedAt = new Date().toISOString();
+                saveCalendarSettings();
+                updateSyncStatusBadge();
+                await syncGoogleCalendar();
+              }
+            }
+          }
+        } catch (e) {
+          clearInterval(checkInterval);
+        }
+      }, 1000);
+    } catch (e) {
+      console.warn('Google Account Connect error:', e);
+    }
+  }
+
+  async function syncGoogleCalendar() {
+    updateSyncStatusBadge(true);
+    try {
+      const res = await fetch('/api/calendar/sync');
       if (res.ok) {
         const data = await res.json();
         if (data.items && Array.isArray(data.items)) {
@@ -1356,40 +1278,74 @@
             isAutonomous: false
           }));
 
-          // Merge without duplicates
           gEvents.forEach(ge => {
             const exists = calendarEvents.find(e => e.googleEventId === ge.googleEventId);
             if (!exists) calendarEvents.push(ge);
           });
 
+          calendarSettings.googleCalendarConnected = true;
+          calendarSettings.lastSyncedAt = new Date().toISOString();
           saveCalendarEvents();
+          saveCalendarSettings();
           renderCalendar();
-          alert(`Successfully synced ${gEvents.length} events from Google Calendar!`);
         }
       }
-    } catch (err) {
-      console.warn('Google Calendar fetch error:', err);
+    } catch (e) {
+      console.warn('Sync Google Calendar error:', e);
+    } finally {
+      updateSyncStatusBadge(false);
     }
   }
 
-  function updateSyncStatusBadge() {
+  async function pushEventToGoogle(evt) {
+    try {
+      await fetch('/api/calendar/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          summary: evt.title,
+          description: evt.description || '',
+          location: evt.location || '',
+          start: { dateTime: new Date(evt.start).toISOString() },
+          end: { dateTime: new Date(evt.end).toISOString() }
+        })
+      });
+    } catch (e) {}
+  }
+
+  function updateSyncStatusBadge(isSyncing = false) {
     const badge = document.getElementById('calSyncStatusBadge');
     if (!badge) return;
 
+    if (isSyncing) {
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> <span class="hidden sm:inline">Syncing...</span>`;
+      badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30';
+      return;
+    }
+
     if (calendarSettings.googleCalendarConnected) {
       badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span class="hidden sm:inline">Google Synced</span>`;
-      badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/20';
     } else {
       badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400"></span> <span class="hidden sm:inline">Local Sovereign</span>`;
-      badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-surface-900 text-zinc-400 border border-white/10 hover:text-white cursor-pointer';
+      badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-surface-900 text-zinc-400 border border-white/10 hover:text-white cursor-pointer transition-colors';
     }
   }
 
   function openSyncModal() {
     const modal = document.getElementById('calendarSyncModal');
     if (!modal) return;
-    const input = document.getElementById('calGoogleClientIdInput');
-    if (input) input.value = calendarSettings.googleClientId || '';
+    
+    // Update live status text in modal
+    const statusText = document.getElementById('calSyncModalStatusText');
+    if (statusText) {
+      if (calendarSettings.googleCalendarConnected) {
+        statusText.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Active &amp; Synced with Google Account</span>`;
+      } else {
+        statusText.innerHTML = `<span class="text-zinc-400 font-mono">Not Connected — Authenticate via Vercel Backend</span>`;
+      }
+    }
+
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.remove('opacity-0'), 10);
   }
@@ -1399,18 +1355,6 @@
     if (!modal) return;
     modal.classList.add('opacity-0');
     setTimeout(() => modal.style.display = 'none', 200);
-  }
-
-  function saveSyncSettingsFromModal() {
-    const input = document.getElementById('calGoogleClientIdInput');
-    if (input) {
-      calendarSettings.googleClientId = input.value.trim();
-      saveCalendarSettings();
-    }
-    closeSyncModal();
-    if (calendarSettings.googleClientId) {
-      initGoogleCalendarSync(calendarSettings.googleClientId);
-    }
   }
 
   // =========================================================================
@@ -1511,24 +1455,19 @@
   function getStartOfWeek(d) {
     const date = new Date(d);
     const day = date.getDay();
-    const diff = date.getDate() - day; // 0 = Sun
+    const diff = date.getDate() - day;
     return new Date(date.setDate(diff));
   }
 
   function getEventsForDate(dateObj) {
     const key = formatDateKey(dateObj);
     return calendarEvents.filter(evt => {
-      // Category filter check
       if (evt.category && activeCategories[evt.category] === false) return false;
-      
-      // Search query check
       if (searchQuery && !evt.title.toLowerCase().includes(searchQuery)) return false;
 
-      // Date match
       const startKey = evt.start ? evt.start.slice(0, 10) : '';
       if (startKey === key) return true;
 
-      // Recurrence expansion
       if (evt.recurrence && evt.recurrence.freq) {
         return matchesRecurrence(evt, dateObj);
       }
@@ -1574,7 +1513,6 @@
       step.setDate(step.getDate() + 1);
     }
 
-    // Deduplicate
     const seen = new Set();
     return matches.filter(e => {
       if (seen.has(e.id)) return false;
@@ -1616,8 +1554,6 @@
   function jumpToMonth(monthIndex) {
     currentDate.setMonth(monthIndex);
     currentView = 'month';
-    const viewSelect = document.getElementById('calViewSelect');
-    if (viewSelect) viewSelect.value = 'month';
     renderCalendar();
   }
 
@@ -1678,10 +1614,14 @@
     handleAgentDirective,
     exportToIcs,
     importFromIcs,
-    initGoogleCalendarSync,
+    connectGoogleAccount,
+    syncGoogleCalendar,
     openSyncModal,
     closeSyncModal,
-    saveSyncSettingsFromModal,
+    saveSyncSettingsFromModal: function() {
+      connectGoogleAccount();
+      closeSyncModal();
+    },
     getEvents: () => [...calendarEvents],
     getSettings: () => ({ ...calendarSettings }),
     setSettings: (s) => {
@@ -1691,7 +1631,6 @@
     }
   };
 
-  // Auto-init on load if container exists
   if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
       loadCalendarFromStorage();

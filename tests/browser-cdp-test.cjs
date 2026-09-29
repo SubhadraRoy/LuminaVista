@@ -46,6 +46,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (pathname === '/api/calendar/status') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ configured: true, connected: false }));
+    return;
+  }
+
+  if (pathname === '/api/calendar/sync') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, items: [] }));
+    return;
+  }
+
+  if (pathname === '/api/calendar/auth') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ configured: true, authUrl: 'https://accounts.google.com/o/oauth2/v2/auth?mock=true' }));
+    return;
+  }
+
   const safePath = path.normalize(path.join(ROOT, pathname));
   if (!safePath.startsWith(ROOT)) {
     res.writeHead(403);
