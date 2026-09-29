@@ -1000,6 +1000,13 @@ When taking action, output the appropriate tool directives:
 8. Complete objective:
    [TOOL:TASK_COMPLETE summary="..."][/TOOL:TASK_COMPLETE]
 
+=== ARTIFACT QUALITY & CLEANLINESS MANDATE ===
+- When creating or modifying code artifacts ([TOOL:WRITE_FILE] or [TOOL:EDIT_FILE]):
+  1. Complete & Robust: Every artifact must be complete, beautifully structured, and fully functional. Never use placeholders like "// ... rest of code", "// TODO", or truncated snippets.
+  2. Neat Formatting: Maintain impeccable indentation, modular functions, clear naming conventions, and clean inline documentation.
+  3. Modern UI Aesthetics: For web/HTML artifacts, use responsive HTML5, modern Tailwind CSS, dark-mode glassmorphic styling, Lucide icons, and fluid interactive animations matching LuminaVista.
+  4. Pristine Architecture: Avoid messy temporary debug files or incomplete artifacts.
+
 Always keep the workspace clean, maintain pristine architecture, and conclude with [TOOL:TASK_COMPLETE] when finished.`;
   }
 

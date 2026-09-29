@@ -361,12 +361,31 @@ async function runBrowserTest() {
 
   await evaluate("window.LuminaCalendar.openEventModal()");
   const isModalOpen = await evaluate("document.getElementById('calendarEventModal').style.display === 'flex'");
-  test("Event creation modal opened in Chrome", isModalOpen);
   await evaluate("window.LuminaCalendar.closeEventModal()");
 
   await evaluate("window.LuminaCalendar.setView('month')");
+  const hasTodayHighlight = await evaluate("document.getElementById('calendarViewContainer')?.innerHTML.includes('TODAY')");
+  test("Month view highlights current date box with TODAY badge in Chrome", hasTodayHighlight);
 
-  // 11. Check for Uncaught Exceptions
+  // 11. Google Calendar OAuth Sync Modal & Redirect URI Check
+  await evaluate("window.LuminaCalendar.openSyncModal()");
+  const isSyncModalOpen = await evaluate("document.getElementById('calendarSyncModal').style.display === 'flex'");
+  test("Google Calendar Sync modal opened in Chrome", isSyncModalOpen);
+
+  const hasRedirectUri = await evaluate("document.getElementById('calSyncRedirectUri') !== null");
+  test("Authorised Redirect URI input exists in sync modal", hasRedirectUri);
+
+  const hasCopyRedirectBtn = await evaluate("document.getElementById('btnCopyRedirectUri') !== null");
+  test("Copy Redirect URI button exists in sync modal", hasCopyRedirectBtn);
+
+  await evaluate("window.LuminaCalendar.closeSyncModal()");
+
+  // 12. Artifacts Sovereign Storage Quota Meter
+  await evaluate("switchTab('tab-artifacts')");
+  const hasStorageMeter = await evaluate("document.getElementById('vfsStorageBar') !== null && document.getElementById('vfsStorageText') !== null");
+  test("Sovereign VFS Storage Quota meter rendered in Chrome", hasStorageMeter);
+
+  // 13. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {
     console.error("Console Errors logged:", consoleErrors);

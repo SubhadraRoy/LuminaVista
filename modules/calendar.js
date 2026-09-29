@@ -277,19 +277,26 @@
 
       const dayEvents = getEventsForDate(cellDate);
 
+      const todayBoxClass = isToday 
+        ? 'group relative p-2.5 flex flex-col min-h-[95px] transition-all cursor-pointer bg-cyan-950/25 border-2 border-cyan-400 shadow-[inset_0_0_15px_rgba(0,242,254,0.15),0_0_20px_rgba(0,242,254,0.15)] ring-1 ring-cyan-400/40 rounded-xl z-10' 
+        : 'group relative p-2 flex flex-col min-h-[90px] transition-all hover:bg-white/[0.03] cursor-pointer';
+
       html += `
-        <div class="group relative p-2 flex flex-col min-h-[90px] transition-all hover:bg-white/[0.03] cursor-pointer"
+        <div class="${todayBoxClass}"
              onclick="LuminaCalendar.handleDayCellClick('${cellDateStr}', event)">
           <div class="flex items-center justify-between mb-1">
-            <span class="inline-flex items-center justify-center text-xs font-mono font-bold w-6 h-6 rounded-full transition-transform ${
-              isToday 
-                ? 'bg-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/40 ring-2 ring-cyan-400/30' 
-                : isCurrentMonth 
-                  ? 'text-zinc-200 group-hover:bg-white/10' 
-                  : 'text-zinc-600'
-            }">
-              ${cellDay === 1 ? `${cellDate.toLocaleString('default', { month: 'short' })} ${cellDay}` : cellDay}
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="inline-flex items-center justify-center text-xs font-mono font-bold w-6 h-6 rounded-full transition-transform ${
+                isToday 
+                  ? 'bg-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/50 ring-2 ring-cyan-300' 
+                  : isCurrentMonth 
+                    ? 'text-zinc-200 group-hover:bg-white/10' 
+                    : 'text-zinc-600'
+              }">
+                ${cellDay === 1 ? `${cellDate.toLocaleString('default', { month: 'short' })} ${cellDay}` : cellDay}
+              </span>
+              ${isToday ? `<span class="text-[9px] font-mono font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-cyan-400 text-black shadow-sm flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-black animate-ping"></span> TODAY</span>` : ''}
+            </div>
             ${dayEvents.length > 3 ? `<span class="text-[9px] font-mono text-cyan-400 font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">+${dayEvents.length - 3}</span>` : ''}
           </div>
 
@@ -1205,7 +1212,15 @@
 
   async function connectGoogleAccount() {
     try {
-      const statusRes = await fetch('/api/calendar/status');
+      const clientRedirect = (typeof window !== 'undefined' && window.location && window.location.origin)
+        ? `${window.location.origin}/api/calendar/callback`
+        : '';
+      
+      const statusUrl = clientRedirect 
+        ? `/api/calendar/status?redirect_uri=${encodeURIComponent(clientRedirect)}`
+        : '/api/calendar/status';
+
+      const statusRes = await fetch(statusUrl);
       if (statusRes.ok) {
         const statusData = await statusRes.json();
         if (statusData.connected) {
@@ -1217,8 +1232,11 @@
         }
       }
 
-      // Fetch OAuth initiation authUrl from backend
-      const authRes = await fetch('/api/calendar/auth');
+      // Fetch OAuth initiation authUrl from backend with client redirect URI
+      const authUrl = clientRedirect 
+        ? `/api/calendar/auth?redirect_uri=${encodeURIComponent(clientRedirect)}` 
+        : '/api/calendar/auth';
+      const authRes = await fetch(authUrl);
       const authData = await authRes.json();
 
       if (!authData.configured || !authData.authUrl) {
@@ -1236,7 +1254,7 @@
         try {
           if (!popup || popup.closed) {
             clearInterval(checkInterval);
-            const checkRes = await fetch('/api/calendar/status');
+            const checkRes = await fetch(statusUrl);
             if (checkRes.ok) {
               const checkData = await checkRes.json();
               if (checkData.connected) {
@@ -1332,22 +1350,96 @@
     }
   }
 
-  function openSyncModal() {
+  async function openSyncModal() {
     const modal = document.getElementById('calendarSyncModal');
     if (!modal) return;
     
-    // Update live status text in modal
+    const computedRedirect = (typeof window !== 'undefined' && window.location && window.location.origin)
+      ? `${window.location.origin}/api/calendar/callback`
+      : '';
+
+    const redirectInput = document.getElementById('calSyncRedirectUri');
+    if (redirectInput && computedRedirect) {
+      redirectInput.value = computedRedirect;
+    }
+
+    const statusBadge = document.getElementById('calSyncModalStatusBadge');
     const statusText = document.getElementById('calSyncModalStatusText');
-    if (statusText) {
-      if (calendarSettings.googleCalendarConnected) {
-        statusText.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Active &amp; Synced with Google Account</span>`;
-      } else {
-        statusText.innerHTML = `<span class="text-zinc-400 font-mono">Not Connected — Authenticate via Vercel Backend</span>`;
+
+    try {
+      const statusUrl = computedRedirect 
+        ? `/api/calendar/status?redirect_uri=${encodeURIComponent(computedRedirect)}`
+        : '/api/calendar/status';
+      const res = await fetch(statusUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.redirectUri && redirectInput) {
+          redirectInput.value = data.redirectUri;
+        }
+        if (data.connected) {
+          calendarSettings.googleCalendarConnected = true;
+          if (statusBadge) {
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-mono';
+            statusBadge.textContent = 'Active Sync';
+          }
+          if (statusText) {
+            statusText.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Google Calendar Connected &amp; Synced</span>`;
+          }
+        } else if (data.configured) {
+          if (statusBadge) {
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono';
+            statusBadge.textContent = 'Configured (Needs Login)';
+          }
+          if (statusText) {
+            statusText.innerHTML = `<span class="text-cyan-300 font-sans">Credentials detected on Vercel. Make sure the redirect URI below is added to Google Cloud Console, then click <b>Sign in &amp; Sync with Google</b>.</span>`;
+          }
+        } else {
+          if (statusBadge) {
+            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono';
+            statusBadge.textContent = 'Awaiting Vercel Env';
+          }
+          if (statusText) {
+            statusText.innerHTML = `<span class="text-amber-400/90 font-sans">Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET on Vercel environment variables.</span>`;
+          }
+        }
+      }
+    } catch (e) {
+      if (statusText) {
+        statusText.innerHTML = `<span class="text-zinc-400 font-mono">Backend status check unavailable.</span>`;
       }
     }
 
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.remove('opacity-0'), 10);
+  }
+
+  function copyRedirectUri() {
+    const el = document.getElementById('calSyncRedirectUri');
+    if (!el) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.value).then(() => showCopiedFeedback());
+      } else {
+        el.select();
+        document.execCommand('copy');
+        showCopiedFeedback();
+      }
+    } catch (e) {
+      el.select();
+    }
+  }
+
+  function showCopiedFeedback() {
+    const btn = document.getElementById('btnCopyRedirectUri');
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Copied!`;
+      if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      }, 2000);
+    }
   }
 
   function closeSyncModal() {
@@ -1618,6 +1710,7 @@
     syncGoogleCalendar,
     openSyncModal,
     closeSyncModal,
+    copyRedirectUri,
     saveSyncSettingsFromModal: function() {
       connectGoogleAccount();
       closeSyncModal();

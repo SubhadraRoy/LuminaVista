@@ -41,6 +41,7 @@
     if (countBadge) countBadge.textContent = `${filenames.length} files`;
     if (window.updateAiSubTabArtifactBadge) window.updateAiSubTabArtifactBadge();
     if (window.rebuildGraphData) window.rebuildGraphData();
+    updateStorageQuotaMeter();
 
     const tree = {};
     filenames.forEach(file => {
@@ -160,12 +161,54 @@
     if (ed) ed.value = (window.vfs && window.vfs[window.csActiveFile]) || "";
   }
 
+  function updateStorageQuotaMeter() {
+    const vfs = window.vfs || {};
+    const filenames = Object.keys(vfs);
+    let totalBytes = 0;
+    let totalChars = 0;
+
+    filenames.forEach(f => {
+      const content = vfs[f] || "";
+      totalChars += content.length;
+      try {
+        totalBytes += (typeof Blob !== 'undefined') ? new Blob([content]).size : content.length;
+      } catch (e) {
+        totalBytes += content.length;
+      }
+    });
+
+    const MAX_STORAGE_BYTES = 50 * 1024 * 1024; // 50 MB Standard Quota
+    const pct = Math.min(100, Math.max(0.1, (totalBytes / MAX_STORAGE_BYTES) * 100));
+
+    let usedDisplay = "0 B";
+    if (totalBytes < 1024) {
+      usedDisplay = `${totalBytes} B`;
+    } else if (totalBytes < 1024 * 1024) {
+      usedDisplay = `${(totalBytes / 1024).toFixed(1)} KB`;
+    } else {
+      usedDisplay = `${(totalBytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    const storageTextEl = document.getElementById("vfsStorageText");
+    if (storageTextEl) storageTextEl.textContent = `${usedDisplay} / 50 MB`;
+
+    const storageBarEl = document.getElementById("vfsStorageBar");
+    if (storageBarEl) storageBarEl.style.width = `${Math.max(1, pct.toFixed(2))}%`;
+
+    const storagePercentEl = document.getElementById("vfsStoragePercent");
+    if (storagePercentEl) storagePercentEl.textContent = `${pct < 0.1 ? '<0.1' : pct.toFixed(1)}%`;
+
+    const storageCharsEl = document.getElementById("vfsStorageChars");
+    if (storageCharsEl) storageCharsEl.textContent = `${totalChars.toLocaleString()} chars`;
+  }
+
   function onEditorContentChange() {
     if (window.csActiveFile && window.vfs) {
       const ed = document.getElementById("csCodeEditor");
       if (ed) {
         window.vfs[window.csActiveFile] = ed.value;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+        updateStorageQuotaMeter();
       }
     }
   }
@@ -416,5 +459,6 @@
   window.openCodespacePopout = openCodespacePopout;
   window.exportCodespaceZip = exportCodespaceZip;
   window.handleIdeTerminalCommand = handleIdeTerminalCommand;
+  window.updateStorageQuotaMeter = updateStorageQuotaMeter;
 
 })(window);

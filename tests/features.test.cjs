@@ -618,6 +618,31 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   const agentEvt = window.LuminaCalendar.getEvents().find(e => e.title === "Autonomous Agent Task Block");
   assert(agentEvt !== undefined && agentEvt.isAutonomous === true, "Directive created autonomous event in calendar store");
 
+  // 12. VFS Storage Limit Meter & Google OAuth Error 400 Resolution
+  console.log("\n[Test Suite 12: VFS Storage Limit Meter & Google OAuth Error 400 Resolution]");
+  assert(document.getElementById("vfsStorageBar") !== null, "#vfsStorageBar exists in DOM");
+  assert(document.getElementById("vfsStorageText") !== null, "#vfsStorageText exists in DOM");
+  assert(document.getElementById("vfsStoragePercent") !== null, "#vfsStoragePercent exists in DOM");
+  assert(document.getElementById("vfsStorageChars") !== null, "#vfsStorageChars exists in DOM");
+
+  // Mount test files in VFS and verify quota telemetry calculation
+  window.vfs = window.vfs || {};
+  window.vfs["test_module.js"] = "console.log('Testing storage limit calculation');";
+  if (window.updateStorageQuotaMeter) window.updateStorageQuotaMeter();
+  const storageText = document.getElementById("vfsStorageText").textContent;
+  assert(storageText.includes("/ 50 MB"), "Storage text displays usage against 50 MB limit");
+
+  // Verify Google Calendar Error 400 Resolution Elements
+  assert(document.getElementById("calendarSyncModal") !== null, "#calendarSyncModal exists in DOM");
+  assert(document.getElementById("calSyncRedirectUri") !== null, "#calSyncRedirectUri exists in DOM");
+  assert(document.getElementById("btnCopyRedirectUri") !== null, "#btnCopyRedirectUri exists in DOM");
+  assert(typeof window.LuminaCalendar.copyRedirectUri === 'function', "LuminaCalendar.copyRedirectUri is a function");
+
+  // Verify Month View Highlights Current Date Box
+  window.LuminaCalendar.setView('month');
+  const monthContainer = document.getElementById('calendarViewContainer');
+  assert(monthContainer && monthContainer.innerHTML.includes("TODAY"), "Month view renders highlighted current date box with TODAY badge");
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");
