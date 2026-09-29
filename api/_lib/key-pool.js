@@ -34,11 +34,18 @@ export function getKeyPool(provider = 'ollama') {
   const p = (provider || '').toLowerCase();
 
   const addKey = (name, val, prov = 'ollama') => {
-    if (!isValidSecretToken(val)) return;
-    const trimmed = val.trim();
-    if (!pool.some(k => k.key === trimmed && k.provider === prov)) {
-      pool.push({ index: pool.length + 1, key: trimmed, name, provider: prov });
-    }
+    if (!val || typeof val !== 'string') return;
+    // Support comma-separated keys stored in a single variable or combined names (e.g. OLLAMA_API_KEY2,OLLAMA_API_KEY1)
+    const tokens = val.split(/[,;\r\n]+/).map(t => t.trim()).filter(Boolean);
+    const names = (name || '').split(/[,;\r\n]+/).map(n => n.trim()).filter(Boolean);
+
+    tokens.forEach((token, idx) => {
+      if (!isValidSecretToken(token)) return;
+      if (!pool.some(k => k.key === token && k.provider === prov)) {
+        const keyName = names[idx] || (tokens.length > 1 ? `${name}_${idx + 1}` : name);
+        pool.push({ index: pool.length + 1, key: token, name: keyName, provider: prov });
+      }
+    });
   };
 
   if (p === 'ollama' || p === 'ollama_pool') {

@@ -1340,6 +1340,13 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(telemStatus === 200 && telemData && telemData.success === true, "Live telemetry action returns success status 200");
   assert(telemData.pools && Array.isArray(telemData.pools.ollama) && Array.isArray(telemData.pools.nvidia), "Telemetry payload reports ollama and nvidia pool arrays");
 
+  // Test 5: Comma-separated variable name and comma-separated tokens (e.g. OLLAMA_API_KEY2,OLLAMA_API_KEY1)
+  process.env['OLLAMA_API_KEY2,OLLAMA_API_KEY1'] = 'mock_token_two_abc, mock_token_one_xyz';
+  const commaPool = getKeyPool('ollama');
+  assert(commaPool.some(k => k.key === 'mock_token_two_abc' && k.name === 'OLLAMA_API_KEY2'), "Discovered first token from comma-joined env var as OLLAMA_API_KEY2");
+  assert(commaPool.some(k => k.key === 'mock_token_one_xyz' && k.name === 'OLLAMA_API_KEY1'), "Discovered second token from comma-joined env var as OLLAMA_API_KEY1");
+  delete process.env['OLLAMA_API_KEY2,OLLAMA_API_KEY1'];
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");
