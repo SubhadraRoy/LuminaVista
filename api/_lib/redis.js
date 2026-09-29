@@ -41,6 +41,21 @@ class ResilientFallbackStorage {
     }
     return 0;
   }
+  async incr(key) {
+    const item = fallbackStore.get(key);
+    let val = 1;
+    let expires = null;
+    if (item) {
+      if (item.expires && Date.now() > item.expires) {
+        val = 1;
+      } else {
+        val = (parseInt(item.value, 10) || 0) + 1;
+        expires = item.expires;
+      }
+    }
+    fallbackStore.set(key, { value: val, expires });
+    return val;
+  }
   async keys(pattern = '*') {
     const now = Date.now();
     const result = [];

@@ -116,7 +116,7 @@ export default async function handler(req, res) {
       category = 'General',
       specialist = 'Omni-Disciplinary Executive Assistant',
       personaDirective = ''
-    } = req.body;
+    } = req.body || {};
 
     currentVfs = currentVfs || {};
     messages = messages || [];

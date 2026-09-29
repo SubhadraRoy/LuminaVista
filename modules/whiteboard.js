@@ -19,6 +19,7 @@
   let lastX = 0;
   let lastY = 0;
   let strokePoints = [];
+  let activePointerId = null;
 
   function initWhiteboard() {
     const mainCv = document.getElementById("whiteboardCanvas");
@@ -165,8 +166,6 @@
       btnRedo.style.pointerEvents = (window.wbRedoStack && window.wbRedoStack.length > 0) ? "auto" : "none";
     }
   }
-
-  let activePointerId = null;
 
   function getCanvasCoords(e, cv) {
     const rect = cv.getBoundingClientRect();

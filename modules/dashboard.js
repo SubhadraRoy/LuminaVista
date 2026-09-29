@@ -30,6 +30,7 @@
       if (window.updateNoteStats) window.updateNoteStats();
     }
     if (window.initWhiteboard) window.initWhiteboard();
+    if (window.LuminaCalendar && window.LuminaCalendar.init) window.LuminaCalendar.init();
     if (window.updateDesignPreview) window.updateDesignPreview();
     if (window.renderAiChat) window.renderAiChat();
 

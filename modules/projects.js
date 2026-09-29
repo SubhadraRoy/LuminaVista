@@ -10,7 +10,8 @@
     else if (!c.includes(".html") && !c.includes(".")) c += "/index.html";
     const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1);
     const cleanPath = (basePath + c).replace(/\/+/g, "/");
-    return window.location.origin + encodeURI(decodeURI(cleanPath));
+    const origin = (window.location.origin && window.location.origin !== "null") ? window.location.origin : "";
+    return origin + encodeURI(decodeURI(cleanPath));
   }
 
   async function fetchRepoProjects() {

@@ -78,13 +78,37 @@
       out.textContent = `[E2B MicroVM]: Compiling & dispatching ${lang.toUpperCase()}...\n`;
     }
 
+    try {
+      // 1. Try dedicated /api/compile endpoint first
+      const compRes = await fetch("/api/compile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: lang, code })
+      });
+      if (compRes.ok) {
+        const compData = await compRes.json();
+        if (out) {
+          out.textContent += compData.output || "[Clean execution, no output]";
+          if (window.showToast) window.showToast("Execution Complete", "Process completed.");
+        }
+        return;
+      }
+    } catch (compileErr) {
+      // Fallback to /api/terminal
+    }
+
     let cmd = "", ext = "";
     if (lang === 'python') { cmd = "python3 /tmp/sbx.py"; ext = "py"; }
     if (lang === 'cpp') { cmd = "g++ -O2 /tmp/sbx.cpp -o /tmp/out && /tmp/out"; ext = "cpp"; }
     if (lang === 'java') { cmd = "javac /tmp/Main.java && cd /tmp && java Main"; ext = "java"; }
     if (lang === 'bash') { cmd = "bash /tmp/sbx.sh"; ext = "sh"; }
     
-    const safeCode = btoa(unescape(encodeURIComponent(code)));
+    let safeCode = "";
+    try {
+      safeCode = btoa(encodeURIComponent(code).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+    } catch (e) {
+      safeCode = btoa(unescape(encodeURIComponent(code)));
+    }
     let filename = ext === 'java' ? 'Main.java' : `sbx.${ext}`;
     const fullCmd = `echo "${safeCode}" | base64 -d > /tmp/${filename} && ${cmd}`;
 

@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     return res.status(rate.status).json({ error: rate.error });
   }
 
-  const { command, files } = req.body;
+  const { command, files } = req.body || {};
   if (!command || typeof command !== 'string') {
     return res.status(400).json({ error: "Missing or invalid terminal command." });
   }

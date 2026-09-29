@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     return res.status(rate.status).json({ error: rate.error });
   }
 
-  const { language, code } = req.body;
+  const { language, code } = req.body || {};
   if (!code || typeof code !== 'string') {
     return res.status(400).json({ error: 'No valid source code provided.' });
   }

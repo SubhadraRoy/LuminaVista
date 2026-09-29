@@ -1172,6 +1172,102 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   // Restore fetch
   window.fetch = originalFetchPost;
 
+  // =========================================================================
+  // TEST SUITE 16: Comprehensive Website Audit & Hardening Verification
+  // =========================================================================
+  console.log("\n[Test Suite 16: Comprehensive Website Audit & Hardening Verification]");
+
+  // 1. api/compile.js null req.body resilience
+  const compileHandler = (await import('../api/compile.js')).default;
+  let compStatus = 0, compData = null;
+  const mockCompReq = {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: null
+  };
+  const mockCompRes = {
+    status: (code) => { compStatus = code; return mockCompRes; },
+    json: (data) => { compData = data; return mockCompRes; },
+    end: () => mockCompRes
+  };
+  await compileHandler(mockCompReq, mockCompRes);
+  assert(compStatus === 400 && compData?.error?.includes('No valid source code'), "api/compile.js gracefully handles null req.body without TypeError");
+
+  // 2. api/terminal.js null req.body resilience
+  const terminalHandler = (await import('../api/terminal.js')).default;
+  let termStatus = 0, termData = null;
+  const mockTermReq = {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: undefined
+  };
+  const mockTermRes = {
+    status: (code) => { termStatus = code; return mockTermRes; },
+    json: (data) => { termData = data; return mockTermRes; },
+    setHeader: () => {},
+    end: () => mockTermRes
+  };
+  await terminalHandler(mockTermReq, mockTermRes);
+  assert(termStatus === 400 && termData?.error?.includes('Missing or invalid terminal command'), "api/terminal.js gracefully handles null req.body without TypeError");
+
+  // 3. api/storage.js null req.body resilience
+  const storageHandler = (await import('../api/storage.js')).default;
+  let storStatus = 0, storData = null;
+  const mockStorReq = {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: null
+  };
+  const mockStorRes = {
+    status: (code) => { storStatus = code; return mockStorRes; },
+    json: (data) => { storData = data; return mockStorRes; },
+    end: () => mockStorRes
+  };
+  process.env.GITHUB_STORAGE_TOKEN = "mock_gh_token";
+  process.env.GITHUB_STORAGE_REPO = "mock_user/mock_repo";
+  await storageHandler(mockStorReq, mockStorRes);
+  assert(storStatus === 400 && storData?.error?.includes('Invalid or illegal file path'), "api/storage.js gracefully handles null req.body without TypeError");
+
+  // 4. api/sync.js stringified JSON deserialization & null req.body
+  const syncHandler = (await import('../api/sync.js')).default;
+  let syncStatus = 0, syncData = null;
+  const mockSyncGetReq = {
+    method: 'GET',
+    headers: { 'content-type': 'application/json', cookie: 'godx_session=sovereign_session' }
+  };
+  const mockSyncRes = {
+    status: (code) => { syncStatus = code; return mockSyncRes; },
+    json: (data) => { syncData = data; return mockSyncRes; },
+    setHeader: () => {},
+    end: () => mockSyncRes
+  };
+  await syncHandler(mockSyncGetReq, mockSyncRes);
+  assert(syncStatus === 200 && typeof syncData === 'object', "api/sync.js returns parsed JSON object on GET");
+
+  // 5. Default EXM Workspace Projects Pre-seeding
+  assert(Array.isArray(window.DEFAULT_EXM_PROJECTS), "window.DEFAULT_EXM_PROJECTS is exported as an array");
+  assert(window.DEFAULT_EXM_PROJECTS.length === 19, "Pre-seeded EXM catalog includes all 19 workspace projects");
+  assert(window.repoProjects.length >= 19, "window.repoProjects is populated with pre-seeded projects offline");
+
+  // 6. Sovereign Root 404.html
+  const fsModule = await import('fs');
+  const pathModule = await import('path');
+  const root404Path = pathModule.resolve(process.cwd(), '404.html');
+  assert(fsModule.existsSync(root404Path), "Sovereign 404.html exists in root directory for Vercel routing");
+  const content404 = fsModule.readFileSync(root404Path, 'utf8');
+  assert(content404.includes('HTTP 404 // NOT_FOUND'), "404.html renders branded LuminaVista OS error header");
+  assert(content404.includes('/dashboard.html'), "404.html provides recovery button navigation to dashboard");
+
+  // 7. EXM 404 Page Not Found Return Link
+  const exm404Path = pathModule.resolve(process.cwd(), 'EXM', '404 Page Not Found', 'index.html');
+  const exm404Content = fsModule.readFileSync(exm404Path, 'utf8');
+  assert(exm404Content.includes('href="/" class="link_404"'), "EXM 404 project Go to Home link properly targets root /");
+
+  // 8. Dashboard Calendar Auto-Initialization
+  const dashJsPath = pathModule.resolve(process.cwd(), 'modules', 'dashboard.js');
+  const dashJsContent = fsModule.readFileSync(dashJsPath, 'utf8');
+  assert(dashJsContent.includes('window.LuminaCalendar.init()'), "modules/dashboard.js initializes LuminaCalendar on OS boot");
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

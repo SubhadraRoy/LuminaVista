@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const { password } = req.body;
+    const { password } = req.body || {};
     
     // 2. Constant-Time Hash Comparison
     const inputHash = crypto.createHash('sha256').update(password || '').digest();

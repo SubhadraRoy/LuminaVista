@@ -5,7 +5,36 @@
 
   window.REPO_API_URL = "https://api.github.com/repos/SubhadraRoy/LuminaVista/contents/EXM";
 
-  window.repoProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]");
+  const DEFAULT_EXM_PROJECTS = [
+    { name: "404 Page Not Found", path: "EXM/404 Page Not Found/", type: "dir" },
+    { name: "BackGrounds For Login Page", path: "EXM/BackGrounds For Login Page/", type: "dir" },
+    { name: "Book portfolio website", path: "EXM/Book portfolio website/", type: "dir" },
+    { name: "Car Slider Animation", path: "EXM/Car Slider Animation/", type: "dir" },
+    { name: "Customized Cursor CSS", path: "EXM/Customized Cursor CSS/", type: "dir" },
+    { name: "Dragon Cursor Animation", path: "EXM/Dragon Cursor Animation/", type: "dir" },
+    { name: "Flower Animation", path: "EXM/Flower Animation/", type: "dir" },
+    { name: "Glassmorphism Login Form", path: "EXM/Glassmorphism Login Form/", type: "dir" },
+    { name: "Heart Animation", path: "EXM/Heart Animation/", type: "dir" },
+    { name: "Heart Partical Animation", path: "EXM/Heart Partical Animation/", type: "dir" },
+    { name: "Impossible LightBulb", path: "EXM/Impossible LightBulb/", type: "dir" },
+    { name: "Interactive Flower Animation", path: "EXM/Interactive Flower Animation/", type: "dir" },
+    { name: "Interactive Galaxy", path: "EXM/Interactive Galaxy/", type: "dir" },
+    { name: "Interactive Reptile Cursor", path: "EXM/Interactive Reptile Cursor/", type: "dir" },
+    { name: "Interactive Spider Clock", path: "EXM/Interactive Spider Clock/", type: "dir" },
+    { name: "Liquid Glass Effect CSS", path: "EXM/Liquid Glass Effect CSS/", type: "dir" },
+    { name: "Login Page Backgrounds", path: "EXM/Login Page Backgrounds/", type: "dir" },
+    { name: "Quantum Neural Network", path: "EXM/Quantum Neural Network/", type: "dir" },
+    { name: "Tubes Cursor Animation", path: "EXM/Tubes Cursor Animation/", type: "dir" }
+  ];
+
+  let savedProjects = [];
+  try {
+    savedProjects = JSON.parse(localStorage.getItem("lumina_exm_projects") || "[]");
+  } catch (e) {
+    savedProjects = [];
+  }
+  window.DEFAULT_EXM_PROJECTS = DEFAULT_EXM_PROJECTS;
+  window.repoProjects = (savedProjects && savedProjects.length > 0) ? savedProjects : [...DEFAULT_EXM_PROJECTS];
   window.currentSelectedProject = window.repoProjects[0] || null;
   window.aiConversation = JSON.parse(localStorage.getItem("lumina_ai_history") || "[]");
   window.vaultNotes = JSON.parse(localStorage.getItem("lumina_godx_multi_notes") || JSON.stringify([

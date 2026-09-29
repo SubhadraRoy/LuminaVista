@@ -1,4 +1,4 @@
-import { getRedisClient } from './_lib/redis.js';
+import { getSafeStorage } from './_lib/redis.js';
 import {
   validateSession,
   checkRateLimit,
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const redis = getRedisClient();
+  const redis = getSafeStorage();
   if (!redis) {
     auditLog('SYNC_CONFIG_FAULT', req, 'Redis unconfigured');
     return res.status(500).json({ error: 'Database service unavailable.' });
@@ -40,7 +40,11 @@ export default async function handler(req, res) {
   try {
     // GET: Retrieve the workspace state when the dashboard loads
     if (req.method === 'GET') {
-      const state = await redis.get(sessionKey);
+      const rawState = await redis.get(sessionKey);
+      let state = rawState;
+      if (typeof rawState === 'string') {
+        try { state = JSON.parse(rawState); } catch (e) { state = null; }
+      }
       return res.status(200).json(state || { vfs: null, notes: null, whiteboard: null, chat: null });
     }
 
@@ -50,8 +54,12 @@ export default async function handler(req, res) {
         return res.status(413).json({ error: 'Payload Limit Exceeded (Max 1MB)' });
       }
 
-      const { vfs, notes, whiteboard, chat } = req.body;
-      const currentState = (await redis.get(sessionKey)) || {};
+      const { vfs, notes, whiteboard, chat } = req.body || {};
+      const rawCurrent = await redis.get(sessionKey);
+      let currentState = rawCurrent || {};
+      if (typeof rawCurrent === 'string') {
+        try { currentState = JSON.parse(rawCurrent); } catch (e) { currentState = {}; }
+      }
       
       const newState = {
         vfs: vfs !== undefined ? vfs : currentState.vfs,

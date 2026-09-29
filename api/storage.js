@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Storage repository credentials unconfigured.' });
   }
 
-  const { action, path: rawPath, content } = req.body;
+  const { action, path: rawPath, content } = req.body || {};
   const cleanPath = sanitizeFilePath(rawPath);
 
   if (action !== 'list' && !cleanPath) {
