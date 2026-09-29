@@ -352,6 +352,26 @@ async function runBrowserTest() {
   const wbTool = await evaluate("window.wbTool");
   test("Switched whiteboard tool to 'pen'", wbTool === 'pen');
 
+  const touchActionNone = await evaluate("document.getElementById('whiteboardCanvas').style.touchAction === 'none'");
+  test("Whiteboard Canvas has touch-action: none for touchscreen", touchActionNone);
+
+  // Dispatch Touchscreen Pointer Events in Chrome
+  const touchDrawSuccess = await evaluate(`
+    (() => {
+      const cv = document.getElementById('whiteboardCanvas');
+      if (!cv) return false;
+      const initialStack = (window.wbUndoStack || []).length;
+      const ptDown = new PointerEvent('pointerdown', { pointerId: 5, pointerType: 'touch', isPrimary: true, clientX: 200, clientY: 200, pressure: 0.8, bubbles: true });
+      const ptMove = new PointerEvent('pointermove', { pointerId: 5, pointerType: 'touch', isPrimary: true, clientX: 250, clientY: 250, pressure: 0.85, bubbles: true });
+      const ptUp = new PointerEvent('pointerup', { pointerId: 5, pointerType: 'touch', isPrimary: true, clientX: 250, clientY: 250, bubbles: true });
+      cv.dispatchEvent(ptDown);
+      cv.dispatchEvent(ptMove);
+      cv.dispatchEvent(ptUp);
+      return (window.wbUndoStack || []).length > initialStack;
+    })()
+  `);
+  test("Touchscreen drawing on laptop screen works seamlessly", touchDrawSuccess);
+
   // 6. Notes Markdown Editor & Preview Mode Switcher
   await evaluate("switchTab('tab-scratchpad')");
   await evaluate("setNoteViewMode('split')");

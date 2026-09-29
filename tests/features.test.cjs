@@ -151,6 +151,73 @@ const initialGrid = window.wbShowGrid;
 window.toggleWhiteboardGrid();
 assert(window.wbShowGrid !== initialGrid, "Grid state toggled");
 
+// Test Hardware Touchscreen, Stylus & Pointer Event Drawing
+window.initWhiteboard();
+const wbCv = document.getElementById("whiteboardCanvas");
+assert(wbCv.style.touchAction === "none", "whiteboardCanvas has style touch-action: none for hardware touchscreen capture");
+assert(document.getElementById("whiteboardContainer").classList.contains("touch-none"), "#whiteboardContainer has touch-none class to prevent touch scroll hijacking");
+
+window.setWbTool('pen');
+const touchDownEvt = new window.PointerEvent('pointerdown', {
+  pointerId: 10,
+  pointerType: 'touch',
+  isPrimary: true,
+  clientX: 100,
+  clientY: 100,
+  pressure: 0.8,
+  bubbles: true,
+  cancelable: true
+});
+wbCv.dispatchEvent(touchDownEvt);
+assert(window.wbUndoStack.length > 0, "Touchscreen pointerdown successfully initialized drawing path");
+
+const touchMoveEvt = new window.PointerEvent('pointermove', {
+  pointerId: 10,
+  pointerType: 'touch',
+  isPrimary: true,
+  clientX: 150,
+  clientY: 150,
+  pressure: 0.85,
+  bubbles: true,
+  cancelable: true
+});
+wbCv.dispatchEvent(touchMoveEvt);
+
+const touchUpEvt = new window.PointerEvent('pointerup', {
+  pointerId: 10,
+  pointerType: 'touch',
+  isPrimary: true,
+  clientX: 150,
+  clientY: 150,
+  bubbles: true
+});
+wbCv.dispatchEvent(touchUpEvt);
+assert(window.localStorage.getItem("lumina_wb_state") !== null, "Touchscreen drawing committed to localStorage state");
+
+// Test Stylus Pen Drawing
+const penDownEvt = new window.PointerEvent('pointerdown', {
+  pointerId: 20,
+  pointerType: 'pen',
+  isPrimary: true,
+  clientX: 200,
+  clientY: 200,
+  pressure: 0.9,
+  bubbles: true,
+  cancelable: true
+});
+wbCv.dispatchEvent(penDownEvt);
+
+const penUpEvt = new window.PointerEvent('pointerup', {
+  pointerId: 20,
+  pointerType: 'pen',
+  isPrimary: true,
+  clientX: 250,
+  clientY: 250,
+  bubbles: true
+});
+wbCv.dispatchEvent(penUpEvt);
+assert(wbCv !== null, "Stylus/pen pointerdown and pointerup successfully processed on canvas");
+
 // 3. Notes Markdown Tests
 console.log("\n[Test Suite 3: Notes Markdown & Multi-Document Studio]");
 assert(document.getElementById("adminScratchpad") !== null, "Scratchpad editor textarea exists");

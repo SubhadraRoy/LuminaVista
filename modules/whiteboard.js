@@ -38,15 +38,29 @@
     }
     window.addEventListener("resize", resizeWhiteboard);
 
-    // Mouse / Pointer drawing events on main canvas
-    mainCv.addEventListener("mousedown", handleWbMouseDown);
-    window.addEventListener("mousemove", handleWbMouseMove);
-    window.addEventListener("mouseup", handleWbMouseUp);
+    // Hardware Touchscreen, Stylus/Pen & Mouse drawing events
+    if (typeof window.PointerEvent !== 'undefined') {
+      mainCv.addEventListener("pointerdown", handlePointerDown, { passive: false });
+      window.addEventListener("pointermove", handlePointerMove, { passive: false });
+      window.addEventListener("pointerup", handlePointerUp);
+      window.addEventListener("pointercancel", handlePointerCancel);
+    }
+    // Also listen for mouse events as fallback (e.g. in test runners / legacy engines)
+    mainCv.addEventListener("mousedown", (e) => {
+      if (!isDrawing) handlePointerDown(e);
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (isDrawing && activePointerId === null) handlePointerMove(e);
+    });
+    window.addEventListener("mouseup", (e) => {
+      if (isDrawing && activePointerId === null) handlePointerUp(e);
+    });
 
-    // Touch events for mobile/tablet
+    // Touch events for mobile/tablet fallback
     mainCv.addEventListener("touchstart", handleWbTouchStart, { passive: false });
     window.addEventListener("touchmove", handleWbTouchMove, { passive: false });
     window.addEventListener("touchend", handleWbTouchEnd);
+    window.addEventListener("touchcancel", handleWbTouchEnd);
 
     // Keyboard shortcuts (Ctrl+Z, Ctrl+Y)
     window.addEventListener("keydown", (e) => {
@@ -152,6 +166,8 @@
     }
   }
 
+  let activePointerId = null;
+
   function getCanvasCoords(e, cv) {
     const rect = cv.getBoundingClientRect();
     let clientX = e.clientX;
@@ -159,19 +175,41 @@
     if (e.touches && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
       clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
     }
+    if (clientX === undefined) clientX = 0;
+    if (clientY === undefined) clientY = 0;
+
     return {
       x: clientX - rect.left,
       y: clientY - rect.top
     };
   }
 
-  // --- Mouse & Touch Handlers ---
+  // --- Hardware Pointer, Stylus & Touchscreen Handlers ---
 
-  function handleWbMouseDown(e) {
-    if (e.button !== 0) return; // Only primary button
+  function handlePointerDown(e) {
+    if (isDrawing) return;
+    // For mouse, only allow primary button (left click = 0).
+    // For touch and pen/stylus, always allow drawing regardless of button property.
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.button !== undefined && e.button > 0 && (e.pointerType === 'mouse' || !e.pointerType)) return;
+    if (e.isPrimary === false) return; // Palm rejection: ignore secondary contact points
+
+    if (e.cancelable && e.preventDefault) e.preventDefault();
+
     const mainCv = document.getElementById("whiteboardCanvas");
     if (!mainCv) return;
+
+    activePointerId = (e.pointerId !== undefined) ? e.pointerId : null;
+    if (activePointerId !== null && mainCv.setPointerCapture) {
+      try {
+        mainCv.setPointerCapture(activePointerId);
+      } catch (ignore) {}
+    }
+
     const coords = getCanvasCoords(e, mainCv);
     startX = coords.x;
     startY = coords.y;
@@ -196,7 +234,7 @@
     }
 
     isDrawing = true;
-    strokePoints = [{ x: startX, y: startY }];
+    strokePoints = [{ x: startX, y: startY, pressure: e.pressure || 0.5 }];
 
     // For pen or highlighter or eraser, start path on main canvas
     if (window.wbTool === 'pen' || window.wbTool === 'highlighter' || window.wbTool === 'eraser') {
@@ -207,73 +245,99 @@
     }
   }
 
-  function handleWbMouseMove(e) {
+  function handlePointerMove(e) {
     if (!isDrawing) return;
+    if (activePointerId !== null && e.pointerId !== undefined && e.pointerId !== activePointerId) return;
+
+    if (e.cancelable && e.preventDefault) e.preventDefault();
+
     const mainCv = document.getElementById("whiteboardCanvas");
     const tempCv = document.getElementById("whiteboardTempCanvas");
     const wrap = document.getElementById("whiteboardContainer");
     if (!mainCv || !tempCv || !wrap) return;
 
-    const coords = getCanvasCoords(e, mainCv);
-    const curX = coords.x;
-    const curY = coords.y;
+    // Process coalesced events for ultra-high-rate digitizer/stylus/touch sampling
+    const events = (e.getCoalescedEvents && typeof e.getCoalescedEvents === 'function')
+      ? e.getCoalescedEvents()
+      : [e];
 
     const mCtx = mainCv.getContext("2d");
     const tCtx = tempCv.getContext("2d");
 
-    if (window.wbTool === 'pen' || window.wbTool === 'highlighter' || window.wbTool === 'eraser') {
-      mCtx.save();
-      mCtx.lineCap = "round";
-      mCtx.lineJoin = "round";
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      const coords = getCanvasCoords(ev, mainCv);
+      const curX = coords.x;
+      const curY = coords.y;
 
-      if (window.wbTool === 'pen') {
-        mCtx.strokeStyle = window.wbColor;
-        mCtx.lineWidth = window.wbSize;
-        mCtx.globalAlpha = 1.0;
-      } else if (window.wbTool === 'highlighter') {
-        mCtx.strokeStyle = window.wbColor;
-        mCtx.lineWidth = Math.max(14, window.wbSize * 3);
-        mCtx.globalAlpha = 0.35;
-      } else if (window.wbTool === 'eraser') {
-        mCtx.strokeStyle = "#030712";
-        mCtx.lineWidth = Math.max(16, window.wbSize * 4);
-        mCtx.globalAlpha = 1.0;
-      }
+      if (window.wbTool === 'pen' || window.wbTool === 'highlighter' || window.wbTool === 'eraser') {
+        mCtx.save();
+        mCtx.lineCap = "round";
+        mCtx.lineJoin = "round";
 
-      // Smooth curve using midpoints
-      strokePoints.push({ x: curX, y: curY });
-      if (strokePoints.length >= 3) {
-        const p1 = strokePoints[strokePoints.length - 2];
-        const p2 = strokePoints[strokePoints.length - 1];
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2;
-        mCtx.quadraticCurveTo(p1.x, p1.y, midX, midY);
-        mCtx.stroke();
+        let dynamicWidth = window.wbSize;
+        if (ev.pointerType === 'pen' && ev.pressure && ev.pressure > 0) {
+          dynamicWidth = Math.max(1, window.wbSize * (0.35 + ev.pressure * 1.3));
+        }
+
+        if (window.wbTool === 'pen') {
+          mCtx.strokeStyle = window.wbColor;
+          mCtx.lineWidth = dynamicWidth;
+          mCtx.globalAlpha = 1.0;
+        } else if (window.wbTool === 'highlighter') {
+          mCtx.strokeStyle = window.wbColor;
+          mCtx.lineWidth = Math.max(14, dynamicWidth * 3);
+          mCtx.globalAlpha = 0.35;
+        } else if (window.wbTool === 'eraser') {
+          mCtx.strokeStyle = "#030712";
+          mCtx.lineWidth = Math.max(16, dynamicWidth * 4);
+          mCtx.globalAlpha = 1.0;
+        }
+
+        // Smooth curve using midpoints
+        strokePoints.push({ x: curX, y: curY, pressure: ev.pressure || 0.5 });
+        if (strokePoints.length >= 3) {
+          const p1 = strokePoints[strokePoints.length - 2];
+          const p2 = strokePoints[strokePoints.length - 1];
+          const midX = (p1.x + p2.x) / 2;
+          const midY = (p1.y + p2.y) / 2;
+          mCtx.quadraticCurveTo(p1.x, p1.y, midX, midY);
+          mCtx.stroke();
+        } else {
+          mCtx.lineTo(curX, curY);
+          mCtx.stroke();
+        }
+        mCtx.restore();
+
       } else {
-        mCtx.lineTo(curX, curY);
-        mCtx.stroke();
+        // Shape tools: Draw preview onto temp canvas
+        tCtx.clearRect(0, 0, wrap.clientWidth, wrap.clientHeight);
+        drawShape(tCtx, window.wbTool, startX, startY, curX, curY, window.wbColor, window.wbSize, window.wbFill);
       }
-      mCtx.restore();
 
-    } else {
-      // Shape tools: Draw preview onto temp canvas
-      tCtx.clearRect(0, 0, wrap.clientWidth, wrap.clientHeight);
-      drawShape(tCtx, window.wbTool, startX, startY, curX, curY, window.wbColor, window.wbSize, window.wbFill);
+      lastX = curX;
+      lastY = curY;
     }
-
-    lastX = curX;
-    lastY = curY;
   }
 
-  function handleWbMouseUp(e) {
+  function handlePointerUp(e) {
     if (!isDrawing) return;
-    isDrawing = false;
+    if (activePointerId !== null && e && e.pointerId !== undefined && e.pointerId !== activePointerId) return;
+
     const mainCv = document.getElementById("whiteboardCanvas");
+    if (mainCv && activePointerId !== null && mainCv.releasePointerCapture) {
+      try {
+        mainCv.releasePointerCapture(activePointerId);
+      } catch (ignore) {}
+    }
+    activePointerId = null;
+    isDrawing = false;
+
     const tempCv = document.getElementById("whiteboardTempCanvas");
     const wrap = document.getElementById("whiteboardContainer");
     if (!mainCv || !tempCv || !wrap) return;
 
-    const coords = getCanvasCoords(e, mainCv);
+    const coords = e ? getCanvasCoords(e, mainCv) : { x: lastX, y: lastY };
     const curX = coords.x;
     const curY = coords.y;
 
@@ -291,22 +355,46 @@
     localStorage.setItem("lumina_wb_state", mainCv.toDataURL("image/png"));
   }
 
+  function handlePointerCancel(e) {
+    if (activePointerId !== null && e && e.pointerId !== undefined && e.pointerId === activePointerId) {
+      handlePointerUp(e);
+    } else if (activePointerId === null) {
+      handlePointerUp(e);
+    }
+  }
+
+  // --- Backward-Compatible Legacy Wrappers ---
+  function handleWbMouseDown(e) {
+    handlePointerDown(e);
+  }
+
+  function handleWbMouseMove(e) {
+    handlePointerMove(e);
+  }
+
+  function handleWbMouseUp(e) {
+    handlePointerUp(e);
+  }
+
   function handleWbTouchStart(e) {
-    if (e.touches.length === 1) {
-      e.preventDefault();
-      handleWbMouseDown(e);
+    if (window.PointerEvent) return; // Handled by pointerdown
+    if (e.touches && e.touches.length === 1) {
+      if (e.cancelable && e.preventDefault) e.preventDefault();
+      handlePointerDown(e);
     }
   }
 
   function handleWbTouchMove(e) {
-    if (e.touches.length === 1 && isDrawing) {
-      e.preventDefault();
-      handleWbMouseMove(e);
+    if (window.PointerEvent) return; // Handled by pointermove
+    if (e.touches && e.touches.length === 1 && isDrawing) {
+      if (e.cancelable && e.preventDefault) e.preventDefault();
+      handlePointerMove(e);
     }
   }
 
   function handleWbTouchEnd(e) {
-    handleWbMouseUp(e);
+    if (window.PointerEvent) return; // Handled by pointerup
+    handlePointerUp(e);
   }
 
   // --- Shape Drawing Core ---
@@ -498,38 +586,87 @@
       saveStickies();
     });
 
-    // Dragging listener
+    // Dragging listener (Hardware Touchscreen & Mouse supported)
     const handle = el.querySelector(".sticky-handle");
+    handle.style.touchAction = "none";
     let isDraggingSticky = false;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
+    let stickyPointerId = null;
 
-    handle.addEventListener("mousedown", (e) => {
+    function startStickyDrag(clientX, clientY, pointerId) {
       isDraggingSticky = true;
-      dragOffsetX = e.clientX - el.offsetLeft;
-      dragOffsetY = e.clientY - el.offsetTop;
+      stickyPointerId = pointerId !== undefined ? pointerId : null;
+      dragOffsetX = clientX - el.offsetLeft;
+      dragOffsetY = clientY - el.offsetTop;
       el.style.zIndex = "50";
-    });
+      if (stickyPointerId !== null && handle.setPointerCapture) {
+        try { handle.setPointerCapture(stickyPointerId); } catch (err) {}
+      }
+    }
 
-    window.addEventListener("mousemove", (e) => {
+    function moveStickyDrag(clientX, clientY) {
       if (!isDraggingSticky) return;
       const wrap = document.getElementById("whiteboardContainer");
       if (!wrap) return;
-      let newX = e.clientX - dragOffsetX;
-      let newY = e.clientY - dragOffsetY;
+      let newX = clientX - dragOffsetX;
+      let newY = clientY - dragOffsetY;
       newX = Math.max(0, Math.min(newX, wrap.clientWidth - 190));
       newY = Math.max(0, Math.min(newY, wrap.clientHeight - 130));
       el.style.left = newX + "px";
       el.style.top = newY + "px";
       sticky.x = newX;
       sticky.y = newY;
-    });
+    }
 
-    window.addEventListener("mouseup", () => {
+    function endStickyDrag() {
       if (isDraggingSticky) {
         isDraggingSticky = false;
         el.style.zIndex = "20";
+        if (stickyPointerId !== null && handle.releasePointerCapture) {
+          try { handle.releasePointerCapture(stickyPointerId); } catch (err) {}
+        }
+        stickyPointerId = null;
         saveStickies();
+      }
+    }
+
+    handle.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.cancelable) e.preventDefault();
+      startStickyDrag(e.clientX, e.clientY, e.pointerId);
+    });
+
+    handle.addEventListener("pointermove", (e) => {
+      if (!isDraggingSticky) return;
+      if (e.cancelable) e.preventDefault();
+      moveStickyDrag(e.clientX, e.clientY);
+    });
+
+    handle.addEventListener("pointerup", () => {
+      endStickyDrag();
+    });
+
+    handle.addEventListener("pointercancel", () => {
+      endStickyDrag();
+    });
+
+    // Fallback mouse listeners
+    handle.addEventListener("mousedown", (e) => {
+      if (!isDraggingSticky && e.button === 0) {
+        startStickyDrag(e.clientX, e.clientY, null);
+      }
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (isDraggingSticky && stickyPointerId === null) {
+        moveStickyDrag(e.clientX, e.clientY);
+      }
+    });
+
+    window.addEventListener("mouseup", () => {
+      if (isDraggingSticky && stickyPointerId === null) {
+        endStickyDrag();
       }
     });
 

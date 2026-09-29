@@ -662,11 +662,11 @@
           </div>
         </div>
 
-        <!-- Canvas Container with Dual-Canvas & Sticky Note Overlay -->
-        <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner bg-dot-pattern min-h-0">
-          <canvas id="whiteboardCanvas" class="absolute inset-0 w-full h-full cursor-crosshair"></canvas>
-          <canvas id="whiteboardTempCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
-          <div id="whiteboardStickyContainer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+        <!-- Canvas Container with Dual-Canvas & Sticky Note Overlay (Hardware Touchscreen & Stylus Enabled) -->
+        <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner bg-dot-pattern min-h-0 touch-none" style="touch-action: none;">
+          <canvas id="whiteboardCanvas" class="absolute inset-0 w-full h-full cursor-crosshair touch-none" style="touch-action: none;"></canvas>
+          <canvas id="whiteboardTempCanvas" class="absolute inset-0 w-full h-full pointer-events-none touch-none" style="touch-action: none;"></canvas>
+          <div id="whiteboardStickyContainer" class="absolute inset-0 pointer-events-none overflow-hidden touch-none" style="touch-action: none;"></div>
         </div>
       </section>
 
