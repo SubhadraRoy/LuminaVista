@@ -422,10 +422,10 @@ async function runBrowserTest() {
   test("Google Calendar Sync modal opened in Chrome", isSyncModalOpen);
 
   const hasRedirectUri = await evaluate("document.getElementById('calSyncRedirectUri') !== null");
-  test("Authorised Redirect URI input exists in sync modal", hasRedirectUri);
+  test("Authorised Redirect URI card cleanly removed from sync modal", !hasRedirectUri);
 
   const hasCopyRedirectBtn = await evaluate("document.getElementById('btnCopyRedirectUri') !== null");
-  test("Copy Redirect URI button exists in sync modal", hasCopyRedirectBtn);
+  test("Copy Redirect URI button cleanly removed from sync modal", !hasCopyRedirectBtn);
 
   await evaluate("window.LuminaCalendar.closeSyncModal()");
 

@@ -1440,39 +1440,6 @@
           </div>
         </div>
 
-        <!-- Authorised Redirect URI for Google Cloud Console (Fixes Error 400: redirect_uri_mismatch) -->
-        <div class="p-3 bg-surface-900/90 rounded-xl border border-cyan-500/30 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <i data-lucide="link-2" class="w-3.5 h-3.5 text-cyan-400"></i> Authorised Redirect URI
-            </span>
-            <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">Fix Error 400</span>
-          </div>
-          <p class="text-[11px] text-zinc-400 leading-relaxed font-sans">
-            To resolve <b>Error 400: redirect_uri_mismatch</b>, copy this exact URI and paste it into <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-cyan-300 underline hover:text-cyan-200">Google Cloud Console</a> &gt; Credentials &gt; OAuth 2.0 Client &gt; <b>Authorised redirect URIs</b>:
-          </p>
-          <div class="flex items-center gap-2">
-            <input type="text" id="calSyncRedirectUri" readonly class="godx-input flex-1 px-2.5 py-1.5 text-[11px] font-mono select-all bg-black/60 text-cyan-300 border border-white/10" value="" placeholder="https://.../api/calendar/callback" />
-            <button type="button" id="btnCopyRedirectUri" onclick="LuminaCalendar.copyRedirectUri()" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-heading font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm shrink-0">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy URI
-            </button>
-          </div>
-          <div class="text-[10px] text-zinc-500 font-sans flex items-center gap-1">
-            <i data-lucide="info" class="w-3 h-3 text-cyan-400 shrink-0"></i>
-            <span>Google takes ~60 seconds to propagate after saving changes in Google Cloud Console.</span>
-          </div>
-        </div>
-
-        <!-- Zero-Frontend-Secrets Security Card -->
-        <div class="p-3 bg-surface-950/70 rounded-xl border border-emerald-500/20 space-y-1.5">
-          <div class="flex items-center gap-2 text-emerald-400 font-bold text-[11px]">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Zero-Frontend-Credentials Policy
-          </div>
-          <p class="text-[11px] text-zinc-400 leading-relaxed font-sans">
-            Your Google Client ID &amp; Secret reside exclusively on your Vercel backend environment variables (<code class="text-cyan-300">GOOGLE_CLIENT_ID</code>, <code class="text-cyan-300">GOOGLE_CLIENT_SECRET</code>). No secrets or credentials are ever exposed in frontend browser code.
-          </p>
-        </div>
-
         <!-- Google One-Click OAuth Sync -->
         <div class="space-y-2 pt-1">
           <button onclick="LuminaCalendar.connectGoogleAccount()" class="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-black font-heading font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-all hover:scale-101">

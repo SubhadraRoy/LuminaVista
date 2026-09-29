@@ -1527,7 +1527,7 @@
             statusBadge.textContent = 'Configured (Needs Login)';
           }
           if (statusText) {
-            statusText.innerHTML = `<span class="text-cyan-300 font-sans">Credentials detected on Vercel. Make sure the redirect URI below is added to Google Cloud Console, then click <b>Sign in &amp; Sync with Google</b>.</span>`;
+            statusText.innerHTML = `<span class="text-cyan-300 font-sans">Credentials configured on Vercel. Click <b>Sign in &amp; Sync with Google</b> to connect.</span>`;
           }
         } else {
           if (statusBadge) {

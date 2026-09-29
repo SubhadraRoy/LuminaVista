@@ -735,11 +735,11 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   window.toggleFolderCollapse("models");
   assert(!window.csCollapsedFolders.has("models"), "models folder expanded again cleanly");
 
-  // Verify Google Calendar Error 400 Resolution Elements
+  // Verify Google Calendar Clean Sync Modal (Authorised Redirect URI card cleanly removed)
   assert(document.getElementById("calendarSyncModal") !== null, "#calendarSyncModal exists in DOM");
-  assert(document.getElementById("calSyncRedirectUri") !== null, "#calSyncRedirectUri exists in DOM");
-  assert(document.getElementById("btnCopyRedirectUri") !== null, "#btnCopyRedirectUri exists in DOM");
-  assert(typeof window.LuminaCalendar.copyRedirectUri === 'function', "LuminaCalendar.copyRedirectUri is a function");
+  assert(document.getElementById("calSyncRedirectUri") === null, "#calSyncRedirectUri is cleanly removed from DOM");
+  assert(document.getElementById("btnCopyRedirectUri") === null, "#btnCopyRedirectUri is cleanly removed from DOM");
+  assert(typeof window.LuminaCalendar.copyRedirectUri === 'function', "LuminaCalendar.copyRedirectUri remains exported safely");
 
   // Verify Month View Highlights Current Date Box
   window.LuminaCalendar.setView('month');
