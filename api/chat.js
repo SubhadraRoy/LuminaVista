@@ -139,6 +139,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      build: 'v14.0.6-verified',
       provider: 'hybrid_pool',
       summary: `Universal Hybrid Pool: ${oPool.length} Ollama key(s), ${nPool.length} NVIDIA/Nemotron key(s) detected.`,
       endpoint: normalizeOllamaEndpoint(process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions'),
@@ -353,6 +354,7 @@ export default async function handler(req, res) {
         const nvidiaModel = resolveModelForProvider(requestedModel, 'nvidia');
         const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
         const payloadMessages = sanitizeProviderMessages(messages, prompt);
+        terminalLogs.push(`[NVIDIA NIM]: Dispatching to model "${nvidiaModel}"...`);
         return fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
           method: 'POST',
           headers: {
