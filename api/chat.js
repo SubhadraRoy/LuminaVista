@@ -320,6 +320,32 @@ export default async function handler(req, res) {
             }
           });
         }
+        // Cross-pool cascade to Groq if configured and previous pools failed
+        const gPool = getKeyPool('groq');
+        if (!failoverResult.success && gPool.length > 0) {
+          allFailoverLogs.push('[Cross-Pool Auto-Failover]: Cascading to Groq Cloud pool (Llama 3.3 70B)...');
+          terminalLogs.push('[Cross-Pool Auto-Failover]: Cascading to Groq Cloud pool...');
+          failoverResult = await executeWithFailover({
+            provider: 'groq',
+            customApiKey,
+            makeRequest: async (apiKey) => {
+              return fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                  model: 'llama-3.3-70b-versatile',
+                  messages,
+                  temperature: 0.6,
+                  max_tokens: 4096,
+                  stream: false
+                })
+              });
+            }
+          });
+        }
       }
 
       if (failoverResult.failoverLogs) {
@@ -336,7 +362,11 @@ export default async function handler(req, res) {
         aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
       } else {
         const aiData = failoverResult.data;
-        aiReply = aiData?.choices?.[0]?.message?.content || aiData?.message?.content || "Task processed.";
+        aiReply = aiData?.choices?.[0]?.message?.content || aiData?.message?.content || "";
+        if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.') {
+          terminalLogs.push('[Response Guard]: Model returned empty or placeholder completion. Falling back to sovereign generator.');
+          aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
+        }
       }
 
       messages.push({ role: "assistant", content: aiReply });
@@ -529,6 +559,7 @@ export default async function handler(req, res) {
       messages,
       failoverLogs: allFailoverLogs,
       activeKeyMeta: lastActiveKeyMeta,
+      rateLimited: !failoverResult?.success && !!(failoverResult?.reason?.includes('ALL_KEYS_EXHAUSTED')),
       jevTelemetry
     });
 

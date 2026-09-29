@@ -2172,53 +2172,124 @@ What specific feature, application, or script would you like to build?`;
             if (p) personaDirective = p.prompt;
           }
 
-          try {
-            const res = await fetch("/api/chat", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                prompt: latestUserMsg,
-                requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
-                provider,
-                enableInternet,
-                enableVfs,
-                enableTerminal,
-                category: activeCat,
-                specialist: activeSpec,
-                personaDirective,
-                messages: [{ role: "system", content: getAiSystemPrompt() }, ...window.aiConversation],
-                currentVfs: window.vfs,
-                customApiKey,
-                customEndpoint
-              })
-            });
+          const MAX_FAILOVER_RETRIES = 5;
+          let retryCount = 0;
+          let fetchSuccess = false;
+          let activeProvider = provider;
 
-            const data = await res.json();
-            if (res.ok) {
-              reply = data.reply || data.choices?.[0]?.message?.content || data.message?.content || "Action verified.";
-
-              // Handle failover indicator badge
-              if (data.activeKeyMeta && failoverBadge) {
-                failoverBadge.textContent = `${data.activeKeyMeta.name}`;
-                failoverBadge.classList.remove("hidden");
-                failoverBadge.classList.add("flex");
+          while (!fetchSuccess && retryCount < MAX_FAILOVER_RETRIES && !window.isAgentAborted) {
+            try {
+              if (retryCount > 0) {
+                const retryMsg = `[Auto-Failover]: Quota limit reached. Cycling key & provider (Attempt ${retryCount + 1} of ${MAX_FAILOVER_RETRIES})...`;
+                console.warn(retryMsg);
+                if (window.showToast) {
+                  window.showToast("Auto-Failover", `Rate-limit detected. Trying alternative key (Attempt ${retryCount + 1}/${MAX_FAILOVER_RETRIES})...`);
+                }
+                const stream = document.getElementById("thinkingLogStream");
+                if (stream) {
+                  const row = document.createElement("div");
+                  row.className = "text-amber-400 flex items-center gap-1.5 font-bold";
+                  row.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> 🔄 [Auto-Failover] Rate limit hit. Cycling to alternative key (Attempt ${retryCount + 1} of ${MAX_FAILOVER_RETRIES})...`;
+                  stream.appendChild(row);
+                  stream.scrollTop = stream.scrollHeight;
+                }
+                // Progressive backoff delay
+                await new Promise(r => setTimeout(r, 1200 * retryCount));
               }
 
-              // Display failover toast if any failover occurred
-              if (Array.isArray(data.failoverLogs) && data.failoverLogs.some(l => l.includes("Auto-Failover"))) {
-                if (window.showToast) window.showToast("Auto-Failover", "Switched API key to prevent rate-limit.");
+              const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  prompt: latestUserMsg,
+                  requestedModel: localStorage.getItem("lumina_ai_model") || "gpt-oss:20b",
+                  provider: activeProvider,
+                  enableInternet,
+                  enableVfs,
+                  enableTerminal,
+                  category: activeCat,
+                  specialist: activeSpec,
+                  personaDirective,
+                  messages: [{ role: "system", content: getAiSystemPrompt() }, ...window.aiConversation],
+                  currentVfs: window.vfs,
+                  customApiKey,
+                  customEndpoint
+                })
+              });
+
+              const data = await res.json().catch(() => null);
+
+              // Check if rate limited (HTTP 429, or rateLimited flag, or quota phrase in error)
+              const isRateLimited = res.status === 429 ||
+                (data && (
+                  data.rateLimited === true ||
+                  (typeof data.error === 'string' && /quota|rate\s*limit|too\s*many\s*requests|all_keys/i.test(data.error))
+                ));
+
+              if (isRateLimited) {
+                retryCount++;
+                if (activeProvider === "ollama_pool") activeProvider = "nvidia_pool";
+                else if (activeProvider === "nvidia_pool") activeProvider = "ollama_pool";
+                continue;
               }
-            } else {
-              throw new Error(data.error || res.statusText);
+
+              if (res.ok && data) {
+                const candidate = data.reply || data.choices?.[0]?.message?.content || data.message?.content || "";
+
+                // Never accept bare "Task processed." or empty string as a completed task
+                if (!candidate || candidate.trim() === "" || candidate.trim() === "Task processed.") {
+                  retryCount++;
+                  if (activeProvider === "ollama_pool") activeProvider = "nvidia_pool";
+                  else if (activeProvider === "nvidia_pool") activeProvider = "ollama_pool";
+                  continue;
+                }
+
+                reply = candidate;
+                fetchSuccess = true;
+
+                // Handle failover indicator badge
+                if (data.activeKeyMeta && failoverBadge) {
+                  failoverBadge.textContent = `${data.activeKeyMeta.name}`;
+                  failoverBadge.classList.remove("hidden");
+                  failoverBadge.classList.add("flex");
+                }
+
+                // Display failover toast if any failover occurred
+                if (Array.isArray(data.failoverLogs) && data.failoverLogs.some(l => l.includes("Auto-Failover"))) {
+                  if (window.showToast) window.showToast("Auto-Failover", "Switched API key to prevent rate-limit.");
+                }
+                break;
+              } else {
+                throw new Error((data && data.error) || res.statusText || "Gateway response failed");
+              }
+            } catch (gatewayErr) {
+              console.warn(`Gateway retry ${retryCount + 1}/${MAX_FAILOVER_RETRIES} error:`, gatewayErr.message);
+              retryCount++;
+              if (retryCount < MAX_FAILOVER_RETRIES) {
+                if (activeProvider === "ollama_pool") activeProvider = "nvidia_pool";
+                else if (activeProvider === "nvidia_pool") activeProvider = "ollama_pool";
+                continue;
+              }
+              break;
             }
-          } catch (gatewayErr) {
-            console.warn("Gateway error, using local Autonomous Sandbox fallback:", gatewayErr.message);
-            reply = await generateSimulatedAutonomousReply(
-              latestUserMsg,
-              window.currentAgentLoop,
-              window.vfs
-            );
-            if (window.showToast) window.showToast("Autonomous Sandbox", "Operating via sovereign fallback sandbox.");
+          }
+
+          // If after MAX_FAILOVER_RETRIES all keys and providers are still exhausted:
+          if (!fetchSuccess) {
+            console.warn(`All ${MAX_FAILOVER_RETRIES} failover attempts exhausted.`);
+            reply = `<thought_process>\n[Rate-Limit Safeguard]: Attempted ${MAX_FAILOVER_RETRIES} consecutive rotations across all registered API keys and provider pools.\nAll available providers reported temporary rate-limits or quota restrictions.\nTerminating retry cycle safely.\n</thought_process>\n\n` +
+              `### ⚠️ AI Provider Quota & Rate Limit Temporarily Reached\n\n` +
+              `All available AI provider keys have temporarily reached their concurrency or quota limits.\n\n` +
+              `LuminaVista automatically made **${MAX_FAILOVER_RETRIES} failover attempts** across all registered key pools, but the upstream providers are currently rate-limiting requests.\n\n` +
+              `**How to proceed:**\n` +
+              `• **Wait ~30–60 seconds**: Cloud rate-limit windows typically refresh every minute.\n` +
+              `• **Add Your Free API Key**: Click **Configure AI (⚙️)** in the top right to paste a free API key from [Groq](https://console.groq.com) or [NVIDIA NIM](https://build.nvidia.com) for dedicated personal quota.\n` +
+              `• **Offline Sandbox**: Switch the provider to **Autonomous Sovereign Sandbox** in AI Studio config for 100% offline, quota-free operation.\n\n` +
+              `[TOOL:TASK_COMPLETE summary="All AI provider keys exhausted after ${MAX_FAILOVER_RETRIES} automated failover attempts."][/TOOL:TASK_COMPLETE]`;
+
+            if (window.showToast) {
+              window.showToast("Rate Limit Exceeded", `Tried ${MAX_FAILOVER_RETRIES} keys across providers. Quota resets in ~60s.`);
+            }
           }
         }
 
