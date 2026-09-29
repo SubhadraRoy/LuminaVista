@@ -16,7 +16,7 @@ const keyCooldowns = new Map();
  */
 function isValidSecretToken(v) {
   if (!v || typeof v !== 'string') return false;
-  const trimmed = v.trim();
+  const trimmed = v.trim().replace(/^["']|["']$/g, '').trim();
   if (trimmed.length < 8) return false;
   if (trimmed.includes(' ')) return false;
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return false;
@@ -35,17 +35,16 @@ export function getKeyPool(provider = 'ollama') {
 
   const addKey = (name, val, prov = 'ollama') => {
     if (!val || typeof val !== 'string') return;
-    // Support comma-separated keys stored in a single variable or combined names (e.g. OLLAMA_API_KEY2,OLLAMA_API_KEY1)
-    const tokens = val.split(/[,;\r\n]+/).map(t => t.trim()).filter(Boolean);
-    const names = (name || '').split(/[,;\r\n]+/).map(n => n.trim()).filter(Boolean);
-
-    tokens.forEach((token, idx) => {
-      if (!isValidSecretToken(token)) return;
-      if (!pool.some(k => k.key === token && k.provider === prov)) {
-        const keyName = names[idx] || (tokens.length > 1 ? `${name}_${idx + 1}` : name);
-        pool.push({ index: pool.length + 1, key: token, name: keyName, provider: prov });
+    const tokens = val.includes(',') ? val.split(',') : [val];
+    for (let idx = 0; idx < tokens.length; idx++) {
+      const rawToken = tokens[idx];
+      if (!isValidSecretToken(rawToken)) continue;
+      const trimmed = rawToken.trim().replace(/^["']|["']$/g, '').trim();
+      const tokenName = tokens.length > 1 ? `${name}_${idx + 1}` : name;
+      if (!pool.some(k => k.key === trimmed && k.provider === prov)) {
+        pool.push({ index: pool.length + 1, key: trimmed, name: tokenName, provider: prov });
       }
-    });
+    }
   };
 
   if (p === 'ollama' || p === 'ollama_pool') {
@@ -65,6 +64,18 @@ export function getKeyPool(provider = 'ollama') {
 
     // 2. Scan all environment variables for any variant of 'ollama' (including ollama2, OLLAMA2, ollama_2, etc.)
     for (const [k, v] of Object.entries(process.env)) {
+      if (k.includes(',')) {
+        const subNames = k.split(',').map(s => s.trim());
+        const subVals = typeof v === 'string' && v.includes(',') ? v.split(',').map(s => s.trim()) : [v];
+        for (let j = 0; j < subNames.length; j++) {
+          const subName = subNames[j];
+          const subVal = subVals[j] || subVals[0];
+          const cleaned = subName.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (cleaned.includes('ollama')) {
+            addKey(subName.toUpperCase(), subVal, 'ollama');
+          }
+        }
+      }
       const cleaned = k.toLowerCase().replace(/[^a-z0-9]/g, '');
       if (cleaned.includes('ollama')) {
         addKey(k.toUpperCase(), v, 'ollama');
@@ -213,6 +224,36 @@ export function isRateLimitOrQuotaError(status, bodyText = '') {
 }
 
 /**
+ * Normalize an Ollama endpoint URL, ensuring proper protocol, path, and cloud fallback
+ * @param {string} endpoint 
+ * @returns {string}
+ */
+export function normalizeOllamaEndpoint(endpoint) {
+  let ep = (endpoint || '').trim().replace(/^["']|["']$/g, '').trim();
+  if (!ep) return 'https://ollama.com/v1/chat/completions';
+
+  // If running in Vercel or cloud and pointing to localhost, fallback to Ollama Cloud
+  if (process.env.VERCEL && /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(ep)) {
+    return 'https://ollama.com/v1/chat/completions';
+  }
+
+  // Remove trailing slashes
+  ep = ep.replace(/\/+$/, '');
+
+  // If already ends with full completion path
+  if (ep.endsWith('/v1/chat/completions') || ep.endsWith('/chat/completions') || ep.endsWith('/api/chat')) {
+    return ep;
+  }
+  if (ep.endsWith('/v1')) {
+    return `${ep}/chat/completions`;
+  }
+  if (ep.endsWith('/api')) {
+    return `${ep}/chat`;
+  }
+  return `${ep}/v1/chat/completions`;
+}
+
+/**
  * Executes an AI provider request with automatic key rotation and continuous failover.
  * If Key #N encounters rate-limits or empty response, it immediately flags cooldown,
  * switches to Key #(N+1), and continues across multi-round retry cycles.
@@ -226,12 +267,16 @@ export function isRateLimitOrQuotaError(status, bodyText = '') {
  */
 export async function executeWithFailover({ provider = 'ollama', makeRequest, customApiKey = '', maxCycles = 2 }) {
   const failoverLogs = [];
+  let hadRateLimit = false;
+  let hadAuthFailure = false;
+  let lastErrorDetail = '';
 
   // If a custom API key was provided explicitly by the user, try it first
   if (customApiKey) {
     try {
       failoverLogs.push('[KeyPool]: Trying custom API key from AI Studio configuration...');
-      const res = await makeRequest(customApiKey, { index: 1, name: 'Custom User Key' });
+      const cleanCustomKey = customApiKey.trim().replace(/^["']|["']$/g, '').trim();
+      const res = await makeRequest(cleanCustomKey, { index: 1, name: 'Custom User Key' });
       const rawText = await res.text().catch(() => '');
 
       if (res.ok) {
@@ -293,6 +338,7 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
           // Verify that the response is not an error disguised as HTTP 200
           if (data) {
             if (data.error || isRateLimitOrQuotaError(res.status, rawText)) {
+              hadRateLimit = true;
               markKeyCooldown(keyMeta.key, 30000, keyProv);
               failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned rate-limit in JSON. Switching to next key...`);
               continue;
@@ -301,6 +347,7 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
             const content = data.choices?.[0]?.message?.content || data.message?.content || data.reply || '';
             // If the model returned completely blank text or dummy "Task processed.", treat as quota glitch and rotate
             if (!content || content.trim() === '' || content.trim() === 'Task processed.') {
+              hadRateLimit = true;
               markKeyCooldown(keyMeta.key, 15000, keyProv);
               failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) returned empty completion. Rotating to next key...`);
               continue;
@@ -313,6 +360,7 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
 
         // Handle HTTP Rate Limit or Quota
         if (isRateLimitOrQuotaError(res.status, rawText)) {
+          hadRateLimit = true;
           markKeyCooldown(keyMeta.key, 30000, keyProv);
           failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) hit rate/quota limit (HTTP ${res.status}). Switching to next key...`);
           continue;
@@ -320,17 +368,22 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
 
         // Handle Authentication failure
         if (res.status === 401 || res.status === 403) {
+          hadAuthFailure = true;
+          lastErrorDetail = `${keyMeta.name} (${keyProv}) unauthorized (HTTP ${res.status})`;
           markKeyCooldown(keyMeta.key, 300000, keyProv);
           failoverLogs.push(`[Auto-Failover]: ${keyMeta.name} (${keyProv}) auth failure (HTTP ${res.status}). Switching to alternate key...`);
           continue;
         }
 
-        failoverLogs.push(`[KeyPool Error]: ${keyMeta.name} (${keyProv}) returned HTTP ${res.status}: ${rawText.substring(0, 120)}`);
-        if (i < activeKeys.length - 1) continue;
+        // Other HTTP error (e.g. 400 bad payload or 404 endpoint not found)
+        lastErrorDetail = `${keyMeta.name} (${keyProv}) returned HTTP ${res.status}: ${rawText.substring(0, 120)}`;
+        failoverLogs.push(`[KeyPool Error]: ${lastErrorDetail}`);
+        continue;
 
       } catch (netErr) {
+        lastErrorDetail = `${keyMeta.name} (${keyProv}) network error: ${netErr.message}`;
         failoverLogs.push(`[KeyPool]: Network error with ${keyMeta.name} (${keyProv}): ${netErr.message}. Attempting failover...`);
-        if (i < activeKeys.length - 1) continue;
+        continue;
       }
     }
 
@@ -339,9 +392,20 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
     }
   }
 
+  let failureReason = '';
+  if (hadRateLimit) {
+    failureReason = `ALL_KEYS_EXHAUSTED: All ${pool.length} configured keys for provider "${provider}" are currently rate-limited.`;
+  } else if (hadAuthFailure) {
+    failureReason = `AUTH_FAILED: Authentication rejected for provider "${provider}". ${lastErrorDetail || 'Please verify API key credentials.'}`;
+  } else if (lastErrorDetail) {
+    failureReason = `GATEWAY_DISPATCH_FAILED: Provider "${provider}" error: ${lastErrorDetail}`;
+  } else {
+    failureReason = `PROVIDER_UNAVAILABLE: Provider "${provider}" did not return a valid response.`;
+  }
+
   return {
     success: false,
-    reason: `ALL_KEYS_EXHAUSTED: All ${pool.length} configured keys for provider "${provider}" are currently rate-limited.`,
+    reason: failureReason,
     failoverLogs
   };
 }

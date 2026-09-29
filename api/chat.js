@@ -7,12 +7,62 @@ import {
   enforcePayloadLimit,
   auditLog
 } from './_lib/auth-guard.js';
-import { executeWithFailover, getKeyPool } from './_lib/key-pool.js';
+import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint } from './_lib/key-pool.js';
 import {
   jevClassifyIntent,
   buildLuminaSystemPrompt,
   jevGenerateBespokeResponse
 } from './_lib/jev-engine.js';
+
+/**
+ * Sanitize and format messages for OpenAI / NVIDIA NIM / Ollama specifications:
+ * - Only includes role and content properties
+ * - Combines multiple system messages into a single system message at index 0
+ * - Merges consecutive messages of the same role (prevents NVIDIA HTTP 400 errors)
+ * - Ignores empty messages
+ */
+export function sanitizeProviderMessages(rawMessages, fallbackPrompt = '') {
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+    return fallbackPrompt ? [{ role: 'user', content: String(fallbackPrompt) }] : [];
+  }
+
+  const combined = [];
+  let systemParts = [];
+
+  for (const m of rawMessages) {
+    if (!m || typeof m !== 'object') continue;
+    const role = (m.role || 'user').toLowerCase();
+    let content = typeof m.content === 'string' ? m.content : (m.content ? JSON.stringify(m.content) : '');
+    content = content.trim();
+    if (!content) continue;
+
+    if (role === 'system') {
+      systemParts.push(content);
+    } else {
+      const validRole = (role === 'assistant') ? 'assistant' : 'user';
+      if (combined.length > 0 && combined[combined.length - 1].role === validRole) {
+        combined[combined.length - 1].content += `\n\n${content}`;
+      } else {
+        combined.push({ role: validRole, content });
+      }
+    }
+  }
+
+  const result = [];
+  if (systemParts.length > 0) {
+    result.push({ role: 'system', content: systemParts.join('\n\n') });
+  }
+
+  for (const msg of combined) {
+    result.push(msg);
+  }
+
+  if (result.length === 0 && fallbackPrompt) {
+    result.push({ role: 'user', content: String(fallbackPrompt) });
+  }
+
+  return result;
+}
 
 export const maxDuration = 60; // Max execution time for Vercel
 
@@ -270,15 +320,18 @@ export default async function handler(req, res) {
 
       const makeOllamaFetch = async (apiKey) => {
         const ollamaModel = resolveModelForProvider(requestedModel, 'ollama');
-        return fetch(customEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions', {
+        const endpoint = normalizeOllamaEndpoint(customEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions');
+        const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
+        const payloadMessages = sanitizeProviderMessages(messages, prompt);
+        return fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            ...(cleanKey ? { 'Authorization': `Bearer ${cleanKey}` } : {})
           },
           body: JSON.stringify({
             model: ollamaModel,
-            messages,
+            messages: payloadMessages,
             stream: false
           })
         });
@@ -286,15 +339,17 @@ export default async function handler(req, res) {
 
       const makeNvidiaFetch = async (apiKey) => {
         const nvidiaModel = resolveModelForProvider(requestedModel, 'nvidia');
+        const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
+        const payloadMessages = sanitizeProviderMessages(messages, prompt);
         return fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${cleanKey}`
           },
           body: JSON.stringify({
             model: nvidiaModel,
-            messages,
+            messages: payloadMessages,
             temperature: 0.6,
             top_p: 0.95,
             max_tokens: 4096,
@@ -308,14 +363,17 @@ export default async function handler(req, res) {
           provider: 'custom',
           customApiKey,
           makeRequest: async (apiKey) => {
+            const endpoint = normalizeOllamaEndpoint(customEndpoint);
+            const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
             const headers = { 'Content-Type': 'application/json' };
-            if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-            return fetch(customEndpoint || 'https://ollama.com/v1/chat/completions', {
+            if (cleanKey) headers['Authorization'] = `Bearer ${cleanKey}`;
+            const payloadMessages = sanitizeProviderMessages(messages, prompt);
+            return fetch(endpoint, {
               method: 'POST',
               headers,
               body: JSON.stringify({
                 model: requestedModel || 'gpt-oss:20b',
-                messages,
+                messages: payloadMessages,
                 stream: false
               })
             });
@@ -368,15 +426,17 @@ export default async function handler(req, res) {
           provider: 'groq',
           customApiKey,
           makeRequest: async (apiKey) => {
+            const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
+            const payloadMessages = sanitizeProviderMessages(messages, prompt);
             return fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Authorization': `Bearer ${cleanKey}`
               },
               body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
-                messages,
+                messages: payloadMessages,
                 temperature: 0.6,
                 max_tokens: 4096,
                 stream: false

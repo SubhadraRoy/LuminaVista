@@ -1340,7 +1340,62 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(telemStatus === 200 && telemData && telemData.success === true, "Live telemetry action returns success status 200");
   assert(telemData.pools && Array.isArray(telemData.pools.ollama) && Array.isArray(telemData.pools.nvidia), "Telemetry payload reports ollama and nvidia pool arrays");
 
-  // Test 5: Comma-separated variable name and comma-separated tokens (e.g. OLLAMA_API_KEY2,OLLAMA_API_KEY1)
+  // Test 5: normalizeOllamaEndpoint tests
+  const { normalizeOllamaEndpoint } = await import('../api/_lib/key-pool.js');
+  assert(normalizeOllamaEndpoint('') === 'https://ollama.com/v1/chat/completions', "normalizeOllamaEndpoint defaults empty string to Ollama Cloud");
+  assert(normalizeOllamaEndpoint('https://ollama.com') === 'https://ollama.com/v1/chat/completions', "normalizeOllamaEndpoint appends /v1/chat/completions to base URL");
+  assert(normalizeOllamaEndpoint('https://ollama.com/v1/') === 'https://ollama.com/v1/chat/completions', "normalizeOllamaEndpoint handles /v1/ trailing slash cleanly");
+  assert(normalizeOllamaEndpoint('"https://ollama.com/v1/chat/completions"') === 'https://ollama.com/v1/chat/completions', "normalizeOllamaEndpoint strips surrounding double quotes");
+
+  process.env.VERCEL = '1';
+  assert(normalizeOllamaEndpoint('http://localhost:11434') === 'https://ollama.com/v1/chat/completions', "normalizeOllamaEndpoint ignores localhost on Vercel and falls back to cloud");
+  delete process.env.VERCEL;
+
+  // Test 6: sanitizeProviderMessages tests
+  const { sanitizeProviderMessages } = await import('../api/chat.js');
+  const dirtyMessages = [
+    { role: 'system', content: 'You are an OS agent.' },
+    { role: 'system', content: 'Be concise.' },
+    { role: 'user', content: 'First user message', id: 'msg_1', timestamp: 12345 },
+    { role: 'user', content: 'Second consecutive user message' },
+    { role: 'assistant', content: 'Hello there' }
+  ];
+  const cleaned = sanitizeProviderMessages(dirtyMessages);
+  assert(cleaned.length === 3, "sanitizeProviderMessages merges consecutive messages of same role");
+  assert(cleaned[0].role === 'system' && cleaned[0].content.includes('You are an OS agent.') && cleaned[0].content.includes('Be concise.'), "Multiple system messages merged at index 0");
+  assert(cleaned[1].role === 'user' && cleaned[1].content.includes('First user message') && cleaned[1].content.includes('Second consecutive'), "Consecutive user messages merged into single message");
+  assert(cleaned[1].id === undefined && cleaned[1].timestamp === undefined, "Metadata properties stripped from payload messages");
+
+  // Test 7: executeWithFailover error attribution
+  const { executeWithFailover } = await import('../api/_lib/key-pool.js');
+  process.env.OLLAMA_API_KEY_MOCK_TEST = 'mock-test-key-12345';
+  
+  // A: HTTP 404 (Gateway failure, NOT rate limit)
+  const fail404 = await executeWithFailover({
+    provider: 'ollama',
+    makeRequest: async () => ({
+      ok: false,
+      status: 404,
+      text: async () => '404 Not Found'
+    })
+  });
+  assert(!fail404.success, "404 failover returns success=false");
+  assert(fail404.reason.includes('GATEWAY_DISPATCH_FAILED'), "404 does NOT falsely attribute error to ALL_KEYS_EXHAUSTED rate limit");
+
+  // B: HTTP 429 (Actual Rate limit)
+  const fail429 = await executeWithFailover({
+    provider: 'ollama',
+    makeRequest: async () => ({
+      ok: false,
+      status: 429,
+      text: async () => 'Too Many Requests'
+    })
+  });
+  assert(!fail429.success, "429 failover returns success=false");
+  assert(fail429.reason.includes('ALL_KEYS_EXHAUSTED'), "429 correctly attributes error to ALL_KEYS_EXHAUSTED");
+  delete process.env.OLLAMA_API_KEY_MOCK_TEST;
+
+  // Test 8: Comma-separated variable name and comma-separated tokens (e.g. OLLAMA_API_KEY2,OLLAMA_API_KEY1)
   process.env['OLLAMA_API_KEY2,OLLAMA_API_KEY1'] = 'mock_token_two_abc, mock_token_one_xyz';
   const commaPool = getKeyPool('ollama');
   assert(commaPool.some(k => k.key === 'mock_token_two_abc' && k.name === 'OLLAMA_API_KEY2'), "Discovered first token from comma-joined env var as OLLAMA_API_KEY2");
