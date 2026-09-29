@@ -4,8 +4,21 @@
 
 import cookie from 'cookie';
 
+// Helper to set robust CORS headers across edge and serverless environments
+function setCorsHeaders(req, res) {
+  if (!res || typeof res.setHeader !== 'function') return;
+  const origin = req?.headers?.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+}
+
 // 1. OAuth2 Authorization URL Initiation
 async function handleAuth(req, res) {
+  setCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) {
     return res.status(200).json({
@@ -38,6 +51,9 @@ async function handleAuth(req, res) {
 
 // 2. OAuth2 Callback & Code Exchange
 async function handleCallback(req, res) {
+  setCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
   const { code, error, state } = req.query || {};
   if (error || !code) {
     const errorMsg = error || 'Authorization denied';
@@ -99,17 +115,29 @@ async function handleCallback(req, res) {
       return res.status(400).send(`Token exchange failed: ${errMsg}`);
     }
 
+    // Preserve existing refresh_token if Google does not return a new one on re-auth
+    let existingRefreshToken = null;
+    const existingCookies = cookie.parse(req.headers?.cookie || '');
+    if (existingCookies.gcal_token) {
+      try {
+        const prev = JSON.parse(Buffer.from(existingCookies.gcal_token, 'base64').toString('utf8'));
+        if (prev.refresh_token) existingRefreshToken = prev.refresh_token;
+      } catch (e) {}
+    }
+
+    const finalRefreshToken = tokenData.refresh_token || existingRefreshToken || null;
+
     // Store tokens securely in an HttpOnly cookie
     const tokenPayload = JSON.stringify({
       access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
+      refresh_token: finalRefreshToken,
       expires_at: Date.now() + ((tokenData.expires_in || 3600) * 1000)
     });
 
     res.setHeader('Set-Cookie', cookie.serialize('gcal_token', Buffer.from(tokenPayload).toString('base64'), {
       httpOnly: true,
       secure: proto === 'https',
-      sameSite: 'lax',
+      sameSite: proto === 'https' ? 'none' : 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days
       path: '/'
     }));
@@ -150,9 +178,13 @@ async function handleCallback(req, res) {
 
 // 3. Status Check
 async function handleStatus(req, res) {
+  setCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
   const configured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
-  const cookies = cookie.parse(req.headers?.cookie || '');
-  const connected = !!cookies.gcal_token;
+  // Verify token is genuinely valid and refreshable
+  const accessToken = await getValidAccessToken(req, res);
+  const connected = !!accessToken;
   const rawHost = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
   const host = rawHost.split(',')[0].trim();
   const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
@@ -195,10 +227,14 @@ async function getValidAccessToken(req, res) {
         tokenData.access_token = freshData.access_token;
         tokenData.expires_at = Date.now() + ((freshData.expires_in || 3600) * 1000);
 
+        const rawHost = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+        const host = rawHost.split(',')[0].trim();
+        const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+
         res.setHeader('Set-Cookie', cookie.serialize('gcal_token', Buffer.from(JSON.stringify(tokenData)).toString('base64'), {
           httpOnly: true,
-          secure: true,
-          sameSite: 'lax',
+          secure: proto === 'https',
+          sameSite: proto === 'https' ? 'none' : 'lax',
           maxAge: 30 * 24 * 60 * 60,
           path: '/'
         }));
@@ -207,7 +243,8 @@ async function getValidAccessToken(req, res) {
       }
     }
 
-    return tokenData.access_token || null;
+    // Do NOT return expired token if refresh failed or no refresh token is present
+    return null;
   } catch (e) {
     return null;
   }
@@ -215,6 +252,9 @@ async function getValidAccessToken(req, res) {
 
 // 5. Two-Way Sync (Pull, Push, and Delete)
 async function handleSync(req, res) {
+  setCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
   const accessToken = await getValidAccessToken(req, res);
 
   if (!accessToken) {
@@ -257,15 +297,29 @@ async function handleSync(req, res) {
   if (req.method === 'POST') {
     try {
       const body = req.body || {};
-      const targetEventId = body.googleEventId || body.eventId;
+      const rawTargetId = body.googleEventId || body.eventId;
+      const targetEventId = rawTargetId ? String(rawTargetId).replace(/^gcal_/, '') : null;
       
       const payload = {
         summary: body.summary || body.title || 'Scheduled Task',
         description: body.description || '',
-        location: body.location || '',
-        start: body.start || { dateTime: new Date().toISOString() },
-        end: body.end || { dateTime: new Date(Date.now() + 3600000).toISOString() }
+        location: body.location || ''
       };
+
+      if (body.allDay) {
+        let startDateStr = body.start?.date || (typeof body.start === 'string' ? body.start.slice(0, 10) : new Date().toISOString().slice(0, 10));
+        let endDateStr = body.end?.date || (typeof body.end === 'string' ? body.end.slice(0, 10) : null);
+        if (!endDateStr || endDateStr <= startDateStr) {
+          const s = new Date(startDateStr + 'T00:00:00Z');
+          const e = new Date(s.getTime() + 86400000);
+          endDateStr = e.toISOString().slice(0, 10);
+        }
+        payload.start = { date: startDateStr };
+        payload.end = { date: endDateStr };
+      } else {
+        payload.start = body.start || { dateTime: new Date().toISOString() };
+        payload.end = body.end || { dateTime: new Date(Date.now() + 3600000).toISOString() };
+      }
 
       let gcalRes;
       if (targetEventId) {
@@ -309,10 +363,11 @@ async function handleSync(req, res) {
   // DELETE: Delete event from Google Calendar
   if (req.method === 'DELETE') {
     try {
-      const eventId = req.query?.eventId || req.body?.eventId;
-      if (!eventId) {
+      const rawEventId = req.query?.eventId || req.body?.eventId;
+      if (!rawEventId) {
         return res.status(400).json({ error: 'Missing eventId to delete from Google Calendar' });
       }
+      const eventId = String(rawEventId).replace(/^gcal_/, '');
 
       const gcalRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
         method: 'DELETE',
@@ -341,6 +396,9 @@ function escapeHtml(str) {
 
 // Master Dispatcher
 export default async function handler(req, res) {
+  setCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
   let action = req.query?.action;
   if (!action && req.url) {
     const rawPath = req.url.split('?')[0];

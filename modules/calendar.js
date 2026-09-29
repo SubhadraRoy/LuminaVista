@@ -782,6 +782,22 @@
     }, 50);
   }
 
+  // Helper to format ISO date strings for input[type="datetime-local"] in local time
+  function formatForDateTimeLocal(val) {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+      return `${val}T09:00`;
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return typeof val === 'string' ? val.slice(0, 16) : '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${day}T${h}:${min}`;
+  }
+
   // =========================================================================
   // EVENT CREATION & EDIT MODAL
   // =========================================================================
@@ -790,8 +806,8 @@
     if (!modal) return;
 
     let evt = null;
-    if (typeof eventIdOrDateStr === 'string' && eventIdOrDateStr.startsWith('evt_')) {
-      evt = calendarEvents.find(e => e.id === eventIdOrDateStr);
+    if (typeof eventIdOrDateStr === 'string' && (eventIdOrDateStr.startsWith('evt_') || eventIdOrDateStr.startsWith('gcal_'))) {
+      evt = calendarEvents.find(e => e.id === eventIdOrDateStr || e.googleEventId === eventIdOrDateStr);
     }
 
     editingEventId = evt ? evt.id : null;
@@ -812,8 +828,8 @@
     if (evt) {
       if (modalTitle) modalTitle.textContent = 'Edit Calendar Event';
       if (inputTitle) inputTitle.value = evt.title || '';
-      if (inputStart) inputStart.value = evt.start ? evt.start.slice(0, 16) : '';
-      if (inputEnd) inputEnd.value = evt.end ? evt.end.slice(0, 16) : '';
+      if (inputStart) inputStart.value = formatForDateTimeLocal(evt.start);
+      if (inputEnd) inputEnd.value = formatForDateTimeLocal(evt.end);
       if (selectCat) selectCat.value = evt.category || 'work';
       if (selectColor) selectColor.value = evt.color || '#039be5';
       if (inputLoc) inputLoc.value = evt.location || '';
@@ -893,6 +909,11 @@
           recurrence: recurrenceFreq !== 'NONE' ? { freq: recurrenceFreq, interval: 1 } : null,
           updatedAt: new Date().toISOString()
         });
+
+        // Push updated event to Google Calendar if connected
+        if (calendarSettings.googleCalendarConnected) {
+          pushEventToGoogle(calendarEvents[idx]);
+        }
       }
     } else {
       const newEvent = {
@@ -945,10 +966,11 @@
 
   async function deleteEventFromGoogle(googleEventId) {
     if (!googleEventId) return;
+    const cleanId = String(googleEventId).replace(/^gcal_/, '');
     const fetchFn = (typeof window !== 'undefined' && typeof window.fetch === 'function') ? window.fetch : (typeof fetch === 'function' ? fetch : null);
     if (!fetchFn) return;
     try {
-      await fetchFn(`/api/calendar/sync?eventId=${encodeURIComponent(googleEventId)}`, {
+      await fetchFn(`/api/calendar/sync?eventId=${encodeURIComponent(cleanId)}`, {
         method: 'DELETE'
       });
     } catch (e) {
@@ -1231,6 +1253,9 @@
         const data = await res.json();
         calendarSettings.googleCalendarConnected = !!data.connected;
         updateSyncStatusBadge();
+        if (data.connected) {
+          await syncGoogleCalendar();
+        }
       }
     } catch (e) {}
   }
@@ -1257,6 +1282,15 @@
         }
       }
 
+      // Pre-open popup synchronously during user gesture to avoid popup blocker
+      const width = 560, height = 680;
+      const left = (typeof window !== 'undefined' && window.screen) ? (window.screen.width - width) / 2 : 100;
+      const top = (typeof window !== 'undefined' && window.screen) ? (window.screen.height - height) / 2 : 100;
+      let popup = null;
+      try {
+        popup = window.open('about:blank', 'google_oauth_popup', `width=${width},height=${height},left=${left},top=${top}`);
+      } catch (e) {}
+
       // Fetch OAuth initiation authUrl from backend with client redirect URI
       const authUrl = clientRedirect 
         ? `/api/calendar/auth?redirect_uri=${encodeURIComponent(clientRedirect)}` 
@@ -1265,15 +1299,18 @@
       const authData = await authRes.json();
 
       if (!authData.configured || !authData.authUrl) {
+        if (popup && !popup.closed) popup.close();
         alert("Google Calendar backend is not configured yet on Vercel.\n\nPlease add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your Vercel Project Settings > Environment Variables, then redeploy!");
         return;
       }
 
-      // Open OAuth in centered popup
-      const width = 560, height = 680;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
-      const popup = window.open(authData.authUrl, 'google_oauth_popup', `width=${width},height=${height},left=${left},top=${top}`);
+      if (popup && !popup.closed) {
+        popup.location.href = authData.authUrl;
+      } else {
+        // Fallback to top-level navigation if popup was blocked
+        window.location.href = authData.authUrl;
+        return;
+      }
 
       const checkInterval = setInterval(async () => {
         try {
@@ -1328,7 +1365,7 @@
           data.items.forEach(item => {
             const startStr = (item.start && (item.start.dateTime || item.start.date)) || new Date().toISOString();
             const endStr = (item.end && (item.end.dateTime || item.end.date)) || new Date(Date.now() + 3600000).toISOString();
-            const allDay = !item.start || !item.start.dateTime;
+            const allDay = !item.start?.dateTime;
             const isAiTask = (item.summary || '').includes('[AI Task]') || (item.description || '').includes('[AI Task]');
 
             const existing = calendarEvents.find(e => e.googleEventId === item.id);
@@ -1361,6 +1398,12 @@
             }
           });
 
+          // 3. Two-Way Push: Push unpushed sovereign local events to Google Calendar
+          const unpushedEvents = calendarEvents.filter(e => !e.googleEventId);
+          for (const localEvt of unpushedEvents) {
+            await pushEventToGoogle(localEvt);
+          }
+
           calendarSettings.googleCalendarConnected = true;
           calendarSettings.lastSyncedAt = new Date().toISOString();
           saveCalendarEvents();
@@ -1383,16 +1426,33 @@
     const fetchFn = (typeof window !== 'undefined' && typeof window.fetch === 'function') ? window.fetch : (typeof fetch === 'function' ? fetch : null);
     if (!fetchFn) return;
     try {
+      let startPayload, endPayload;
+      if (evt.allDay) {
+        const startDateStr = getEventLocalDateKey(evt.start);
+        const sDate = new Date(startDateStr + 'T00:00:00Z');
+        const eDate = new Date(sDate.getTime() + 86400000);
+        startPayload = { date: startDateStr };
+        endPayload = { date: eDate.toISOString().slice(0, 10) };
+      } else {
+        const sDate = new Date(evt.start);
+        const eDate = new Date(evt.end || (sDate.getTime() + 3600000));
+        startPayload = { dateTime: !isNaN(sDate.getTime()) ? sDate.toISOString() : new Date().toISOString() };
+        endPayload = { dateTime: !isNaN(eDate.getTime()) ? eDate.toISOString() : new Date(Date.now() + 3600000).toISOString() };
+      }
+
+      const rawGoogleId = evt.googleEventId || (evt.id && evt.id.startsWith('gcal_') ? evt.id.replace(/^gcal_/, '') : undefined);
+
       const res = await fetchFn('/api/calendar/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          googleEventId: evt.googleEventId,
+          googleEventId: rawGoogleId,
           summary: evt.title,
           description: evt.description || '',
           location: evt.location || '',
-          start: { dateTime: new Date(evt.start).toISOString() },
-          end: { dateTime: new Date(evt.end).toISOString() }
+          allDay: !!evt.allDay,
+          start: startPayload,
+          end: endPayload
         })
       });
       if (res.ok) {
@@ -1758,6 +1818,22 @@
   // =========================================================================
   // HELPER UTILITIES
   // =========================================================================
+  function getEventLocalDateKey(str) {
+    if (!str) return '';
+    if (typeof str === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return str;
+    }
+    if (typeof str === 'string' && str.includes('T')) {
+      if (str.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(str)) {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) return formatDateKey(d);
+      }
+      return str.slice(0, 10);
+    }
+    const d = new Date(str);
+    return !isNaN(d.getTime()) ? formatDateKey(d) : '';
+  }
+
   function formatDateKey(d) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -1805,7 +1881,7 @@
       if (evt.category && activeCategories[evt.category] === false) return false;
       if (searchQuery && !evt.title.toLowerCase().includes(searchQuery)) return false;
 
-      const startKey = evt.start ? evt.start.slice(0, 10) : '';
+      const startKey = getEventLocalDateKey(evt.start);
       if (startKey === key) return true;
 
       if (evt.recurrence && evt.recurrence.freq) {
@@ -2005,6 +2081,20 @@
         window.history.replaceState({}, document.title, cleanUrl.toString());
       } catch (e) {}
     }
+
+    // Periodic 5-minute background auto-sync
+    setInterval(() => {
+      if (calendarSettings.googleCalendarConnected) {
+        syncGoogleCalendar();
+      }
+    }, 5 * 60 * 1000);
+
+    // Auto-sync when user returns focus to the LuminaVista window/tab
+    window.addEventListener('focus', () => {
+      if (calendarSettings.googleCalendarConnected) {
+        syncGoogleCalendar();
+      }
+    });
   }
 
   if (typeof document !== 'undefined') {

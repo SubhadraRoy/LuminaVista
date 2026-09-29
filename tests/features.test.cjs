@@ -1040,6 +1040,129 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(baseLinks.some(l => l.source === 'modules/calendar.js' && l.target === 'api/calendar.js'), "Graphify links modules/calendar.js to api/calendar.js");
   assert(baseLinks.some(l => l.source === 'api/calendar.js' && l.target === 'Google Calendar API'), "Graphify links api/calendar.js to Google Calendar API");
 
+  // =========================================================================
+  // TEST SUITE 15: Google Calendar Sovereign Two-Way Sync Hardening & CORS Preflight
+  // =========================================================================
+  console.log("\n[Test Suite 15: Google Calendar Sovereign Two-Way Sync Hardening & CORS Preflight]");
+
+  // 1. CORS Preflight (OPTIONS)
+  let preflightStatus = 0;
+  const mockHeaders = {};
+  const mockOptionsReq = {
+    method: 'OPTIONS',
+    url: '/api/calendar/sync',
+    headers: { origin: 'https://lumina-vista-sigma.vercel.app' }
+  };
+  const mockOptionsRes = {
+    setHeader: (k, v) => { mockHeaders[k] = v; },
+    status: (code) => { preflightStatus = code; return mockOptionsRes; },
+    end: () => mockOptionsRes
+  };
+  await calendarController(mockOptionsReq, mockOptionsRes);
+  assert(preflightStatus === 204, "OPTIONS preflight returns 204 No Content");
+  assert(mockHeaders['Access-Control-Allow-Origin'] === 'https://lumina-vista-sigma.vercel.app', "OPTIONS preflight sets Access-Control-Allow-Origin");
+  assert(mockHeaders['Access-Control-Allow-Methods'].includes('DELETE'), "OPTIONS preflight permits DELETE method");
+  assert(mockHeaders['Access-Control-Allow-Credentials'] === 'true', "OPTIONS preflight permits credentials");
+
+  // 2. Google Calendar API v3 All-Day Event End Date Invariant (Exclusive end date)
+  let capturedPushBody = null;
+  const originalFetchPost = window.fetch;
+  window.fetch = async (url, opts = {}) => {
+    if (url.includes('/api/calendar/sync') && opts.method === 'POST') {
+      capturedPushBody = JSON.parse(opts.body);
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          item: { id: 'gcal_created_test_123', summary: capturedPushBody.summary }
+        })
+      };
+    }
+    return originalFetchPost ? originalFetchPost(url, opts) : { ok: true, json: async () => ({}) };
+  };
+
+  const allDayEvt = {
+    id: 'evt_allday_test',
+    title: 'All Day Planning Session',
+    start: '2026-10-20',
+    end: '2026-10-20',
+    allDay: true,
+    category: 'work',
+    color: '#039be5'
+  };
+  window.LuminaCalendar.addEvent(allDayEvt);
+  await window.LuminaCalendar.pushEventToGoogle(allDayEvt);
+
+  assert(capturedPushBody !== null, "pushEventToGoogle called POST on /api/calendar/sync");
+  assert(capturedPushBody.allDay === true, "pushEventToGoogle sets allDay: true");
+  assert(capturedPushBody.start && capturedPushBody.start.date === '2026-10-20', "All-day event start.date is set to start date");
+  assert(capturedPushBody.end && capturedPushBody.end.date === '2026-10-21', "All-day event end.date is strictly exclusive (start + 1 day)");
+
+  // 3. openEventModal support for Google Calendar items (gcal_ prefix)
+  const gcalSyncedEvt = {
+    id: 'gcal_meeting_777',
+    googleEventId: 'meeting_777',
+    title: 'Product Strategy Sync',
+    start: '2026-10-25T11:00:00',
+    end: '2026-10-25T12:00:00',
+    allDay: false,
+    category: 'work',
+    color: '#3f51b5'
+  };
+  window.LuminaCalendar.addEvent(gcalSyncedEvt);
+  window.LuminaCalendar.openEventModal('gcal_meeting_777');
+
+  const modalTitleEl = document.getElementById('calModalHeaderTitle');
+  const modalTitleInput = document.getElementById('calEventTitleInput');
+  assert(modalTitleEl && modalTitleEl.textContent === 'Edit Calendar Event', "openEventModal opens in Edit mode for gcal_ prefixed events");
+  assert(modalTitleInput && modalTitleInput.value === 'Product Strategy Sync', "openEventModal populates title for gcal_ prefixed events");
+
+  // 4. saveEventFromModal pushes existing event updates to Google Calendar
+  let editPushedBody = null;
+  window.fetch = async (url, opts = {}) => {
+    if (url.includes('/api/calendar/sync') && opts.method === 'POST') {
+      editPushedBody = JSON.parse(opts.body);
+      return { ok: true, json: async () => ({ success: true, item: { id: 'meeting_777' } }) };
+    }
+    return originalFetchPost ? originalFetchPost(url, opts) : { ok: true, json: async () => ({}) };
+  };
+
+  modalTitleInput.value = 'Product Strategy Sync (Updated)';
+  window.LuminaCalendar.saveEventFromModal();
+  assert(editPushedBody !== null, "saveEventFromModal pushes update to Google Calendar");
+  assert(editPushedBody.summary === 'Product Strategy Sync (Updated)', "saveEventFromModal sends updated summary to Google Calendar");
+  assert(editPushedBody.googleEventId === 'meeting_777', "saveEventFromModal passes stripped googleEventId");
+
+  // 5. Two-Way Push of unpushed local events during syncGoogleCalendar()
+  const unpushedLocalEvt = {
+    id: 'evt_local_only_555',
+    title: 'Local Brainstorming',
+    start: '2026-11-01T15:00:00',
+    end: '2026-11-01T16:00:00',
+    category: 'personal',
+    color: '#039be5'
+  };
+  window.LuminaCalendar.addEvent(unpushedLocalEvt);
+
+  let unpushedSyncPushed = false;
+  window.fetch = async (url, opts = {}) => {
+    if (url.includes('/api/calendar/sync') && opts.method === 'POST') {
+      const b = JSON.parse(opts.body);
+      if (b.summary === 'Local Brainstorming') unpushedSyncPushed = true;
+      return { ok: true, json: async () => ({ success: true, item: { id: 'gid_brainstorm_555' } }) };
+    }
+    if (url.includes('/api/calendar/sync') && (!opts.method || opts.method === 'GET')) {
+      return { ok: true, json: async () => ({ success: true, items: [] }) };
+    }
+    return originalFetchPost ? originalFetchPost(url, opts) : { ok: true, json: async () => ({}) };
+  };
+
+  await window.LuminaCalendar.syncGoogleCalendar();
+  assert(unpushedSyncPushed === true, "syncGoogleCalendar() pushed unpushed local event to Google Calendar");
+
+  // Restore fetch
+  window.fetch = originalFetchPost;
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");
