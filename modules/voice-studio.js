@@ -17,6 +17,114 @@
   let canvasContext = null;
   let canvasEl = null;
 
+  let audioCtx = null;
+  let analyser = null;
+  let micSource = null;
+  let micDataArray = null;
+  let micStream = null;
+
+  async function requestMicrophonePermission() {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return true; // Non-browser / Node test environment
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      setupAudioAnalyser(stream);
+      showMicrophonePermissionHelp(false);
+      return true;
+    } catch (err) {
+      console.warn('[VoiceStudio] getUserMedia permission error:', err);
+      const isDenied = err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError';
+      const msg = isDenied 
+        ? 'Microphone access denied. Please click the lock icon in your address bar and allow Microphone.'
+        : `Microphone error: ${err.message || 'Unable to access audio device.'}`;
+      updateVoiceStatus('error', msg);
+      showMicrophonePermissionHelp(true);
+      if (window.showToast) {
+        window.showToast('Microphone Denied', 'Please allow microphone access in your browser address bar.');
+      }
+      return false;
+    }
+  }
+
+  function setupAudioAnalyser(stream) {
+    try {
+      micStream = stream;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      if (!audioCtx) {
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.8;
+      micSource = audioCtx.createMediaStreamSource(stream);
+      micSource.connect(analyser);
+      micDataArray = new Uint8Array(analyser.frequencyBinCount);
+    } catch (e) {
+      console.warn('[VoiceStudio] AudioContext setup error:', e);
+    }
+  }
+
+  function getLiveAudioVolume() {
+    if (!analyser || !micDataArray || !isListening) return 0;
+    try {
+      analyser.getByteFrequencyData(micDataArray);
+      let sum = 0;
+      for (let i = 0; i < micDataArray.length; i++) {
+        sum += micDataArray[i];
+      }
+      return sum / micDataArray.length; // 0..255
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function cleanupAudioAnalyser() {
+    if (micStream) {
+      try {
+        micStream.getTracks().forEach(t => t.stop());
+      } catch (e) {}
+      micStream = null;
+    }
+    if (micSource) {
+      try { micSource.disconnect(); } catch (e) {}
+      micSource = null;
+    }
+  }
+
+  function showMicrophonePermissionHelp(show) {
+    const btn = document.getElementById('voiceRetryMicBtn');
+    if (btn) {
+      if (show) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+  }
+
+  async function retryMicrophoneAccess() {
+    updateVoiceStatus('ready', 'Requesting microphone permission...');
+    const ok = await requestMicrophonePermission();
+    if (ok) {
+      showMicrophonePermissionHelp(false);
+      startListening();
+    }
+  }
+
   // 1. Initialize Speech Recognition
   function initSpeechEngine() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -86,8 +194,12 @@
         if (event.error === 'no-speech') return;
         console.warn('[VoiceStudio] Recognition event:', event.error);
         if (event.error === 'not-allowed') {
-          updateVoiceStatus('error', 'Microphone access denied.');
-          if (window.showToast) window.showToast('Mic Blocked', 'Please grant microphone permissions.');
+          updateVoiceStatus('error', 'Microphone access denied. Please allow microphone in browser.');
+          showMicrophonePermissionHelp(true);
+          if (window.showToast) window.showToast('Mic Blocked', 'Please grant microphone permissions in your browser address bar.');
+        } else if (event.error === 'audio-capture') {
+          updateVoiceStatus('error', 'No microphone detected or audio capture failed.');
+          showMicrophonePermissionHelp(true);
         }
       };
 
@@ -421,6 +533,9 @@
       const cy = h / 2;
       phase += 0.04;
 
+      const liveVol = getLiveAudioVolume();
+      const volBoost = (liveVol / 255) * 36;
+
       // Base radius and color based on visualizerState
       let radius = 48;
       let colorPrimary = 'rgba(0, 242, 254, 0.85)';
@@ -428,9 +543,10 @@
       let numRings = 3;
 
       if (visualizerState === 'listening') {
-        radius = 54 + Math.sin(phase * 2) * 8;
-        colorPrimary = 'rgba(6, 182, 212, 0.9)'; // Cyan
-        colorSecondary = 'rgba(14, 165, 233, 0.6)';
+        radius = 52 + volBoost + Math.sin(phase * 2) * 6;
+        const alpha = Math.min(1, 0.75 + (liveVol / 255) * 0.25);
+        colorPrimary = `rgba(6, 182, 212, ${alpha})`; // Cyan
+        colorSecondary = `rgba(14, 165, 233, ${Math.min(1, 0.45 + (liveVol / 255) * 0.45)})`;
         numRings = 4;
       } else if (visualizerState === 'thinking') {
         radius = 46 + Math.sin(phase * 4) * 4;
@@ -506,6 +622,9 @@
       } else if (state === 'speaking') {
         badge.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border', 'border-emerald-500/40');
         badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-bounce"></span> AI Speaking';
+      } else if (state === 'error') {
+        badge.classList.add('bg-rose-500/20', 'text-rose-300', 'border', 'border-rose-500/40');
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> Mic Blocked';
       } else {
         badge.classList.add('bg-zinc-800', 'text-zinc-400', 'border', 'border-white/10');
         badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-zinc-500"></span> Ready';
@@ -518,7 +637,7 @@
   }
 
   // 8. Public Interface: Open/Close Voice Mode
-  function openVoiceInteractionMode() {
+  async function openVoiceInteractionMode() {
     const modal = document.getElementById('aiVoiceModal');
     if (!modal) return;
 
@@ -533,10 +652,15 @@
     if (canvas) initVisualizer(canvas);
 
     loadSpeechVoices();
-    startListening();
+
+    updateVoiceStatus('ready', 'Initializing sovereign microphone stream...');
+    const granted = await requestMicrophonePermission();
+    if (granted) {
+      startListening();
+    }
 
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
-    if (window.showToast) window.showToast('Voice Interaction', '100% Free Hands-Free Voice Mode Active.');
+    if (window.showToast) window.showToast('Voice Interaction', 'Two-Way Sovereign Voice Mode Active.');
   }
 
   function closeVoiceInteractionMode() {
@@ -545,6 +669,7 @@
 
     stopListening();
     stopSpeaking();
+    cleanupAudioAnalyser();
 
     modal.classList.add('opacity-0');
     const c = modal.querySelector('.glass-panel');
@@ -604,5 +729,8 @@
   window.toggleContinuousMode = toggleContinuousMode;
   window.onVoiceDropdownChange = onVoiceDropdownChange;
   window.stopVoiceSpeaking = stopSpeaking;
+  window.requestMicrophonePermission = requestMicrophonePermission;
+  window.retryMicrophoneAccess = retryMicrophoneAccess;
+  window.getLiveAudioVolume = getLiveAudioVolume;
 
 })(typeof window !== 'undefined' ? window : global);

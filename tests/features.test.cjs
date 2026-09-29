@@ -530,10 +530,19 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   console.log("\n[Test Suite 9: 100% Free Sovereign Voice Interaction Studio]");
   assert(typeof window.openVoiceInteractionMode === 'function', "voice-studio exports openVoiceInteractionMode");
   assert(typeof window.toggleVoiceInteractionMode === 'function', "voice-studio exports toggleVoiceInteractionMode");
+  assert(typeof window.requestMicrophonePermission === 'function', "voice-studio exports requestMicrophonePermission");
+  assert(typeof window.retryMicrophoneAccess === 'function', "voice-studio exports retryMicrophoneAccess");
+  assert(typeof window.getLiveAudioVolume === 'function', "voice-studio exports getLiveAudioVolume");
   assert(document.getElementById("btnAiVoiceMode") !== null, "Microphone toggle button #btnAiVoiceMode exists in AI Studio");
   assert(document.getElementById("aiVoiceModal") !== null, "Voice Interaction modal #aiVoiceModal exists in DOM");
   assert(document.getElementById("voiceCanvas") !== null, "Voice audio visualizer #voiceCanvas exists in DOM");
   assert(document.getElementById("voiceContinuousToggleBtn") !== null, "Continuous hands-free conversation loop button exists");
+  assert(document.getElementById("voiceRetryMicBtn") !== null, "Retry microphone access button #voiceRetryMicBtn exists in DOM");
+
+  const vercelCfg = JSON.parse(fs.readFileSync(path.join(__dirname, '../vercel.json'), 'utf8'));
+  const permHeader = vercelCfg.headers?.[0]?.headers?.find(h => h.key === 'Permissions-Policy');
+  assert(permHeader && permHeader.value.includes('microphone=(self)'), "vercel.json Permissions-Policy explicitly allows microphone=(self)");
+  assert(permHeader && permHeader.value.includes('camera=(self)'), "vercel.json Permissions-Policy explicitly allows camera=(self)");
 
   // Suite 10: Mobile Responsiveness, Off-Canvas Sidebar Drawer & Slider Navigation
   console.log("\n[Test Suite 10: Mobile Responsiveness, Off-Canvas Sidebar Drawer & Slider Navigation]");

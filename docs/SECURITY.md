@@ -57,4 +57,4 @@ Configured in `vercel.json`:
 - `X-Frame-Options`: `SAMEORIGIN`
 - `X-XSS-Protection`: `1; mode=block`
 - `Referrer-Policy`: `strict-origin-when-cross-origin`
-- `Permissions-Policy`: `camera=(), microphone=(), geolocation=(), browsing-topics=()`
+- `Permissions-Policy`: `camera=(self), microphone=(self), geolocation=(), browsing-topics=()`

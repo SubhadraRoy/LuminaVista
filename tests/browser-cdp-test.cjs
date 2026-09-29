@@ -445,7 +445,22 @@ async function runBrowserTest() {
   const aiChatToolbarHasNoArtifactsBtn = await evaluate("document.getElementById('btnCodespaceToggleText') === null");
   test("Artifacts button cleanly removed from AI Studio chat toolbar", aiChatToolbarHasNoArtifactsBtn);
 
-  // 14. Check for Uncaught Exceptions
+  // 14. Voice Studio Two-Way Audio Mode & Microphone Elements in Chrome
+  await evaluate("openVoiceInteractionMode()");
+  const isVoiceModalOpen = await evaluate("document.getElementById('aiVoiceModal')?.style.display !== 'none'");
+  test("Voice Studio modal opens cleanly in Chrome", isVoiceModalOpen);
+
+  const hasVoiceCanvas = await evaluate("document.getElementById('voiceCanvas') !== null");
+  test("Voice visualizer canvas rendered in Chrome", hasVoiceCanvas);
+
+  const hasRetryMicBtn = await evaluate("document.getElementById('voiceRetryMicBtn') !== null");
+  test("Retry microphone permission button exists in Chrome", hasRetryMicBtn);
+
+  await evaluate("closeVoiceInteractionMode()");
+  const isVoiceModalClosed = await evaluate("document.getElementById('aiVoiceModal')?.style.display === 'none' || document.getElementById('aiVoiceModal')?.classList.contains('opacity-0')");
+  test("Voice Studio modal closes cleanly in Chrome", isVoiceModalClosed);
+
+  // 15. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {
     console.error("Console Errors logged:", consoleErrors);
