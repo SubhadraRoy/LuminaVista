@@ -8,7 +8,9 @@
     if (!c.startsWith("EXM/")) c = "EXM/" + c;
     if (c.endsWith("/")) c += "index.html";
     else if (!c.includes(".html") && !c.includes(".")) c += "/index.html";
-    return window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1) + c;
+    const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/") + 1);
+    const cleanPath = (basePath + c).replace(/\/+/g, "/");
+    return window.location.origin + encodeURI(decodeURI(cleanPath));
   }
 
   async function fetchRepoProjects() {

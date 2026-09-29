@@ -1,7 +1,6 @@
 # Vercel deployment ignore rules
 tests/
 docs/
-EXM/
 *.md
 .github/
 .vscode/
