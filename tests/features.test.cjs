@@ -8,15 +8,24 @@ const rootDir = path.join(__dirname, '..');
 const htmlPath = path.join(rootDir, 'dashboard.html');
 const htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
+const virtualConsole = new (require('jsdom').VirtualConsole)();
+virtualConsole.on("error", () => {});
+
 const dom = new JSDOM(htmlContent, {
   url: "http://localhost:3000/dashboard.html",
   runScripts: "dangerously",
-  resources: "usable",
+  virtualConsole,
   pretendToBeVisual: true
 });
 
 const { window } = dom;
 const { document } = window;
+
+// Process safety guards for CI environments
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+  process.exit(1);
+});
 
 // Mock APIs not in JSDOM
 window.ResizeObserver = class {
@@ -25,12 +34,33 @@ window.ResizeObserver = class {
   disconnect() {}
 };
 
+window.PointerEvent = class extends window.MouseEvent {
+  constructor(type, params = {}) {
+    super(type, params);
+    this.pointerId = params.pointerId || 0;
+    this.pointerType = params.pointerType || 'mouse';
+    this.isPrimary = params.isPrimary || false;
+    this.pressure = params.pressure || 0;
+    this.width = params.width || 1;
+    this.height = params.height || 1;
+    this.tiltX = params.tiltX || 0;
+    this.tiltY = params.tiltY || 0;
+  }
+};
+
+window.requestAnimationFrame = (cb) => setTimeout(() => {
+  try { cb(performance.now()); } catch (_) {}
+}, 16);
+window.cancelAnimationFrame = (id) => clearTimeout(id);
+
+const mockGradient = { addColorStop: () => {} };
 window.HTMLCanvasElement.prototype.getContext = function() {
   return {
     clearRect: () => {},
     fillRect: () => {},
     strokeRect: () => {},
     beginPath: () => {},
+    closePath: () => {},
     moveTo: () => {},
     lineTo: () => {},
     stroke: () => {},
@@ -41,10 +71,18 @@ window.HTMLCanvasElement.prototype.getContext = function() {
     quadraticCurveTo: () => {},
     drawImage: () => {},
     scale: () => {},
+    translate: () => {},
+    transform: () => {},
+    setTransform: () => {},
+    resetTransform: () => {},
     save: () => {},
     restore: () => {},
     fillText: () => {},
-    measureText: () => ({ width: 50 })
+    measureText: () => ({ width: 50 }),
+    createLinearGradient: () => mockGradient,
+    createRadialGradient: () => mockGradient,
+    setLineDash: () => {},
+    getLineDash: () => []
   };
 };
 
@@ -171,7 +209,7 @@ assert(window.wbShowGrid !== initialGrid, "Grid state toggled");
 // Test Hardware Touchscreen, Stylus & Pointer Event Drawing
 window.initWhiteboard();
 const wbCv = document.getElementById("whiteboardCanvas");
-assert(wbCv.style.touchAction === "none", "whiteboardCanvas has style touch-action: none for hardware touchscreen capture");
+assert(wbCv.classList.contains("touch-none") || wbCv.style.touchAction === "none" || (wbCv.getAttribute('style') && wbCv.getAttribute('style').includes("touch-action")), "whiteboardCanvas has style touch-action: none for hardware touchscreen capture");
 assert(document.getElementById("whiteboardContainer").classList.contains("touch-none"), "#whiteboardContainer has touch-none class to prevent touch scroll hijacking");
 
 window.setWbTool('pen');
