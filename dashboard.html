@@ -83,6 +83,120 @@
     .thought-content { padding: 0.875rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.725rem; color: #94a3b8; background: rgba(3, 7, 18, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.05); }
     @keyframes thinkingShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     .thinking-skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(0,242,254,0.12) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: thinkingShimmer 2.5s infinite; }
+
+    /* ========================================================
+       COLLAPSED SIDEBAR (68px) PRECISION ORIENTATION & ALIGNMENT
+       ======================================================== */
+    #mainSidebar.sidebar-collapsed {
+      width: 68px !important;
+    }
+    /* 1. Header: Stack GX logo and toggle button cleanly, preventing overlap */
+    #mainSidebar.sidebar-collapsed #sidebarHeader {
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0.625rem !important;
+      padding: 0.875rem 0.5rem !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarBrand {
+      margin: 0 auto !important;
+      justify-content: center !important;
+      width: auto !important;
+      cursor: pointer;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarBrand .sidebar-label {
+      display: none !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarControls {
+      width: 100% !important;
+      display: flex !important;
+      justify-content: center !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarToggleBtn {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 38px !important;
+      height: 30px !important;
+      border-radius: 0.625rem !important;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #38bdf8 !important;
+      margin: 0 auto !important;
+      transition: all 0.2s ease;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarToggleBtn:hover {
+      background: rgba(0, 242, 254, 0.15) !important;
+      border-color: rgba(0, 242, 254, 0.4) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
+    }
+
+    /* 2. Navigation Items: Center all icons in exact vertical axis */
+    #mainSidebar.sidebar-collapsed nav {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn {
+      width: 44px !important;
+      height: 44px !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0 !important;
+      border-radius: 0.75rem !important;
+      border-left: 1px solid transparent !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn i,
+    #mainSidebar.sidebar-collapsed .tab-btn svg {
+      margin: 0 !important;
+      width: 1.125rem !important;
+      height: 1.125rem !important;
+      flex-shrink: 0 !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn .sidebar-label {
+      display: none !important;
+    }
+
+    /* Active Tab in Collapsed State: Centered glowing badge */
+    #mainSidebar.sidebar-collapsed .tab-btn.nav-tab-active {
+      background: rgba(0, 242, 254, 0.14) !important;
+      border: 1px solid var(--primary) !important;
+      box-shadow: 0 0 16px var(--primary-glow), inset 0 0 10px rgba(0, 242, 254, 0.1) !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn:hover:not(.nav-tab-active) {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: #ffffff !important;
+    }
+
+    /* 3. Footer: Center logout button, hide ping text */
+    #mainSidebar.sidebar-collapsed #sidebarFooter {
+      padding: 0.75rem 0.5rem !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarFooterContainer {
+      justify-content: center !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarFooterStatus {
+      display: none !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarLogoutBtn {
+      margin: 0 auto !important;
+      width: 42px !important;
+      height: 42px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 0.75rem !important;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    #mainSidebar.sidebar-collapsed #sidebarLogoutBtn:hover {
+      background: rgba(244, 63, 94, 0.15) !important;
+      border-color: rgba(244, 63, 94, 0.4) !important;
+      color: #f43f5e !important;
+    }
   </style>
 </head>
 <body class="flex h-screen font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950 select-none">
@@ -102,19 +216,19 @@
   <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 border-r border-white/5 bg-surface-950/95 backdrop-blur-2xl flex flex-col h-full shrink-0 transition-[width,transform] duration-200 shadow-2xl md:shadow-none" style="width: 250px;">
     
     <!-- Sidebar Header -->
-    <div class="p-4 border-b border-white/5 flex items-center justify-between">
-      <div id="sidebarBrand" class="flex items-center gap-3 overflow-hidden">
+    <div id="sidebarHeader" class="p-4 border-b border-white/5 flex items-center justify-between transition-all duration-200">
+      <div id="sidebarBrand" class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="if(window.isSidebarMinimized) toggleSidebarMinimize()" title="LuminaVista OS">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_15px_rgba(0,242,254,0.3)] shrink-0">GX</div>
         <div class="sidebar-label whitespace-nowrap">
           <h1 class="font-heading font-bold text-base text-white tracking-tight leading-none">LuminaVista</h1>
           <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v14</p>
         </div>
       </div>
-      <div class="flex items-center gap-1">
+      <div id="sidebarControls" class="flex items-center gap-1">
         <button onclick="closeMobileSidebar()" class="md:hidden p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Close Menu" aria-label="Close Navigation Drawer">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
-        <button onclick="toggleSidebarMinimize()" class="hidden md:inline-flex p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Toggle Sidebar" aria-label="Toggle Sidebar Navigation">
+        <button id="sidebarToggleBtn" onclick="toggleSidebarMinimize()" class="hidden md:inline-flex p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Toggle Sidebar" aria-label="Toggle Sidebar Navigation">
           <i data-lucide="chevrons-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
         </button>
       </div>
@@ -122,55 +236,55 @@
 
     <!-- Navigation Items ("The Slider") -->
     <nav class="flex-1 overflow-y-auto py-4 px-2 space-y-1 custom-scrollbar">
-      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer">
+      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer" title="AI-Studio" aria-label="AI-Studio">
         <i data-lucide="bot" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">AI-Studio</span>
       </button>
-      <button onclick="switchTab('tab-artifacts')" id="btn-tab-artifacts" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-artifacts')" id="btn-tab-artifacts" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Artifacts IDE" aria-label="Artifacts IDE">
         <i data-lucide="folder-code" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Artifacts IDE</span>
       </button>
-      <button onclick="switchTab('tab-graphify')" id="btn-tab-graphify" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-graphify')" id="btn-tab-graphify" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Graphify Graph" aria-label="Graphify Graph">
         <i data-lucide="network" class="w-4 h-4 shrink-0 text-purple-400"></i><span class="sidebar-label">Graphify Graph</span>
       </button>
-      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Projects Explorer" aria-label="Projects Explorer">
         <i data-lucide="folder-tree" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Projects</span>
       </button>
-      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Compilers & SQL" aria-label="Compilers & SQL">
         <i data-lucide="code-2" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Compilers & SQL</span>
       </button>
-      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Whiteboard Pro" aria-label="Whiteboard Pro">
         <i data-lucide="pen-tool" class="w-4 h-4 shrink-0 text-purple-400"></i><span class="sidebar-label">Whiteboard Pro</span>
       </button>
-      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="UI Generator" aria-label="UI Generator">
         <i data-lucide="palette" class="w-4 h-4 shrink-0 text-pink-400"></i><span class="sidebar-label">UI Generator</span>
       </button>
-      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Split Compare" aria-label="Split Compare">
         <i data-lucide="columns" class="w-4 h-4 shrink-0 text-indigo-400"></i><span class="sidebar-label">Split Compare</span>
       </button>
-      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Terminal MicroVM" aria-label="Terminal MicroVM">
         <i data-lucide="terminal" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Terminal MicroVM</span>
       </button>
-      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Telemetry & Waveforms" aria-label="Telemetry & Waveforms">
         <i data-lucide="activity" class="w-4 h-4 shrink-0 text-amber-400"></i><span class="sidebar-label">Telemetry</span>
       </button>
-      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Notes Markdown" aria-label="Notes Markdown">
         <i data-lucide="book-open" class="w-4 h-4 shrink-0 text-sky-400"></i><span class="sidebar-label">Notes Markdown</span>
       </button>
-      <button onclick="switchTab('tab-calendar')" id="btn-tab-calendar" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-calendar')" id="btn-tab-calendar" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Calendar & Agenda" aria-label="Calendar & Agenda">
         <i data-lucide="calendar" class="w-4 h-4 shrink-0 text-cyan-400"></i><span class="sidebar-label">Calendar</span>
       </button>
-      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer">
+      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Settings & Theme" aria-label="Settings & Theme">
         <i data-lucide="settings" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Settings</span>
       </button>
     </nav>
     
     <!-- Sidebar Footer -->
-    <div class="p-3.5 border-t border-white/5 bg-surface-900/40">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2 overflow-hidden">
+    <div id="sidebarFooter" class="p-3.5 border-t border-white/5 bg-surface-900/40 transition-all duration-200">
+      <div id="sidebarFooterContainer" class="flex items-center justify-between">
+        <div id="sidebarFooterStatus" class="flex items-center gap-2 overflow-hidden">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
           <span class="font-mono text-[10px] text-zinc-400 sidebar-label whitespace-nowrap">Edge Secured</span>
         </div>
-        <button onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 transition-colors p-1" title="Lock System" aria-label="Lock System and Sign Out">
+        <button id="sidebarLogoutBtn" onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 transition-colors p-2 rounded-xl hover:bg-white/5 cursor-pointer" title="Lock System" aria-label="Lock System and Sign Out">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
       </div>

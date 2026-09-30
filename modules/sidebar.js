@@ -44,10 +44,12 @@
 
     if (window.isSidebarMinimized) {
       sb.style.width = "68px";
+      sb.classList.add("sidebar-collapsed");
       labels.forEach(el => el.classList.add("hidden"));
       icon.setAttribute("data-lucide", "chevrons-right");
     } else {
       sb.style.width = (window.lastSidebarWidth || 250) + "px";
+      sb.classList.remove("sidebar-collapsed");
       labels.forEach(el => el.classList.remove("hidden"));
       icon.setAttribute("data-lucide", "chevrons-left");
     }

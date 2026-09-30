@@ -233,6 +233,38 @@ async function runBrowserTest() {
   const sidebarWidthCollapsed = await evaluate("document.getElementById('mainSidebar').style.width");
   test("Sidebar collapses to 68px", sidebarWidthCollapsed === "68px");
 
+  const isCollapsedClassApplied = await evaluate("document.getElementById('mainSidebar').classList.contains('sidebar-collapsed')");
+  test("Sidebar has .sidebar-collapsed class when minimized", isCollapsedClassApplied);
+
+  const headerFlexDir = await evaluate("window.getComputedStyle(document.getElementById('sidebarHeader')).flexDirection");
+  test("Sidebar header stacks brand and toggle button vertically (flex-direction: column)", headerFlexDir === "column");
+
+  const brandAndToggleNonOverlapping = await evaluate(`(() => {
+    const brandRect = document.getElementById('sidebarBrand').getBoundingClientRect();
+    const toggleRect = document.getElementById('sidebarToggleBtn').getBoundingClientRect();
+    const noVerticalOverlap = toggleRect.top >= brandRect.bottom;
+    const sbRect = document.getElementById('mainSidebar').getBoundingClientRect();
+    const sbCenter = sbRect.left + sbRect.width / 2;
+    const brandCenter = brandRect.left + brandRect.width / 2;
+    const toggleCenter = toggleRect.left + toggleRect.width / 2;
+    const isBrandCentered = Math.abs(brandCenter - sbCenter) < 5;
+    const isToggleCentered = Math.abs(toggleCenter - sbCenter) < 5;
+    return noVerticalOverlap && isBrandCentered && isToggleCentered;
+  })()`);
+  test("GX logo and collapse toggle button are vertically stacked and centered without merging", brandAndToggleNonOverlapping);
+
+  const navIconsCentered = await evaluate(`(() => {
+    const sbRect = document.getElementById('mainSidebar').getBoundingClientRect();
+    const sbCenter = sbRect.left + sbRect.width / 2;
+    const buttons = Array.from(document.querySelectorAll('#mainSidebar nav .tab-btn'));
+    return buttons.every(btn => {
+      const rect = btn.getBoundingClientRect();
+      const btnCenter = rect.left + rect.width / 2;
+      return Math.abs(btnCenter - sbCenter) < 4;
+    });
+  })()`);
+  test("All sidebar navigation tab icons are horizontally centered in 68px column", navIconsCentered);
+
   await evaluate("toggleSidebarMinimize()");
   const sidebarWidthExpanded = await evaluate("document.getElementById('mainSidebar').style.width");
   test("Sidebar expands to 250px", sidebarWidthExpanded === "250px");
