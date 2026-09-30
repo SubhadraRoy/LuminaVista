@@ -1899,6 +1899,10 @@ Deliver your completion report using this structure:
   const isStallingDeflection = isStallingRegex.test(deflectionReply) || /\b(what specific feature, application, or script would you like to build)\b/i.test(deflectionReply);
   assert(isStallingDeflection, "Anti-stalling guard detects conversational deflection on calendar query");
 
+  // Suite 23: TypeSafe Jev Cognitive Matrix & Typed Decision Engine (jevAsk)
+  const runJevMatrixSuite = require('./suite-jev-matrix.cjs');
+  await runJevMatrixSuite({ assert, window, rootDir });
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

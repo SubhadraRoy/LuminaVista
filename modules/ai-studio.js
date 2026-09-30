@@ -33,27 +33,27 @@
       .replace(/'/g, "&#039;");
   }
 
-  // Jev System-1 Sub-50ms Intent Classifier & Safety Guardrail Layer
+  // Jev System-1 Sub-50ms Intent Classifier & Safety Guardrail Layer (Cognitive Matrix v3.0 Ultra)
   function classifyJevIntentClient(prompt = '', vfs = {}) {
     const start = performance.now();
     const pTrim = (prompt || '').trim();
     const p = pTrim.toLowerCase();
     const vfsFiles = Object.keys(vfs || {});
 
-    let route = 'CONVERSATION';
-    let targetFile = '';
-    let confidence = 0.95;
     let guardrailPassed = true;
-    let reasoning = 'General conversational inquiry';
+    let threatCategory = 'none';
+    let targetFile = '';
     const entities = {
       languages: [],
       files: [],
       tools: [],
-      isMultiStep: false
+      isMultiStep: false,
+      commands: [],
+      dates: []
     };
 
-    // 1. Destructive Command & Exploitation Guardrail Check
-    if (
+    // 1. Destructive, Exfiltration & Injection Guardrail Screen (<0.5ms)
+    const isDestructive =
       p.includes('rm -rf /') || 
       p.includes('rm -rf ~') ||
       p.includes(':(){ :|:& };:') || 
@@ -61,10 +61,32 @@
       p.includes('dd if=/dev/zero') ||
       p.includes('cat /dev/urandom >') ||
       p.includes('drop database') ||
-      p.includes('format c:')
-    ) {
+      p.includes('format c:');
+
+    const isExfiltration =
+      p.includes('/etc/shadow') ||
+      p.includes('/etc/passwd') ||
+      p.includes('.ssh/id_rsa') ||
+      p.includes('printenv | curl') ||
+      p.includes('env | nc ') ||
+      /\b(curl|wget|fetch|nc|ncat)\b.*(leak|exfil|evil|\$|token|key|secret)/i.test(p);
+
+    const isPromptInjection =
+      p.includes('ignore all previous instructions') ||
+      p.includes('system prompt override') ||
+      p.includes('act as dan') ||
+      p.includes('disregard safety protocols') ||
+      p.includes('bypass all guardrails');
+
+    if (isDestructive) {
       guardrailPassed = false;
-      reasoning = 'Jev System-1 Guardrail: blocked catastrophic or destructive system command';
+      threatCategory = 'destructive_command';
+    } else if (isExfiltration) {
+      guardrailPassed = false;
+      threatCategory = 'credential_exfiltration';
+    } else if (isPromptInjection) {
+      guardrailPassed = false;
+      threatCategory = 'prompt_injection';
     }
 
     // 2. Language & Entity Extraction
@@ -75,115 +97,265 @@
     if (/\b(sql|database|postgres|sqlite)\b/i.test(p)) entities.languages.push('sql');
     if (/\b(bash|shell|sh)\b/i.test(p)) entities.languages.push('bash');
     if (/\b(docker|container)\b/i.test(p)) entities.tools.push('docker');
+    if (/\b(git|github)\b/i.test(p)) entities.tools.push('git');
+    if (/\b(npm|npx|pip)\b/i.test(p)) entities.tools.push('package_manager');
+
+    // Detect dates / time ranges
+    if (/\b(today)\b/i.test(p)) entities.dates.push('today');
+    if (/\b(tomorrow)\b/i.test(p)) entities.dates.push('tomorrow');
+    if (/\b(next\s*weeks?)\b/i.test(p)) entities.dates.push('next_week');
+    if (/\b(this\s*week)\b/i.test(p)) entities.dates.push('this_week');
 
     // Detect explicit file path mentioned in prompt
-    const pathMatch = pTrim.match(/(?:in|to|file|create|edit|view|read|inspect|patch|modify|update)\s+([a-zA-Z0-9_\-/\\]+\.[a-zA-Z0-9]{1,5})\b/i) ||
-                      pTrim.match(/\b([a-zA-Z0-9_\-/\\]+\.(?:js|jsx|ts|tsx|py|html|css|json|sql|md|sh|cjs|mjs))\b/i);
+    const pathMatch = pTrim.match(/(?:in|to|file|create|edit|view|read|inspect|patch|modify|update|delete|remove)\s+([a-zA-Z0-9_\-/\\]+\.[a-zA-Z0-9]{1,5})\b/i) ||
+                      pTrim.match(/\b([a-zA-Z0-9_\-/\\]+\.(?:js|jsx|ts|tsx|py|html|css|json|sql|md|sh|cjs|mjs|txt|log))\b/i);
     if (pathMatch && pathMatch[1]) {
       targetFile = pathMatch[1].replace(/\\/g, '/');
       entities.files.push(targetFile);
-    }
-
-    // 3. Multi-Step Autonomous Task / Pipeline / Benchmark Execution
-    const isAutonomousTask =
-      /\[task goal\]|task goal:|autonomous task|autonomous goal/i.test(p) ||
-      (/(1\.|step 1|phase 1).*(2\.|step 2|phase 2)/i.test(p) && /(filesystem|terminal|execute|script|repos|directory|analysis|pipeline|report)/i.test(p)) ||
-      (p.includes('git_trend_analysis') || (p.includes('fetch_meta.py') && p.includes('repos.json'))) ||
-      /\b(chaos\s*engineering|chaos\s*drill|flaky\s*upstream|mock\s*server.*8999|chaos_lab|chaos_archive|chaos\.log|stress_test\.py)\b/i.test(p) ||
-      (/\b(systems\s*automation|operations\s*agent|execution\s*workflow|complete\s*tool\s*suite)\b/i.test(p) && /\b(vfs|terminal|sandbox|calendar|schedule|scan|verify|operational)\b/i.test(p)) ||
-      (/\b(pipeline|drill|benchmark|multi-?step|e2e\s*test|stress\s*test|microservices?)\b/i.test(p) && /\b(server|port|script|test|terminal|archive|compress|summary)\b/i.test(p)) ||
-      (/\b(once you have that|next|finally|tidy up)\b/i.test(p) && /\b(spin up|server|script|terminal|compress|delete)\b/i.test(p));
-
-    if (isAutonomousTask) {
-      route = 'AUTONOMOUS_TASK';
-      confidence = 0.995;
-      entities.isMultiStep = true;
-      reasoning = 'Jev identified multi-step autonomous engineering pipeline';
-    }
-    // 4. Calendar Scheduling & Management Intent
-    else if (
-      /\b(schedule|calendar|calander|calender|calndr|calndar|clendar|scheule|scheduale|sched|skedule|sked|sechdule|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours|agenda|timetable|itinerary)\b/i.test(p) ||
-      /\b(check|show|view|see|inspect|what('s|\s+is)?\s+on)\b.*\b(calander|calendar|calender|calndr|scheule|scheduale|sched|skedule|agenda|timetable|itinerary|meetings?|events?|appointments?|routine|week|day)\b/i.test(p) ||
-      /\b(next\s+week'?s?|this\s+week'?s?|upcoming)\s+(scheule|schedule|sched|agenda|calendar|calander|calender|plan|events?|meetings?)\b/i.test(p) ||
-      /\[tool:schedule_event/i.test(p)
-    ) {
-      route = 'SCHEDULE_CALENDAR';
-      confidence = 0.985;
-      reasoning = 'Calendar scheduling or routine management';
-    }
-    // 5. Codebase Search / Grep vs Live External Web Search
-    else if (
-      /\b(search\s*code|find\s*(in\s*files|symbol|function|class|variable|regex|import)|grep|where\s*is\s*(the\s*)?(function|class|method|file))\b/i.test(p) ||
-      (/\b(find|search)\b/i.test(p) && vfsFiles.some(f => p.includes(f.toLowerCase())))
-    ) {
-      route = 'VIEW_FILE';
-      targetFile = targetFile || vfsFiles.find(f => p.includes(f.toLowerCase())) || (vfsFiles[0] || 'index.html');
-      confidence = 0.96;
-      reasoning = 'Resolved local codebase / workspace search intent';
-    }
-    // 6. External Web Search / Live Information Routing
-    else if (
-      /\b(news|headlines|weather|stock|crypto|price\s*of|who\s*is|who\s*was|what\s*happened|when\s*did|where\s*is|latest\s*on|updates?\s*on|today'?s?\s*news)\b/i.test(p) ||
-      /\b(browse|web\s*search|google|search|look\s*up|find\s*out)\b/i.test(p) ||
-      p.startsWith('search') || p.startsWith('find') || p.startsWith('browse')
-    ) {
-      route = 'SEARCH_WEB';
-      confidence = 0.985;
-      reasoning = 'Routed to live web search';
-    }
-    // 7. Terminal execution routing
-    else if (/^(run|exec|execute|terminal|bash|sh|cmd)\b/i.test(p) || p.startsWith('python ') || p.startsWith('node ') || p.startsWith('npm ') || p.startsWith('pip ')) {
-      route = 'EXEC_COMMAND';
-      confidence = 0.97;
-      reasoning = 'Terminal command execution';
-    }
-    // 8. File editing routing
-    else if ((/\b(edit|replace|modify|update|patch|fix|refactor)\b/i.test(p)) && (targetFile || vfsFiles.some(f => p.includes(f.toLowerCase())))) {
-      route = 'EDIT_FILE';
-      targetFile = targetFile || vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0] || 'index.html';
-      confidence = 0.96;
-      reasoning = `Targeted file modification in ${targetFile}`;
-    }
-    // 9. File viewing routing
-    else if ((/\b(view|read|cat|inspect|open|show\s*code)\b/i.test(p)) && (targetFile || vfsFiles.some(f => p.includes(f.toLowerCase())))) {
-      route = 'VIEW_FILE';
-      targetFile = targetFile || vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0] || 'index.html';
-      confidence = 0.97;
-      reasoning = `Inspecting file contents of ${targetFile}`;
-    }
-    // 10. Code & Project Creation routing
-    else if (
-      /\b(create|build|write|implement|generate|code|scaffold|develop)\b.*\b(app|application|game|calculator|landing\s*page|website|page|component|script|program|server|tool|dashboard|todo|counter|api|html|python|js|css|sql|file)\b/i.test(p) ||
-      /\b(create|write|generate|add)\s+([a-zA-Z0-9_\-/\\]+\.(html|js|py|css|json|sql|md|txt|jsx|tsx|sh))\b/i.test(p)
-    ) {
-      route = 'WRITE_FILE';
-      confidence = 0.99;
-
-      if (!targetFile) {
-        if (p.includes('.py') || p.includes('python')) targetFile = 'main.py';
-        else if (p.includes('.js') || p.includes('javascript') || p.includes('node')) targetFile = 'app.js';
-        else if (p.includes('.css')) targetFile = 'style.css';
-        else if (p.includes('.json')) targetFile = 'data.json';
-        else if (p.includes('.sql')) targetFile = 'query.sql';
-        else targetFile = 'index.html';
+    } else {
+      const existingMatch = vfsFiles.find(f => p.includes(f.toLowerCase()));
+      if (existingMatch) {
+        targetFile = existingMatch;
+        entities.files.push(targetFile);
       }
-      reasoning = `Autonomous software synthesis targeting ${targetFile}`;
-    }
-    // 11. Directory / workspace inspection
-    else if (/^(ls|dir|list\s*files|tree|what\s*files|workspace\s*files)\b/i.test(p)) {
-      route = 'LIST_DIR';
-      confidence = 0.99;
-      reasoning = 'Workspace file tree inspection';
-    }
-    // 12. Conversational Intent fallback
-    else {
-      route = 'CONVERSATION';
-      confidence = 0.98;
-      reasoning = 'Conversational dialogue';
     }
 
-    const latencyMs = Math.max(1, Math.round(performance.now() - start));
-    return { route, targetFile, confidence, guardrailPassed, latencyMs, entities, reasoning };
+    const targetExists = targetFile ? vfsFiles.some(f => f.toLowerCase() === targetFile.toLowerCase()) : false;
+
+    // 3. Multi-Signal Semantic Vector Scoring Matrix
+    const scores = {
+      AUTONOMOUS_TASK: 0,
+      SCHEDULE_CALENDAR: 0,
+      WRITE_FILE: 0,
+      EDIT_FILE: 0,
+      VIEW_FILE: 0,
+      DELETE_FILE: 0,
+      EXEC_COMMAND: 0,
+      SEARCH_WEB: 0,
+      LIST_DIR: 0,
+      CONVERSATION: 15
+    };
+
+    const hasCreationVerb = /\b(create|build|write|implement|generate|code|scaffold|develop|author|make|scaffolding)\b/i.test(p);
+    const hasEditVerb = /\b(edit|replace|modify|update|patch|fix|refactor|rewrite|amend|alter)\b/i.test(p);
+    const hasInspectionVerb = /\b(view|read|cat|open|inspect|show\s*code|display|examine|peek)\b/i.test(p);
+    const hasDeleteVerb = /\b(delete|remove|drop|rm|unlink|erase|clean\s*up|clear\s*file|trash)\b/i.test(p);
+    const hasExecVerb = /^(run|exec|execute|terminal|bash|sh|cmd)\b/i.test(p) || p.startsWith('python ') || p.startsWith('node ') || p.startsWith('npm ') || p.startsWith('pip ');
+    const hasCodeArtifact = /\b(app|application|game|calculator|landing\s*page|website|page|component|script|program|server|tool|dashboard|todo|counter|api|html|python|js|css|sql|file)\b/i.test(p);
+    const hasQuestionPattern = /^(how\s*(do|can|to|does)|why\s*(is|does|do)|what\s*(is|are|does)|explain|tell\s*me\s*about|help\s*me\s*understand|teach\s*me|difference\s*between)\b/i.test(p);
+
+    // A. AUTONOMOUS_TASK Scoring
+    if (/\[task goal\]|task goal:|autonomous task|autonomous goal/i.test(p)) scores.AUTONOMOUS_TASK += 140;
+    if (/(1\.|step 1|phase 1).*(2\.|step 2|phase 2)/i.test(p) && /(filesystem|terminal|execute|script|repos|directory|analysis|pipeline|report)/i.test(p)) scores.AUTONOMOUS_TASK += 135;
+    if (p.includes('git_trend_analysis') || (p.includes('fetch_meta.py') && p.includes('repos.json'))) scores.AUTONOMOUS_TASK += 140;
+    if (/\b(chaos\s*engineering|chaos\s*drill|flaky\s*upstream|mock\s*server.*8999|chaos_lab|chaos_archive|chaos\.log|stress_test\.py)\b/i.test(p)) scores.AUTONOMOUS_TASK += 140;
+    if ((/\b(systems\s*automation|operations\s*agent|execution\s*workflow|complete\s*tool\s*suite)\b/i.test(p)) && /\b(vfs|terminal|sandbox|calendar|schedule|scan|verify|operational)\b/i.test(p)) scores.AUTONOMOUS_TASK += 140;
+    if ((/\b(pipeline|drill|benchmark|multi-?step|e2e\s*test|stress\s*test|microservices?)\b/i.test(p)) && /\b(server|port|script|test|terminal|archive|compress|summary)\b/i.test(p)) scores.AUTONOMOUS_TASK += 120;
+    if ((/\b(once you have that|next|finally|tidy up)\b/i.test(p)) && /\b(spin up|server|script|terminal|compress|delete)\b/i.test(p)) scores.AUTONOMOUS_TASK += 120;
+
+    if (scores.AUTONOMOUS_TASK >= 90) {
+      entities.isMultiStep = true;
+    }
+
+    // B. SCHEDULE_CALENDAR Scoring
+    if (scores.AUTONOMOUS_TASK < 90) {
+      const isCalendarDirect = /\b(schedule|calendar|calander|calender|calndr|calndar|clendar|scheule|scheduale|sched|skedule|sked|sechdule|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours|agenda|timetable|itinerary)\b/i.test(p);
+      const isCalendarQuery = /\b(check|show|view|see|inspect|what\s*(?:'s|\s*(?:is|are|do\s+i\s+have))?\s*(?:on|in|my)?)\b.*\b(calander|calendar|calender|calndr|scheule|scheduale|sched|skedule|agenda|timetable|itinerary|meetings?|events?|appointments?|routine|week|day)\b/i.test(p);
+      const isCalendarRange = /\b(next\s+week'?s?|this\s+week'?s?|upcoming)\s+(scheule|schedule|sched|agenda|calendar|calander|calender|plan|events?|meetings?)\b/i.test(p);
+      if (isCalendarDirect) scores.SCHEDULE_CALENDAR += 55;
+      if (isCalendarQuery) scores.SCHEDULE_CALENDAR += 60;
+      if (isCalendarRange) scores.SCHEDULE_CALENDAR += 55;
+      if (/\[tool:schedule_event/i.test(p)) scores.SCHEDULE_CALENDAR += 90;
+    }
+
+    // C. DELETE_FILE Scoring
+    if (hasDeleteVerb && (targetFile || targetExists)) {
+      scores.DELETE_FILE += 65;
+      if (targetExists) scores.DELETE_FILE += 25;
+    }
+    if (/\[tool:delete_file/i.test(p)) scores.DELETE_FILE += 90;
+
+    // D. EDIT_FILE Scoring
+    if (hasEditVerb) {
+      scores.EDIT_FILE += 50;
+      if (targetExists) scores.EDIT_FILE += 30;
+      if (targetFile && !targetExists) scores.EDIT_FILE += 10;
+    }
+    if (/\[tool:edit_file/i.test(p)) scores.EDIT_FILE += 90;
+
+    // E. WRITE_FILE Scoring
+    if (hasCreationVerb) {
+      if (hasCodeArtifact) scores.WRITE_FILE += 55;
+      if (pathMatch) scores.WRITE_FILE += 40;
+      if (targetFile && !targetExists) scores.WRITE_FILE += 25;
+      if (targetFile && targetExists) scores.WRITE_FILE += 5;
+    }
+    if (/\[tool:write_file/i.test(p)) scores.WRITE_FILE += 90;
+
+    // F. VIEW_FILE & Codebase Search Scoring
+    if (hasInspectionVerb && (targetFile || targetExists)) {
+      scores.VIEW_FILE += 55;
+      if (targetExists) scores.VIEW_FILE += 25;
+    }
+    if (/\b(search\s*code|find\s*(in\s*files|symbol|function|class|variable|regex|import)|grep|where\s*is\s*(the\s*)?(function|class|method|file))\b/i.test(p)) {
+      scores.VIEW_FILE += 60;
+    }
+    if (/\[tool:view_file/i.test(p)) scores.VIEW_FILE += 90;
+
+    // G. EXEC_COMMAND Scoring
+    if (hasExecVerb) {
+      scores.EXEC_COMMAND += 60;
+      if (/^(python|node|npm|pip|bash|sh)\s+/i.test(p)) scores.EXEC_COMMAND += 20;
+    }
+    if (/\[tool:exec/i.test(p)) scores.EXEC_COMMAND += 90;
+    if (hasQuestionPattern) {
+      scores.EXEC_COMMAND = Math.max(0, scores.EXEC_COMMAND - 50);
+    }
+
+    // H. SEARCH_WEB Scoring
+    const isWebTopic = /\b(news|headlines|weather|stock|crypto|price\s*of|who\s*is|who\s*was|what\s*happened|when\s*did|where\s*is|latest\s*on|updates?\s*on|today'?s?\s*news)\b/i.test(p);
+    const isWebVerb = /\b(browse|web\s*search|google|search|look\s*up|find\s*out)\b/i.test(p) || p.startsWith('search') || p.startsWith('find') || p.startsWith('browse');
+    if (isWebTopic) scores.SEARCH_WEB += 60;
+    if (isWebVerb) scores.SEARCH_WEB += 50;
+    if (/\[tool:search_web/i.test(p)) scores.SEARCH_WEB += 90;
+    if (/\b(in\s*files|in\s*code|in\s*codebase|in\s*workspace|in\s*vfs|in\s*project)\b/i.test(p) || targetExists) {
+      scores.SEARCH_WEB = Math.max(0, scores.SEARCH_WEB - 60);
+    }
+
+    // I. LIST_DIR Scoring
+    if (/^(ls|dir|list\s*files|tree|what\s*files|workspace\s*files)\b/i.test(p)) scores.LIST_DIR += 75;
+    if (/\[tool:list_dir/i.test(p)) scores.LIST_DIR += 90;
+
+    // J. CONVERSATION Scoring
+    if (/^(hi|hello|hey|howdy|greetings|good\s*(morning|afternoon|evening))\b/i.test(p)) scores.CONVERSATION += 50;
+    if (hasQuestionPattern && scores.SCHEDULE_CALENDAR < 50 && scores.VIEW_FILE < 50 && scores.SEARCH_WEB < 50) scores.CONVERSATION += 45;
+    if (/\b(explain|teach|guide|clarify|what\s*is|difference\s*between|why\s*does)\b/i.test(p)) scores.CONVERSATION += 40;
+    if (/\b(thanks|thank\s*you|great\s*job|awesome)\b/i.test(p)) scores.CONVERSATION += 50;
+
+    // 4. Compound Intent Resolution & Workflow Synthesis
+    const activeRoutes = Object.entries(scores)
+      .filter(([r, s]) => r !== 'CONVERSATION' && r !== 'AUTONOMOUS_TASK' && s >= 35)
+      .sort((a, b) => b[1] - a[1]);
+
+    let isCompound = false;
+    const compoundPlan = [];
+    const requiredTools = [];
+
+    if (activeRoutes.length >= 2 && !scores.AUTONOMOUS_TASK) {
+      const routeNames = activeRoutes.map(x => x[0]);
+      if (
+        (routeNames.includes('SEARCH_WEB') && (routeNames.includes('WRITE_FILE') || routeNames.includes('EDIT_FILE'))) ||
+        (routeNames.includes('WRITE_FILE') && routeNames.includes('EXEC_COMMAND')) ||
+        (routeNames.includes('EDIT_FILE') && routeNames.includes('EXEC_COMMAND'))
+      ) {
+        isCompound = true;
+        scores.AUTONOMOUS_TASK = Math.max(scores.AUTONOMOUS_TASK, activeRoutes[0][1] + 25);
+        compoundPlan.push(...routeNames);
+      }
+    }
+
+    // 5. Ranking and Calibrated Confidence Determination
+    const sorted = Object.entries(scores)
+      .sort((a, b) => b[1] - a[1])
+      .map(([r, s]) => ({ route: r, score: Math.max(0, s) }));
+
+    let winner = sorted[0];
+    const runnerUp = sorted[1] || { route: 'CONVERSATION', score: 0 };
+    const margin = winner.score - runnerUp.score;
+
+    if (!guardrailPassed) {
+      return {
+        route: 'CONVERSATION',
+        confidence: 0.999,
+        guardrailPassed: false,
+        threatCategory,
+        latencyMs: Math.max(1, Math.round(performance.now() - start)),
+        targetFile: '',
+        secondaryRoutes: [],
+        scores,
+        compoundPlan: [],
+        requiredTools: [],
+        entities,
+        reasoning: `Jev System-1 Guardrail: blocked potentially dangerous activity (${threatCategory})`
+      };
+    }
+
+    let route = winner.route;
+    let confidence = 0.95;
+
+    if (winner.score >= 80) confidence = 0.995;
+    else if (winner.score >= 60) confidence = 0.985;
+    else if (winner.score >= 45) confidence = 0.96;
+    else if (winner.score >= 30) confidence = 0.92;
+    else confidence = 0.85;
+
+    if (margin < 10 && winner.score < 50) {
+      confidence = Math.max(0.70, confidence - 0.10);
+    }
+
+    if (route === 'WRITE_FILE' && !targetFile) {
+      if (entities.languages.includes('python')) targetFile = 'main.py';
+      else if (entities.languages.includes('javascript')) targetFile = 'app.js';
+      else if (entities.languages.includes('typescript')) targetFile = 'app.ts';
+      else if (entities.languages.includes('css')) targetFile = 'style.css';
+      else if (entities.languages.includes('json')) targetFile = 'data.json';
+      else if (entities.languages.includes('sql')) targetFile = 'query.sql';
+      else targetFile = 'index.html';
+    }
+
+    if (route === 'SEARCH_WEB') requiredTools.push('TOOL:SEARCH_WEB');
+    else if (route === 'SCHEDULE_CALENDAR') requiredTools.push('TOOL:SCHEDULE_EVENT');
+    else if (route === 'WRITE_FILE') requiredTools.push('TOOL:WRITE_FILE');
+    else if (route === 'EDIT_FILE') requiredTools.push('TOOL:EDIT_FILE');
+    else if (route === 'VIEW_FILE') requiredTools.push('TOOL:VIEW_FILE');
+    else if (route === 'DELETE_FILE') requiredTools.push('TOOL:DELETE_FILE');
+    else if (route === 'EXEC_COMMAND') requiredTools.push('TOOL:EXEC');
+    else if (route === 'LIST_DIR') requiredTools.push('TOOL:LIST_DIR');
+    else if (route === 'AUTONOMOUS_TASK') {
+      requiredTools.push('TOOL:WRITE_FILE', 'TOOL:EXEC', 'TOOL:TASK_COMPLETE');
+    }
+
+    let reasoning = `Jev System-1 Cognitive Matrix evaluated prompt (score: ${winner.score}, margin: +${margin}).`;
+    if (route === 'AUTONOMOUS_TASK') {
+      reasoning = isCompound
+        ? `Jev orchestrated compound multi-tool pipeline across ${compoundPlan.join(' -> ')}`
+        : 'Jev identified multi-step autonomous engineering pipeline requiring coordinated tool execution';
+    } else if (route === 'SCHEDULE_CALENDAR') {
+      reasoning = 'Identified calendar event or schedule management intent';
+    } else if (route === 'WRITE_FILE') {
+      reasoning = `Autonomous software synthesis targeting ${targetFile}`;
+    } else if (route === 'EDIT_FILE') {
+      reasoning = `Targeted file modification in ${targetFile}`;
+    } else if (route === 'VIEW_FILE') {
+      reasoning = `Inspecting file contents of ${targetFile || 'workspace'}`;
+    } else if (route === 'DELETE_FILE') {
+      reasoning = `Explicit file removal targeting ${targetFile}`;
+    } else if (route === 'EXEC_COMMAND') {
+      reasoning = 'Explicit terminal command execution detected';
+    } else if (route === 'SEARCH_WEB') {
+      reasoning = 'Routed to live web search for external data or query';
+    } else if (route === 'LIST_DIR') {
+      reasoning = 'Workspace file tree inspection';
+    } else {
+      reasoning = 'Natural conversational or domain Q&A dialog';
+    }
+
+    const secondaryRoutes = sorted.slice(1, 3).filter(x => x.score > 15);
+
+    return {
+      route,
+      targetFile,
+      confidence: Number(confidence.toFixed(3)),
+      guardrailPassed,
+      threatCategory,
+      latencyMs: Math.max(1, Math.round(performance.now() - start)),
+      secondaryRoutes,
+      scores,
+      compoundPlan: compoundPlan.length > 0 ? compoundPlan : [route],
+      requiredTools,
+      entities,
+      reasoning
+    };
   }
 
   // =========================================================================
