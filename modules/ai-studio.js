@@ -158,7 +158,8 @@
     }
 
     // B. SCHEDULE_CALENDAR Scoring
-    if (scores.AUTONOMOUS_TASK < 90) {
+    const isSoftwareEvent = /\b(event\s*(?:sourcing|driven|stream|emitter|loop|handler)|dom\s*event|mouse\s*event|click\s*event)\b/i.test(p);
+    if (scores.AUTONOMOUS_TASK < 90 && !isSoftwareEvent) {
       const isCalendarDirect = /\b(schedule|calendar|calander|calender|calndr|calndar|clendar|scheule|scheduale|sched|skedule|sked|sechdule|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours|agenda|timetable|itinerary)\b/i.test(p);
       const isCalendarQuery = /\b(check|show|view|see|inspect|what\s*(?:'s|\s*(?:is|are|do\s+i\s+have))?\s*(?:on|in|my)?)\b.*\b(calander|calendar|calender|calndr|scheule|scheduale|sched|skedule|agenda|timetable|itinerary|meetings?|events?|appointments?|routine|week|day)\b/i.test(p);
       const isCalendarRange = /\b(next\s+week'?s?|this\s+week'?s?|upcoming)\s+(scheule|schedule|sched|agenda|calendar|calander|calender|plan|events?|meetings?)\b/i.test(p);
@@ -197,8 +198,8 @@
       scores.VIEW_FILE += 55;
       if (targetExists) scores.VIEW_FILE += 25;
     }
-    if (/\b(search\s*code|find\s*(in\s*files|symbol|function|class|variable|regex|import)|grep|where\s*is\s*(the\s*)?(function|class|method|file))\b/i.test(p)) {
-      scores.VIEW_FILE += 60;
+    if (/\b(search\s*code|find\s*(in\s*files|symbol|function|class|variable|regex|import)|grep|where\s*is\b.*\b(function|class|method|defined|symbol)|defined\s*in\s*(?:the\s*)?(?:codebase|code|workspace|repo))\b/i.test(p)) {
+      scores.VIEW_FILE += 75;
     }
     if (/\[tool:view_file/i.test(p)) scores.VIEW_FILE += 90;
 
@@ -218,18 +219,18 @@
     if (isWebTopic) scores.SEARCH_WEB += 60;
     if (isWebVerb) scores.SEARCH_WEB += 50;
     if (/\[tool:search_web/i.test(p)) scores.SEARCH_WEB += 90;
-    if (/\b(in\s*files|in\s*code|in\s*codebase|in\s*workspace|in\s*vfs|in\s*project)\b/i.test(p) || targetExists) {
-      scores.SEARCH_WEB = Math.max(0, scores.SEARCH_WEB - 60);
+    if (/\b(in\s*(?:the\s*)?(?:files|code|codebase|workspace|vfs|project|repo))\b/i.test(p) || targetExists || /\b(defined\s*in|function|class)\b/i.test(p)) {
+      scores.SEARCH_WEB = Math.max(0, scores.SEARCH_WEB - 70);
     }
 
     // I. LIST_DIR Scoring
-    if (/^(ls|dir|list\s*files|tree|what\s*files|workspace\s*files)\b/i.test(p)) scores.LIST_DIR += 75;
+    if (/^(ls|dir|list\s*(all\s*)?files|list\s*dir|tree|what\s*files|workspace\s*files)\b/i.test(p) || /\b(list\s*(all\s*)?files\s*(in|of|workspace))\b/i.test(p)) scores.LIST_DIR += 80;
     if (/\[tool:list_dir/i.test(p)) scores.LIST_DIR += 90;
 
     // J. CONVERSATION Scoring
     if (/^(hi|hello|hey|howdy|greetings|good\s*(morning|afternoon|evening))\b/i.test(p)) scores.CONVERSATION += 50;
     if (hasQuestionPattern && scores.SCHEDULE_CALENDAR < 50 && scores.VIEW_FILE < 50 && scores.SEARCH_WEB < 50) scores.CONVERSATION += 45;
-    if (/\b(explain|teach|guide|clarify|what\s*is|difference\s*between|why\s*does)\b/i.test(p)) scores.CONVERSATION += 40;
+    if (/\b(explain|teach|guide|clarify|what\s*is|difference\s*between|why\s*does)\b/i.test(p)) scores.CONVERSATION += 50;
     if (/\b(thanks|thank\s*you|great\s*job|awesome)\b/i.test(p)) scores.CONVERSATION += 50;
 
     // 4. Compound Intent Resolution & Workflow Synthesis

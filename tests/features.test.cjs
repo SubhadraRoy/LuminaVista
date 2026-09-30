@@ -1903,6 +1903,10 @@ Deliver your completion report using this structure:
   const runJevMatrixSuite = require('./suite-jev-matrix.cjs');
   await runJevMatrixSuite({ assert, window, rootDir });
 
+  // Suite 24: Jev Ultra Cognitive Intelligence Engine (v4.0 Super-System)
+  const runJevUltraSuite = require('./suite-jev-ultra.cjs');
+  await runJevUltraSuite({ assert, window, rootDir });
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

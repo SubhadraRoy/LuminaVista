@@ -32,8 +32,10 @@
     { id: 'modules/personas/software-eng.js', label: 'personas/software-eng.js', cat: 'ai', type: 'Persona Domain', loc: 940, size: '47 KB', desc: '102 Software Engineering & Programming Language Specialist personas.' },
     { id: 'modules/personas/ai-data.js', label: 'personas/ai-data.js', cat: 'ai', type: 'Persona Domain', loc: 940, size: '47 KB', desc: '102 Artificial Intelligence, Deep Learning & Data Science personas.' },
     { id: 'modules/personas/devops-security.js', label: 'personas/devops-security.js', cat: 'ai', type: 'Persona Domain', loc: 940, size: '47 KB', desc: '102 DevOps, Cloud SRE & Cybersecurity Specialist personas.' },
-    { id: 'api/_lib/key-pool.js', label: 'key-pool.js', cat: 'ai', type: 'Failover Engine', loc: 200, size: '8 KB', desc: '8x Ollama Cloud & NVIDIA NIM multi-key pool with automated 429 rate-limit failover.' },
-    { id: 'api/_lib/jev-engine.js', label: 'jev-engine.js', cat: 'ai', type: 'S1 Decision Layer', loc: 710, size: '37 KB', desc: 'TypeSafe Jev System-1 sub-50ms intent classifier, safety guardrails, dynamic cognitive synthesis, and calendar directives.' },
+    { id: 'api/_lib/jev-engine.js', label: 'jev-engine.js', cat: 'ai', type: 'S1 Decision Layer', loc: 1476, size: '70 KB', desc: 'TypeSafe Jev Ultra Cognitive Matrix v4.0 with sub-1.5ms decision routing, 50+ domain semantic ontology, DAG planning, and typed judgments.' },
+    { id: 'api/_lib/jev/jev-tensor.js', label: 'jev-tensor.js', cat: 'ai', type: 'Semantic Matrix', loc: 237, size: '12 KB', desc: '50+ domain semantic vector tensor and calibrated confidence scoring.' },
+    { id: 'api/_lib/jev/jev-dag.js', label: 'jev-dag.js', cat: 'ai', type: 'DAG Synthesizer', loc: 109, size: '6 KB', desc: 'Dynamic tool execution graph generator with node dependencies and rollback policies.' },
+    { id: 'api/_lib/jev/jev-ask.js', label: 'jev-ask.js', cat: 'ai', type: 'Typed Decisions', loc: 167, size: '8 KB', desc: 'High-speed typed evaluation suite supporting noul, choice, score, rank, and gate.' },
 
     // Serverless APIs
     { id: 'api/chat.js', label: 'api/chat.js', cat: 'api', type: 'Serverless API', loc: 410, size: '17 KB', desc: 'Autonomous serverless agent loop with multi-key cloud failover, tool calling, and live VFS injection.' },
@@ -128,8 +130,10 @@
     { source: 'api/auth.js', target: 'api/_lib/redis.js' },
     { source: 'api/logout.js', target: 'api/_lib/auth-guard.js' },
 
-    { source: 'api/chat.js', target: 'api/_lib/key-pool.js' },
     { source: 'api/chat.js', target: 'api/_lib/jev-engine.js' },
+    { source: 'api/_lib/jev-engine.js', target: 'api/_lib/jev/jev-tensor.js' },
+    { source: 'api/_lib/jev-engine.js', target: 'api/_lib/jev/jev-dag.js' },
+    { source: 'api/_lib/jev-engine.js', target: 'api/_lib/jev/jev-ask.js' },
     { source: 'api/chat.js', target: 'api/_lib/auth-guard.js' },
     { source: 'api/chat.js', target: 'E2B MicroVM' },
 
