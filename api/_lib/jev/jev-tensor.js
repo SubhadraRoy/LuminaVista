@@ -9,6 +9,7 @@ export function scoreJevTensor(prompt = '', { entities = {}, targetFile = '', ta
   const scores = {
     AUTONOMOUS_TASK: 0,
     SCHEDULE_CALENDAR: 0,
+    DRAW_WHITEBOARD: 0,
     WRITE_FILE: 0,
     EDIT_FILE: 0,
     VIEW_FILE: 0,
@@ -90,6 +91,17 @@ export function scoreJevTensor(prompt = '', { entities = {}, targetFile = '', ta
     if (isCalendarRange) scores.SCHEDULE_CALENDAR += 55;
     if (isCalendarMutation) scores.SCHEDULE_CALENDAR += 70;
     if (/\[tool:schedule_event/i.test(p)) scores.SCHEDULE_CALENDAR += 90;
+  }
+
+  // =========================================================================
+  // 3. DRAW_WHITEBOARD Ontology Scoring
+  // =========================================================================
+  if (!isAutonomousTask) {
+    const isWhiteboardDirect = /\b(whiteboard|white\s*board|draw\s*on\s*whiteboard|whiteboard\s*pro|sketch|flowchart|architecture\s*diagram|system\s*diagram|mindmap|mind\s*map|erd\s*diagram|entity\s*relationship)\b/i.test(p);
+    const isWhiteboardAction = /\b(draw|sketch|visualize|render|generate|create|diagram|blueprint)\b/i.test(p) && /\b(whiteboard|white\s*board|canvas|diagram|flowchart|architecture|nodes?|sticky\s*notes?|er\s*diagram)\b/i.test(p);
+    if (isWhiteboardDirect) scores.DRAW_WHITEBOARD += 60;
+    if (isWhiteboardAction) scores.DRAW_WHITEBOARD += 45;
+    if (/\[tool:whiteboard/i.test(p)) scores.DRAW_WHITEBOARD += 95;
   }
 
   // =========================================================================

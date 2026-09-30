@@ -459,6 +459,67 @@ async function runBrowserTest() {
   `);
   test("Touchscreen drawing on laptop screen works seamlessly", touchDrawSuccess);
 
+  // 5b. Whiteboard Pro Multi-Board Gallery, AI Directives & Premium Features in Chrome
+  await evaluate("openWhiteboardGallery('templates')");
+  const isGalleryOpen = await evaluate("!document.getElementById('whiteboardGalleryModal').classList.contains('hidden')");
+  test("Whiteboard Gallery & Blueprints modal opened in Chrome", isGalleryOpen);
+
+  const templateCardCount = await evaluate("document.getElementById('galleryTemplatesGrid').children.length");
+  test(`Gallery rendered built-in architecture blueprint cards (Found: ${templateCardCount})`, templateCardCount >= 7);
+
+  await evaluate("LuminaWhiteboardGallery.closeGalleryModal()");
+  const isGalleryClosed = await evaluate("document.getElementById('whiteboardGalleryModal').classList.contains('hidden')");
+  test("Whiteboard Gallery modal closed in Chrome", isGalleryClosed);
+
+  // Load Microservices Blueprint in Chrome
+  await evaluate("LuminaWhiteboardGallery.loadTemplate('template_microservices', false)");
+  const hasStickies = await evaluate("(window.wbStickies || []).length > 0");
+  test("Rendered Microservices Blueprint onto canvas with stickies in Chrome", hasStickies);
+
+  // Test Multi-Board creation & switching
+  await evaluate("LuminaWhiteboardGallery.createNewBoard('Architecture v2')");
+  const activeBoardName = await evaluate("LuminaWhiteboardGallery.getCurrentActiveBoard().name");
+  test("Created and switched to new board 'Architecture v2' in Chrome", activeBoardName === 'Architecture v2');
+
+  // Test AI Diagram Assistant Modal
+  await evaluate("openWhiteboardAiAssistant()");
+  const isAiModalOpen = await evaluate("!document.getElementById('whiteboardAiModal').classList.contains('hidden')");
+  test("AI Diagram Assistant modal opened in Chrome", isAiModalOpen);
+
+  await evaluate("LuminaWhiteboardAi.closeAiModal()");
+  const isAiModalClosed = await evaluate("document.getElementById('whiteboardAiModal').classList.contains('hidden')");
+  test("AI Diagram Assistant modal closed in Chrome", isAiModalClosed);
+
+  // Test Smart Shapes (diamond, cylinder, cloud, star, laser)
+  await evaluate("setWbTool('diamond')");
+  const isDiamond = await evaluate("window.wbTool === 'diamond'");
+  test("Selected Smart Shape: Diamond Decision in Chrome", isDiamond);
+
+  await evaluate("setWbTool('laser')");
+  const isLaser = await evaluate("window.wbTool === 'laser'");
+  test("Selected Presentation Tool: Laser Pointer in Chrome", isLaser);
+
+  // Test Background Style Switcher
+  await evaluate("setWhiteboardBackground('blueprint')");
+  const isBlueprintBg = await evaluate("document.getElementById('whiteboardContainer').classList.contains('bg-blueprint-pattern')");
+  test("Whiteboard background switched to Blueprint style in Chrome", isBlueprintBg);
+
+  // Test Zoom Engine
+  await evaluate("zoomIn()");
+  const zoomInVal = await evaluate("window.wbZoom > 1.0");
+  test("Whiteboard zoomIn increases scale in Chrome", zoomInVal);
+
+  await evaluate("resetZoom()");
+  const zoomResetVal = await evaluate("window.wbZoom === 1.0");
+  test("Whiteboard resetZoom restores 100% scale in Chrome", zoomResetVal);
+
+  // Test Retina PNG and SVG export execution in Chrome
+  const svgResult = await evaluate("downloadWhiteboardSvg()");
+  test("SVG export generates valid vector markup in Chrome", typeof svgResult === 'string' && svgResult.includes('<svg'));
+
+  const jsonResult = await evaluate("exportWhiteboardJson()");
+  test("JSON scene export generates valid payload in Chrome", typeof jsonResult === 'string' && jsonResult.includes('"version": "2.0"'));
+
   // 6. Notes Markdown Editor & Preview Mode Switcher
   await evaluate("switchTab('tab-scratchpad')");
   await evaluate("setNoteViewMode('split')");

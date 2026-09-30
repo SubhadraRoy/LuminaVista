@@ -126,6 +126,7 @@
     const scores = {
       AUTONOMOUS_TASK: 0,
       SCHEDULE_CALENDAR: 0,
+      DRAW_WHITEBOARD: 0,
       WRITE_FILE: 0,
       EDIT_FILE: 0,
       VIEW_FILE: 0,
@@ -167,6 +168,15 @@
       if (isCalendarQuery) scores.SCHEDULE_CALENDAR += 60;
       if (isCalendarRange) scores.SCHEDULE_CALENDAR += 55;
       if (/\[tool:schedule_event/i.test(p)) scores.SCHEDULE_CALENDAR += 90;
+    }
+
+    // DRAW_WHITEBOARD Scoring
+    if (scores.AUTONOMOUS_TASK < 90) {
+      const isWhiteboardDirect = /\b(whiteboard|white\s*board|draw\s*on\s*whiteboard|whiteboard\s*pro|sketch|flowchart|architecture\s*diagram|system\s*diagram|mindmap|mind\s*map|erd\s*diagram|entity\s*relationship)\b/i.test(p);
+      const isWhiteboardAction = /\b(draw|sketch|visualize|render|generate|create|diagram|blueprint)\b/i.test(p) && /\b(whiteboard|white\s*board|canvas|diagram|flowchart|architecture|nodes?|sticky\s*notes?|er\s*diagram)\b/i.test(p);
+      if (isWhiteboardDirect) scores.DRAW_WHITEBOARD += 60;
+      if (isWhiteboardAction) scores.DRAW_WHITEBOARD += 45;
+      if (/\[tool:whiteboard/i.test(p)) scores.DRAW_WHITEBOARD += 95;
     }
 
     // C. DELETE_FILE Scoring
@@ -994,7 +1004,31 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       }
     }
 
-    // 9. Task Complete
+    // 9. Whiteboard Directive (Draw diagram, flowcharts, templates, stickies)
+    const wbRegex = /\[TOOL:WHITEBOARD([^\]]*)\](?:([\s\S]*?)\[\/TOOL:WHITEBOARD\])?/g;
+    let wbMatch;
+    while ((wbMatch = wbRegex.exec(rawText)) !== null) {
+      if (window.LuminaWhiteboard && window.LuminaWhiteboard.handleAgentDirective) {
+        setThinkingOrbState("shaping");
+        const attrStr = wbMatch[1] || '';
+        const bodyContent = wbMatch[2] || '';
+        const attrs = {};
+        const attrRegex = /([a-zA-Z0-9_\-]+)="([^"]*)"/g;
+        let aMatch;
+        while ((aMatch = attrRegex.exec(attrStr)) !== null) {
+          attrs[aMatch[1]] = aMatch[2];
+        }
+
+        const wbRes = window.LuminaWhiteboard.handleAgentDirective(attrs, bodyContent);
+        if (wbRes && wbRes.success) {
+          results.push(`[TOOL_RESULT:WHITEBOARD action="${wbRes.action}" status="success" nodes="${wbRes.nodeCount}"]\n${wbRes.summary}\n[/TOOL_RESULT:WHITEBOARD]`);
+        } else {
+          results.push(`[TOOL_RESULT:WHITEBOARD status="error"]\n${wbRes ? wbRes.summary : 'Failed to execute whiteboard directive'}\n[/TOOL_RESULT:WHITEBOARD]`);
+        }
+      }
+    }
+
+    // 10. Task Complete
     const completeRegex = /\[TOOL:TASK_COMPLETE(?: summary="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:TASK_COMPLETE\])?/g;
     let cMatch;
     while ((cMatch = completeRegex.exec(rawText)) !== null) {

@@ -317,6 +317,38 @@
           </button>
         </div>`);
       })
+      .replace(/\[TOOL:WHITEBOARD([^\]]*)\](?:([\s\S]*?)\[\/TOOL:WHITEBOARD\])?/g, (m, attrStr) => {
+        const attrs = {};
+        const attrRegex = /([a-zA-Z0-9_\-]+)="([^"]*)"/g;
+        let aMatch;
+        while ((aMatch = attrRegex.exec(attrStr || '')) !== null) {
+          attrs[aMatch[1]] = aMatch[2];
+        }
+        const act = (attrs.action || 'draw').toLowerCase();
+        const titleStr = attrs.title || attrs.name || 'System Architecture';
+
+        let badgeColor = 'fuchsia';
+        let iconName = 'layout';
+        let label = 'AI Whiteboard Visualized';
+        if (act === 'clear') {
+          label = 'Whiteboard Cleared';
+          badgeColor = 'rose';
+          iconName = 'trash-2';
+        } else if (act === 'template') {
+          label = 'Whiteboard Blueprint Loaded';
+          badgeColor = 'cyan';
+        }
+
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-${badgeColor}-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-${badgeColor}-300">
+          <div class="flex items-center gap-2">
+            <i data-lucide="${iconName}" class="w-4 h-4 text-${badgeColor}-400 shrink-0"></i>
+            <span><strong>${label}:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(titleStr)}</code></span>
+          </div>
+          <button onclick="switchTab('tab-whiteboard')" class="px-2.5 py-1 rounded-lg bg-${badgeColor}-500/20 hover:bg-${badgeColor}-500/30 text-${badgeColor}-200 text-[11px] font-semibold border border-${badgeColor}-500/40 cursor-pointer flex items-center gap-1 transition-colors">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open Whiteboard Pro
+          </button>
+        </div>`);
+      })
       .replace(/\[TOOL:TASK_COMPLETE(?: summary="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:TASK_COMPLETE\])?/g, (m, s1, s2) => {
         const sum = s1 || (s2 ? s2.trim() : "All autonomous tasks completed.");
         return storeSnippet(`<div class="my-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl shadow-xl flex items-start gap-3 font-sans text-xs text-emerald-200">

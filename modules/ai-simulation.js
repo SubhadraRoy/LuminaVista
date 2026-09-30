@@ -923,6 +923,55 @@ if __name__ == "__main__":
         `[TOOL:TASK_COMPLETE summary="Calendar Event Scheduled"]`;
     }
 
+    // Whiteboard Pro Diagramming Intent
+    if (jev.route === 'DRAW_WHITEBOARD') {
+      let cleanTitle = pTrim.replace(/\b(draw|sketch|visualize|render|open|generate|create|on|the|whiteboard|white\s*board|pro)\b/gi, '').trim() || 'Architecture Blueprint';
+      if (cleanTitle.length > 50) cleanTitle = cleanTitle.slice(0, 50).trim();
+
+      let matchedTemplate = '';
+      let templateName = '';
+      if (/\b(microservices?|distributed|api\s*gateway|event\s*driven)\b/i.test(pTrim)) {
+        matchedTemplate = 'template_microservices';
+        templateName = 'Microservices & Distributed Gateway Architecture';
+      } else if (/\b(serverless|vector|rag|embeddings?|ai\s*pipeline|llm\s*pipeline)\b/i.test(pTrim)) {
+        matchedTemplate = 'template_serverless_ai';
+        templateName = 'Cloud AI & Vector Pipeline';
+      } else if (/\b(zero\s*trust|enclave|kms|security|firewall|vault)\b/i.test(pTrim)) {
+        matchedTemplate = 'template_zero_trust';
+        templateName = 'Zero-Trust Secure Enclaves & KMS';
+      } else if (/\b(database|erd|schema|ecommerce|tables?|relational|sql)\b/i.test(pTrim)) {
+        matchedTemplate = 'template_ecommerce_erd';
+        templateName = 'E-Commerce Database ERD';
+      } else if (/\b(oauth|auth|jwt|login|sso|identity|pkce)\b/i.test(pTrim)) {
+        matchedTemplate = 'template_oauth_flow';
+        templateName = 'OAuth2.0 / OIDC & PKCE Flow';
+      } else if (/\b(kanban|agile|sprint|scrum|backlog|board)\b/i.test(pTrim)) {
+        matchedTemplate = 'template_kanban';
+        templateName = 'Agile Sprint Kanban Board';
+      } else if (/\b(mindmap|mind\s*map|brainstorm|strategy|ideas?)\b/i.test(pTrim)) {
+        matchedTemplate = 'template_mindmap';
+        templateName = 'Cognitive Systems Mind Map';
+      }
+
+      if (matchedTemplate) {
+        return thoughts +
+          `### Whiteboard Pro: Architectural Blueprint Synthesized\n\n` +
+          `I have rendered the **${templateName}** onto your Whiteboard Pro canvas with interactive nodes, connectors, and stickies.\n\n` +
+          `[TOOL:WHITEBOARD action="template" template="${matchedTemplate}" title="${escapeHtml(templateName)}"][/TOOL:WHITEBOARD]\n\n` +
+          `• **Canvas State**: Rendered high-fidelity nodes, typed connectors, and sticky annotations.\n` +
+          `• **Whiteboard Gallery**: Saved to your board list for export to Retina PNG, vector SVG, or JSON.\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Rendered ${templateName} on Whiteboard Pro."][/TOOL:TASK_COMPLETE]`;
+      }
+
+      return thoughts +
+        `### Whiteboard Pro: Custom Diagram Synthesized\n\n` +
+        `Rendering custom architectural model and flowchart for "${escapeHtml(cleanTitle)}" onto your Whiteboard Pro canvas:\n\n` +
+        `[TOOL:WHITEBOARD action="draw" title="${escapeHtml(cleanTitle)}" type="architecture"]${escapeHtml(pTrim)}[/TOOL:WHITEBOARD]\n\n` +
+        `• **Canvas State**: Rendered dynamic nodes, bidirectional connectors, and contextual sticky notes.\n` +
+        `• **Export Ready**: Available for instant presentation, Laser Mode inspection, and SVG/Retina PNG export.\n\n` +
+        `[TOOL:TASK_COMPLETE summary="Synthesized visual diagram for '${escapeHtml(cleanTitle)}' on Whiteboard Pro."][/TOOL:TASK_COMPLETE]`;
+    }
+
     // 2. Search Web intent
     if (jev.route === 'SEARCH_WEB') {
       let cleanQuery = pTrim

@@ -21,6 +21,14 @@
   let strokePoints = [];
   let activePointerId = null;
 
+  // Premium Features State (Laser, Background, Zoom/Pan)
+  let laserPoints = [];
+  let laserAnimId = null;
+  window.wbZoom = 1.0;
+  window.wbPanX = 0;
+  window.wbPanY = 0;
+  window.wbBackground = 'dots';
+
   function initWhiteboard() {
     const mainCv = document.getElementById("whiteboardCanvas");
     const tempCv = document.getElementById("whiteboardTempCanvas");
@@ -241,6 +249,47 @@
       const ctx = mainCv.getContext("2d");
       ctx.beginPath();
       ctx.moveTo(startX, startY);
+    } else if (window.wbTool === 'laser') {
+      laserPoints = [{ x: startX, y: startY, time: Date.now() }];
+      if (!laserAnimId) {
+        laserAnimId = requestAnimationFrame(renderLaserTrail);
+      }
+    }
+  }
+
+  function renderLaserTrail() {
+    const tempCv = document.getElementById("whiteboardTempCanvas");
+    if (!tempCv) return;
+    const ctx = tempCv.getContext("2d");
+    const now = Date.now();
+    laserPoints = laserPoints.filter(p => now - p.time < 1100);
+
+    ctx.clearRect(0, 0, tempCv.width, tempCv.height);
+
+    if (laserPoints.length > 1) {
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = window.wbColor || '#f43f5e';
+
+      for (let i = 1; i < laserPoints.length; i++) {
+        const p1 = laserPoints[i - 1];
+        const p2 = laserPoints[i];
+        const age = now - p2.time;
+        const alpha = Math.max(0, 1 - age / 1100);
+
+        ctx.strokeStyle = hexToRgba(window.wbColor || '#f43f5e', alpha);
+        ctx.lineWidth = Math.max(2, window.wbSize * 2.2 * alpha);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+      laserAnimId = requestAnimationFrame(renderLaserTrail);
+    } else {
+      laserAnimId = null;
     }
   }
 
@@ -269,7 +318,12 @@
       const curX = coords.x;
       const curY = coords.y;
 
-      if (window.wbTool === 'pen' || window.wbTool === 'highlighter' || window.wbTool === 'eraser') {
+      if (window.wbTool === 'laser') {
+        laserPoints.push({ x: curX, y: curY, time: Date.now() });
+        if (!laserAnimId) {
+          laserAnimId = requestAnimationFrame(renderLaserTrail);
+        }
+      } else if (window.wbTool === 'pen' || window.wbTool === 'highlighter' || window.wbTool === 'eraser') {
         mCtx.save();
         mCtx.lineCap = "round";
         mCtx.lineJoin = "round";
@@ -343,7 +397,7 @@
     const mCtx = mainCv.getContext("2d");
     const tCtx = tempCv.getContext("2d");
 
-    if (window.wbTool !== 'pen' && window.wbTool !== 'highlighter' && window.wbTool !== 'eraser') {
+    if (window.wbTool !== 'pen' && window.wbTool !== 'highlighter' && window.wbTool !== 'eraser' && window.wbTool !== 'laser') {
       // Clear temp canvas and commit shape onto main canvas
       tCtx.clearRect(0, 0, wrap.clientWidth, wrap.clientHeight);
       saveWbState();
@@ -453,6 +507,68 @@
       const ry = Math.abs(y2 - y1) / 2;
       ctx.beginPath();
       ctx.ellipse(cx, cy, Math.max(1, rx), Math.max(1, ry), 0, 0, Math.PI * 2);
+      if (fill) ctx.fill();
+      ctx.stroke();
+    } else if (tool === 'diamond') {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, Math.min(y1, y2));
+      ctx.lineTo(Math.max(x1, x2), cy);
+      ctx.lineTo(cx, Math.max(y1, y2));
+      ctx.lineTo(Math.min(x1, x2), cy);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      ctx.stroke();
+    } else if (tool === 'cylinder') {
+      const rx = Math.abs(x2 - x1) / 2;
+      const ry = Math.min(18, Math.abs(y2 - y1) / 4);
+      const cx = Math.min(x1, x2) + rx;
+      const topY = Math.min(y1, y2) + ry;
+      const botY = Math.max(y1, y2) - ry;
+      ctx.beginPath();
+      ctx.ellipse(cx, topY, Math.max(1, rx), Math.max(1, ry), 0, 0, Math.PI * 2);
+      if (fill) ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx - rx, topY);
+      ctx.lineTo(cx - rx, botY);
+      ctx.ellipse(cx, botY, Math.max(1, rx), Math.max(1, ry), 0, Math.PI, 0, true);
+      ctx.lineTo(cx + rx, topY);
+      if (fill) ctx.fill();
+      ctx.stroke();
+    } else if (tool === 'cloud') {
+      const minX = Math.min(x1, x2);
+      const minY = Math.min(y1, y2);
+      const w = Math.abs(x2 - x1);
+      const h = Math.abs(y2 - y1);
+      const cx = minX + w / 2;
+      const cy = minY + h / 2;
+      const r = Math.min(w, h) / 3.2;
+      ctx.beginPath();
+      ctx.arc(cx - r * 0.9, cy, Math.max(1, r * 0.7), 0, Math.PI * 2);
+      ctx.arc(cx, cy - r * 0.6, Math.max(1, r * 0.9), 0, Math.PI * 2);
+      ctx.arc(cx + r * 0.9, cy, Math.max(1, r * 0.7), 0, Math.PI * 2);
+      ctx.arc(cx, cy + r * 0.4, Math.max(1, r * 0.8), 0, Math.PI * 2);
+      if (fill) ctx.fill();
+      ctx.stroke();
+    } else if (tool === 'star') {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const rOuter = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1)) / 2;
+      const rInner = rOuter * 0.45;
+      const points = 5;
+      ctx.beginPath();
+      for (let i = 0; i < points * 2; i++) {
+        const angle = (i * Math.PI) / points - Math.PI / 2;
+        const r = i % 2 === 0 ? rOuter : rInner;
+        const px = cx + r * Math.cos(angle);
+        const py = cy + r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
       if (fill) ctx.fill();
       ctx.stroke();
     }
@@ -713,8 +829,9 @@
   function setWbTool(tool) {
     window.wbTool = tool;
     const toolIds = [
-      'wbToolSelect', 'wbToolPen', 'wbToolHighlighter', 'wbToolLine',
-      'wbToolArrow', 'wbToolRect', 'wbToolRoundedRect', 'wbToolCircle',
+      'wbToolSelect', 'wbToolPen', 'wbToolHighlighter', 'wbToolLaser',
+      'wbToolLine', 'wbToolArrow', 'wbToolRect', 'wbToolRoundedRect', 'wbToolCircle',
+      'wbToolDiamond', 'wbToolCylinder', 'wbToolCloud', 'wbToolStar',
       'wbToolSticky', 'wbToolText', 'wbToolEraser'
     ];
     toolIds.forEach(id => {
@@ -728,11 +845,16 @@
       'select': 'wbToolSelect',
       'pen': 'wbToolPen',
       'highlighter': 'wbToolHighlighter',
+      'laser': 'wbToolLaser',
       'line': 'wbToolLine',
       'arrow': 'wbToolArrow',
       'rect': 'wbToolRect',
       'roundedRect': 'wbToolRoundedRect',
       'circle': 'wbToolCircle',
+      'diamond': 'wbToolDiamond',
+      'cylinder': 'wbToolCylinder',
+      'cloud': 'wbToolCloud',
+      'star': 'wbToolStar',
       'sticky': 'wbToolSticky',
       'text': 'wbToolText',
       'eraser': 'wbToolEraser'
@@ -748,6 +870,7 @@
     if (mainCv) {
       if (tool === 'select') mainCv.style.cursor = 'default';
       else if (tool === 'text') mainCv.style.cursor = 'text';
+      else if (tool === 'laser') mainCv.style.cursor = 'crosshair';
       else mainCv.style.cursor = 'crosshair';
     }
   }
@@ -882,6 +1005,222 @@
     });
   }
 
+  function clearWhiteboardSilently() {
+    saveWbState();
+    const mainCv = document.getElementById("whiteboardCanvas");
+    const wrap = document.getElementById("whiteboardContainer");
+    if (mainCv && wrap) {
+      mainCv.getContext("2d").clearRect(0, 0, wrap.clientWidth, wrap.clientHeight);
+      localStorage.removeItem("lumina_wb_state");
+    }
+    window.wbStickies = [];
+    saveStickies();
+    const stickyContainer = document.getElementById("whiteboardStickyContainer");
+    if (stickyContainer) stickyContainer.innerHTML = "";
+  }
+
+  // --- Background Grid Modes ---
+  function setWhiteboardBackground(bgType) {
+    const wrap = document.getElementById("whiteboardContainer");
+    if (!wrap) return;
+    wrap.classList.remove('bg-dot-pattern', 'bg-grid-pattern', 'bg-blueprint-pattern', 'bg-clean');
+    window.wbBackground = bgType;
+    if (bgType === 'grid') {
+      wrap.classList.add('bg-grid-pattern');
+    } else if (bgType === 'blueprint') {
+      wrap.classList.add('bg-blueprint-pattern');
+    } else if (bgType === 'clean') {
+      wrap.classList.add('bg-clean');
+    } else {
+      wrap.classList.add('bg-dot-pattern');
+    }
+    const bgSelect = document.getElementById("wbBgSelect");
+    if (bgSelect) bgSelect.value = bgType;
+    localStorage.setItem('lumina_wb_bg', bgType);
+    if (window.showToast) window.showToast("Canvas Background", `Grid pattern set to ${bgType}.`);
+  }
+
+  // --- Zoom & Pan Engine ---
+  function setWbZoom(level) {
+    const clamped = Math.max(0.25, Math.min(3.0, Math.round(level * 100) / 100));
+    window.wbZoom = clamped;
+    const label = document.getElementById("wbZoomLabel");
+    if (label) label.textContent = `${Math.round(clamped * 100)}%`;
+    applyCanvasTransform();
+  }
+
+  function zoomIn() {
+    setWbZoom(window.wbZoom + 0.15);
+  }
+
+  function zoomOut() {
+    setWbZoom(window.wbZoom - 0.15);
+  }
+
+  function resetZoom() {
+    window.wbPanX = 0;
+    window.wbPanY = 0;
+    setWbZoom(1.0);
+  }
+
+  function applyCanvasTransform() {
+    const mainCv = document.getElementById("whiteboardCanvas");
+    const tempCv = document.getElementById("whiteboardTempCanvas");
+    const stickyContainer = document.getElementById("whiteboardStickyContainer");
+    const scaleStr = `scale(${window.wbZoom}) translate(${window.wbPanX}px, ${window.wbPanY}px)`;
+    if (mainCv) mainCv.style.transform = scaleStr;
+    if (tempCv) tempCv.style.transform = scaleStr;
+    if (stickyContainer) stickyContainer.style.transform = scaleStr;
+  }
+
+  // --- Retina & Multi-Format Export Suite ---
+  function downloadWhiteboardRetina(scale = 2) {
+    const mainCv = document.getElementById("whiteboardCanvas");
+    const wrap = document.getElementById("whiteboardContainer");
+    if (!mainCv || !wrap) return;
+
+    const w = wrap.clientWidth || 1200;
+    const h = wrap.clientHeight || 800;
+
+    const offscreen = document.createElement("canvas");
+    offscreen.width = w * scale;
+    offscreen.height = h * scale;
+    const oCtx = offscreen.getContext("2d");
+
+    // Draw background
+    oCtx.fillStyle = "#030712";
+    oCtx.fillRect(0, 0, offscreen.width, offscreen.height);
+
+    // Draw main canvas content
+    oCtx.drawImage(mainCv, 0, 0, offscreen.width, offscreen.height);
+
+    // Render stickies onto the export canvas
+    (window.wbStickies || []).forEach(s => {
+      const sx = s.x * scale;
+      const sy = s.y * scale;
+      const sw = 192 * scale;
+      const sh = 120 * scale;
+
+      oCtx.save();
+      oCtx.fillStyle = s.color || "#fef08a";
+      oCtx.shadowColor = "rgba(0,0,0,0.4)";
+      oCtx.shadowBlur = 10 * scale;
+      oCtx.fillRect(sx, sy, sw, sh);
+      oCtx.shadowBlur = 0;
+
+      oCtx.fillStyle = "#1e293b";
+      oCtx.font = `${Math.round(11 * scale)}px 'Plus Jakarta Sans', sans-serif`;
+      const textLines = (s.text || "").split("\n");
+      textLines.forEach((line, idx) => {
+        if (idx < 5) oCtx.fillText(line, sx + 12 * scale, sy + (22 + idx * 16) * scale);
+      });
+      oCtx.restore();
+    });
+
+    const a = document.createElement("a");
+    a.href = offscreen.toDataURL("image/png");
+    a.download = `whiteboard_retina_${scale}x_${Date.now()}.png`;
+    a.click();
+
+    if (window.showToast) window.showToast("Retina Export Ready", `Exported at ${scale}x Ultra High-Res.`);
+  }
+
+  function downloadWhiteboardSvg() {
+    const mainCv = document.getElementById("whiteboardCanvas");
+    const wrap = document.getElementById("whiteboardContainer");
+    if (!mainCv || !wrap) return;
+
+    const w = wrap.clientWidth || 1200;
+    const h = wrap.clientHeight || 800;
+    const dataUrl = mainCv.toDataURL("image/png");
+
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <rect width="100%" height="100%" fill="#030712"/>
+  <image href="${dataUrl}" width="${w}" height="${h}"/>
+</svg>`;
+
+    if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+      try {
+        const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `whiteboard_${Date.now()}.svg`;
+        a.click();
+        setTimeout(() => { if (URL.revokeObjectURL) URL.revokeObjectURL(url); }, 2000);
+      } catch (e) {}
+    }
+
+    if (window.showToast) window.showToast("SVG Exported", "Vector SVG downloaded.");
+    return svgContent;
+  }
+
+  function exportWhiteboardJson() {
+    const mainCv = document.getElementById("whiteboardCanvas");
+    const activeBoard = window.LuminaWhiteboardGallery ? window.LuminaWhiteboardGallery.getCurrentActiveBoard() : null;
+
+    const sceneData = {
+      version: "2.0",
+      boardName: activeBoard ? activeBoard.name : "Whiteboard",
+      exportedAt: new Date().toISOString(),
+      stickies: window.wbStickies || [],
+      background: window.wbBackground || 'dots',
+      imageData: mainCv ? mainCv.toDataURL("image/png") : null
+    };
+
+    const jsonStr = JSON.stringify(sceneData, null, 2);
+    if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+      try {
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `whiteboard_scene_${Date.now()}.json`;
+        a.click();
+        setTimeout(() => { if (URL.revokeObjectURL) URL.revokeObjectURL(url); }, 2000);
+      } catch (e) {}
+    }
+
+    if (window.showToast) window.showToast("Scene Saved", "Whiteboard JSON exported.");
+    return jsonStr;
+  }
+
+  function importWhiteboardJson(fileOrJson) {
+    try {
+      const data = typeof fileOrJson === 'string' ? JSON.parse(fileOrJson) : fileOrJson;
+      if (!data) return;
+
+      clearWhiteboardSilently();
+
+      if (data.background) setWhiteboardBackground(data.background);
+
+      if (data.imageData) {
+        const mainCv = document.getElementById("whiteboardCanvas");
+        const wrap = document.getElementById("whiteboardContainer");
+        if (mainCv && wrap) {
+          const ctx = mainCv.getContext("2d");
+          const img = new Image();
+          img.src = data.imageData;
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, wrap.clientWidth, wrap.clientHeight);
+            saveWbState();
+          };
+        }
+      }
+
+      if (Array.isArray(data.stickies)) {
+        data.stickies.forEach(s => {
+          createStickyNote(s.x, s.y, s.text, s.color);
+        });
+      }
+
+      if (window.showToast) window.showToast("Scene Restored", `Imported "${data.boardName || 'Whiteboard'}"`);
+    } catch (err) {
+      console.error("[Whiteboard] Error importing JSON scene:", err);
+      if (window.showToast) window.showToast("Import Failed", "Invalid whiteboard JSON scene format.");
+    }
+  }
+
   // Window Exports
   window.initWhiteboard = initWhiteboard;
   window.resizeWhiteboard = resizeWhiteboard;
@@ -896,10 +1235,68 @@
   window.redoWhiteboard = redoWhiteboard;
   window.toggleWhiteboardGrid = toggleWhiteboardGrid;
   window.clearWhiteboard = clearWhiteboard;
+  window.clearWhiteboardSilently = clearWhiteboardSilently;
   window.downloadWhiteboard = downloadWhiteboard;
+  window.downloadWhiteboardRetina = downloadWhiteboardRetina;
+  window.downloadWhiteboardSvg = downloadWhiteboardSvg;
+  window.exportWhiteboardJson = exportWhiteboardJson;
+  window.importWhiteboardJson = importWhiteboardJson;
   window.copyWhiteboardImage = copyWhiteboardImage;
   window.createStickyNote = createStickyNote;
   window.changeStickyColor = changeStickyColor;
   window.removeStickyNote = removeStickyNote;
+  window.setWhiteboardBackground = setWhiteboardBackground;
+  window.setWbZoom = setWbZoom;
+  window.zoomIn = zoomIn;
+  window.zoomOut = zoomOut;
+  window.resetZoom = resetZoom;
+  window.openWhiteboardGallery = (tab) => {
+    if (window.LuminaWhiteboardGallery) window.LuminaWhiteboardGallery.openGalleryModal(tab);
+  };
+  window.openWhiteboardAiAssistant = () => {
+    if (window.LuminaWhiteboardAi) window.LuminaWhiteboardAi.openAiModal();
+  };
+
+  // Unified LuminaWhiteboard Pro API
+  window.LuminaWhiteboard = {
+    init: initWhiteboard,
+    drawShape: (tool, x1, y1, x2, y2, color, size, fill) => {
+      const cv = document.getElementById("whiteboardCanvas");
+      if (cv) drawShape(cv.getContext("2d"), tool, x1, y1, x2, y2, color || window.wbColor, size || window.wbSize, fill || window.wbFill);
+    },
+    drawDiagram: (spec) => {
+      if (window.LuminaWhiteboardGallery && window.LuminaWhiteboardGallery.renderDiagramDirect) {
+        window.LuminaWhiteboardGallery.renderDiagramDirect(spec);
+      }
+    },
+    handleAgentDirective: (attrs, body) => {
+      if (window.LuminaWhiteboardAi && window.LuminaWhiteboardAi.handleAgentDirective) {
+        return window.LuminaWhiteboardAi.handleAgentDirective(attrs, body);
+      }
+      return { success: false, summary: 'AI module not mounted' };
+    },
+    openGallery: (tab) => {
+      if (window.LuminaWhiteboardGallery) window.LuminaWhiteboardGallery.openGalleryModal(tab);
+    },
+    openAiAssistant: () => {
+      if (window.LuminaWhiteboardAi) window.LuminaWhiteboardAi.openAiModal();
+    },
+    loadTemplate: (id, asNew) => {
+      if (window.LuminaWhiteboardGallery) return window.LuminaWhiteboardGallery.loadTemplate(id, asNew);
+      return false;
+    },
+    setBackground: setWhiteboardBackground,
+    setZoom: setWbZoom,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    exportRetinaPng: downloadWhiteboardRetina,
+    exportSvg: downloadWhiteboardSvg,
+    exportJson: exportWhiteboardJson,
+    importJson: importWhiteboardJson,
+    addSticky: createStickyNote,
+    clearCanvas: clearWhiteboard,
+    clearCanvasSilently: clearWhiteboardSilently
+  };
 
 })(window);

@@ -59,6 +59,7 @@ window.HTMLCanvasElement.prototype.getContext = function() {
     clearRect: () => {},
     fillRect: () => {},
     strokeRect: () => {},
+    rect: () => {},
     beginPath: () => {},
     closePath: () => {},
     moveTo: () => {},
@@ -119,6 +120,8 @@ const moduleFiles = [
   'modules/voice-studio.js',
   'modules/compiler.js',
   'modules/terminal.js',
+  'modules/whiteboard-gallery.js',
+  'modules/whiteboard-ai.js',
   'modules/whiteboard.js',
   'modules/notes.js',
   'modules/projects.js',
@@ -1948,6 +1951,10 @@ Deliver your completion report using this structure:
   // Suite 25: Mobile Gyroscope 3D Card Tilt & Phone Interaction
   const runMobileGyroSuite = require('./suite-mobile-gyro.cjs');
   await runMobileGyroSuite({ assert, window, rootDir });
+
+  // Suite 26: Whiteboard Pro Multi-Board Gallery, AI Directives & Premium Features
+  const runWhiteboardSuite = require('./suite-whiteboard.cjs');
+  await runWhiteboardSuite({ assert, window, document, rootDir });
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

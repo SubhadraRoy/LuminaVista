@@ -751,19 +751,37 @@
       <!-- TAB 4: WHITEBOARD PRO (Advanced Vector & Freehand Studio)            -->
       <!-- ===================================================================== -->
       <section id="tab-whiteboard" class="tab-pane hidden h-full flex flex-col space-y-3 min-h-0">
-        <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+        <div class="glass-panel rounded-2xl p-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
           
-          <!-- Tool Palette -->
-          <div class="flex items-center gap-1 bg-surface-900/90 p-1.5 rounded-xl border border-white/10 text-xs">
+          <!-- Board Manager & Templates + AI Studio Buttons -->
+          <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs">
+            <select id="wbBoardSelector" onchange="LuminaWhiteboardGallery.switchBoard(this.value)" class="godx-input px-2.5 py-1 text-xs font-mono cursor-pointer rounded-lg bg-surface-955 border border-white/10 text-cyan-300 max-w-[140px] truncate" title="Active Whiteboard">
+              <option value="board_default">Main Whiteboard</option>
+            </select>
+            <button onclick="openWhiteboardGallery('templates')" class="px-2.5 py-1.5 rounded-lg bg-surface-950 hover:bg-surface-850 text-cyan-400 font-semibold border border-cyan-500/20 cursor-pointer flex items-center gap-1" title="Blueprint Templates & Gallery">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Gallery
+            </button>
+            <button onclick="openWhiteboardAiAssistant()" class="btn-gradient px-3 py-1.5 rounded-lg text-black font-bold cursor-pointer shadow-md flex items-center gap-1" title="AI Diagram Generator">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI Diagram
+            </button>
+          </div>
+
+          <!-- Tool Palette (with Smart Shapes & Laser Presentation Mode) -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1.5 rounded-xl border border-white/10 text-xs overflow-x-auto">
             <button onclick="setWbTool('select')" id="wbToolSelect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Select / Move"><i data-lucide="mouse-pointer" class="w-4 h-4"></i></button>
             <button onclick="setWbTool('pen')" id="wbToolPen" class="p-2 rounded-lg bg-cyan-500 text-black cursor-pointer transition-colors" title="Brush / Freehand"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
             <button onclick="setWbTool('highlighter')" id="wbToolHighlighter" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Highlighter (Glow Marker)"><i data-lucide="highlighter" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('laser')" id="wbToolLaser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Laser Pointer (Presentation Trail)"><i data-lucide="zap" class="w-4 h-4"></i></button>
             <div class="w-px h-5 bg-white/10 mx-0.5"></div>
             <button onclick="setWbTool('line')" id="wbToolLine" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Straight Line"><i data-lucide="minus" class="w-4 h-4"></i></button>
             <button onclick="setWbTool('arrow')" id="wbToolArrow" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Directional Arrow"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></button>
             <button onclick="setWbTool('rect')" id="wbToolRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Rectangle"><i data-lucide="square" class="w-4 h-4"></i></button>
             <button onclick="setWbTool('roundedRect')" id="wbToolRoundedRect" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Rounded Rectangle"><i data-lucide="rectangle-horizontal" class="w-4 h-4"></i></button>
             <button onclick="setWbTool('circle')" id="wbToolCircle" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Circle / Ellipse"><i data-lucide="circle" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('diamond')" id="wbToolDiamond" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Decision Diamond"><i data-lucide="rhombus" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('cylinder')" id="wbToolCylinder" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Database Cylinder"><i data-lucide="database" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('cloud')" id="wbToolCloud" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Cloud Boundary"><i data-lucide="cloud" class="w-4 h-4"></i></button>
+            <button onclick="setWbTool('star')" id="wbToolStar" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Star Badge"><i data-lucide="star" class="w-4 h-4"></i></button>
             <div class="w-px h-5 bg-white/10 mx-0.5"></div>
             <button onclick="setWbTool('sticky')" id="wbToolSticky" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Sticky Note"><i data-lucide="sticky-note" class="w-4 h-4"></i></button>
             <button onclick="setWbTool('text')" id="wbToolText" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Text Label"><i data-lucide="type" class="w-4 h-4"></i></button>
@@ -788,20 +806,51 @@
             <button onclick="updateWbSize(4)" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:text-white cursor-pointer font-bold">4px</button>
             <button onclick="updateWbSize(8)" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:text-white cursor-pointer">8px</button>
             <button onclick="updateWbSize(16)" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:text-white cursor-pointer">16px</button>
-            <input type="range" id="wbSizeSlider" min="1" max="30" value="4" oninput="updateWbSize(this.value)" class="w-16 accent-cyan-400 cursor-pointer hidden sm:block" />
-            <span id="wbSizeLabel" class="text-[11px] font-mono text-cyan-400 w-6">4px</span>
+            <input type="range" id="wbSizeSlider" min="1" max="30" value="4" oninput="updateWbSize(this.value)" class="w-14 accent-cyan-400 cursor-pointer hidden sm:block" />
+            <span id="wbSizeLabel" class="text-[11px] font-mono text-cyan-400 w-5">4px</span>
             <div class="w-px h-4 bg-white/10 mx-0.5"></div>
-            <button onclick="toggleWbFill()" id="btnWbFill" class="px-2.5 py-1 rounded text-[11px] font-mono text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Toggle Shape Fill Mode">Fill: Off</button>
+            <button onclick="toggleWbFill()" id="btnWbFill" class="px-2 py-1 rounded text-[11px] font-mono text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Toggle Shape Fill Mode">Fill: Off</button>
           </div>
 
-          <!-- Canvas State Actions (Undo, Redo, Grid, Clear, Export) -->
+          <!-- Canvas Zoom & Background Style -->
+          <div class="flex items-center gap-1.5 bg-surface-900/90 p-1.5 rounded-xl border border-white/10 text-xs">
+            <select id="wbBgSelector" onchange="setWhiteboardBackground(this.value)" class="godx-input px-2 py-1 text-[11px] font-mono cursor-pointer rounded-lg bg-surface-950 border border-white/10 text-zinc-300" title="Canvas Background Style">
+              <option value="dots" selected>Dots</option>
+              <option value="grid">Grid</option>
+              <option value="blueprint">Blueprint</option>
+              <option value="clean">Clean</option>
+            </select>
+            <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+            <button onclick="zoomOut()" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Zoom Out"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
+            <span id="wbZoomVal" class="text-[11px] font-mono text-cyan-400 w-9 text-center">100%</span>
+            <button onclick="zoomIn()" class="p-1.5 rounded-lg bg-surface-950 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Zoom In"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+            <button onclick="resetZoom()" class="px-2 py-1 rounded-lg bg-surface-950 hover:bg-surface-850 text-[11px] font-mono text-zinc-400 hover:text-white border border-white/10 cursor-pointer" title="Fit Canvas to Screen">Fit</button>
+          </div>
+
+          <!-- Canvas State Actions (Undo, Redo, Clear, Multi-Format Exports) -->
           <div class="flex items-center gap-1.5">
             <button onclick="undoWhiteboard()" id="btnWbUndo" class="p-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Undo (Ctrl+Z)"><i data-lucide="undo" class="w-4 h-4"></i></button>
             <button onclick="redoWhiteboard()" id="btnWbRedo" class="p-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Redo (Ctrl+Y)"><i data-lucide="redo" class="w-4 h-4"></i></button>
-            <button onclick="toggleWhiteboardGrid()" id="btnWbGrid" class="px-3 py-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-xs font-mono text-zinc-300 border border-white/10 cursor-pointer transition-colors">Grid: On</button>
-            <button onclick="clearWhiteboard()" class="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs cursor-pointer transition-colors">Clear</button>
+            <button onclick="clearWhiteboard()" class="px-2.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs cursor-pointer transition-colors" title="Clear Canvas">Clear</button>
             <button onclick="copyWhiteboardImage()" class="p-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Copy to Clipboard"><i data-lucide="copy" class="w-4 h-4"></i></button>
-            <button onclick="downloadWhiteboard()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md flex items-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export PNG</button>
+            
+            <!-- Export Buttons -->
+            <button onclick="downloadWhiteboard()" class="btn-gradient px-3 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md flex items-center gap-1" title="Export Standard PNG">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> PNG
+            </button>
+            <button onclick="downloadWhiteboardRetina(2)" class="px-2.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono font-bold text-cyan-400 border border-cyan-500/20 cursor-pointer" title="Export Ultra Retina (2x) PNG">
+              Retina 2x
+            </button>
+            <button onclick="downloadWhiteboardSvg()" class="px-2.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono font-bold text-pink-400 border border-pink-500/20 cursor-pointer" title="Export Vector SVG">
+              SVG
+            </button>
+            <button onclick="exportWhiteboardJson()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Export Scene JSON">
+              <i data-lucide="file-json" class="w-4 h-4"></i>
+            </button>
+            <button onclick="document.getElementById('wbImportJsonFile').click()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Import Scene JSON">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+            </button>
+            <input type="file" id="wbImportJsonFile" accept=".json" class="hidden" onchange="importWhiteboardJson(event)" />
           </div>
         </div>
 
@@ -1639,6 +1688,113 @@
   </div>
 
   <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: WHITEBOARD PRO GALLERY & TEMPLATES                        -->
+  <!-- ========================================================================= -->
+  <div id="whiteboardGalleryModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-4xl w-[96vw] max-h-[90vh] p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative flex flex-col space-y-4 overflow-hidden">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-base text-white">Whiteboard Gallery &amp; Blueprints</h3>
+            <p class="text-xs text-zinc-400">Manage multiple boards or insert production architecture templates.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="LuminaWhiteboardGallery.promptNewBoard()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 text-xs font-mono font-bold cursor-pointer transition-colors flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Board
+          </button>
+          <button onclick="LuminaWhiteboardGallery.closeGalleryModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Gallery"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+      </div>
+
+      <!-- Tab Switcher (Templates vs Saved Boards) -->
+      <div class="flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs">
+          <button id="galleryTabTemplatesBtn" onclick="LuminaWhiteboardGallery.switchGalleryTab('templates')" class="px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 font-heading font-semibold text-xs border border-cyan-500/30 cursor-pointer">
+            Architectural Blueprints
+          </button>
+          <button id="galleryTabBoardsBtn" onclick="LuminaWhiteboardGallery.switchGalleryTab('boards')" class="px-4 py-2 rounded-xl text-zinc-400 hover:text-white font-heading font-semibold text-xs cursor-pointer">
+            My Whiteboards
+          </button>
+        </div>
+
+        <!-- Filter Chips for Templates -->
+        <div id="galleryCategoryChips" class="hidden sm:flex items-center gap-1.5 overflow-x-auto py-1">
+          <button data-category="all" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('all')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-cyan-500 text-black font-bold cursor-pointer">All</button>
+          <button data-category="architecture" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('architecture')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Architecture</button>
+          <button data-category="ai_cloud" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('ai_cloud')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">AI &amp; Cloud</button>
+          <button data-category="security" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('security')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Security</button>
+          <button data-category="database" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('database')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Database</button>
+          <button data-category="workflow" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('workflow')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Workflows</button>
+        </div>
+      </div>
+
+      <!-- Templates View Container -->
+      <div id="galleryTemplatesView" class="flex-1 overflow-y-auto custom-scrollbar pr-1">
+        <div id="galleryTemplatesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+      </div>
+
+      <!-- Boards View Container -->
+      <div id="galleryBoardsView" class="hidden flex-1 overflow-y-auto custom-scrollbar pr-1">
+        <div id="galleryBoardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: AI DIAGRAM & FLOWCHART ASSISTANT                         -->
+  <!-- ========================================================================= -->
+  <div id="whiteboardAiModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-xl w-[94vw] sm:w-full p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative flex flex-col space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-black flex items-center justify-center font-bold shadow-lg shadow-cyan-500/20">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-base text-white">AI Diagram Assistant</h3>
+            <p class="text-xs text-zinc-400">Describe any flowchart, architecture, or workflow in natural language.</p>
+          </div>
+        </div>
+        <button onclick="LuminaWhiteboardAi.closeAiModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Assistant"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- Prompt Input -->
+      <div class="space-y-2">
+        <label for="wbAiPromptInput" class="text-xs font-mono text-zinc-400">Describe what you want to visualize:</label>
+        <textarea id="wbAiPromptInput" rows="3" placeholder="e.g. Draw a 4-step CI/CD pipeline with GitHub Actions, Docker Build, Test Runner, and Vercel Deploy..." class="godx-input w-full p-3 text-xs font-sans resize-none custom-scrollbar leading-relaxed"></textarea>
+      </div>
+
+      <!-- Quick Presets -->
+      <div class="space-y-1.5">
+        <span class="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">Quick Presets:</span>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('Microservices architecture with Envoy API Gateway, Auth Service, Kafka bus and Postgres database')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">Microservices Architecture</button>
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('OAuth2.0 PKCE authentication sequence between Single Page App, Auth Gateway, Token Validator and User Profile DB')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">OAuth2 Authentication</button>
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('E-commerce database relational schema with Users, Orders, Products, Payments and Inventory')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">Database ERD</button>
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('Agile 3-column sprint Kanban with Backlog, In-Progress deep work, and Verified production releases')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">Kanban Workflow</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="pt-2 flex items-center justify-between border-t border-white/10">
+        <button onclick="LuminaWhiteboardAi.closeAiModal()" class="px-4 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-semibold text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Cancel</button>
+        <button id="wbAiGenerateBtn" onclick="LuminaWhiteboardAi.triggerAiDiagramGeneration()" class="btn-gradient px-5 py-2.5 rounded-xl text-xs font-bold text-black cursor-pointer shadow-lg shadow-cyan-500/20 flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-4 h-4"></i> Generate Diagram
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
   <!-- MODULAR JAVASCRIPT LOGIC ENGINE                                            -->
   <!-- ========================================================================= -->
   <script src="./modules/state.js"></script>
@@ -1654,6 +1810,8 @@
   <script src="./modules/voice-studio.js"></script>
   <script src="./modules/compiler.js"></script>
   <script src="./modules/terminal.js"></script>
+  <script src="./modules/whiteboard-gallery.js"></script>
+  <script src="./modules/whiteboard-ai.js"></script>
   <script src="./modules/whiteboard.js"></script>
   <script src="./modules/notes.js"></script>
   <script src="./modules/projects.js"></script>
