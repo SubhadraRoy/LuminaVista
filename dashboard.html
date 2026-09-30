@@ -68,10 +68,51 @@
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
     
     .nav-tab-active { background: linear-gradient(90deg, rgba(0,242,254,0.12) 0%, transparent 100%); border-left: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
-    .codespace-tab-active { background: #1e293b; border-color: var(--primary); color: #00f2fe; }
     .bg-dot-pattern { background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px); background-size: 20px 20px; }
-    
-    .sidebar-resizer { width: 4px; cursor: col-resize; transition: background 0.2s; }
+    .bg-grid-pattern { background-image: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px); background-size: 24px 24px; }
+    .bg-blueprint-pattern { background-image: linear-gradient(to right, rgba(0, 242, 254, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 242, 254, 0.15) 1px, transparent 1px); background-size: 32px 32px; }
+    .bg-clean { background-image: none !important; }
+
+    /* Whiteboard vs Blackboard Canvas Surface Themes */
+    #whiteboardContainer.wb-theme-whiteboard {
+      background-color: #ffffff !important;
+      border-color: rgba(203, 213, 225, 0.8) !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-dot-pattern {
+      background-image: radial-gradient(rgba(15, 23, 42, 0.15) 1.5px, transparent 1.5px) !important;
+      background-size: 20px 20px !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-grid-pattern {
+      background-image: linear-gradient(to right, rgba(15, 23, 42, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(15, 23, 42, 0.08) 1px, transparent 1px) !important;
+      background-size: 24px 24px !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-blueprint-pattern {
+      background-image: linear-gradient(to right, rgba(2, 132, 199, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(2, 132, 199, 0.15) 1px, transparent 1px) !important;
+      background-size: 32px 32px !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-clean {
+      background-image: none !important;
+    }
+
+    #whiteboardContainer.wb-theme-blackboard {
+      background-color: #0b0f19 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-dot-pattern {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px) !important;
+      background-size: 20px 20px !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-grid-pattern {
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px) !important;
+      background-size: 24px 24px !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-blueprint-pattern {
+      background-image: linear-gradient(to right, rgba(0, 242, 254, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 242, 254, 0.15) 1px, transparent 1px) !important;
+      background-size: 32px 32px !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-clean {
+      background-image: none !important;
+    }
     .sidebar-resizer:hover, .sidebar-resizer.resizing { background: var(--primary); }
     .custom-scrollbar::-webkit-scrollbar { height: 6px; }
 
@@ -753,7 +794,7 @@
       <section id="tab-whiteboard" class="tab-pane hidden h-full flex flex-col space-y-3 min-h-0">
         <div class="glass-panel rounded-2xl p-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
           
-          <!-- Board Manager & Templates + AI Studio Buttons -->
+          <!-- Board Manager & Templates + AI Studio Buttons + Whiteboard/Blackboard Theme Toggle -->
           <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs">
             <select id="wbBoardSelector" onchange="LuminaWhiteboardGallery.switchBoard(this.value)" class="godx-input px-2.5 py-1 text-xs font-mono cursor-pointer rounded-lg bg-surface-955 border border-white/10 text-cyan-300 max-w-[140px] truncate" title="Active Whiteboard">
               <option value="board_default">Main Whiteboard</option>
@@ -761,8 +802,13 @@
             <button onclick="openWhiteboardGallery('templates')" class="px-2.5 py-1.5 rounded-lg bg-surface-950 hover:bg-surface-850 text-cyan-400 font-semibold border border-cyan-500/20 cursor-pointer flex items-center gap-1" title="Blueprint Templates & Gallery">
               <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Gallery
             </button>
-            <button onclick="openWhiteboardAiAssistant()" class="btn-gradient px-3 py-1.5 rounded-lg text-black font-bold cursor-pointer shadow-md flex items-center gap-1" title="AI Diagram Generator">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI Diagram
+            <button onclick="openWhiteboardAiAssistant()" class="btn-gradient px-3 py-1.5 rounded-lg text-black font-bold cursor-pointer shadow-md flex items-center gap-1" title="AI Illustration & Diagram Generator">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI Draw
+            </button>
+            <div class="w-px h-5 bg-white/10 mx-0.5"></div>
+            <!-- Whiteboard vs Blackboard Theme Mode Toggle -->
+            <button id="btnWbThemeToggle" onclick="toggleWhiteboardTheme()" class="px-2.5 py-1.5 rounded-lg bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/20 font-semibold cursor-pointer flex items-center gap-1 text-xs transition-all" title="Toggle Whiteboard (White) vs Blackboard (Dark)">
+              <i data-lucide="moon" class="w-3.5 h-3.5 text-cyan-400"></i> Blackboard
             </button>
           </div>
 
@@ -788,8 +834,8 @@
             <button onclick="setWbTool('eraser')" id="wbToolEraser" class="p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Eraser"><i data-lucide="eraser" class="w-4 h-4"></i></button>
           </div>
 
-          <!-- Color Presets & Custom Picker -->
-          <div class="flex items-center gap-1.5 bg-surface-900/90 p-1.5 rounded-xl border border-white/10">
+          <!-- Color Presets & Custom Picker (Dynamically Swapped for Whiteboard / Blackboard) -->
+          <div id="wbColorSwatches" class="flex items-center gap-1.5 bg-surface-900/90 p-1.5 rounded-xl border border-white/10">
             <button onclick="setWbPresetColor('#00f2fe')" class="w-5 h-5 rounded-full bg-[#00f2fe] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Cyan"></button>
             <button onclick="setWbPresetColor('#10b981')" class="w-5 h-5 rounded-full bg-[#10b981] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Emerald"></button>
             <button onclick="setWbPresetColor('#f59e0b')" class="w-5 h-5 rounded-full bg-[#f59e0b] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Amber"></button>
@@ -834,15 +880,15 @@
             <button onclick="clearWhiteboard()" class="px-2.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs cursor-pointer transition-colors" title="Clear Canvas">Clear</button>
             <button onclick="copyWhiteboardImage()" class="p-2 rounded-xl bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Copy to Clipboard"><i data-lucide="copy" class="w-4 h-4"></i></button>
             
-            <!-- Export Buttons -->
-            <button onclick="downloadWhiteboard()" class="btn-gradient px-3 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md flex items-center gap-1" title="Export Standard PNG">
+            <!-- Export Buttons (PNG & JPG Dual-Format Options - No SVG) -->
+            <button onclick="downloadWhiteboard('png')" id="btnDownloadWbPng" class="btn-gradient px-3 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md flex items-center gap-1" title="Export High-Resolution PNG">
               <i data-lucide="download" class="w-3.5 h-3.5"></i> PNG
             </button>
-            <button onclick="downloadWhiteboardRetina(2)" class="px-2.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono font-bold text-cyan-400 border border-cyan-500/20 cursor-pointer" title="Export Ultra Retina (2x) PNG">
-              Retina 2x
+            <button onclick="downloadWhiteboard('jpg')" id="btnDownloadWbJpg" class="px-3 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono font-bold text-amber-400 border border-amber-500/20 cursor-pointer flex items-center gap-1" title="Export High-Resolution JPG">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> JPG
             </button>
-            <button onclick="downloadWhiteboardSvg()" class="px-2.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono font-bold text-pink-400 border border-pink-500/20 cursor-pointer" title="Export Vector SVG">
-              SVG
+            <button onclick="downloadWhiteboardRetina(2, 'png')" class="px-2.5 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono font-bold text-cyan-400 border border-cyan-500/20 cursor-pointer" title="Export Ultra Retina (2x) PNG">
+              Retina 2x
             </button>
             <button onclick="exportWhiteboardJson()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Export Scene JSON">
               <i data-lucide="file-json" class="w-4 h-4"></i>
@@ -855,7 +901,7 @@
         </div>
 
         <!-- Canvas Container with Dual-Canvas & Sticky Note Overlay (Hardware Touchscreen & Stylus Enabled) -->
-        <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner bg-dot-pattern min-h-0 touch-none" style="touch-action: none;">
+        <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner bg-dot-pattern min-h-0 touch-none wb-theme-blackboard" style="touch-action: none;">
           <canvas id="whiteboardCanvas" class="absolute inset-0 w-full h-full cursor-crosshair touch-none" style="touch-action: none;"></canvas>
           <canvas id="whiteboardTempCanvas" class="absolute inset-0 w-full h-full pointer-events-none touch-none" style="touch-action: none;"></canvas>
           <div id="whiteboardStickyContainer" class="absolute inset-0 pointer-events-none overflow-hidden touch-none" style="touch-action: none;"></div>

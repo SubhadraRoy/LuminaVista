@@ -1160,7 +1160,10 @@
                            targetDateStr === 'next_week' || targetDateStr === 'week' || targetDateStr === 'upcoming';
 
       if (isRangeQuery) {
-        const days = directive.daysAhead ? parseInt(directive.daysAhead, 10) : 7;
+        let days = directive.daysAhead ? parseInt(directive.daysAhead, 10) : 7;
+        if (range === 'next_week' || targetDateStr === 'next_week') {
+          days = Math.max(days, 14);
+        }
         matched = getUpcomingEvents(days);
       } else if (targetDateStr) {
         if (targetDateStr === 'today') {

@@ -172,10 +172,15 @@
 
     // DRAW_WHITEBOARD Scoring
     if (scores.AUTONOMOUS_TASK < 90) {
-      const isWhiteboardDirect = /\b(whiteboard|white\s*board|draw\s*on\s*whiteboard|whiteboard\s*pro|sketch|flowchart|architecture\s*diagram|system\s*diagram|mindmap|mind\s*map|erd\s*diagram|entity\s*relationship)\b/i.test(p);
-      const isWhiteboardAction = /\b(draw|sketch|visualize|render|generate|create|diagram|blueprint)\b/i.test(p) && /\b(whiteboard|white\s*board|canvas|diagram|flowchart|architecture|nodes?|sticky\s*notes?|er\s*diagram)\b/i.test(p);
+      const isWhiteboardDirect = /\b(whiteboard|white\s*board|blackboard|black\s*board|draw\s*on\s*whiteboard|whiteboard\s*pro|sketch|flowchart|architecture\s*diagram|system\s*diagram|mindmap|mind\s*map|erd\s*diagram|entity\s*relationship)\b/i.test(p);
+      const isWhiteboardAction = /\b(draw|sketch|visualize|render|generate|create|diagram|blueprint|paint|illustrate|doodle)\b/i.test(p) && /\b(whiteboard|white\s*board|blackboard|black\s*board|canvas|diagram|flowchart|architecture|nodes?|sticky\s*notes?|er\s*diagram)\b/i.test(p);
+      const isArtSubject = /\b(penguin|emperor\s*penguin|tux|cat|kitten|kitty|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration)\b/i.test(p);
+      const isDrawVerb = /\b(draw|sketch|doodle|paint|illustrate|render)\b/i.test(p);
+      const isDirectDrawingPrompt = isDrawVerb && (isArtSubject || /\b(draw|sketch|paint|illustrate|doodle)\s+(a|an|the|me\s+a|us\s+a)?\s*([a-z0-9_\-]+)/i.test(p)) && !p.includes('git_trend') && !p.includes('chaos');
+
       if (isWhiteboardDirect) scores.DRAW_WHITEBOARD += 60;
       if (isWhiteboardAction) scores.DRAW_WHITEBOARD += 45;
+      if (isDirectDrawingPrompt) scores.DRAW_WHITEBOARD += 85;
       if (/\[tool:whiteboard/i.test(p)) scores.DRAW_WHITEBOARD += 95;
     }
 
@@ -630,11 +635,11 @@
         const evts = window.LuminaCalendar.getEvents();
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const endOfTomorrow = startOfToday + (2 * 86400000);
+        const endOfRange = startOfToday + (30 * 86400000); // 30-day window covering today, tomorrow, this week, next week, and month
         const nearEvents = evts.filter(e => {
           if (!e || !e.start) return false;
           const t = new Date(e.start).getTime();
-          return !isNaN(t) && t >= startOfToday && t <= endOfTomorrow;
+          return !isNaN(t) && t >= (startOfToday - 86400000) && t <= endOfRange;
         }).sort((a, b) => (a.start > b.start ? 1 : -1));
 
         if (nearEvents.length > 0) {
@@ -659,8 +664,8 @@ Specialist Directive: ${personaDirective}
 - Active Workspace Files:
 ${fileListStr}
 
-=== UPCOMING SCHEDULE & CALENDAR ===
-Active user calendar schedule for today & next 48 hours:
+=== UPCOMING SCHEDULE & CALENDAR (TODAY, THIS WEEK, NEXT WEEK & 30 DAYS) ===
+Active user calendar schedule:
 ${calStr}
 
 === AUTONOMOUS CAPABILITIES & TOOL CALLING CONVENTIONS ===
@@ -1239,6 +1244,17 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
                   if (activeProvider === "ollama_pool") activeProvider = "nvidia_pool";
                   else if (activeProvider === "nvidia_pool") activeProvider = "ollama_pool";
                   continue;
+                }
+
+                // Anti-stalling deflection check: If remote model deflected on calendar or whiteboard prompt, synthesize autonomous reply
+                const isStalling = /\b(what specific feature, application, or script would you like to build)\b/i.test(candidate) ||
+                  /\b(i am equipped to:[\s\S]*write or modify files)/i.test(candidate);
+
+                if (isStalling && window.classifyJevIntentClient && window.generateSimulatedAutonomousReply) {
+                  const clientJev = window.classifyJevIntentClient(latestUserMsg, window.vfs);
+                  if (clientJev.route === 'SCHEDULE_CALENDAR' || clientJev.route === 'DRAW_WHITEBOARD') {
+                    candidate = await window.generateSimulatedAutonomousReply(latestUserMsg, 1, window.vfs);
+                  }
                 }
 
                 reply = candidate;

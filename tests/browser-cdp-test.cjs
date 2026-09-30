@@ -513,9 +513,31 @@ async function runBrowserTest() {
   const zoomResetVal = await evaluate("window.wbZoom === 1.0");
   test("Whiteboard resetZoom restores 100% scale in Chrome", zoomResetVal);
 
-  // Test Retina PNG and SVG export execution in Chrome
-  const svgResult = await evaluate("downloadWhiteboardSvg()");
-  test("SVG export generates valid vector markup in Chrome", typeof svgResult === 'string' && svgResult.includes('<svg'));
+  // Test PNG and JPG export buttons in Chrome (Verify SVG button removed)
+  const hasPngExportBtn = await evaluate("document.getElementById('btnDownloadWbPng') !== null");
+  test("Explicit PNG export button rendered in Chrome (#btnDownloadWbPng)", hasPngExportBtn);
+
+  const hasJpgExportBtn = await evaluate("document.getElementById('btnDownloadWbJpg') !== null");
+  test("Explicit JPG export button rendered in Chrome (#btnDownloadWbJpg)", hasJpgExportBtn);
+
+  const noSvgInUi = await evaluate("document.querySelectorAll('button[onclick*=\"downloadWhiteboardSvg\"]').length === 0");
+  test("UI has zero SVG export buttons in Chrome (only PNG and JPG)", noSvgInUi);
+
+  // Test Dual Theme Switcher (Whiteboard vs Blackboard)
+  await evaluate("setWhiteboardTheme('whiteboard')");
+  const isWhiteboardTheme = await evaluate("window.wbTheme === 'whiteboard' && document.getElementById('whiteboardContainer').classList.contains('wb-theme-whiteboard')");
+  test("Canvas switched to crisp Whiteboard mode in Chrome", isWhiteboardTheme);
+
+  const wbPaletteMarkers = await evaluate("document.getElementById('wbColorSwatches')?.innerHTML.includes('#0f172a')");
+  test("Color swatches dynamically adapted to dark slate markers in Chrome", wbPaletteMarkers);
+
+  await evaluate("toggleWhiteboardTheme()");
+  const isBlackboardTheme = await evaluate("window.wbTheme === 'blackboard' && document.getElementById('whiteboardContainer').classList.contains('wb-theme-blackboard')");
+  test("Canvas toggled back to Blackboard mode in Chrome", isBlackboardTheme);
+
+  // Test Penguin Handcrafted Vector Illustration Synthesis
+  const penguinDrawRes = await evaluate("LuminaWhiteboard.handleAgentDirective({ action: 'draw', type: 'illustration', title: 'Emperor Penguin' }, 'draw a penguin')");
+  test("AI Whiteboard synthesized authentic vector Penguin illustration in Chrome", penguinDrawRes && penguinDrawRes.success === true && penguinDrawRes.subject === 'penguin');
 
   const jsonResult = await evaluate("exportWhiteboardJson()");
   test("JSON scene export generates valid payload in Chrome", typeof jsonResult === 'string' && jsonResult.includes('"version": "2.0"'));

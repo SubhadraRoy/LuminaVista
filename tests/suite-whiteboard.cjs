@@ -134,15 +134,21 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   window.resetZoom();
   assert(window.wbZoom === 1.0, "resetZoom restores scale to 1.0");
 
-  // 10. Multi-Format Exports (SVG, Retina PNG, JSON Scene)
+  // 10. Multi-Format Exports (PNG, JPG, Retina PNG, JSON Scene - No SVG in UI)
+  assert(typeof window.downloadWhiteboard === 'function', "downloadWhiteboard is exposed");
+  assert(typeof window.downloadWhiteboardPng === 'function', "downloadWhiteboardPng is exposed");
+  assert(typeof window.downloadWhiteboardJpg === 'function', "downloadWhiteboardJpg is exposed");
   assert(typeof window.downloadWhiteboardRetina === 'function', "downloadWhiteboardRetina is exposed");
-  assert(typeof window.downloadWhiteboardSvg === 'function', "downloadWhiteboardSvg is exposed");
   assert(typeof window.exportWhiteboardJson === 'function', "exportWhiteboardJson is exposed");
   assert(typeof window.importWhiteboardJson === 'function', "importWhiteboardJson is exposed");
 
-  // Test SVG Export
-  const svgOutput = window.downloadWhiteboardSvg();
-  assert(typeof svgOutput === 'string' && svgOutput.startsWith('<svg') && svgOutput.endsWith('</svg>'), "downloadWhiteboardSvg produces valid SVG string");
+  // Verify UI has explicit PNG and JPG buttons and NO SVG button
+  const btnPng = document.getElementById('btnDownloadWbPng');
+  const btnJpg = document.getElementById('btnDownloadWbJpg');
+  assert(btnPng !== null, "UI contains explicit PNG download button (#btnDownloadWbPng)");
+  assert(btnJpg !== null, "UI contains explicit JPG download button (#btnDownloadWbJpg)");
+  const svgButtons = Array.from(document.querySelectorAll('button[onclick*="Svg"], button[onclick*="svg"]'));
+  assert(svgButtons.length === 0, "UI does not contain any SVG download button (only PNG and JPG supported)");
 
   // Test JSON Scene Export & Import
   const exportedJson = window.exportWhiteboardJson();
@@ -150,7 +156,62 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   const parsedJson = JSON.parse(exportedJson);
   assert(parsedJson.version && Array.isArray(parsedJson.stickies), "Exported JSON contains version and stickies");
 
-  // 11. Modal UI Elements Integrity
+  // 11. Dual Whiteboard vs Blackboard Canvas Theme Engine
+  assert(typeof window.setWhiteboardTheme === 'function', "setWhiteboardTheme is exposed");
+  assert(typeof window.toggleWhiteboardTheme === 'function', "toggleWhiteboardTheme is exposed");
+
+  // Test Switch to Whiteboard mode
+  window.setWhiteboardTheme('whiteboard');
+  assert(window.wbTheme === 'whiteboard', "Whiteboard theme active state is 'whiteboard'");
+  assert(container.classList.contains('wb-theme-whiteboard'), "Container has wb-theme-whiteboard class");
+  assert(!container.classList.contains('wb-theme-blackboard'), "Container does not have wb-theme-blackboard class");
+  
+  // Verify swatches adapt to Whiteboard palette (dark markers)
+  const swatchesEl = document.getElementById('wbColorSwatches');
+  assert(swatchesEl !== null, "#wbColorSwatches mounted in DOM");
+  assert(swatchesEl.innerHTML.includes('#0f172a'), "Whiteboard palette contains Slate Black marker");
+
+  // Test Toggle back to Blackboard mode
+  window.toggleWhiteboardTheme();
+  assert(window.wbTheme === 'blackboard', "Toggled back to blackboard theme");
+  assert(container.classList.contains('wb-theme-blackboard'), "Container has wb-theme-blackboard class");
+  assert(!container.classList.contains('wb-theme-whiteboard'), "Container does not have wb-theme-whiteboard class");
+  assert(swatchesEl.innerHTML.includes('#00f2fe'), "Blackboard palette contains Chalk Cyan marker");
+
+  // 12. Art & Penguin Handcrafted Vector Illustration Engine
+  const penguinPrompts = [
+    "draw a penguin",
+    "sketch a cute penguin on whiteboard",
+    "draw an emperor penguin"
+  ];
+  for (const pPrompt of penguinPrompts) {
+    const pTensor = scoreJevTensor(pPrompt, {});
+    assert(pTensor.winner.route === 'DRAW_WHITEBOARD', `Tensor routes "${pPrompt}" to DRAW_WHITEBOARD`);
+    const pClassified = jevClassifyIntent(pPrompt, {});
+    assert(pClassified.route === 'DRAW_WHITEBOARD', `Jev classifies "${pPrompt}" to DRAW_WHITEBOARD`);
+  }
+
+  // Server bespoke response should invoke illustration for penguin
+  const penguinBespoke = jevGenerateBespokeResponse("draw a penguin", 1, {});
+  assert(penguinBespoke.includes('type="illustration"'), "Server generator sets type='illustration' for penguin drawing");
+  assert(penguinBespoke.includes('title="Emperor Penguin"'), "Server generator gives appropriate title for penguin");
+
+  // Client simulated reply should invoke illustration for penguin
+  const clientPenguinReply = await window.generateSimulatedAutonomousReply("draw a penguin on whiteboard", 1, {});
+  assert(clientPenguinReply.includes('type="illustration"'), "Client simulated reply sets type='illustration' for penguin");
+
+  // Execute illustration directive directly on canvas
+  const drawPenguinRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Emperor Penguin',
+    type: 'illustration'
+  }, "draw an emperor penguin");
+  assert(drawPenguinRes.success === true, "Whiteboard AI renders penguin illustration successfully");
+  assert(drawPenguinRes.type === 'illustration', "Result confirms illustration type");
+  assert(drawPenguinRes.subject === 'penguin', "Result correctly identifies subject as penguin");
+  assert(drawPenguinRes.shapeCount > 0, "Penguin illustration drew vector shapes");
+
+  // 13. Modal UI Elements Integrity
   const galleryModal = document.getElementById('whiteboardGalleryModal');
   const aiModal = document.getElementById('whiteboardAiModal');
   assert(galleryModal !== null, "whiteboardGalleryModal markup mounted in DOM");

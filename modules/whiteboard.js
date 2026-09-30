@@ -28,6 +28,7 @@
   window.wbPanX = 0;
   window.wbPanY = 0;
   window.wbBackground = 'dots';
+  window.wbTheme = localStorage.getItem('lumina_wb_theme') || 'blackboard';
 
   function initWhiteboard() {
     const mainCv = document.getElementById("whiteboardCanvas");
@@ -35,6 +36,7 @@
     const wrap = document.getElementById("whiteboardContainer");
     if (!mainCv || !tempCv || !wrap) return;
 
+    setWhiteboardTheme(window.wbTheme, true);
     resizeWhiteboard();
     loadWbState();
     loadStickies();
@@ -875,10 +877,104 @@
     }
   }
 
+  // --- Whiteboard vs Blackboard Theme Engine & Palette Switcher ---
+  const THEME_PALETTES = {
+    whiteboard: [
+      { name: 'Slate Black', hex: '#0f172a' },
+      { name: 'Royal Blue',  hex: '#1d4ed8' },
+      { name: 'Crimson Red', hex: '#dc2626' },
+      { name: 'Emerald',     hex: '#059669' },
+      { name: 'Purple',      hex: '#7c3aed' },
+      { name: 'Dark Amber',  hex: '#d97706' }
+    ],
+    blackboard: [
+      { name: 'Chalk White', hex: '#ffffff' },
+      { name: 'Chalk Cyan',  hex: '#00f2fe' },
+      { name: 'Chalk Emerald',hex: '#10b981' },
+      { name: 'Chalk Yellow', hex: '#fde047' },
+      { name: 'Chalk Rose',  hex: '#f43f5e' },
+      { name: 'Chalk Purple',hex: '#a855f7' }
+    ]
+  };
+
+  function setWhiteboardTheme(theme, silent = false) {
+    const validTheme = (theme === 'whiteboard') ? 'whiteboard' : 'blackboard';
+    window.wbTheme = validTheme;
+    localStorage.setItem('lumina_wb_theme', validTheme);
+
+    const wrap = document.getElementById("whiteboardContainer");
+    if (wrap) {
+      if (validTheme === 'whiteboard') {
+        wrap.classList.remove('wb-theme-blackboard', 'bg-surface-950');
+        wrap.classList.add('wb-theme-whiteboard', 'bg-white');
+      } else {
+        wrap.classList.remove('wb-theme-whiteboard', 'bg-white');
+        wrap.classList.add('wb-theme-blackboard', 'bg-surface-950');
+      }
+    }
+
+    renderPaletteSwatches(validTheme);
+
+    if (validTheme === 'whiteboard') {
+      if (!window.wbColor || window.wbColor === '#ffffff' || window.wbColor === '#00f2fe' || window.wbColor === '#fde047') {
+        window.wbColor = '#0f172a';
+      }
+    } else {
+      if (!window.wbColor || window.wbColor === '#0f172a' || window.wbColor === '#1e293b' || window.wbColor === '#000000') {
+        window.wbColor = '#00f2fe';
+      }
+    }
+
+    const picker = document.getElementById("wbColorPicker");
+    if (picker) picker.value = window.wbColor;
+
+    updateThemeToggleUI(validTheme);
+
+    if (!silent && window.showToast) {
+      window.showToast(
+        validTheme === 'whiteboard' ? '⚪ Whiteboard Mode' : '⚫ Blackboard Mode',
+        validTheme === 'whiteboard' ? 'Crisp white canvas with dark studio markers active.' : 'Classic chalkboard canvas with luminous chalk active.'
+      );
+    }
+  }
+
+  function toggleWhiteboardTheme() {
+    const nextTheme = window.wbTheme === 'whiteboard' ? 'blackboard' : 'whiteboard';
+    setWhiteboardTheme(nextTheme);
+  }
+
+  function renderPaletteSwatches(theme) {
+    const container = document.getElementById("wbColorSwatches");
+    if (!container) return;
+
+    const colors = THEME_PALETTES[theme] || THEME_PALETTES.blackboard;
+    container.innerHTML = colors.map(c => {
+      const isSelected = window.wbColor && window.wbColor.toLowerCase() === c.hex.toLowerCase();
+      return `<button onclick="setWbPresetColor('${c.hex}')" class="w-5 h-5 rounded-full border-2 ${isSelected ? 'border-cyan-400 scale-110 shadow-md ring-2 ring-cyan-400/50' : 'border-black/20 hover:scale-110'} transition-transform cursor-pointer" style="background-color: ${c.hex};" title="${c.name}"></button>`;
+    }).join('') + `
+      <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+      <input type="color" id="wbColorPicker" value="${window.wbColor || (theme === 'whiteboard' ? '#0f172a' : '#00f2fe')}" onchange="updateWbColor(this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent" title="Custom Color" />
+    `;
+  }
+
+  function updateThemeToggleUI(theme) {
+    const btn = document.getElementById("btnWbThemeToggle");
+    if (!btn) return;
+    if (theme === 'whiteboard') {
+      btn.innerHTML = `<i data-lucide="sun" class="w-3.5 h-3.5 text-amber-500 inline mr-1"></i> <span class="font-bold text-slate-900">Whiteboard</span>`;
+      btn.className = "px-2.5 py-1.5 rounded-lg bg-white text-slate-900 border border-slate-300 font-semibold cursor-pointer shadow-sm flex items-center text-xs transition-all";
+    } else {
+      btn.innerHTML = `<i data-lucide="moon" class="w-3.5 h-3.5 text-cyan-400 inline mr-1"></i> <span class="font-bold text-cyan-300">Blackboard</span>`;
+      btn.className = "px-2.5 py-1.5 rounded-lg bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/20 font-semibold cursor-pointer flex items-center text-xs transition-all";
+    }
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  }
+
   function setWbPresetColor(hex) {
     window.wbColor = hex;
     const picker = document.getElementById("wbColorPicker");
     if (picker) picker.value = hex;
+    renderPaletteSwatches(window.wbTheme || 'blackboard');
   }
 
   function updateWbColor(hex) {
@@ -978,14 +1074,71 @@
     if (window.showToast) window.showToast("Whiteboard Cleared", "Canvas reset to blank.");
   }
 
-  function downloadWhiteboard() {
+  function downloadWhiteboard(format = 'png') {
     const mainCv = document.getElementById("whiteboardCanvas");
-    if (!mainCv) return;
+    const wrap = document.getElementById("whiteboardContainer");
+    if (!mainCv || !wrap) return;
+
+    const normFormat = (format || 'png').toLowerCase().includes('jpg') || (format || '').toLowerCase().includes('jpeg') ? 'jpg' : 'png';
+    const mime = normFormat === 'jpg' ? 'image/jpeg' : 'image/png';
+    const ext = normFormat === 'jpg' ? 'jpg' : 'png';
+
+    const w = wrap.clientWidth || 1200;
+    const h = wrap.clientHeight || 800;
+
+    const offscreen = document.createElement("canvas");
+    offscreen.width = w;
+    offscreen.height = h;
+    const oCtx = offscreen.getContext("2d");
+
+    // Solid background matching active board theme (white for Whiteboard, chalkboard dark for Blackboard)
+    const bgColor = (window.wbTheme === 'whiteboard') ? '#ffffff' : '#0f172a';
+    oCtx.fillStyle = bgColor;
+    oCtx.fillRect(0, 0, w, h);
+
+    // Draw main drawing canvas
+    oCtx.drawImage(mainCv, 0, 0, w, h);
+
+    // Render stickies onto the export canvas
+    (window.wbStickies || []).forEach(s => {
+      const sx = s.x;
+      const sy = s.y;
+      const sw = 192;
+      const sh = 120;
+
+      oCtx.save();
+      oCtx.fillStyle = s.color || "#fef08a";
+      oCtx.shadowColor = "rgba(0,0,0,0.3)";
+      oCtx.shadowBlur = 8;
+      oCtx.fillRect(sx, sy, sw, sh);
+      oCtx.shadowBlur = 0;
+
+      oCtx.fillStyle = "#1e293b";
+      oCtx.font = "11px 'Plus Jakarta Sans', sans-serif";
+      const textLines = (s.text || "").split("\n");
+      textLines.forEach((line, idx) => {
+        if (idx < 5) oCtx.fillText(line, sx + 12, sy + 22 + idx * 16);
+      });
+      oCtx.restore();
+    });
+
+    const dataUrl = normFormat === 'jpg' ? offscreen.toDataURL(mime, 0.95) : offscreen.toDataURL(mime);
     const a = document.createElement("a");
-    a.href = mainCv.toDataURL("image/png");
-    a.download = `whiteboard_pro_${Date.now()}.png`;
+    a.href = dataUrl;
+    a.download = `whiteboard_${window.wbTheme || 'pro'}_${Date.now()}.${ext}`;
     a.click();
-    if (window.showToast) window.showToast("Export Complete", "Whiteboard image downloaded.");
+
+    if (window.showToast) {
+      window.showToast(`${normFormat.toUpperCase()} Download Ready`, `Exported whiteboard as high-quality ${normFormat.toUpperCase()}.`);
+    }
+  }
+
+  function downloadWhiteboardPng() {
+    downloadWhiteboard('png');
+  }
+
+  function downloadWhiteboardJpg() {
+    downloadWhiteboard('jpg');
   }
 
   function copyWhiteboardImage() {
@@ -1074,10 +1227,14 @@
   }
 
   // --- Retina & Multi-Format Export Suite ---
-  function downloadWhiteboardRetina(scale = 2) {
+  function downloadWhiteboardRetina(scale = 2, format = 'png') {
     const mainCv = document.getElementById("whiteboardCanvas");
     const wrap = document.getElementById("whiteboardContainer");
     if (!mainCv || !wrap) return;
+
+    const normFormat = (format || 'png').toLowerCase().includes('jpg') || (format || '').toLowerCase().includes('jpeg') ? 'jpg' : 'png';
+    const mime = normFormat === 'jpg' ? 'image/jpeg' : 'image/png';
+    const ext = normFormat === 'jpg' ? 'jpg' : 'png';
 
     const w = wrap.clientWidth || 1200;
     const h = wrap.clientHeight || 800;
@@ -1087,8 +1244,9 @@
     offscreen.height = h * scale;
     const oCtx = offscreen.getContext("2d");
 
-    // Draw background
-    oCtx.fillStyle = "#030712";
+    // Draw background matching active theme
+    const bgColor = (window.wbTheme === 'whiteboard') ? '#ffffff' : '#0f172a';
+    oCtx.fillStyle = bgColor;
     oCtx.fillRect(0, 0, offscreen.width, offscreen.height);
 
     // Draw main canvas content
@@ -1118,11 +1276,11 @@
     });
 
     const a = document.createElement("a");
-    a.href = offscreen.toDataURL("image/png");
-    a.download = `whiteboard_retina_${scale}x_${Date.now()}.png`;
+    a.href = normFormat === 'jpg' ? offscreen.toDataURL(mime, 0.95) : offscreen.toDataURL(mime);
+    a.download = `whiteboard_${window.wbTheme || 'pro'}_retina_${scale}x_${Date.now()}.${ext}`;
     a.click();
 
-    if (window.showToast) window.showToast("Retina Export Ready", `Exported at ${scale}x Ultra High-Res.`);
+    if (window.showToast) window.showToast(`${normFormat.toUpperCase()} Retina Export`, `Exported at ${scale}x in ${normFormat.toUpperCase()} format.`);
   }
 
   function downloadWhiteboardSvg() {
@@ -1236,7 +1394,11 @@
   window.toggleWhiteboardGrid = toggleWhiteboardGrid;
   window.clearWhiteboard = clearWhiteboard;
   window.clearWhiteboardSilently = clearWhiteboardSilently;
+  window.setWhiteboardTheme = setWhiteboardTheme;
+  window.toggleWhiteboardTheme = toggleWhiteboardTheme;
   window.downloadWhiteboard = downloadWhiteboard;
+  window.downloadWhiteboardPng = downloadWhiteboardPng;
+  window.downloadWhiteboardJpg = downloadWhiteboardJpg;
   window.downloadWhiteboardRetina = downloadWhiteboardRetina;
   window.downloadWhiteboardSvg = downloadWhiteboardSvg;
   window.exportWhiteboardJson = exportWhiteboardJson;
@@ -1260,6 +1422,10 @@
   // Unified LuminaWhiteboard Pro API
   window.LuminaWhiteboard = {
     init: initWhiteboard,
+    setTheme: setWhiteboardTheme,
+    toggleTheme: toggleWhiteboardTheme,
+    downloadPng: downloadWhiteboardPng,
+    downloadJpg: downloadWhiteboardJpg,
     drawShape: (tool, x1, y1, x2, y2, color, size, fill) => {
       const cv = document.getElementById("whiteboardCanvas");
       if (cv) drawShape(cv.getContext("2d"), tool, x1, y1, x2, y2, color || window.wbColor, size || window.wbSize, fill || window.wbFill);

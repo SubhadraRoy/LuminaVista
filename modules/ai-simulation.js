@@ -959,8 +959,37 @@ if __name__ == "__main__":
           `I have rendered the **${templateName}** onto your Whiteboard Pro canvas with interactive nodes, connectors, and stickies.\n\n` +
           `[TOOL:WHITEBOARD action="template" template="${matchedTemplate}" title="${escapeHtml(templateName)}"][/TOOL:WHITEBOARD]\n\n` +
           `• **Canvas State**: Rendered high-fidelity nodes, typed connectors, and sticky annotations.\n` +
-          `• **Whiteboard Gallery**: Saved to your board list for export to Retina PNG, vector SVG, or JSON.\n\n` +
+          `• **Whiteboard Gallery**: Saved to your board list for export to Retina PNG, JPG, or JSON.\n\n` +
           `[TOOL:TASK_COMPLETE summary="Rendered ${templateName} on Whiteboard Pro."][/TOOL:TASK_COMPLETE]`;
+      }
+
+      const isIllustration = /\b(penguin|emperor\s*penguin|tux|cat|kitten|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration)\b/i.test(pTrim) ||
+        (/\b(draw|sketch|paint|illustrate|doodle)\b/i.test(pTrim) && !/\b(architecture|diagram|flowchart|erd|system|component|mesh|pipeline|network)\b/i.test(pTrim));
+
+      if (isIllustration) {
+        if (/\b(penguin|emperor\s*penguin|tux)\b/i.test(pTrim)) cleanTitle = 'Emperor Penguin';
+        else if (/\b(cat|kitten|kitty)\b/i.test(pTrim)) cleanTitle = 'Playful Kitten';
+        else if (/\b(dog|puppy)\b/i.test(pTrim)) cleanTitle = 'Loyal Puppy';
+        else if (/\b(house|cottage|castle)\b/i.test(pTrim)) cleanTitle = 'Cozy Cottage';
+        else if (/\b(rocket|spaceship)\b/i.test(pTrim)) cleanTitle = 'Cosmic Rocket';
+        else if (/\b(car|automobile|truck)\b/i.test(pTrim)) cleanTitle = 'Sports Automobile';
+        else if (/\b(tree|forest)\b/i.test(pTrim)) cleanTitle = 'Ancient Oak Tree';
+        else if (/\b(flower|rose|sunflower)\b/i.test(pTrim)) cleanTitle = 'Blooming Flower';
+        else if (/\b(robot|android)\b/i.test(pTrim)) cleanTitle = 'Autonomous Robot';
+        else if (/\b(face|smile|portrait)\b/i.test(pTrim)) cleanTitle = 'Joyful Expression';
+        else {
+          let clean = cleanTitle.replace(/\b(a|an|the|me|on|canvas)\b/gi, '').trim();
+          cleanTitle = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Creative Artwork';
+        }
+
+        return thoughts +
+          `### Whiteboard Pro: Handcrafted Illustration Synthesized 🎨\n\n` +
+          `I have illustrated **${escapeHtml(cleanTitle)}** directly onto your Whiteboard canvas with vector contours, anatomical detail, and artistic annotations.\n\n` +
+          `[TOOL:WHITEBOARD action="draw" title="${escapeHtml(cleanTitle)}" type="illustration"]${escapeHtml(pTrim)}[/TOOL:WHITEBOARD]\n\n` +
+          `• **Visual Subject**: Handcrafted vector illustration of "${escapeHtml(cleanTitle)}" with color-matched palette.\n` +
+          `• **Canvas Theme**: Dynamic contrast optimized for your active board.\n` +
+          `• **Export Ready**: Available for instant JPG or PNG download.\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Illustrated '${escapeHtml(cleanTitle)}' on Whiteboard Pro."][/TOOL:TASK_COMPLETE]`;
       }
 
       return thoughts +
@@ -968,7 +997,7 @@ if __name__ == "__main__":
         `Rendering custom architectural model and flowchart for "${escapeHtml(cleanTitle)}" onto your Whiteboard Pro canvas:\n\n` +
         `[TOOL:WHITEBOARD action="draw" title="${escapeHtml(cleanTitle)}" type="architecture"]${escapeHtml(pTrim)}[/TOOL:WHITEBOARD]\n\n` +
         `• **Canvas State**: Rendered dynamic nodes, bidirectional connectors, and contextual sticky notes.\n` +
-        `• **Export Ready**: Available for instant presentation, Laser Mode inspection, and SVG/Retina PNG export.\n\n` +
+        `• **Export Ready**: Available for instant presentation, Laser Mode inspection, and JPG or PNG export.\n\n` +
         `[TOOL:TASK_COMPLETE summary="Synthesized visual diagram for '${escapeHtml(cleanTitle)}' on Whiteboard Pro."][/TOOL:TASK_COMPLETE]`;
     }
 
