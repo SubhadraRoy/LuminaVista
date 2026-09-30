@@ -28,87 +28,140 @@ export function jevClassifyIntent(prompt = '', vfs = {}) {
   let targetFile = '';
   let confidence = 0.95;
   let guardrailPassed = true;
+  let reasoning = 'General conversational inquiry';
+  const entities = {
+    languages: [],
+    files: [],
+    tools: [],
+    isMultiStep: false
+  };
 
-  // Destructive command guardrail check
-  if (p.includes('rm -rf /') || p.includes(':(){ :|:& };:') || p.includes('mkfs') || p.includes('dd if=/dev/zero')) {
+  // 1. Destructive Command & Exploitation Guardrail Check
+  if (
+    p.includes('rm -rf /') || 
+    p.includes('rm -rf ~') ||
+    p.includes(':(){ :|:& };:') || 
+    p.includes('mkfs') || 
+    p.includes('dd if=/dev/zero') ||
+    p.includes('cat /dev/urandom >') ||
+    p.includes('drop database') ||
+    p.includes('format c:')
+  ) {
     guardrailPassed = false;
+    reasoning = 'Jev System-1 Guardrail: blocked catastrophic or destructive system command';
   }
 
-  // 0. Multi-Step Autonomous Task / Pipeline / Benchmark Execution
+  // 2. Language & Entity Extraction
+  if (/\b(python|py)\b/i.test(p)) entities.languages.push('python');
+  if (/\b(javascript|node|js)\b/i.test(p)) entities.languages.push('javascript');
+  if (/\b(typescript|ts)\b/i.test(p)) entities.languages.push('typescript');
+  if (/\b(html|css|tailwind)\b/i.test(p)) entities.languages.push('html');
+  if (/\b(sql|database|postgres|sqlite)\b/i.test(p)) entities.languages.push('sql');
+  if (/\b(bash|shell|sh)\b/i.test(p)) entities.languages.push('bash');
+  if (/\b(docker|container)\b/i.test(p)) entities.tools.push('docker');
+
+  // Detect explicit file path mentioned in prompt (e.g. "src/auth.js", "tests/app.test.cjs")
+  const pathMatch = pTrim.match(/(?:in|to|file|create|edit|view|read|inspect|patch|modify|update)\s+([a-zA-Z0-9_\-/\\]+\.[a-zA-Z0-9]{1,5})\b/i) ||
+                    pTrim.match(/\b([a-zA-Z0-9_\-/\\]+\.(?:js|jsx|ts|tsx|py|html|css|json|sql|md|sh|cjs|mjs))\b/i);
+  if (pathMatch && pathMatch[1]) {
+    targetFile = pathMatch[1].replace(/\\/g, '/');
+    entities.files.push(targetFile);
+  }
+
+  // 3. Multi-Step Autonomous Task / Pipeline / Benchmark Execution
   const isAutonomousTask =
     /\[task goal\]|task goal:|autonomous task|autonomous goal/i.test(p) ||
     (/(1\.|step 1|phase 1).*(2\.|step 2|phase 2)/i.test(p) && /(filesystem|terminal|execute|script|repos|directory|analysis|pipeline|report)/i.test(p)) ||
     (p.includes('git_trend_analysis') || (p.includes('fetch_meta.py') && p.includes('repos.json'))) ||
     /\b(chaos\s*engineering|chaos\s*drill|flaky\s*upstream|mock\s*server.*8999|chaos_lab|chaos_archive|chaos\.log|stress_test\.py)\b/i.test(p) ||
     (/\b(systems\s*automation|operations\s*agent|execution\s*workflow|complete\s*tool\s*suite)\b/i.test(p) && /\b(vfs|terminal|sandbox|calendar|schedule|scan|verify|operational)\b/i.test(p)) ||
-    (/\b(pipeline|drill|benchmark|multi-?step|e2e\s*test)\b/i.test(p) && /\b(server|port|script|test|terminal|archive|compress|summary)\b/i.test(p)) ||
+    (/\b(pipeline|drill|benchmark|multi-?step|e2e\s*test|stress\s*test|microservices?)\b/i.test(p) && /\b(server|port|script|test|terminal|archive|compress|summary)\b/i.test(p)) ||
     (/\b(once you have that|next|finally|tidy up)\b/i.test(p) && /\b(spin up|server|script|terminal|compress|delete)\b/i.test(p));
 
   if (isAutonomousTask) {
     route = 'AUTONOMOUS_TASK';
-    confidence = 0.99;
+    confidence = 0.995;
+    entities.isMultiStep = true;
+    reasoning = 'Jev identified multi-step autonomous engineering pipeline requiring coordinated tool execution';
   }
-  // 1. Calendar scheduling & real-life routine intent
+  // 4. Calendar Scheduling & Management Intent
   else if (
     /\b(schedule|calendar|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
     /\[tool:schedule_event/i.test(p)
   ) {
     route = 'SCHEDULE_CALENDAR';
-    confidence = 0.98;
+    confidence = 0.985;
+    reasoning = 'Identified calendar event or schedule management intent';
   }
-  // 2. Web search / Live information / News routing
+  // 5. Codebase Search / Grep vs Live External Web Search
+  else if (
+    /\b(search\s*code|find\s*(in\s*files|symbol|function|class|variable|regex|import)|grep|where\s*is\s*(the\s*)?(function|class|method|file))\b/i.test(p) ||
+    (/\b(find|search)\b/i.test(p) && vfsFiles.some(f => p.includes(f.toLowerCase())))
+  ) {
+    route = 'VIEW_FILE';
+    targetFile = targetFile || vfsFiles.find(f => p.includes(f.toLowerCase())) || (vfsFiles[0] || 'index.html');
+    confidence = 0.96;
+    reasoning = 'Resolved local codebase / workspace search intent';
+  }
+  // 6. External Web Search / Live Information Routing
   else if (
     /\b(news|headlines|weather|stock|crypto|price\s*of|who\s*is|who\s*was|what\s*happened|when\s*did|where\s*is|latest\s*on|updates?\s*on|today'?s?\s*news)\b/i.test(p) ||
-    /\b(search|look\s*up|find\s*out|google|browse|web\s*search)\b/i.test(p) ||
-    /\b(get\s+me|tell\s+me|show\s+me|give\s+me|fetch)\b.*\b(news|headlines|information|info|weather|update|scores?|results?)\b/i.test(p) ||
-    p.startsWith('search') || p.startsWith('find')
+    /\b(browse|web\s*search|google|search|look\s*up|find\s*out)\b/i.test(p) ||
+    p.startsWith('search') || p.startsWith('find') || p.startsWith('browse')
   ) {
     route = 'SEARCH_WEB';
-    confidence = 0.98;
+    confidence = 0.985;
+    reasoning = 'Routed to live web search for external data or query';
   }
-  // 2. Terminal execution routing - Explicit command intent
+  // 7. Terminal execution routing - Explicit command intent
   else if (/^(run|exec|execute|terminal|bash|sh|cmd)\b/i.test(p) || p.startsWith('python ') || p.startsWith('node ') || p.startsWith('npm ') || p.startsWith('pip ')) {
     route = 'EXEC_COMMAND';
-    confidence = 0.96;
-  }
-  // 3. File editing routing - Target file must exist in VFS
-  else if ((/\b(edit|replace|modify|update|patch|fix)\b/i.test(p)) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
-    route = 'EDIT_FILE';
-    targetFile = vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0] || 'index.html';
-    confidence = 0.94;
-  }
-  // 4. File viewing routing - Target file must exist in VFS
-  else if ((/\b(view|read|cat|inspect|open|show\s*code)\b/i.test(p)) && vfsFiles.some(f => p.includes(f.toLowerCase()))) {
-    route = 'VIEW_FILE';
-    targetFile = vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0];
     confidence = 0.97;
+    reasoning = 'Explicit terminal command execution detected';
   }
-  // 5. Code & Project Creation routing - Must be an explicit request to create software/files
-  else if (/\b(create|build|write|implement|generate|code|scaffold|develop)\b.*\b(app|application|game|calculator|landing\s*page|website|page|component|script|program|server|tool|dashboard|todo|counter|api|html|python|js|css|sql|file)\b/i.test(p) ||
-           /\b(create|write|generate|add)\s+([a-zA-Z0-9_\-]+\.(html|js|py|css|json|sql|md|txt))\b/i.test(p)) {
+  // 8. File editing routing - Target file exists or is specified with modification intent
+  else if ((/\b(edit|replace|modify|update|patch|fix|refactor)\b/i.test(p)) && (targetFile || vfsFiles.some(f => p.includes(f.toLowerCase())))) {
+    route = 'EDIT_FILE';
+    targetFile = targetFile || vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0] || 'index.html';
+    confidence = 0.96;
+    reasoning = `Targeted file modification in ${targetFile}`;
+  }
+  // 9. File viewing routing - Target file inspection
+  else if ((/\b(view|read|cat|inspect|open|show\s*code)\b/i.test(p)) && (targetFile || vfsFiles.some(f => p.includes(f.toLowerCase())))) {
+    route = 'VIEW_FILE';
+    targetFile = targetFile || vfsFiles.find(f => p.includes(f.toLowerCase())) || vfsFiles[0] || 'index.html';
+    confidence = 0.97;
+    reasoning = `Inspecting file contents of ${targetFile}`;
+  }
+  // 10. Code & Project Creation routing
+  else if (
+    /\b(create|build|write|implement|generate|code|scaffold|develop)\b.*\b(app|application|game|calculator|landing\s*page|website|page|component|script|program|server|tool|dashboard|todo|counter|api|html|python|js|css|sql|file)\b/i.test(p) ||
+    /\b(create|write|generate|add)\s+([a-zA-Z0-9_\-/\\]+\.(html|js|py|css|json|sql|md|txt|jsx|tsx|sh))\b/i.test(p)
+  ) {
     route = 'WRITE_FILE';
     confidence = 0.99;
 
-    // Detect target file extension
-    const matchFile = p.match(/\b([a-zA-Z0-9_\-]+\.(html|js|py|css|json|sql|md|txt))\b/i);
-    if (matchFile) {
-      targetFile = matchFile[1];
-    } else if (p.includes('.py') || p.includes('python')) targetFile = 'main.py';
-    else if (p.includes('.js') || p.includes('javascript') || p.includes('node')) targetFile = 'app.js';
-    else if (p.includes('.css')) targetFile = 'style.css';
-    else if (p.includes('.json')) targetFile = 'data.json';
-    else if (p.includes('.sql')) targetFile = 'query.sql';
-    else targetFile = 'index.html';
+    if (!targetFile) {
+      if (p.includes('.py') || p.includes('python')) targetFile = 'main.py';
+      else if (p.includes('.js') || p.includes('javascript') || p.includes('node')) targetFile = 'app.js';
+      else if (p.includes('.css')) targetFile = 'style.css';
+      else if (p.includes('.json')) targetFile = 'data.json';
+      else if (p.includes('.sql')) targetFile = 'query.sql';
+      else targetFile = 'index.html';
+    }
+    reasoning = `Autonomous software synthesis targeting ${targetFile}`;
   }
-  // 6. Directory / workspace inspection only if asking to list files exclusively
+  // 11. Directory / workspace inspection
   else if (/^(ls|dir|list\s*files|tree|what\s*files|workspace\s*files)\b/i.test(p)) {
     route = 'LIST_DIR';
     confidence = 0.99;
+    reasoning = 'Workspace file tree inspection';
   }
-  // 7. Conversational intent (Greetings, Q&A, Identity, Advice, Baking, etc.)
+  // 12. Conversational Intent fallback
   else {
     route = 'CONVERSATION';
-    confidence = 0.99;
+    confidence = 0.98;
+    reasoning = 'Natural conversational or domain Q&A dialog';
   }
 
   const latencyMs = Math.max(1, Date.now() - start);
@@ -118,7 +171,9 @@ export function jevClassifyIntent(prompt = '', vfs = {}) {
     confidence,
     guardrailPassed,
     latencyMs,
-    targetFile
+    targetFile,
+    entities,
+    reasoning
   };
 }
 
