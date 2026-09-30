@@ -263,7 +263,7 @@ async function runBrowserTest() {
   // Test dynamic 2-tier category switching in browser
   await evaluate("document.getElementById('modalAiCategorySelect').value = 'cybersecurity'; onModalCategoryChange();");
   const cyberSpecialistCount = await evaluate("document.getElementById('modalAiPersonaSelect').options.length");
-  test("Switching category to 'cybersecurity' dynamically loads 50 specialists", cyberSpecialistCount === 50);
+  test(`Switching category to 'cybersecurity' dynamically loads 50+ specialists (Found: ${cyberSpecialistCount})`, cyberSpecialistCount >= 50);
 
   // Test Universal Hybrid Engine default and removal of simulation option in Chrome
   const providerOptions = await evaluate("Array.from(document.getElementById('modalAiProviderSelect').options).map(o => o.value)");

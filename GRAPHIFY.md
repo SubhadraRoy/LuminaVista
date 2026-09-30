@@ -153,7 +153,20 @@ flowchart TD
 | `modules/ai-simulation.js` | AI & Inference | 1,225 | 58 KB | Client-side autonomous agent simulation sandbox, chaos engineering drill generator, and offline tool execution. |
 | `modules/ai-tasks-sessions.js` | AI & Inference | 550 | 24 KB | Multi-session conversation history, scheduled autonomous background tasks, and cloud worker synchronization. |
 | `modules/ai-chat-ui.js` | AI & Inference | 758 | 39 KB | Thinking Orbs animated state engine, Claude/Antigravity collapsible thought cards, action cards, prompt edit, and chat rendering. |
-| `personas.js` | AI & Inference | 1,384 | 68 KB | 1,800+ specialized technical persona directives categorized across 35 engineering disciplines. |
+| `personas.js` | AI & Inference | 357 | 15 KB | Master Persona Registry & 35-Category Matrix Orchestrator aggregating 1,813+ specialists. |
+| `modules/personas/general.js` | AI & Inference | 967 | 48 KB | Modular Persona Domain: 105 General, Cognitive Mentors & Everyday Life Assistants. |
+| `modules/personas/software-eng.js` | AI & Inference | 940 | 47 KB | Modular Persona Domain: 102 Software Engineering & Programming Language Specialists. |
+| `modules/personas/frontend-ui.js` | AI & Inference | 931 | 46 KB | Modular Persona Domain: 101 Frontend Development, Creative Web Design & Data Visualization. |
+| `modules/personas/backend-cloud.js` | AI & Inference | 931 | 46 KB | Modular Persona Domain: 101 Backend Systems, APIs, Cloud Native & MicroVM Systems. |
+| `modules/personas/devops-security.js` | AI & Inference | 940 | 47 KB | Modular Persona Domain: 102 DevOps, Cloud Infrastructure, Cybersecurity & Cryptography. |
+| `modules/personas/ai-data.js` | AI & Inference | 940 | 47 KB | Modular Persona Domain: 102 Artificial Intelligence, Deep Learning & Data Science. |
+| `modules/personas/hardware-robotics.js` | AI & Inference | 1,372 | 68 KB | Modular Persona Domain: 150 Hardware Engineering, Embedded Systems & Robotics. |
+| `modules/personas/mobile-game-database.js` | AI & Inference | 1,372 | 68 KB | Modular Persona Domain: 150 Mobile App Development, Game Dev 3D & Database Storage. |
+| `modules/personas/deeptech-space.js` | AI & Inference | 1,372 | 68 KB | Modular Persona Domain: 150 Blockchain Web3, Quantum Computing & Aerospace Systems. |
+| `modules/personas/business-finance-legal.js` | AI & Inference | 1,822 | 89 KB | Modular Persona Domain: 200 Finance Fintech, Legal Compliance, Marketing & Product Strategy. |
+| `modules/personas/creative-arts.js` | AI & Inference | 1,372 | 68 KB | Modular Persona Domain: 150 Creative Writing, Music Audio & Cinema VFX. |
+| `modules/personas/lifestyle-wellness.js` | AI & Inference | 1,822 | 89 KB | Modular Persona Domain: 200 Culinary Gastronomy, Travel Nomad, Healthcare Bio & Fitness. |
+| `modules/personas/education-support.js` | AI & Inference | 1,822 | 89 KB | Modular Persona Domain: 200 Teaching Academia, Philosophy Ethics, Productivity & Support. |
 | `api/_lib/key-pool.js` | AI Infrastructure | 200 | 8 KB | 8x Ollama Cloud & NVIDIA NIM multi-key pool with automated 429 rate-limit failover. |
 | `api/_lib/jev-engine.js` | AI Infrastructure | 710 | 37 KB | TypeSafe Jev System-1 sub-50ms intent classifier, safety guardrails, dynamic cognitive synthesis, and calendar directives. |
 | `api/chat.js` | Serverless APIs | 410 | 17 KB | Autonomous serverless agent loop with multi-key cloud failover, tool calling, and live VFS injection. |

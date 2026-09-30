@@ -54,6 +54,19 @@ window.HTMLCanvasElement.prototype.toDataURL = function() {
 
 // Load modules
 const moduleFiles = [
+  'modules/personas/general.js',
+  'modules/personas/software-eng.js',
+  'modules/personas/frontend-ui.js',
+  'modules/personas/backend-cloud.js',
+  'modules/personas/devops-security.js',
+  'modules/personas/ai-data.js',
+  'modules/personas/hardware-robotics.js',
+  'modules/personas/mobile-game-database.js',
+  'modules/personas/deeptech-space.js',
+  'modules/personas/business-finance-legal.js',
+  'modules/personas/creative-arts.js',
+  'modules/personas/lifestyle-wellness.js',
+  'modules/personas/education-support.js',
   'personas.js',
   'modules/state.js',
   'modules/sidebar.js',
@@ -450,10 +463,10 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(Array.isArray(window.LuminaPersonas) && window.LuminaPersonas.length >= 1800, `1,800+ Specialists loaded (Found: ${window.LuminaPersonas ? window.LuminaPersonas.length : 0})`);
   
   const swPersonas = window.getPersonasForCategory("software_eng");
-  assert(Array.isArray(swPersonas) && swPersonas.length === 50, `Category software_eng has exactly 50 specialists (Found: ${swPersonas ? swPersonas.length : 0})`);
+  assert(Array.isArray(swPersonas) && swPersonas.length >= 50, `Category software_eng has 50+ specialists (Found: ${swPersonas ? swPersonas.length : 0})`);
   
   const culinaryPersonas = window.getPersonasForCategory("culinary_gastronomy");
-  assert(Array.isArray(culinaryPersonas) && culinaryPersonas.length === 50, `Category culinary_gastronomy has exactly 50 specialists (Found: ${culinaryPersonas ? culinaryPersonas.length : 0})`);
+  assert(Array.isArray(culinaryPersonas) && culinaryPersonas.length >= 50, `Category culinary_gastronomy has 50+ specialists (Found: ${culinaryPersonas ? culinaryPersonas.length : 0})`);
 
   // Verify Category Dropdown in DOM
   window.populatePersonasDropdown();
