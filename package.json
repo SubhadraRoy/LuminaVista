@@ -3,9 +3,9 @@
   "version": "14.0.0",
   "type": "module",
   "private": true,
-  "description": "LuminaVista OS — Sovereign Cloud Workspace, Firecracker MicroVM & Antigravity Autonomous Studio",
+  "description": "LuminaVista — Private Personal Website and Sovereign Workspace. Unauthorized access strictly prohibited.",
   "author": "Subhadra Roy",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "https://github.com/SubhadraRoy/LuminaVista.git"
