@@ -624,6 +624,21 @@
       }
     });
 
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0] && Math.random() > 0.35) {
+        const touch = e.touches[0];
+        trailSparks.push({
+          x: touch.clientX,
+          y: touch.clientY,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: (Math.random() - 0.5) * 1.5,
+          size: Math.random() * 2 + 1,
+          alpha: 0.8,
+          color: Math.random() > 0.5 ? 'rgba(0, 242, 254,' : 'rgba(168, 85, 247,'
+        });
+      }
+    }, { passive: true });
+
     function renderTrail() {
       tCtx.clearRect(0, 0, tCanvas.width, tCanvas.height);
       for (let i = trailSparks.length - 1; i >= 0; i--) {
@@ -799,39 +814,156 @@
     });
 
     // ==========================================
-    // 2. 3D CARD PARALLAX TILT & SPOTLIGHT TORCH
+    // 2. 3D CARD PARALLAX TILT & SPOTLIGHT TORCH (Mouse & Mobile Gyroscope)
     // ==========================================
     const cardBody = document.getElementById('card-body');
     const orbCyan = document.getElementById('orb-cyan');
     const orbViolet = document.getElementById('orb-violet');
 
+    let isGyroActive = false;
+    let lastGyroTime = 0;
+
+    // Helper to smoothly apply 3D rotation, spotlight torch, and ambient orbs
+    function applyCardTilt(dx, dy, intensity = 8, duration = 0.5) {
+      if (!cardBody) return;
+      gsap.to(cardBody, {
+        rotationY: dx * intensity,
+        rotationX: -dy * intensity,
+        transformPerspective: 1000,
+        duration: duration,
+        ease: "power1.out",
+        overwrite: "auto"
+      });
+
+      const rect = cardBody.getBoundingClientRect();
+      const lx = rect.width * (0.5 + dx * 0.45);
+      const ly = rect.height * (0.5 + dy * 0.45);
+      cardBody.style.setProperty('--mouse-x', `${lx}px`);
+      cardBody.style.setProperty('--mouse-y', `${ly}px`);
+
+      if (orbCyan && orbViolet) {
+        gsap.to(orbCyan, { x: dx * 40, y: dy * 40, duration: 1.2, ease: "power1.out", overwrite: "auto" });
+        gsap.to(orbViolet, { x: -dx * 35, y: -dy * 35, duration: 1.2, ease: "power1.out", overwrite: "auto" });
+      }
+    }
+
+    // A. Desktop Mouse Parallax Tilt
     window.addEventListener('mousemove', (e) => {
+      // If mobile gyroscope recently updated, ignore synthetic mouse events from touch
+      if (isGyroActive && Date.now() - lastGyroTime < 1500) return;
+
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
       const dx = (e.clientX - cx) / cx;
       const dy = (e.clientY - cy) / cy;
 
-      gsap.to(cardBody, {
-        rotationY: dx * 8,
-        rotationX: -dy * 8,
-        transformPerspective: 1000,
-        duration: 0.5,
-        ease: "power1.out"
-      });
+      applyCardTilt(dx, dy, 8, 0.5);
 
+      // Pinpoint spotlight precisely to mouse pointer if cursor is hovering
       const rect = cardBody.getBoundingClientRect();
       const lx = e.clientX - rect.left;
       const ly = e.clientY - rect.top;
       cardBody.style.setProperty('--mouse-x', `${lx}px`);
       cardBody.style.setProperty('--mouse-y', `${ly}px`);
-
-      gsap.to(orbCyan, { x: dx * 40, y: dy * 40, duration: 1.2, ease: "power1.out" });
-      gsap.to(orbViolet, { x: -dx * 35, y: -dy * 35, duration: 1.2, ease: "power1.out" });
     });
 
     window.addEventListener('mouseleave', () => {
-      gsap.to(cardBody, { rotationY: 0, rotationX: 0, duration: 0.8, ease: "power2.out" });
+      if (!isGyroActive) {
+        gsap.to(cardBody, { rotationY: 0, rotationX: 0, duration: 0.8, ease: "power2.out", overwrite: "auto" });
+      }
     });
+
+    // B. Mobile Gyroscope / Accelerometer Phone Tilting (DeviceOrientationEvent)
+    function handleOrientation(e) {
+      if (e.gamma === null || e.beta === null || e.gamma === undefined || e.beta === undefined) return;
+
+      isGyroActive = true;
+      lastGyroTime = Date.now();
+
+      // gamma: Left-to-right tilt in degrees [-90, +90]
+      // beta: Front-to-back tilt in degrees [-180, +180]
+      // Natural reading angle when holding phone in hands is ~45deg pitch
+      const naturalPitch = 45;
+      const deltaBeta = e.beta - naturalPitch;
+      const deltaGamma = e.gamma;
+
+      // Clamp tilt to comfortable physiological range (+/- 25 degrees)
+      const clampedGamma = Math.max(-25, Math.min(25, deltaGamma));
+      const clampedBeta = Math.max(-25, Math.min(25, deltaBeta));
+
+      let normX = clampedGamma / 25; // -1 (left tilt) to +1 (right tilt)
+      let normY = clampedBeta / 25;  // -1 (back tilt) to +1 (forward tilt)
+
+      // Respect screen orientation angle (portrait vs landscape)
+      const screenAngle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+      let effX = normX;
+      let effY = normY;
+      if (screenAngle === 90) {
+        effX = normY;
+        effY = -normX;
+      } else if (screenAngle === -90 || screenAngle === 270) {
+        effX = -normY;
+        effY = normX;
+      } else if (screenAngle === 180) {
+        effX = -normX;
+        effY = -normY;
+      }
+
+      // Smoothly tilt card with physical responsiveness on mobile (14 deg)
+      applyCardTilt(effX, effY, 14, 0.45);
+    }
+
+    // C. iOS 13+ Safari Permission Handling & Auto-Registration
+    let gyroPermissionRequested = false;
+    function requestGyroPermission() {
+      if (gyroPermissionRequested) return;
+      gyroPermissionRequested = true;
+
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then((state) => {
+            if (state === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
+    // Attach permission request to first user touch or pointer interaction
+    window.addEventListener('touchstart', requestGyroPermission, { once: true, passive: true });
+    window.addEventListener('pointerdown', requestGyroPermission, { once: true, passive: true });
+
+    // For Android, Chrome mobile, and non-permission browsers, listen immediately
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+      window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+    }
+
+    // D. Touch Drag Fallback for Mobile (Finger drag tilt)
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches.length > 0) {
+        const touch = e.touches[0];
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = (touch.clientX - cx) / cx;
+        const dy = (touch.clientY - cy) / cy;
+
+        applyCardTilt(dx, dy, 12, 0.4);
+
+        const rect = cardBody.getBoundingClientRect();
+        const lx = touch.clientX - rect.left;
+        const ly = touch.clientY - rect.top;
+        cardBody.style.setProperty('--mouse-x', `${lx}px`);
+        cardBody.style.setProperty('--mouse-y', `${ly}px`);
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+      // If gyroscope is not actively emitting, gently center the card
+      if (!isGyroActive || Date.now() - lastGyroTime > 3000) {
+        gsap.to(cardBody, { rotationY: 0, rotationX: 0, duration: 0.8, ease: "power2.out", overwrite: "auto" });
+      }
+    }, { passive: true });
 
     // ==========================================
     // 3. MAGNETIC BUTTON PHYSICS (React Bits pattern)
@@ -878,6 +1010,16 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) {
+        mouse.x = e.touches[0].clientX;
+        mouse.y = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    window.addEventListener('touchend', () => {
+      mouse.x = -1000;
+      mouse.y = -1000;
+    }, { passive: true });
 
     class Particle {
       constructor() {

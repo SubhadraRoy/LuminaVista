@@ -1907,6 +1907,10 @@ Deliver your completion report using this structure:
   const runJevUltraSuite = require('./suite-jev-ultra.cjs');
   await runJevUltraSuite({ assert, window, rootDir });
 
+  // Suite 25: Mobile Gyroscope 3D Card Tilt & Phone Interaction
+  const runMobileGyroSuite = require('./suite-mobile-gyro.cjs');
+  await runMobileGyroSuite({ assert, window, rootDir });
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");
