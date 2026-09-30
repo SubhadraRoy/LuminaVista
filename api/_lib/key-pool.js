@@ -1,6 +1,7 @@
 // api/_lib/key-pool.js - Multi-Key Auto-Failover & Rotation Engine
 // Handles Multi-Key pools across Ollama Cloud, NVIDIA NIM, Groq, OpenRouter & Gemini
 // with intelligent rate-limit detection, response validation, and continuous rotation.
+import { scrubSecrets } from './auth-guard.js';
 
 const keyCooldowns = new Map();
 
@@ -362,14 +363,20 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
         if (data && !data.error && !isRateLimitOrQuotaError(res.status, rawText)) {
           const content = extractCompletionContent(data, rawText);
           if (content && content.trim() && content.trim() !== 'Task processed.' && content.trim() !== 'null') {
-            return { success: true, data, content, keyMeta: { index: 1, name: 'Custom User Key' }, failoverLogs };
+            return {
+              success: true,
+              data,
+              content,
+              keyMeta: { index: 1, name: 'Custom User Key', provider: 'custom' },
+              failoverLogs: failoverLogs.map(l => scrubSecrets(l))
+            };
           }
         }
       }
 
       failoverLogs.push(`[KeyPool]: Custom Key rate-limited or returned empty response. Cascading to platform key pool...`);
     } catch (err) {
-      failoverLogs.push(`[KeyPool]: Custom Key error (${err.message}). Cascading to platform pool...`);
+      failoverLogs.push(`[KeyPool]: Custom Key error (${scrubSecrets(err.message)}). Cascading to platform pool...`);
     }
   }
 
@@ -431,7 +438,18 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
             }
 
             failoverLogs.push(`[KeyPool]: Success from ${keyMeta.name} (${keyProv}, HTTP 200).`);
-            return { success: true, data, content, keyMeta, failoverLogs };
+            const safeKeyMeta = {
+              index: keyMeta.index,
+              name: keyMeta.name,
+              provider: keyProv
+            };
+            return {
+              success: true,
+              data,
+              content,
+              keyMeta: safeKeyMeta,
+              failoverLogs: failoverLogs.map(l => scrubSecrets(l))
+            };
           }
         }
 
@@ -453,13 +471,14 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
         }
 
         // Other HTTP error (e.g. 400 bad payload or 404 endpoint not found)
-        lastErrorDetail = `${keyMeta.name} (${keyProv}) returned HTTP ${res.status}: ${rawText.substring(0, 120)}`;
+        const scrubbedErrText = scrubSecrets(rawText.substring(0, 120));
+        lastErrorDetail = `${keyMeta.name} (${keyProv}) returned HTTP ${res.status}: ${scrubbedErrText}`;
         failoverLogs.push(`[KeyPool Error]: ${lastErrorDetail}`);
         continue;
 
       } catch (netErr) {
-        lastErrorDetail = `${keyMeta.name} (${keyProv}) network error: ${netErr.message}`;
-        failoverLogs.push(`[KeyPool]: Network error with ${keyMeta.name} (${keyProv}): ${netErr.message}. Attempting failover...`);
+        lastErrorDetail = `${keyMeta.name} (${keyProv}) network error: ${scrubSecrets(netErr.message)}`;
+        failoverLogs.push(`[KeyPool]: Network error with ${keyMeta.name} (${keyProv}): ${scrubSecrets(netErr.message)}. Attempting failover...`);
         continue;
       }
     }
@@ -473,16 +492,16 @@ export async function executeWithFailover({ provider = 'ollama', makeRequest, cu
   if (hadRateLimit) {
     failureReason = `ALL_KEYS_EXHAUSTED: All ${pool.length} configured keys for provider "${provider}" are currently rate-limited.`;
   } else if (hadAuthFailure) {
-    failureReason = `AUTH_FAILED: Authentication rejected for provider "${provider}". ${lastErrorDetail || 'Please verify API key credentials.'}`;
+    failureReason = `AUTH_FAILED: Authentication rejected for provider "${provider}". ${scrubSecrets(lastErrorDetail) || 'Please verify API key credentials.'}`;
   } else if (lastErrorDetail) {
-    failureReason = `GATEWAY_DISPATCH_FAILED: Provider "${provider}" error: ${lastErrorDetail}`;
+    failureReason = `GATEWAY_DISPATCH_FAILED: Provider "${provider}" error: ${scrubSecrets(lastErrorDetail)}`;
   } else {
     failureReason = `PROVIDER_UNAVAILABLE: Provider "${provider}" did not return a valid response.`;
   }
 
   return {
     success: false,
-    reason: failureReason,
-    failoverLogs
+    reason: scrubSecrets(failureReason),
+    failoverLogs: failoverLogs.map(l => scrubSecrets(l))
   };
 }

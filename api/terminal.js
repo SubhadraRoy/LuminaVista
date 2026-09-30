@@ -5,7 +5,9 @@ import {
   checkRateLimit,
   sanitizeError,
   enforcePayloadLimit,
-  auditLog
+  auditLog,
+  sendSecureJson,
+  scrubSecrets
 } from './_lib/auth-guard.js';
 
 export const maxDuration = 60;
@@ -17,11 +19,11 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
   // 1. Enforce payload limit (Max 200KB)
   if (!enforcePayloadLimit(req, 200000)) {
-    return res.status(413).json({ error: 'Payload Limit Exceeded (Max 200KB)' });
+    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded (Max 200KB)' });
   }
 
   const redis = getRedisClient();
@@ -30,24 +32,24 @@ export default async function handler(req, res) {
   const auth = await validateSession(req, redis);
   if (!auth.valid) {
     auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/terminal');
-    return res.status(auth.status).json({ error: auth.error });
+    return sendSecureJson(res.status(auth.status), auth.status, { error: auth.error });
   }
 
   // 3. Sliding IP Rate Limiting (20 commands / 5 minutes)
   const rate = await checkRateLimit(req, redis, 'terminal', 20, 300);
   if (!rate.allowed) {
     auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/terminal');
-    return res.status(rate.status).json({ error: rate.error });
+    return sendSecureJson(res, rate.status, { error: rate.error });
   }
 
   const { command, files } = req.body || {};
   if (!command || typeof command !== 'string') {
-    return res.status(400).json({ error: "Missing or invalid terminal command." });
+    return sendSecureJson(res, 400, { error: "Missing or invalid terminal command." });
   }
 
   if (!process.env.E2B_API_KEY) {
     auditLog('TERMINAL_CONFIG_FAULT', req, 'E2B_API_KEY missing in environment');
-    return res.status(500).json({ error: "MicroVM infrastructure unconfigured." });
+    return sendSecureJson(res, 500, { error: "MicroVM infrastructure unconfigured." });
   }
 
   let sbx = null;
@@ -77,21 +79,21 @@ export default async function handler(req, res) {
       for (const item of list) {
         if (item.type === 'file') {
           const content = await sbx.files.read(item.name);
-          workspaceFiles.push({ name: item.name, content });
+          workspaceFiles.push({ name: item.name, content: scrubSecrets(content) });
         }
       }
     } catch (ignore) {}
 
-    return res.status(200).json({
-      stdout: execution.stdout || '',
-      stderr: execution.stderr || '',
+    return sendSecureJson(res, 200, {
+      stdout: scrubSecrets(execution.stdout || ''),
+      stderr: scrubSecrets(execution.stderr || ''),
       error: execution.error ? sanitizeError(execution.error.message) : null,
       workspaceFiles
     });
 
   } catch (error) {
     auditLog('TERMINAL_FAULT', req, error.message);
-    return res.status(502).json({ error: sanitizeError(error, "MicroVM execution error.") });
+    return sendSecureJson(res, 502, { error: sanitizeError(error, "MicroVM execution error.") });
   } finally {
     if (sbx) await sbx.kill().catch(() => {});
   }

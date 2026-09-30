@@ -5,7 +5,9 @@ import {
   checkRateLimit,
   sanitizeError,
   enforcePayloadLimit,
-  auditLog
+  auditLog,
+  sendSecureJson,
+  scrubSecrets
 } from './_lib/auth-guard.js';
 
 export const maxDuration = 60;
@@ -21,11 +23,11 @@ const RUNNERS = {
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
   // 1. Enforce payload size limit (Max 100KB)
   if (!enforcePayloadLimit(req, 100000)) {
-    return res.status(413).json({ error: 'Payload Limit Exceeded (Max 100KB)' });
+    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded (Max 100KB)' });
   }
 
   const redis = getRedisClient();
@@ -34,24 +36,24 @@ export default async function handler(req, res) {
   const auth = await validateSession(req, redis);
   if (!auth.valid) {
     auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/compile');
-    return res.status(auth.status).json({ error: auth.error });
+    return sendSecureJson(res.status(auth.status), auth.status, { error: auth.error });
   }
 
   // 3. Sliding IP Rate Limiting (20 compilations / 5 minutes)
   const rate = await checkRateLimit(req, redis, 'compile', 20, 300);
   if (!rate.allowed) {
     auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/compile');
-    return res.status(rate.status).json({ error: rate.error });
+    return sendSecureJson(res, rate.status, { error: rate.error });
   }
 
   const { language, code } = req.body || {};
   if (!code || typeof code !== 'string') {
-    return res.status(400).json({ error: 'No valid source code provided.' });
+    return sendSecureJson(res, 400, { error: 'No valid source code provided.' });
   }
 
   if (!process.env.E2B_API_KEY) {
     auditLog('COMPILE_CONFIG_FAULT', req, 'E2B_API_KEY missing in environment');
-    return res.status(500).json({ error: 'Cloud compiler infrastructure unconfigured.' });
+    return sendSecureJson(res, 500, { error: 'Cloud compiler infrastructure unconfigured.' });
   }
 
   const runner = RUNNERS[language ? language.toLowerCase() : 'python'] || RUNNERS.python;
@@ -63,14 +65,16 @@ export default async function handler(req, res) {
 
     const execution = await sbx.commands.run(runner.cmd, { timeoutMs: 15000 });
 
-    const output = (execution.stdout || '') + (execution.stderr ? (execution.stdout ? '\n' : '') + execution.stderr : '');
-    return res.status(200).json({
-      output: output || '[Process exited cleanly with no output]',
+    const rawOutput = (execution.stdout || '') + (execution.stderr ? (execution.stdout ? '\n' : '') + execution.stderr : '');
+    const cleanOutput = scrubSecrets(rawOutput);
+
+    return sendSecureJson(res, 200, {
+      output: cleanOutput || '[Process exited cleanly with no output]',
       exitCode: execution.error ? 1 : 0
     });
   } catch (err) {
     auditLog('COMPILE_EXECUTION_FAULT', req, err.message);
-    return res.status(500).json({ error: sanitizeError(err, 'Cloud compiler execution failed.') });
+    return sendSecureJson(res, 500, { error: sanitizeError(err, 'Cloud compiler execution failed.') });
   } finally {
     if (sbx) await sbx.kill().catch(() => {});
   }

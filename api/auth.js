@@ -1,11 +1,11 @@
 import crypto from 'crypto';
 import { Redis } from '@upstash/redis';
 import { serialize } from 'cookie';
-import { getClientIp, auditLog } from './_lib/auth-guard.js';
+import { getClientIp, auditLog, sendSecureJson } from './_lib/auth-guard.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-  if (JSON.stringify(req.body || {}).length > 2000) return res.status(413).json({ error: 'Payload Limit Exceeded' });
+  if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
+  if (JSON.stringify(req.body || {}).length > 2000) return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded' });
 
   const expectedPassword = process.env.ADMIN_PASSWORD;
   const dbUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   if (!expectedPassword || !dbUrl || !dbUrl.startsWith('http')) {
     auditLog('AUTH_MISCONFIG', req, 'Database credentials or admin password missing');
-    return res.status(500).json({ success: false, error: 'Server misconfigured. Access blocked.' });
+    return sendSecureJson(res, 500, { success: false, error: 'Server misconfigured. Access blocked.' });
   }
 
   const clientIp = getClientIp(req);
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     const attempts = await redis.get(rateLimitKey);
     if (attempts && parseInt(attempts, 10) >= 5) {
       auditLog('AUTH_LOCKOUT', req, `Blocked after ${attempts} failed attempts`);
-      return res.status(429).json({
+      return sendSecureJson(res, 429, {
         success: false,
         error: 'Too many failed authentication attempts. Access locked for 15 minutes.'
       });
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       }));
 
       auditLog('AUTH_SUCCESS', req, 'Session granted');
-      return res.status(200).json({ success: true, message: 'Welcome to LuminaVista' });
+      return sendSecureJson(res, 200, { success: true, message: 'Welcome to LuminaVista' });
     }
 
     // 3. Register failed attempt with 15-minute TTL
@@ -62,10 +62,10 @@ export default async function handler(req, res) {
     await redis.expire(rateLimitKey, 900);
 
     auditLog('AUTH_FAILURE', req, 'Invalid credentials provided');
-    return res.status(401).json({ success: false, error: 'Access Denied.' });
+    return sendSecureJson(res, 401, { success: false, error: 'Access Denied.' });
 
   } catch (error) {
     auditLog('AUTH_CRASH', req, error.message);
-    return res.status(502).json({ success: false, error: 'Authentication engine failure.' });
+    return sendSecureJson(res, 502, { success: false, error: 'Authentication engine failure.' });
   }
 }

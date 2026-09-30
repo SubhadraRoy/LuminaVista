@@ -1584,6 +1584,154 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(!genericPyOutput.includes('Python Version:'), "Generic python code eliminated shallow Python Version stub");
   assert(genericPyOutput.includes('class ModuleRunner') || genericPyOutput.includes('def main():'), "Generic python code synthesizes functional module");
 
+  // Suite 20: Comprehensive Defense-In-Depth Zero-Exposure Security Hardening
+  console.log("\n[Test Suite 20: Comprehensive Defense-In-Depth Zero-Exposure Security Hardening]");
+  const {
+    scrubSecrets,
+    maskSecret,
+    sanitizeDeep,
+    setSecurityHeaders,
+    sendSecureJson
+  } = await import('../api/_lib/auth-guard.js');
+
+  // 1. maskSecret guarantees zero raw characters exposed
+  assert(maskSecret("sk-1234567890abcdef") === "••••••••••••", "maskSecret returns pure bullet mask without raw characters");
+  assert(!maskSecret("sk-1234567890abcdef").includes("sk-"), "maskSecret contains zero key prefix");
+  assert(!maskSecret("sk-1234567890abcdef").includes("cdef"), "maskSecret contains zero key suffix");
+
+  // 2. scrubSecrets removes known environment secret values dynamically
+  process.env.OLLAMA_API_KEY_TEST = "sec_ollama_live_token_778899";
+  const rawLogWithEnvSecret = "Error connecting with key sec_ollama_live_token_778899 on endpoint";
+  const scrubbedLog = scrubSecrets(rawLogWithEnvSecret);
+  assert(!scrubbedLog.includes("sec_ollama_live_token_778899"), "scrubSecrets dynamically scrubs active environment secrets");
+  assert(scrubbedLog.includes("[REDACTED_SECRET]"), "scrubSecrets injects redaction placeholder for env secrets");
+
+  // 3. scrubSecrets scrubs all known API key signatures and database URLs
+  const rawLeakString = [
+    "nvapi-9876543210abcdefghijklmnop",
+    "sk-proj-1234567890abcdefghijklmn",
+    "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+    "github_pat_11ABCD_1234567890abcdefghijklmnopqrstuvwxyz",
+    "ya29.a0ARrdaM-1234567890abcdefghijklmnopqrstuvwxyz",
+    "GOCSPX-1234567890abcdefghijklmn",
+    "e2b_1234567890abcdefghijklmn",
+    "redis://default:my_upstash_secret_password@host.upstash.io:6379",
+    "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.secret_sig",
+    "password=super_secret_admin_pass"
+  ].join(" ");
+  const cleanLeakString = scrubSecrets(rawLeakString);
+  assert(!cleanLeakString.includes("nvapi-9876543210"), "scrubSecrets removes NVIDIA API keys");
+  assert(!cleanLeakString.includes("sk-proj-123456"), "scrubSecrets removes OpenAI/Ollama secret keys");
+  assert(!cleanLeakString.includes("ghp_1234567890"), "scrubSecrets removes GitHub personal access tokens");
+  assert(!cleanLeakString.includes("github_pat_"), "scrubSecrets removes fine-grained GitHub PAT tokens");
+  assert(!cleanLeakString.includes("ya29.a0ARrdaM"), "scrubSecrets removes Google OAuth access tokens");
+  assert(!cleanLeakString.includes("GOCSPX-123456"), "scrubSecrets removes Google OAuth client secrets");
+  assert(!cleanLeakString.includes("e2b_1234567890"), "scrubSecrets removes E2B API keys");
+  assert(!cleanLeakString.includes("my_upstash_secret_password"), "scrubSecrets removes database connection passwords");
+  assert(!cleanLeakString.includes("secret_sig"), "scrubSecrets removes raw Bearer JWT tokens");
+  assert(!cleanLeakString.includes("super_secret_admin_pass"), "scrubSecrets removes password query/form parameters");
+
+  // 4. sanitizeDeep recursively cleans nested objects and arrays
+  const sensitiveObj = {
+    user: "operator",
+    key: "sk-plain-secret-in-key",
+    secret: "plain-secret-in-secret",
+    apiKey: "plain-secret-in-apiKey",
+    nested: {
+      password: "admin_password_raw",
+      token: "bearer_token_raw",
+      normal: "This contains nvapi-secretkey12345678 within text"
+    },
+    items: [
+      { key: "item-key-1" },
+      { notes: "Connected to redis://default:secretpass@redis:6379" }
+    ]
+  };
+  const sanitizedObj = sanitizeDeep(sensitiveObj);
+  assert(sanitizedObj.key === "[REDACTED]", "sanitizeDeep redacts 'key' field value");
+  assert(sanitizedObj.secret === "[REDACTED]", "sanitizeDeep redacts 'secret' field value");
+  assert(sanitizedObj.apiKey === "[REDACTED]", "sanitizeDeep redacts 'apiKey' field value");
+  assert(sanitizedObj.nested.password === "[REDACTED]", "sanitizeDeep redacts nested 'password' field value");
+  assert(sanitizedObj.nested.token === "[REDACTED]", "sanitizeDeep redacts nested 'token' field value");
+  assert(!sanitizedObj.nested.normal.includes("nvapi-secretkey12345678"), "sanitizeDeep scrubs nested string values");
+  assert(sanitizedObj.items[0].key === "[REDACTED]", "sanitizeDeep redacts array element 'key' field");
+  assert(!sanitizedObj.items[1].notes.includes("secretpass"), "sanitizeDeep scrubs array element string values");
+
+  // 5. setSecurityHeaders sets zero-trust headers on response
+  const mockSecRes = {
+    headers: {},
+    setHeader: (k, v) => { mockSecRes.headers[k] = v; }
+  };
+  setSecurityHeaders(mockSecRes);
+  assert(mockSecRes.headers['X-Content-Type-Options'] === 'nosniff', "Security headers enforce X-Content-Type-Options: nosniff");
+  assert(mockSecRes.headers['X-Frame-Options'] === 'DENY', "Security headers enforce X-Frame-Options: DENY");
+  assert(mockSecRes.headers['Cache-Control'].includes('no-store'), "Security headers enforce Cache-Control: no-store");
+  assert(mockSecRes.headers['Strict-Transport-Security'].includes('max-age=63072000'), "Security headers enforce HSTS with 2-year duration");
+
+  // 6. sendSecureJson applies security headers and deep sanitization
+  let jsonStatus = 0;
+  let jsonData = null;
+  const mockSendRes = {
+    headers: {},
+    setHeader: (k, v) => { mockSendRes.headers[k] = v; },
+    status: (code) => { jsonStatus = code; return mockSendRes; },
+    json: (data) => { jsonData = data; return mockSendRes; }
+  };
+  sendSecureJson(mockSendRes, 201, {
+    key: "sensitive_to_redact",
+    message: "Contains nvapi-abc1234567890 key"
+  });
+  assert(jsonStatus === 201, "sendSecureJson sets status code 201");
+  assert(mockSendRes.headers['X-Content-Type-Options'] === 'nosniff', "sendSecureJson sets security headers");
+  assert(jsonData.key === "[REDACTED]", "sendSecureJson automatically redacts sensitive keys");
+  assert(!jsonData.message.includes("nvapi-abc1234567890"), "sendSecureJson automatically scrubs secrets in strings");
+
+  // 7. Live /api/chat telemetry endpoint zero-leakage check
+  const secChatHandler = (await import('../api/chat.js')).default;
+  let telemSecStatus = 0;
+  let telemSecData = null;
+  const mockSecTelemReq = {
+    method: 'GET',
+    query: { action: 'telemetry' }
+  };
+  const mockSecTelemRes = {
+    headers: {},
+    setHeader: (k, v) => { mockSecTelemRes.headers[k] = v; },
+    status: (code) => { telemSecStatus = code; return mockSecTelemRes; },
+    json: (data) => { telemSecData = data; return mockSecTelemRes; }
+  };
+  await secChatHandler(mockSecTelemReq, mockSecTelemRes);
+  assert(telemSecStatus === 200, "Hardened telemetry returns 200");
+  assert(mockSecTelemRes.headers['X-Content-Type-Options'] === 'nosniff', "Telemetry sets nosniff header");
+  assert(mockSecTelemRes.headers['Cache-Control'].includes('no-store'), "Telemetry sets no-store header");
+  const allMaskedPoolKeys = [
+    ...(telemSecData.pools?.ollama || []),
+    ...(telemSecData.pools?.nvidia || []),
+    ...(telemSecData.pools?.groq || [])
+  ];
+  for (const poolEntry of allMaskedPoolKeys) {
+    assert(poolEntry.keyMasked === "••••••••••••", `Key ${poolEntry.name} uses zero-character mask ••••••••••••`);
+    assert(!poolEntry.keyMasked.includes("sk-") && !poolEntry.keyMasked.includes("nvapi-"), `Key ${poolEntry.name} reveals 0 key prefix`);
+    assert(!poolEntry.key, `Key ${poolEntry.name} does not leak raw key property`);
+  }
+  const serializedTelem = JSON.stringify(telemSecData);
+  assert(!serializedTelem.includes(process.env.OLLAMA_API_KEY1 || 'NON_EXISTENT_TOKEN_1'), "Telemetry JSON does not contain OLLAMA_API_KEY1");
+  assert(!serializedTelem.includes(process.env.NVIDIA_API_KEY || 'NON_EXISTENT_TOKEN_2'), "Telemetry JSON does not contain NVIDIA_API_KEY");
+
+  // 8. executeWithFailover keyMeta stripped of raw key property
+  const { executeWithFailover: secFailover } = await import('../api/_lib/key-pool.js');
+  let observedKeyMeta = null;
+  await secFailover({
+    provider: 'ollama',
+    makeRequest: async (key) => {
+      return { ok: true, json: async () => ({ choices: [{ message: { content: 'Security verification clean' } }] }) };
+    }
+  }).then(res => { observedKeyMeta = res.keyMeta; });
+  if (observedKeyMeta) {
+    assert(observedKeyMeta.name !== undefined, "executeWithFailover keyMeta has name descriptor");
+    assert(observedKeyMeta.key === undefined, "executeWithFailover keyMeta strictly strips raw key property");
+  }
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

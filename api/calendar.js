@@ -3,10 +3,12 @@
 // Keeps total deployment functions well below Vercel Hobby's 12-function limit.
 
 import cookie from 'cookie';
+import { sendSecureJson, sanitizeError, setSecurityHeaders } from './_lib/auth-guard.js';
 
 // Helper to set robust CORS headers across edge and serverless environments
 function setCorsHeaders(req, res) {
   if (!res || typeof res.setHeader !== 'function') return;
+  setSecurityHeaders(res);
   const origin = req?.headers?.origin || '*';
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -21,7 +23,7 @@ async function handleAuth(req, res) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) {
-    return res.status(200).json({
+    return sendSecureJson(res, 200, {
       configured: false,
       error: 'GOOGLE_CLIENT_ID is not configured in Vercel environment variables.'
     });
@@ -42,7 +44,7 @@ async function handleAuth(req, res) {
   const scope = encodeURIComponent('https://www.googleapis.com/auth/calendar');
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
 
-  return res.status(200).json({
+  return sendSecureJson(res, 200, {
     configured: true,
     authUrl,
     redirectUri
@@ -56,7 +58,7 @@ async function handleCallback(req, res) {
 
   const { code, error, state } = req.query || {};
   if (error || !code) {
-    const errorMsg = error || 'Authorization denied';
+    const errorMsg = sanitizeError(error || 'Authorization denied');
     return res.status(400).send(`
       <!DOCTYPE html>
       <html>
@@ -79,7 +81,7 @@ async function handleCallback(req, res) {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return res.status(500).send('Server missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in Vercel environment variables.');
+    return res.status(500).send('Server missing Google OAuth configuration in Vercel environment variables.');
   }
 
   let redirectUriFromState = null;
@@ -111,8 +113,8 @@ async function handleCallback(req, res) {
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok) {
       console.error('Google token exchange error:', tokenData);
-      const errMsg = tokenData.error_description || tokenData.error || 'Token exchange failed';
-      return res.status(400).send(`Token exchange failed: ${errMsg}`);
+      const errMsg = sanitizeError(tokenData.error_description || tokenData.error || 'Token exchange failed');
+      return res.status(400).send(`Token exchange failed: ${escapeHtml(errMsg)}`);
     }
 
     // Preserve existing refresh_token if Google does not return a new one on re-auth
@@ -190,7 +192,7 @@ async function handleStatus(req, res) {
   const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || req.query?.redirect_uri || `${proto}://${host}/api/calendar/callback`;
 
-  return res.status(200).json({
+  return sendSecureJson(res, 200, {
     configured,
     connected,
     hasClientId: !!process.env.GOOGLE_CLIENT_ID,
@@ -258,7 +260,7 @@ async function handleSync(req, res) {
   const accessToken = await getValidAccessToken(req, res);
 
   if (!accessToken) {
-    return res.status(401).json({
+    return sendSecureJson(res, 401, {
       connected: false,
       error: 'Not connected to Google Calendar. Please authenticate.'
     });
@@ -279,17 +281,17 @@ async function handleSync(req, res) {
 
       if (!gcalRes.ok) {
         const errText = await gcalRes.text();
-        return res.status(gcalRes.status).json({ error: 'Failed to fetch from Google Calendar', details: errText });
+        return sendSecureJson(res, gcalRes.status, { error: 'Failed to fetch from Google Calendar', details: sanitizeError(errText) });
       }
 
       const data = await gcalRes.json();
-      return res.status(200).json({
+      return sendSecureJson(res, 200, {
         success: true,
         items: data.items || []
       });
     } catch (err) {
       console.error('Google Calendar Sync GET error:', err);
-      return res.status(500).json({ error: 'Failed to pull Google Calendar events' });
+      return sendSecureJson(res, 500, { error: 'Failed to pull Google Calendar events' });
     }
   }
 
@@ -346,17 +348,17 @@ async function handleSync(req, res) {
 
       if (!gcalRes.ok) {
         const errText = await gcalRes.text();
-        return res.status(gcalRes.status).json({ error: 'Failed to push to Google Calendar', details: errText });
+        return sendSecureJson(res, gcalRes.status, { error: 'Failed to push to Google Calendar', details: sanitizeError(errText) });
       }
 
       const createdItem = await gcalRes.json();
-      return res.status(200).json({
+      return sendSecureJson(res, 200, {
         success: true,
         item: createdItem
       });
     } catch (err) {
       console.error('Google Calendar Sync POST error:', err);
-      return res.status(500).json({ error: 'Failed to push Google Calendar event' });
+      return sendSecureJson(res, 500, { error: 'Failed to push Google Calendar event' });
     }
   }
 
@@ -365,7 +367,7 @@ async function handleSync(req, res) {
     try {
       const rawEventId = req.query?.eventId || req.body?.eventId;
       if (!rawEventId) {
-        return res.status(400).json({ error: 'Missing eventId to delete from Google Calendar' });
+        return sendSecureJson(res, 400, { error: 'Missing eventId to delete from Google Calendar' });
       }
       const eventId = String(rawEventId).replace(/^gcal_/, '');
 
@@ -376,17 +378,17 @@ async function handleSync(req, res) {
 
       if (!gcalRes.ok && gcalRes.status !== 404 && gcalRes.status !== 410) {
         const errText = await gcalRes.text();
-        return res.status(gcalRes.status).json({ error: 'Failed to delete Google Calendar event', details: errText });
+        return sendSecureJson(res, gcalRes.status, { error: 'Failed to delete Google Calendar event', details: sanitizeError(errText) });
       }
 
-      return res.status(200).json({ success: true, deletedEventId: eventId });
+      return sendSecureJson(res, 200, { success: true, deletedEventId: eventId });
     } catch (err) {
       console.error('Google Calendar Sync DELETE error:', err);
-      return res.status(500).json({ error: 'Failed to delete event from Google Calendar' });
+      return sendSecureJson(res, 500, { error: 'Failed to delete event from Google Calendar' });
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  return sendSecureJson(res, 405, { error: 'Method not allowed' });
 }
 
 function escapeHtml(str) {

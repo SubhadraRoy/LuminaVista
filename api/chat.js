@@ -5,7 +5,10 @@ import {
   checkRateLimit,
   sanitizeError,
   enforcePayloadLimit,
-  auditLog
+  auditLog,
+  maskSecret,
+  sendSecureJson,
+  scrubSecrets
 } from './_lib/auth-guard.js';
 import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
 import {
@@ -136,9 +139,7 @@ export default async function handler(req, res) {
     const oPool = getKeyPool('ollama');
     const nPool = getKeyPool('nvidia');
     const gPool = getKeyPool('groq');
-    const mask = (k) => (!k || k.length <= 6) ? '***' : `${k.substring(0, 3)}...${k.substring(k.length - 4)}`;
-
-    return res.status(200).json({
+    return sendSecureJson(res, 200, {
       success: true,
       build: 'v14.0.6-verified',
       provider: 'hybrid_pool',
@@ -146,19 +147,19 @@ export default async function handler(req, res) {
       endpoint: normalizeOllamaEndpoint(process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions'),
       configuredModel: process.env.OLLAMA_MODEL || 'gpt-oss:20b',
       pools: {
-        ollama: oPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'ollama' })),
-        nvidia: nPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'nvidia' })),
-        groq: gPool.map(k => ({ name: k.name, keyMasked: mask(k.key), provider: 'groq' }))
+        ollama: oPool.map(k => ({ name: k.name, keyMasked: maskSecret(k.key), provider: 'ollama' })),
+        nvidia: nPool.map(k => ({ name: k.name, keyMasked: maskSecret(k.key), provider: 'nvidia' })),
+        groq: gPool.map(k => ({ name: k.name, keyMasked: maskSecret(k.key), provider: 'groq' }))
       },
       totalCount: oPool.length + nPool.length + gPool.length
     });
   }
 
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
   // 1. Enforce payload size cap (250 KB)
   if (!enforcePayloadLimit(req, 250000)) {
-    return res.status(413).json({ error: 'Payload Limit Exceeded (Max 250KB)' });
+    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded (Max 250KB)' });
   }
 
   const redis = getRedisClient();
@@ -167,14 +168,14 @@ export default async function handler(req, res) {
   const auth = await validateSession(req, redis);
   if (!auth.valid) {
     auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/chat');
-    return res.status(auth.status).json({ error: auth.error });
+    return sendSecureJson(res.status(auth.status), auth.status, { error: auth.error });
   }
 
   // 3. Sliding IP Rate Limiting (30 requests / 5 minutes)
   const rate = await checkRateLimit(req, redis, 'chat', 30, 300);
   if (!rate.allowed) {
     auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/chat');
-    return res.status(rate.status).json({ error: rate.error });
+    return sendSecureJson(res, rate.status, { error: rate.error });
   }
 
   try {
@@ -209,7 +210,7 @@ export default async function handler(req, res) {
     const jevTelemetry = jevClassifyIntent(prompt, currentVfs);
     if (!jevTelemetry.guardrailPassed) {
       auditLog('SECURITY_GUARDRAIL_TRIGGERED', req, `Blocked malicious payload in prompt: ${(prompt || '').substring(0, 100)}`);
-      return res.status(400).json({
+      return sendSecureJson(res, 400, {
         error: 'Security Guardrail Violation: Potentially destructive system command blocked by Jev System-1 safety layer.',
         jevTelemetry
       });
@@ -710,19 +711,25 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({
+    const safeActiveKeyMeta = lastActiveKeyMeta ? {
+      index: lastActiveKeyMeta.index,
+      name: lastActiveKeyMeta.name,
+      provider: lastActiveKeyMeta.provider
+    } : null;
+
+    return sendSecureJson(res, 200, {
       reply: aiReply,
       vfs: currentVfs,
       logs: terminalLogs,
       messages,
       failoverLogs: allFailoverLogs,
-      activeKeyMeta: lastActiveKeyMeta,
+      activeKeyMeta: safeActiveKeyMeta,
       rateLimited: !failoverResult?.success && !!(failoverResult?.reason?.includes('ALL_KEYS_EXHAUSTED')),
       jevTelemetry
     });
 
   } catch (error) {
     auditLog('CHAT_ERROR', req, error.message);
-    return res.status(500).json({ error: sanitizeError(error, 'Autonomous agent processing failure.') });
+    return sendSecureJson(res, 500, { error: sanitizeError(error, 'Autonomous agent processing failure.') });
   }
 }

@@ -5,7 +5,7 @@
 
 import { Sandbox } from '@e2b/code-interpreter';
 import { getRedisClient, getSafeStorage } from './_lib/redis.js';
-import { sanitizeError, auditLog, validateSession } from './_lib/auth-guard.js';
+import { sanitizeError, auditLog, validateSession, sendSecureJson, scrubSecrets, sanitizeDeep } from './_lib/auth-guard.js';
 import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
 import { jevGenerateBespokeResponse } from './_lib/jev-engine.js';
 import { sanitizeProviderMessages } from './chat.js';
@@ -23,11 +23,11 @@ export default async function handler(req, res) {
     if (jobId) {
       try {
         const raw = await storage.get(`job_state:${jobId}`);
-        if (!raw) return res.status(404).json({ error: 'Job not found' });
+        if (!raw) return sendSecureJson(res, 404, { error: 'Job not found' });
         const job = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        return res.status(200).json({ success: true, job });
+        return sendSecureJson(res, 200, { success: true, job });
       } catch (err) {
-        return res.status(500).json({ error: 'Failed to retrieve job state' });
+        return sendSecureJson(res, 500, { error: 'Failed to retrieve job state' });
       }
     }
 
@@ -48,9 +48,9 @@ export default async function handler(req, res) {
             }
           }
         }
-        return res.status(200).json({ success: true, completedJobs });
+        return sendSecureJson(res, 200, { success: true, completedJobs });
       } catch (err) {
-        return res.status(500).json({ error: 'Failed to query completed jobs' });
+        return sendSecureJson(res, 500, { error: 'Failed to query completed jobs' });
       }
     }
 
@@ -85,37 +85,37 @@ export default async function handler(req, res) {
         }
 
         await storage.set('cloud_scheduled_tasks', JSON.stringify(schedules), { ex: 86400 * 30 });
-        return res.status(200).json({ success: true, executedCount: ranTasks.length, tasks: ranTasks });
+        return sendSecureJson(res, 200, { success: true, executedCount: ranTasks.length, tasks: ranTasks });
       } catch (err) {
-        return res.status(500).json({ error: 'Failed to run due schedules' });
+        return sendSecureJson(res, 500, { error: 'Failed to run due schedules' });
       }
     }
 
-    return res.status(400).json({ error: 'Missing jobId or action parameter' });
+    return sendSecureJson(res, 400, { error: 'Missing jobId or action parameter' });
   }
 
   // 2. POST Requests: Dispatch autonomous job or sync scheduled tasks
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
   const { action, jobId, userSession, prompt, requestedModel, provider, messages, currentVfs, schedules } = req.body || {};
 
   // Action: Sync user's scheduled tasks to cloud
   if (action === 'sync_schedules') {
-    if (!Array.isArray(schedules)) return res.status(400).json({ error: 'Invalid schedules payload' });
+    if (!Array.isArray(schedules)) return sendSecureJson(res, 400, { error: 'Invalid schedules payload' });
     try {
       await storage.set('cloud_scheduled_tasks', JSON.stringify(schedules), { ex: 86400 * 30 });
       if (userSession) {
         await storage.set(`user_schedules:${userSession}`, JSON.stringify(schedules), { ex: 86400 * 30 });
       }
-      return res.status(200).json({ success: true, count: schedules.length });
+      return sendSecureJson(res, 200, { success: true, count: schedules.length });
     } catch (err) {
-      return res.status(500).json({ error: 'Failed to sync schedules' });
+      return sendSecureJson(res, 500, { error: 'Failed to sync schedules' });
     }
   }
 
   // Dispatch background job
   if (!jobId) {
-    return res.status(400).json({ error: 'Missing required worker parameters' });
+    return sendSecureJson(res, 400, { error: 'Missing required worker parameters' });
   }
 
   const effectiveSession = userSession || 'sovereign_session';
@@ -127,7 +127,7 @@ export default async function handler(req, res) {
       const active = await redis.get(`session:${userSession}`);
       if (!active && userSession && userSession !== 'sovereign_session') {
         auditLog('WORKER_UNAUTHORIZED', req, `Invalid userSession for job ${jobId}`);
-        return res.status(401).json({ error: 'Unauthorized worker invocation' });
+        return sendSecureJson(res, 401, { error: 'Unauthorized worker invocation' });
       }
     } catch (err) {
       // Graceful fallback for mock tests
@@ -155,13 +155,13 @@ export default async function handler(req, res) {
       req
     });
 
-    return res.status(200).json({ success: true, jobId, ...result });
+    return sendSecureJson(res, 200, { success: true, jobId, ...result });
 
   } catch (error) {
     auditLog('WORKER_FAULT', req, error.message);
     const safeError = sanitizeError(error, 'Background execution failure');
     await storage.set(`job_state:${jobId}`, JSON.stringify({ status: 'failed', error: safeError }), { ex: 3600 });
-    return res.status(500).json({ error: safeError });
+    return sendSecureJson(res, 500, { error: safeError });
   }
 }
 
@@ -322,7 +322,7 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
   }
 
   // 3. Mark job as completed and persist to storage
-  const finalState = {
+  const rawFinalState = {
     status: 'completed',
     jobId,
     prompt,
@@ -331,6 +331,8 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
     logs: terminalLogs,
     completedAt: Date.now()
   };
+
+  const finalState = sanitizeDeep(rawFinalState);
 
   await storage.set(`job_state:${jobId}`, JSON.stringify(finalState), { ex: 86400 * 7 });
   return finalState;

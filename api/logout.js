@@ -1,6 +1,6 @@
 import { serialize } from 'cookie';
 import { getRedisClient } from './_lib/redis.js';
-import { auditLog } from './_lib/auth-guard.js';
+import { auditLog, sendSecureJson } from './_lib/auth-guard.js';
 
 export default async function handler(req, res) {
   try {
@@ -20,8 +20,8 @@ export default async function handler(req, res) {
     }));
 
     auditLog('AUTH_LOGOUT', req, 'Session terminated');
-    return res.status(200).json({ success: true });
+    return sendSecureJson(res, 200, { success: true });
   } catch (error) {
-    return res.status(500).json({ success: false, error: 'Logout interaction failed.' });
+    return sendSecureJson(res, 500, { success: false, error: 'Logout interaction failed.' });
   }
 }
