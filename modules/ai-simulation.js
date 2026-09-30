@@ -856,6 +856,22 @@ if __name__ == "__main__":
       // Check view intent
       const isView = /\b(view|show|check|list|what\s*(is|are|do|have)|upcoming|get|find|inspect)\b/i.test(pTrim) && !/\b(create|add|edit|update|reschedule|move|delete|cancel|clear|remove)\b/i.test(pTrim);
       if (isView) {
+        const isNextWeek = /\b(next\s*weeks?|upcoming\s*week)\b/i.test(pTrim);
+        const isThisWeek = /\b(this\s*week|upcoming\s*(7|seven)\s*days|current\s*week|week)\b/i.test(pTrim);
+        if (isNextWeek) {
+          return thoughts +
+            `### Inspecting Sovereign Calendar Schedule (Next Week)\n\n` +
+            `Querying scheduled events and meetings for next week...\n\n` +
+            `[TOOL:SCHEDULE_EVENT action="view" range="next_week" daysAhead="7"][/TOOL:SCHEDULE_EVENT]\n\n` +
+            `[TOOL:TASK_COMPLETE summary="Retrieved calendar schedule for next week."][/TOOL:TASK_COMPLETE]`;
+        }
+        if (isThisWeek) {
+          return thoughts +
+            `### Inspecting Sovereign Calendar Schedule (This Week)\n\n` +
+            `Querying scheduled events and meetings for the upcoming week...\n\n` +
+            `[TOOL:SCHEDULE_EVENT action="view" range="week" daysAhead="7"][/TOOL:SCHEDULE_EVENT]\n\n` +
+            `[TOOL:TASK_COMPLETE summary="Retrieved calendar schedule for this week."][/TOOL:TASK_COMPLETE]`;
+        }
         let targetDate = dateStr;
         if (pLower.includes('tomorrow')) {
           const tom = new Date();
@@ -865,7 +881,7 @@ if __name__ == "__main__":
         return thoughts +
           `### Inspecting Sovereign Calendar Schedule\n\n` +
           `Querying scheduled events for ${targetDate}...\n\n` +
-          `[TOOL:SCHEDULE_EVENT action="view" date="${targetDate}"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="view" date="${targetDate}"][/TOOL:SCHEDULE_EVENT]\n\n` +
           `[TOOL:TASK_COMPLETE summary="Calendar events retrieved for ${targetDate}."][/TOOL:TASK_COMPLETE]`;
       }
 

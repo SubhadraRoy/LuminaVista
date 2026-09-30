@@ -86,7 +86,9 @@ export function jevClassifyIntent(prompt = '', vfs = {}) {
   }
   // 4. Calendar Scheduling & Management Intent
   else if (
-    /\b(schedule|calendar|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
+    /\b(schedule|calendar|calander|calender|calndr|calndar|clendar|scheule|scheduale|sched|skedule|sked|sechdule|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours|agenda|timetable|itinerary)\b/i.test(p) ||
+    /\b(check|show|view|see|inspect|what('s|\s+is)?\s+on)\b.*\b(calander|calendar|calender|calndr|scheule|scheduale|sched|skedule|agenda|timetable|itinerary|meetings?|events?|appointments?|routine|week|day)\b/i.test(p) ||
+    /\b(next\s+week'?s?|this\s+week'?s?|upcoming)\s+(scheule|schedule|sched|agenda|calendar|calander|calender|plan|events?|meetings?)\b/i.test(p) ||
     /\[tool:schedule_event/i.test(p)
   ) {
     route = 'SCHEDULE_CALENDAR';
@@ -1113,6 +1115,22 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
     // Check view intent
     const isView = /\b(view|show|check|list|what\s*(is|are|do|have)|upcoming|get|find|inspect)\b/i.test(pTrim) && !/\b(create|add|edit|update|reschedule|move|delete|cancel|clear|remove)\b/i.test(pTrim);
     if (isView) {
+      const isNextWeek = /\b(next\s*weeks?|upcoming\s*week)\b/i.test(pTrim);
+      const isThisWeek = /\b(this\s*week|upcoming\s*(7|seven)\s*days|current\s*week|week)\b/i.test(pTrim);
+      if (isNextWeek) {
+        return thoughts +
+          `### Inspecting Sovereign Calendar Schedule (Next Week)\n\n` +
+          `Querying scheduled events and meetings for next week...\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="view" range="next_week" daysAhead="7"][/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Retrieved calendar schedule for next week."][/TOOL:TASK_COMPLETE]`;
+      }
+      if (isThisWeek) {
+        return thoughts +
+          `### Inspecting Sovereign Calendar Schedule (This Week)\n\n` +
+          `Querying scheduled events and meetings for the upcoming week...\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="view" range="week" daysAhead="7"][/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Retrieved calendar schedule for this week."][/TOOL:TASK_COMPLETE]`;
+      }
       let targetDate = dateStr;
       if (pLower.includes('tomorrow')) {
         const tom = new Date();
@@ -1122,7 +1140,7 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
       return thoughts +
         `### Inspecting Sovereign Calendar Schedule\n\n` +
         `Querying scheduled events for ${targetDate}...\n\n` +
-        `[TOOL:SCHEDULE_EVENT action="view" date="${targetDate}"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
+        `[TOOL:SCHEDULE_EVENT action="view" date="${targetDate}"][/TOOL:SCHEDULE_EVENT]\n\n` +
         `[TOOL:TASK_COMPLETE summary="Calendar events retrieved for ${targetDate}."][/TOOL:TASK_COMPLETE]`;
     }
 

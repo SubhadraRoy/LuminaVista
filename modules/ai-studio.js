@@ -102,7 +102,9 @@
     }
     // 4. Calendar Scheduling & Management Intent
     else if (
-      /\b(schedule|calendar|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours)\b/i.test(p) ||
+      /\b(schedule|calendar|calander|calender|calndr|calndar|clendar|scheule|scheduale|sched|skedule|sked|sechdule|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours|agenda|timetable|itinerary)\b/i.test(p) ||
+      /\b(check|show|view|see|inspect|what('s|\s+is)?\s+on)\b.*\b(calander|calendar|calender|calndr|scheule|scheduale|sched|skedule|agenda|timetable|itinerary|meetings?|events?|appointments?|routine|week|day)\b/i.test(p) ||
+      /\b(next\s+week'?s?|this\s+week'?s?|upcoming)\s+(scheule|schedule|sched|agenda|calendar|calander|calender|plan|events?|meetings?)\b/i.test(p) ||
       /\[tool:schedule_event/i.test(p)
     ) {
       route = 'SCHEDULE_CALENDAR';
@@ -783,6 +785,24 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
               ? evts.map(e => `  • [ID: ${e.id}] "${e.title}" | ${e.start} -> ${e.end} | Category: ${e.category}${e.googleEventId ? ' (Google Synced)' : ''}`).join('\n')
               : '  (No events found matching query)';
             results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="view" status="success" count="${res.count}"]\nFound ${res.count} scheduled event(s):\n${listStr}\n[/TOOL_RESULT:SCHEDULE_EVENT]`);
+
+            // Visibly format and display the scheduled events directly in the chat bubble
+            if (window.aiConversation && window.aiConversation.length > 0) {
+              const lastMsg = window.aiConversation[window.aiConversation.length - 1];
+              if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.content.includes('📅 Scheduled Events')) {
+                const rangeLabel = attrs.range === 'next_week' ? 'Next Week' : (attrs.range || attrs.date || 'Upcoming');
+                const formattedEvents = evts.length > 0
+                  ? `\n\n**📅 Scheduled Events Found for ${escapeHtml(rangeLabel)} (${evts.length}):**\n` + evts.map(e => {
+                      const s = e.start ? e.start.replace('T', ' ') : '';
+                      const ed = e.end ? e.end.replace('T', ' ') : '';
+                      return `• **${escapeHtml(e.title || 'Untitled')}** — \`${s}\` to \`${ed}\` *(Category: ${e.category || 'general'}${e.googleEventId ? ' | Google Synced' : ''})*`;
+                    }).join('\n')
+                  : `\n\nℹ️ **No events currently scheduled** for ${escapeHtml(rangeLabel)}. Your calendar is clear! You can ask me to schedule an event or auto-plan your week anytime.`;
+                lastMsg.content += formattedEvents;
+                updateActiveSessionMessages();
+                renderAiChat();
+              }
+            }
           } else if (action === 'create' || action === 'add') {
             const e = res.event || {};
             results.push(`[TOOL_RESULT:SCHEDULE_EVENT action="create" status="success"]\nCreated and scheduled event "${e.title}" [ID: ${e.id}] from ${e.start} to ${e.end} (Category: ${e.category}). Synced to calendar.\n[/TOOL_RESULT:SCHEDULE_EVENT]`);

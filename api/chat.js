@@ -524,11 +524,12 @@ export default async function handler(req, res) {
         aiReply = failoverResult.content || extractCompletionContent(aiData) || "";
 
         const isAutonomousIntent = jevTelemetry?.route === 'AUTONOMOUS_TASK';
-        const isStallingText = /\b(what specific operation would you like|what would you like me to work on|let me know the specific task|what specific operation|what task should i do|what should i do first|could you let me know the specific task|ready to get underway|let me know what task)\b/i.test(aiReply);
-        const lacksToolCalls = isAutonomousIntent && !aiReply.includes('[TOOL:');
+        const isCalendarIntent = jevTelemetry?.route === 'SCHEDULE_CALENDAR';
+        const isStallingText = /\b(what specific operation would you like|what would you like me to work on|let me know the specific task|what specific operation|what task should i do|what should i do first|could you let me know the specific task|ready to get underway|let me know what task|what specific feature, application, or script would you like to build)\b/i.test(aiReply);
+        const lacksToolCalls = (isAutonomousIntent && !aiReply.includes('[TOOL:')) || (isCalendarIntent && !aiReply.includes('[TOOL:SCHEDULE_EVENT'));
 
         if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.' || aiReply.trim() === 'null' || isStallingText || lacksToolCalls) {
-          terminalLogs.push('[Response Guard]: Model returned conversational deflection or missing tool execution on autonomous task. Falling back to sovereign generator.');
+          terminalLogs.push('[Response Guard]: Model returned conversational deflection or missing tool execution on autonomous/calendar task. Falling back to sovereign generator.');
           aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
         }
       }

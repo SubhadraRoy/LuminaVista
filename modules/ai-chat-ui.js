@@ -273,16 +273,46 @@
           <span><strong>MicroVM Terminal Exec:</strong> <code class="text-cyan-200 bg-black/40 px-2 py-0.5 rounded">➜ ${escapeHtml(cmd.trim())}</code></span>
         </div>`);
       })
-      .replace(/\[TOOL:SCHEDULE_EVENT(?: action="([^"]*)")?(?: title="([^"]*)")?(?: start="([^"]*)")?(?: end="([^"]*)")?(?: category="([^"]*)")?(?: date="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:SCHEDULE_EVENT\])?/g, (m, action, title, start, end, cat, date) => {
-        const act = action || 'create';
-        const titleStr = title || 'Calendar Event';
+      .replace(/\[TOOL:SCHEDULE_EVENT([^\]]*)\](?:([\s\S]*?)\[\/TOOL:SCHEDULE_EVENT\])?/g, (m, attrStr) => {
+        const attrs = {};
+        const attrRegex = /([a-zA-Z0-9_\-]+)="([^"]*)"/g;
+        let aMatch;
+        while ((aMatch = attrRegex.exec(attrStr || '')) !== null) {
+          attrs[aMatch[1]] = aMatch[2];
+        }
+        const act = (attrs.action || 'create').toLowerCase();
+        const titleStr = attrs.title || attrs.query || 'Calendar Event';
         const isPlan = act === 'auto_plan';
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-cyan-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-cyan-300">
+        const isView = act === 'view' || act === 'list';
+        const isDelete = act === 'delete' || act === 'remove';
+        const isEdit = act === 'edit' || act === 'update';
+
+        let label = 'Calendar Event Scheduled';
+        let detail = titleStr;
+        let badgeColor = 'cyan';
+        let iconName = 'calendar';
+        if (isPlan) {
+          label = 'Autonomous Real-Life Day Plan';
+          detail = attrs.date || 'Today';
+        } else if (isView) {
+          label = 'Calendar Schedule Query';
+          detail = attrs.range === 'next_week' ? 'Next Week Schedule' : (attrs.range || attrs.date || 'Upcoming Events');
+        } else if (isDelete) {
+          label = 'Calendar Event Deleted';
+          detail = titleStr;
+          badgeColor = 'rose';
+          iconName = 'trash-2';
+        } else if (isEdit) {
+          label = 'Calendar Event Updated';
+          detail = titleStr;
+        }
+
+        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-${badgeColor}-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-${badgeColor}-300">
           <div class="flex items-center gap-2">
-            <i data-lucide="calendar" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-            <span><strong>${isPlan ? 'Autonomous Real-Life Day Plan' : 'Calendar Event Scheduled'}:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(isPlan ? (date || 'Today') : titleStr)}</code></span>
+            <i data-lucide="${iconName}" class="w-4 h-4 text-${badgeColor}-400 shrink-0"></i>
+            <span><strong>${label}:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(detail)}</code></span>
           </div>
-          <button onclick="switchTab('tab-calendar')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 text-[11px] font-semibold border border-cyan-500/40 cursor-pointer flex items-center gap-1 transition-colors">
+          <button onclick="switchTab('tab-calendar')" class="px-2.5 py-1 rounded-lg bg-${badgeColor}-500/20 hover:bg-${badgeColor}-500/30 text-${badgeColor}-200 text-[11px] font-semibold border border-${badgeColor}-500/40 cursor-pointer flex items-center gap-1 transition-colors">
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open in Calendar
           </button>
         </div>`);

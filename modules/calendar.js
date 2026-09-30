@@ -1152,10 +1152,17 @@
     // 1. View / List
     if (action === 'view' || action === 'list') {
       let targetDateStr = directive.date;
+      const range = (directive.range || '').toLowerCase().trim();
       const query = (directive.query || directive.search || '').toLowerCase().trim();
       let matched = [];
 
-      if (targetDateStr) {
+      const isRangeQuery = range === 'next_week' || range === 'week' || range === 'upcoming' ||
+                           targetDateStr === 'next_week' || targetDateStr === 'week' || targetDateStr === 'upcoming';
+
+      if (isRangeQuery) {
+        const days = directive.daysAhead ? parseInt(directive.daysAhead, 10) : 7;
+        matched = getUpcomingEvents(days);
+      } else if (targetDateStr) {
         if (targetDateStr === 'today') {
           targetDateStr = formatDateKey(new Date());
         } else if (targetDateStr === 'tomorrow') {
@@ -1167,7 +1174,7 @@
         if (!isNaN(dObj.getTime())) {
           matched = getEventsForDate(dObj);
         } else {
-          matched = [...calendarEvents];
+          matched = getUpcomingEvents(7);
         }
       } else if (query) {
         matched = calendarEvents.filter(e => 
@@ -1178,7 +1185,7 @@
         matched = getUpcomingEvents(directive.daysAhead ? parseInt(directive.daysAhead, 10) : 7);
       }
 
-      if (query && targetDateStr) {
+      if (query && (targetDateStr || range)) {
         matched = matched.filter(e =>
           (e.title && e.title.toLowerCase().includes(query)) ||
           (e.description && e.description.toLowerCase().includes(query))
