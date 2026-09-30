@@ -522,8 +522,13 @@ export default async function handler(req, res) {
       } else {
         const aiData = failoverResult.data;
         aiReply = failoverResult.content || extractCompletionContent(aiData) || "";
-        if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.' || aiReply.trim() === 'null') {
-          terminalLogs.push('[Response Guard]: Model returned empty or placeholder completion. Falling back to sovereign generator.');
+
+        const isAutonomousIntent = jevTelemetry?.route === 'AUTONOMOUS_TASK';
+        const isStallingText = /\b(what specific operation would you like|what would you like me to work on|let me know the specific task|what specific operation|what task should i do|what should i do first|could you let me know the specific task|ready to get underway|let me know what task)\b/i.test(aiReply);
+        const lacksToolCalls = isAutonomousIntent && !aiReply.includes('[TOOL:');
+
+        if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.' || aiReply.trim() === 'null' || isStallingText || lacksToolCalls) {
+          terminalLogs.push('[Response Guard]: Model returned conversational deflection or missing tool execution on autonomous task. Falling back to sovereign generator.');
           aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
         }
       }

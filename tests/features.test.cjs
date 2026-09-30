@@ -1732,6 +1732,95 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
     assert(observedKeyMeta.key === undefined, "executeWithFailover keyMeta strictly strips raw key property");
   }
 
+  // =========================================================================
+  // Test Suite 21: Anti-Stalling Response Guard & Systems Automation Operations Lifecycle
+  // =========================================================================
+  console.log("\n[Test Suite 21: Anti-Stalling Response Guard & Systems Automation Operations Lifecycle]");
+  const { jevClassifyIntent: serverClassify, jevGenerateBespokeResponse: serverBespoke } = await import('../api/_lib/jev-engine.js');
+
+  const opsPrompt = `## Role / Persona
+You are an autonomous, execution-focused Systems Automation and Operations Agent. You operate inside a secure Firecracker sandbox with direct access to local system states, the live web, and an operational scheduling system.
+
+## Core Intent & Execution Architecture
+- Never output shallow text summaries or echo the user's instructions inside dummy scripts.
+- Every task must be broken down into structural tool calls that modify the environment, manage files, or update schedules.
+- Maintain absolute state awareness across files, terminal states, and time slots.
+
+## Complete Tool Suite & Bindings
+You must actively invoke the following capabilities to resolve goals:
+1. Filesystem Control (VFS): Use EDIT_FILE to build functional scripts, DELETE_FILE to clean work directories, and LIST_DIR to audit the workspace.
+2. Terminal Execution: Execute Python, Bash, or Node commands inside the sandbox to process live data, build network environments, or run stress tests.
+3. Web Extraction: Use SEARCH_WEB to pull raw documentation, API endpoints, and live technical specs.
+4. Operations Scheduling: Use SCHEDULE_EVENT to view, create, edit, or clear timeline markers and operational logs within the system calendar.
+
+## Execution Workflow
+1. Discover & Scan: Use SEARCH_WEB and terminal commands to map requirements and open ports.
+2. Orchestrate Workspace: Use VFS tools to generate real, logic-heavy code files.
+3. Run & Validate: Execute the scripts via the terminal, tracking error handling and process limitations.
+4. Log & Clean: Log execution windows to the calendar using SCHEDULE_EVENT, compress outputs, and use DELETE_FILE to wipe temporary data.
+
+## Output Format
+Deliver your completion report using this structure:
+### 1. Operations & Calendar Log
+- Summary of files changed and calendar time slots blocked or modified.
+### 2. Functional Metrics
+- Exact runtime results, calculations, or network outputs.
+### 3. Verification Signatures
+- Checksums (SHA-256/MD5) and directory validation arrays.`;
+
+  // 1. Intent Classification
+  const serverOpsIntent = serverClassify(opsPrompt, {});
+  assert(serverOpsIntent.route === 'AUTONOMOUS_TASK', "Server classifies Systems Automation Operations Agent as AUTONOMOUS_TASK");
+  assert(serverOpsIntent.confidence >= 0.99, "Server confidence for operations agent is >= 0.99");
+
+  const clientOpsIntent = window.classifyJevIntentClient(opsPrompt, {});
+  assert(clientOpsIntent.route === 'AUTONOMOUS_TASK', "Client classifies Systems Automation Operations Agent as AUTONOMOUS_TASK");
+  assert(clientOpsIntent.confidence >= 0.99, "Client confidence for operations agent is >= 0.99");
+
+  // 2. Server Pipeline Generation
+  const serverOpsReply = serverBespoke(opsPrompt, 1, {}, '');
+  assert(serverOpsReply.includes('[TOOL:SEARCH_WEB'), "Server pipeline includes web search discovery tool");
+  assert(serverOpsReply.includes('[TOOL:LIST_DIR]'), "Server pipeline audits directory with LIST_DIR");
+  assert(serverOpsReply.includes('[TOOL:SCHEDULE_EVENT action="view"'), "Server pipeline queries system calendar");
+  assert(serverOpsReply.includes('[TOOL:WRITE_FILE filename="ops_controller.py"]'), "Server pipeline synthesizes ops_controller.py");
+  assert(serverOpsReply.includes('compute_checksums'), "ops_controller.py includes SHA-256 / MD5 hash calculation");
+  assert(serverOpsReply.includes('probe_network_sockets'), "ops_controller.py includes socket port probing");
+  assert(serverOpsReply.includes('[TOOL:EXEC]python3 ops_controller.py'), "Server pipeline executes ops_controller.py in terminal");
+  assert(serverOpsReply.includes('[TOOL:SCHEDULE_EVENT action="create"'), "Server pipeline establishes operations calendar marker");
+  assert(serverOpsReply.includes('[TOOL:EXEC]mkdir -p /tmp/ops_archive && gzip'), "Server pipeline compresses logs and cleans raw files");
+  assert(serverOpsReply.includes('[TOOL:WRITE_FILE filename="ops_telemetry.json"]'), "Server pipeline mounts ops_telemetry.json");
+  assert(serverOpsReply.includes('[TOOL:TASK_COMPLETE'), "Server pipeline completes with TASK_COMPLETE tool");
+
+  // 3. Exact 3-Part Output Format Verification
+  assert(serverOpsReply.includes('### 1. Operations & Calendar Log'), "Server output contains exact '### 1. Operations & Calendar Log' header");
+  assert(serverOpsReply.includes('### 2. Functional Metrics'), "Server output contains exact '### 2. Functional Metrics' header");
+  assert(serverOpsReply.includes('### 3. Verification Signatures'), "Server output contains exact '### 3. Verification Signatures' header");
+  assert(serverOpsReply.includes('SHA-256') && serverOpsReply.includes('MD5'), "Server output includes cryptographic checksum verification");
+
+  // 4. Client Simulated Pipeline Generation
+  const clientOpsReply = await window.generateSimulatedAutonomousReply(opsPrompt, 1, {});
+  assert(clientOpsReply.includes('[TOOL:WRITE_FILE filename="ops_controller.py"]'), "Client pipeline mounts ops_controller.py");
+  assert(clientOpsReply.includes('[TOOL:SCHEDULE_EVENT action="create"'), "Client pipeline allocates operations slot in calendar");
+  assert(clientOpsReply.includes('### 1. Operations & Calendar Log'), "Client output contains '### 1. Operations & Calendar Log'");
+  assert(clientOpsReply.includes('### 2. Functional Metrics'), "Client output contains '### 2. Functional Metrics'");
+  assert(clientOpsReply.includes('### 3. Verification Signatures'), "Client output contains '### 3. Verification Signatures'");
+
+  // 5. Anti-Stalling Response Guard Interception Logic
+  const stallingResponses = [
+    "I’m ready to get underway! Could you let me know the specific task or file you’d like me to work on next?",
+    "What specific operation would you like me to execute first?",
+    "Could you let me know the specific task?",
+    "What task should I do first?"
+  ];
+  const isStallingRegex = /\b(what specific operation would you like|what would you like me to work on|let me know the specific task|what specific operation|what task should i do|what should i do first|could you let me know the specific task|ready to get underway|let me know what task)\b/i;
+  for (const stallText of stallingResponses) {
+    assert(isStallingRegex.test(stallText), `Anti-stalling guard detects stalling message: "${stallText.substring(0, 40)}..."`);
+  }
+
+  const compliantAutonomousReply = `[TOOL:WRITE_FILE filename="ops_controller.py"]\nprint("active")\n[/TOOL:WRITE_FILE]`;
+  assert(!isStallingRegex.test(compliantAutonomousReply), "Anti-stalling guard does not flag compliant tool execution");
+  assert(compliantAutonomousReply.includes('[TOOL:'), "Compliant reply satisfies tool execution requirement");
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");
