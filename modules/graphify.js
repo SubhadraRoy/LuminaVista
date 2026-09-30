@@ -24,8 +24,11 @@
     { id: 'modules/state.js', label: 'state.js', cat: 'frontend', type: 'State Bus', loc: 210, size: '9 KB', desc: 'Central reactive state store, active tab routing, and session state persistence.' },
 
     // AI & Inference Engine
-    { id: 'modules/ai-studio.js', label: 'ai-studio.js', cat: 'ai', type: 'Core Module', loc: 2700, size: '128 KB', desc: 'Autonomous AI Studio, cognitive thinking engine, tool protocol execution, multi-session chat, and calendar CRUD.' },
-    { id: 'personas.js', label: 'personas.js', cat: 'ai', type: 'Persona Matrix', loc: 3600, size: '190 KB', desc: '1,800+ specialized technical persona directives categorized across 35 engineering disciplines.' },
+    { id: 'modules/ai-studio.js', label: 'ai-studio.js', cat: 'ai', type: 'Core Orchestrator', loc: 1363, size: '64 KB', desc: 'Autonomous AI Studio core orchestrator, Jev intent classifier, provider settings, and tool execution protocol.' },
+    { id: 'modules/ai-simulation.js', label: 'ai-simulation.js', cat: 'ai', type: 'Simulation Engine', loc: 1225, size: '58 KB', desc: 'Client-side autonomous agent simulation sandbox, chaos engineering drill generator, and offline tool execution.' },
+    { id: 'modules/ai-tasks-sessions.js', label: 'ai-tasks-sessions.js', cat: 'ai', type: 'Task & Session Core', loc: 550, size: '24 KB', desc: 'Multi-session conversation history, scheduled autonomous background tasks, and cloud worker synchronization.' },
+    { id: 'modules/ai-chat-ui.js', label: 'ai-chat-ui.js', cat: 'ai', type: 'Chat UI & Orbs', loc: 758, size: '39 KB', desc: 'Thinking Orbs animated state engine, Claude/Antigravity collapsible thought cards, action cards, prompt edit, and chat rendering.' },
+    { id: 'personas.js', label: 'personas.js', cat: 'ai', type: 'Persona Matrix', loc: 1384, size: '68 KB', desc: '1,800+ specialized technical persona directives categorized across 35 engineering disciplines.' },
     { id: 'api/_lib/key-pool.js', label: 'key-pool.js', cat: 'ai', type: 'Failover Engine', loc: 200, size: '8 KB', desc: '8x Ollama Cloud & NVIDIA NIM multi-key pool with automated 429 rate-limit failover.' },
     { id: 'api/_lib/jev-engine.js', label: 'jev-engine.js', cat: 'ai', type: 'S1 Decision Layer', loc: 710, size: '37 KB', desc: 'TypeSafe Jev System-1 sub-50ms intent classifier, safety guardrails, dynamic cognitive synthesis, and calendar directives.' },
 
@@ -53,7 +56,8 @@
     { id: 'Google Calendar API', label: 'Google Calendar API', cat: 'runtime', type: 'Cloud Calendar', loc: 'N/A', size: 'REST OAuth2', desc: 'Google Calendar API v3 primary calendar endpoint for real-time two-way synchronization.' },
 
     // Workspaces & Tools
-    { id: 'modules/calendar.js', label: 'calendar.js', cat: 'workspace', type: 'Scheduler & Cal', loc: 1840, size: '77 KB', desc: 'Google Calendar sovereign replica with 6 calendar views, AI auto-planning, conflict resolution, and two-way sync.' },
+    { id: 'modules/calendar.js', label: 'calendar.js', cat: 'workspace', type: 'Scheduler Core', loc: 1615, size: '68 KB', desc: 'Google Calendar sovereign replica with 6 calendar views, AI auto-planning, conflict resolution, and event modals.' },
+    { id: 'modules/calendar-sync.js', label: 'calendar-sync.js', cat: 'workspace', type: 'Sync & iCal Engine', loc: 650, size: '25 KB', desc: 'Google Calendar two-way OAuth2 synchronization controller, status badge, modal, and RFC 5545 iCalendar import/export.' },
     { id: 'modules/codespace.js', label: 'codespace.js', cat: 'workspace', type: 'Artifacts IDE', loc: 850, size: '36 KB', desc: 'In-browser Monaco/Ace Artifacts IDE, multi-tab file editor, live preview engine, and collapsible VFS tree.' },
     { id: 'modules/whiteboard.js', label: 'whiteboard.js', cat: 'workspace', type: 'Canvas Engine', loc: 560, size: '24 KB', desc: 'Whiteboard Pro vector drawing studio with touchscreen pointer events, dual-canvas preview, and sticky notes.' },
     { id: 'modules/notes.js', label: 'notes.js', cat: 'workspace', type: 'Markdown Studio', loc: 420, size: '18 KB', desc: 'Multi-document Markdown notes vault with split real-time HTML preview.' },
@@ -71,7 +75,11 @@
 
   const BASE_LINKS = [
     { source: 'dashboard.html', target: 'modules/ai-studio.js' },
+    { source: 'dashboard.html', target: 'modules/ai-simulation.js' },
+    { source: 'dashboard.html', target: 'modules/ai-tasks-sessions.js' },
+    { source: 'dashboard.html', target: 'modules/ai-chat-ui.js' },
     { source: 'dashboard.html', target: 'modules/calendar.js' },
+    { source: 'dashboard.html', target: 'modules/calendar-sync.js' },
     { source: 'dashboard.html', target: 'modules/codespace.js' },
     { source: 'dashboard.html', target: 'modules/whiteboard.js' },
     { source: 'dashboard.html', target: 'modules/notes.js' },
@@ -86,6 +94,9 @@
     { source: 'dashboard.html', target: 'modules/state.js' },
     { source: 'dashboard.html', target: 'middleware.js' },
 
+    { source: 'modules/ai-studio.js', target: 'modules/ai-simulation.js' },
+    { source: 'modules/ai-studio.js', target: 'modules/ai-tasks-sessions.js' },
+    { source: 'modules/ai-studio.js', target: 'modules/ai-chat-ui.js' },
     { source: 'modules/ai-studio.js', target: 'api/chat.js' },
     { source: 'modules/ai-studio.js', target: 'api/terminal.js' },
     { source: 'modules/ai-studio.js', target: 'personas.js' },
@@ -93,7 +104,11 @@
     { source: 'modules/ai-studio.js', target: 'modules/codespace.js' },
     { source: 'modules/ai-studio.js', target: 'modules/calendar.js' },
     { source: 'modules/ai-studio.js', target: 'modules/voice-studio.js' },
+    { source: 'modules/ai-tasks-sessions.js', target: 'modules/calendar.js' },
+    { source: 'modules/ai-tasks-sessions.js', target: 'api/worker.js' },
 
+    { source: 'modules/calendar.js', target: 'modules/calendar-sync.js' },
+    { source: 'modules/calendar-sync.js', target: 'api/calendar.js' },
     { source: 'modules/calendar.js', target: 'api/calendar.js' },
     { source: 'api/calendar.js', target: 'Google Calendar API' },
     { source: 'api/worker.js', target: 'api/calendar.js' },

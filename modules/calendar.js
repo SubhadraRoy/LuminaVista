@@ -71,6 +71,20 @@
     lastSyncedAt: null
   };
 
+  // Modular Calendar Sync Delegators (delegates to window.LuminaCalendarSync)
+  const deleteEventFromGoogle = (...args) => (window.LuminaCalendarSync?.deleteEventFromGoogle ? window.LuminaCalendarSync.deleteEventFromGoogle(...args) : Promise.resolve());
+  const pushEventToGoogle = (...args) => (window.LuminaCalendarSync?.pushEventToGoogle ? window.LuminaCalendarSync.pushEventToGoogle(...args) : Promise.resolve());
+  const syncGoogleCalendar = (...args) => (window.LuminaCalendarSync?.syncGoogleCalendar ? window.LuminaCalendarSync.syncGoogleCalendar(...args) : Promise.resolve());
+  const updateSyncStatusBadge = (...args) => (window.LuminaCalendarSync?.updateSyncStatusBadge ? window.LuminaCalendarSync.updateSyncStatusBadge(...args) : undefined);
+  const connectGoogleAccount = (...args) => (window.LuminaCalendarSync?.connectGoogleAccount ? window.LuminaCalendarSync.connectGoogleAccount(...args) : undefined);
+  const openSyncModal = (...args) => (window.LuminaCalendarSync?.openSyncModal ? window.LuminaCalendarSync.openSyncModal(...args) : undefined);
+  const closeSyncModal = (...args) => (window.LuminaCalendarSync?.closeSyncModal ? window.LuminaCalendarSync.closeSyncModal(...args) : undefined);
+  const copyRedirectUri = (...args) => (window.LuminaCalendarSync?.copyRedirectUri ? window.LuminaCalendarSync.copyRedirectUri(...args) : undefined);
+  const exportToIcs = (...args) => (window.LuminaCalendarSync?.exportToIcs ? window.LuminaCalendarSync.exportToIcs(...args) : '');
+  const importFromIcs = (...args) => (window.LuminaCalendarSync?.importFromIcs ? window.LuminaCalendarSync.importFromIcs(...args) : { success: false });
+  const saveSyncSettingsFromModal = (...args) => (window.LuminaCalendarSync?.saveSyncSettingsFromModal ? window.LuminaCalendarSync.saveSyncSettingsFromModal(...args) : undefined);
+  const checkBackendConnectionStatus = (...args) => (window.LuminaCalendarSync?.checkBackendConnectionStatus ? window.LuminaCalendarSync.checkBackendConnectionStatus(...args) : Promise.resolve());
+
   // =========================================================================
   // STORAGE & INITIALIZATION (Permanently Pristine - No Seeded Dummy Events)
   // =========================================================================
@@ -964,20 +978,6 @@
     renderCalendar();
   }
 
-  async function deleteEventFromGoogle(googleEventId) {
-    if (!googleEventId) return;
-    const cleanId = String(googleEventId).replace(/^gcal_/, '');
-    const fetchFn = (typeof window !== 'undefined' && typeof window.fetch === 'function') ? window.fetch : (typeof fetch === 'function' ? fetch : null);
-    if (!fetchFn) return;
-    try {
-      await fetchFn(`/api/calendar/sync?eventId=${encodeURIComponent(cleanId)}`, {
-        method: 'DELETE'
-      });
-    } catch (e) {
-      console.warn('Failed to delete event from Google Calendar:', e);
-    }
-  }
-
   function handleDayCellClick(dateStr, event) {
     selectedDate = new Date(dateStr);
     openEventModal(dateStr);
@@ -1112,480 +1112,6 @@
       }
     });
   }
-
-  // =========================================================================
-  // UNIVERSAL RFC 5545 iCALENDAR (.ICS) ENGINE
-  // =========================================================================
-  function exportToIcs() {
-    let ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//LuminaVista//Google Calendar Sovereign Replica//EN',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'X-WR-CALNAME:LuminaVista Calendar'
-    ];
-
-    calendarEvents.forEach(evt => {
-      const s = new Date(evt.start);
-      const e = new Date(evt.end);
-      const dtStamp = formatIcsDate(new Date());
-      const dtStart = formatIcsDate(s);
-      const dtEnd = formatIcsDate(e);
-
-      ics.push('BEGIN:VEVENT');
-      ics.push(`UID:${evt.id}@luminavista.sovereign`);
-      ics.push(`DTSTAMP:${dtStamp}`);
-      ics.push(`DTSTART:${dtStart}`);
-      ics.push(`DTEND:${dtEnd}`);
-      ics.push(`SUMMARY:${escapeIcs(evt.title)}`);
-      if (evt.description) ics.push(`DESCRIPTION:${escapeIcs(evt.description)}`);
-      if (evt.location) ics.push(`LOCATION:${escapeIcs(evt.location)}`);
-      if (evt.category) ics.push(`CATEGORIES:${evt.category.toUpperCase()}`);
-      if (evt.recurrence && evt.recurrence.freq) {
-        ics.push(`RRULE:FREQ=${evt.recurrence.freq};INTERVAL=${evt.recurrence.interval || 1}`);
-      }
-      ics.push('END:VEVENT');
-    });
-
-    ics.push('END:VCALENDAR');
-    const icsContent = ics.join('\r\n');
-
-    if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' && typeof document !== 'undefined' && document.body) {
-      try {
-        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `luminavista-calendar-${formatDateKey(new Date())}.ics`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        if (typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(url);
-      } catch (e) {}
-    }
-
-    return icsContent;
-  }
-
-  function importFromIcs(icsText) {
-    if (!icsText || !icsText.includes('BEGIN:VCALENDAR')) {
-      return { success: false, message: 'Invalid iCal (.ics) format' };
-    }
-
-    const lines = icsText.split(/\r\n|\r|\n/);
-    const importedEvents = [];
-    let cur = null;
-
-    for (let line of lines) {
-      line = line.trim();
-      if (line === 'BEGIN:VEVENT') {
-        cur = {
-          id: `evt_ics_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-          title: 'Imported Event',
-          allDay: false,
-          category: 'work',
-          color: '#3f51b5',
-          isAutonomous: false
-        };
-      } else if (line === 'END:VEVENT' && cur) {
-        if (cur.start) {
-          if (!cur.end) cur.end = new Date(new Date(cur.start).getTime() + 3600000).toISOString();
-          importedEvents.push(cur);
-        }
-        cur = null;
-      } else if (cur) {
-        if (line.startsWith('SUMMARY:')) cur.title = unescapeIcs(line.substring(8));
-        else if (line.startsWith('DESCRIPTION:')) cur.description = unescapeIcs(line.substring(12));
-        else if (line.startsWith('LOCATION:')) cur.location = unescapeIcs(line.substring(9));
-        else if (line.startsWith('DTSTART:')) cur.start = parseIcsDate(line.substring(8));
-        else if (line.startsWith('DTEND:')) cur.end = parseIcsDate(line.substring(6));
-        else if (line.startsWith('CATEGORIES:')) {
-          const cat = line.substring(11).toLowerCase();
-          if (CATEGORY_META[cat]) cur.category = cat;
-        }
-      }
-    }
-
-    if (importedEvents.length > 0) {
-      calendarEvents.push(...importedEvents);
-      saveCalendarEvents();
-      renderCalendar();
-    }
-
-    return { success: true, count: importedEvents.length };
-  }
-
-  function formatIcsDate(d) {
-    return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  }
-
-  function parseIcsDate(str) {
-    if (/^\d{8}T\d{6}Z?$/.test(str)) {
-      const y = str.slice(0, 4);
-      const m = str.slice(4, 6);
-      const d = str.slice(6, 8);
-      const h = str.slice(9, 11);
-      const min = str.slice(11, 13);
-      const s = str.slice(13, 15);
-      return `${y}-${m}-${d}T${h}:${min}:${s}`;
-    }
-    return new Date().toISOString();
-  }
-
-  function escapeIcs(str) {
-    if (!str) return '';
-    return str.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-  }
-
-  function unescapeIcs(str) {
-    if (!str) return '';
-    return str.replace(/\\n/g, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
-  }
-
-  // =========================================================================
-  // ZERO-FRONTEND-SECRETS BACKEND GOOGLE CALENDAR SYNC
-  // =========================================================================
-  async function checkBackendConnectionStatus() {
-    try {
-      const res = await fetch('/api/calendar/status');
-      if (res.ok) {
-        const data = await res.json();
-        calendarSettings.googleCalendarConnected = !!data.connected;
-        updateSyncStatusBadge();
-        if (data.connected) {
-          await syncGoogleCalendar();
-        }
-      }
-    } catch (e) {}
-  }
-
-  async function connectGoogleAccount() {
-    try {
-      const clientRedirect = (typeof window !== 'undefined' && window.location && window.location.origin)
-        ? `${window.location.origin}/api/calendar/callback`
-        : '';
-      
-      const statusUrl = clientRedirect 
-        ? `/api/calendar/status?redirect_uri=${encodeURIComponent(clientRedirect)}`
-        : '/api/calendar/status';
-
-      const statusRes = await fetch(statusUrl);
-      if (statusRes.ok) {
-        const statusData = await statusRes.json();
-        if (statusData.connected) {
-          calendarSettings.googleCalendarConnected = true;
-          saveCalendarSettings();
-          updateSyncStatusBadge();
-          await syncGoogleCalendar();
-          return;
-        }
-      }
-
-      // Pre-open popup synchronously during user gesture to avoid popup blocker
-      const width = 560, height = 680;
-      const left = (typeof window !== 'undefined' && window.screen) ? (window.screen.width - width) / 2 : 100;
-      const top = (typeof window !== 'undefined' && window.screen) ? (window.screen.height - height) / 2 : 100;
-      let popup = null;
-      try {
-        popup = window.open('about:blank', 'google_oauth_popup', `width=${width},height=${height},left=${left},top=${top}`);
-      } catch (e) {}
-
-      // Fetch OAuth initiation authUrl from backend with client redirect URI
-      const authUrl = clientRedirect 
-        ? `/api/calendar/auth?redirect_uri=${encodeURIComponent(clientRedirect)}` 
-        : '/api/calendar/auth';
-      const authRes = await fetch(authUrl);
-      const authData = await authRes.json();
-
-      if (!authData.configured || !authData.authUrl) {
-        if (popup && !popup.closed) popup.close();
-        alert("Google Calendar backend is not configured yet on Vercel.\n\nPlease add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your Vercel Project Settings > Environment Variables, then redeploy!");
-        return;
-      }
-
-      if (popup && !popup.closed) {
-        popup.location.href = authData.authUrl;
-      } else {
-        // Fallback to top-level navigation if popup was blocked
-        window.location.href = authData.authUrl;
-        return;
-      }
-
-      const checkInterval = setInterval(async () => {
-        try {
-          if (!popup || popup.closed) {
-            clearInterval(checkInterval);
-            const checkRes = await fetch(statusUrl);
-            if (checkRes.ok) {
-              const checkData = await checkRes.json();
-              if (checkData.connected) {
-                calendarSettings.googleCalendarConnected = true;
-                calendarSettings.lastSyncedAt = new Date().toISOString();
-                saveCalendarSettings();
-                updateSyncStatusBadge();
-                await syncGoogleCalendar();
-              }
-            }
-          }
-        } catch (e) {
-          clearInterval(checkInterval);
-        }
-      }, 1000);
-    } catch (e) {
-      console.warn('Google Account Connect error:', e);
-    }
-  }
-
-  async function syncGoogleCalendar(isManual = false) {
-    updateSyncStatusBadge(true);
-    try {
-      const res = await fetch('/api/calendar/sync');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.items && Array.isArray(data.items)) {
-          const activeGoogleEventIds = new Set(data.items.map(item => item.id));
-
-          // 1. Two-Way Delete: If an event was deleted from Google Calendar, remove it here
-          const removedEvents = calendarEvents.filter(e => e.googleEventId && !activeGoogleEventIds.has(e.googleEventId));
-          removedEvents.forEach(delEvt => {
-            if (delEvt.scheduledTaskId && window.scheduledTasks) {
-              window.scheduledTasks = window.scheduledTasks.filter(t => t.id !== delEvt.scheduledTaskId);
-              if (window.saveScheduledTasks) window.saveScheduledTasks();
-              if (window.renderScheduledTasksList) window.renderScheduledTasksList();
-            }
-          });
-
-          calendarEvents = calendarEvents.filter(e => {
-            if (!e.googleEventId) return true; // preserve sovereign local events
-            return activeGoogleEventIds.has(e.googleEventId); // keep only if it still exists in Google Calendar
-          });
-
-          // 2. Two-Way Update & Add from Google Calendar
-          data.items.forEach(item => {
-            const startStr = (item.start && (item.start.dateTime || item.start.date)) || new Date().toISOString();
-            const endStr = (item.end && (item.end.dateTime || item.end.date)) || new Date(Date.now() + 3600000).toISOString();
-            const allDay = !item.start?.dateTime;
-            const isAiTask = (item.summary || '').includes('[AI Task]') || (item.description || '').includes('[AI Task]');
-
-            const existing = calendarEvents.find(e => e.googleEventId === item.id);
-            if (existing) {
-              existing.title = item.summary || 'Google Calendar Event';
-              existing.description = item.description || '';
-              existing.location = item.location || '';
-              existing.start = startStr;
-              existing.end = endStr;
-              existing.allDay = allDay;
-              if (isAiTask) {
-                existing.category = 'ai_autonomous';
-                existing.color = '#00f2fe';
-                existing.isAutonomous = true;
-              }
-            } else {
-              calendarEvents.push({
-                id: `gcal_${item.id}`,
-                googleEventId: item.id,
-                title: item.summary || 'Google Calendar Event',
-                description: item.description || '',
-                location: item.location || '',
-                start: startStr,
-                end: endStr,
-                allDay: allDay,
-                category: isAiTask ? 'ai_autonomous' : 'work',
-                color: isAiTask ? '#00f2fe' : '#3f51b5',
-                isAutonomous: isAiTask
-              });
-            }
-          });
-
-          // 3. Two-Way Push: Push unpushed sovereign local events to Google Calendar
-          const unpushedEvents = calendarEvents.filter(e => !e.googleEventId);
-          for (const localEvt of unpushedEvents) {
-            await pushEventToGoogle(localEvt);
-          }
-
-          calendarSettings.googleCalendarConnected = true;
-          calendarSettings.lastSyncedAt = new Date().toISOString();
-          saveCalendarEvents();
-          saveCalendarSettings();
-          renderCalendar();
-          // Only show toast if triggered manually by user; keep background auto-updates completely silent
-          if (isManual && window.showToast) {
-            window.showToast("Google Calendar Synced", `${data.items.length} active events in two-way sync.`);
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Sync Google Calendar error:', e);
-    } finally {
-      updateSyncStatusBadge(false);
-    }
-  }
-
-  async function pushEventToGoogle(evt) {
-    if (!calendarSettings.googleCalendarConnected) return;
-    const fetchFn = (typeof window !== 'undefined' && typeof window.fetch === 'function') ? window.fetch : (typeof fetch === 'function' ? fetch : null);
-    if (!fetchFn) return;
-    try {
-      let startPayload, endPayload;
-      if (evt.allDay) {
-        const startDateStr = getEventLocalDateKey(evt.start);
-        const sDate = new Date(startDateStr + 'T00:00:00Z');
-        const eDate = new Date(sDate.getTime() + 86400000);
-        startPayload = { date: startDateStr };
-        endPayload = { date: eDate.toISOString().slice(0, 10) };
-      } else {
-        const sDate = new Date(evt.start);
-        const eDate = new Date(evt.end || (sDate.getTime() + 3600000));
-        startPayload = { dateTime: !isNaN(sDate.getTime()) ? sDate.toISOString() : new Date().toISOString() };
-        endPayload = { dateTime: !isNaN(eDate.getTime()) ? eDate.toISOString() : new Date(Date.now() + 3600000).toISOString() };
-      }
-
-      const rawGoogleId = evt.googleEventId || (evt.id && evt.id.startsWith('gcal_') ? evt.id.replace(/^gcal_/, '') : undefined);
-
-      const res = await fetchFn('/api/calendar/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          googleEventId: rawGoogleId,
-          summary: evt.title,
-          description: evt.description || '',
-          location: evt.location || '',
-          allDay: !!evt.allDay,
-          start: startPayload,
-          end: endPayload
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.item && data.item.id) {
-          evt.googleEventId = data.item.id;
-          saveCalendarEvents();
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to push event to Google Calendar:', e);
-    }
-  }
-
-  function updateSyncStatusBadge(isSyncing = false) {
-    const badge = document.getElementById('calSyncStatusBadge');
-    if (!badge) return;
-
-    if (isSyncing) {
-      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> <span class="hidden sm:inline">Syncing...</span>`;
-      badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30';
-      return;
-    }
-
-    if (calendarSettings.googleCalendarConnected) {
-      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span class="hidden sm:inline">Google Synced</span>`;
-      badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/20';
-    } else {
-      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400"></span> <span class="hidden sm:inline">Local Sovereign</span>`;
-      badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-surface-900 text-zinc-400 border border-white/10 hover:text-white cursor-pointer transition-colors';
-    }
-  }
-
-  async function openSyncModal() {
-    const modal = document.getElementById('calendarSyncModal');
-    if (!modal) return;
-    
-    const computedRedirect = (typeof window !== 'undefined' && window.location && window.location.origin)
-      ? `${window.location.origin}/api/calendar/callback`
-      : '';
-
-    const redirectInput = document.getElementById('calSyncRedirectUri');
-    if (redirectInput && computedRedirect) {
-      redirectInput.value = computedRedirect;
-    }
-
-    const statusBadge = document.getElementById('calSyncModalStatusBadge');
-    const statusText = document.getElementById('calSyncModalStatusText');
-
-    try {
-      const statusUrl = computedRedirect 
-        ? `/api/calendar/status?redirect_uri=${encodeURIComponent(computedRedirect)}`
-        : '/api/calendar/status';
-      const res = await fetch(statusUrl);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.redirectUri && redirectInput) {
-          redirectInput.value = data.redirectUri;
-        }
-        if (data.connected) {
-          calendarSettings.googleCalendarConnected = true;
-          if (statusBadge) {
-            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-mono';
-            statusBadge.textContent = 'Active Sync';
-          }
-          if (statusText) {
-            statusText.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Google Calendar Connected &amp; Synced</span>`;
-          }
-        } else if (data.configured) {
-          if (statusBadge) {
-            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono';
-            statusBadge.textContent = 'Configured (Needs Login)';
-          }
-          if (statusText) {
-            statusText.innerHTML = `<span class="text-cyan-300 font-sans">Credentials configured on Vercel. Click <b>Sign in &amp; Sync with Google</b> to connect.</span>`;
-          }
-        } else {
-          if (statusBadge) {
-            statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono';
-            statusBadge.textContent = 'Awaiting Vercel Env';
-          }
-          if (statusText) {
-            statusText.innerHTML = `<span class="text-amber-400/90 font-sans">Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET on Vercel environment variables.</span>`;
-          }
-        }
-      }
-    } catch (e) {
-      if (statusText) {
-        statusText.innerHTML = `<span class="text-zinc-400 font-mono">Backend status check unavailable.</span>`;
-      }
-    }
-
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.remove('opacity-0'), 10);
-  }
-
-  function copyRedirectUri() {
-    const el = document.getElementById('calSyncRedirectUri');
-    if (!el) return;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(el.value).then(() => showCopiedFeedback());
-      } else {
-        el.select();
-        document.execCommand('copy');
-        showCopiedFeedback();
-      }
-    } catch (e) {
-      el.select();
-    }
-  }
-
-  function showCopiedFeedback() {
-    const btn = document.getElementById('btnCopyRedirectUri');
-    if (btn) {
-      const orig = btn.innerHTML;
-      btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Copied!`;
-      if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
-      setTimeout(() => {
-        btn.innerHTML = orig;
-        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
-      }, 2000);
-    }
-  }
-
-  function closeSyncModal() {
-    const modal = document.getElementById('calendarSyncModal');
-    if (!modal) return;
-    modal.classList.add('opacity-0');
-    setTimeout(() => modal.style.display = 'none', 200);
-  }
-
   // =========================================================================
   // AI STUDIO INTENT DIRECTIVE HANDLER & FUZZY MATCHER
   // =========================================================================
@@ -2052,6 +1578,17 @@
     fuzzyFindEvent,
     getUpcomingEvents,
     getEvents: () => [...calendarEvents],
+    getRawEvents: () => calendarEvents,
+    setEvents: (evts) => {
+      calendarEvents = evts;
+      saveCalendarEvents();
+      renderCalendar();
+    },
+    saveEvents: saveCalendarEvents,
+    saveSettings: saveCalendarSettings,
+    formatDateKey,
+    getEventLocalDateKey,
+    CATEGORY_META,
     getSettings: () => ({ ...calendarSettings }),
     setSettings: (s) => {
       calendarSettings = Object.assign(calendarSettings, s);
@@ -2060,42 +1597,9 @@
     }
   };
 
-  // Cross-window and OAuth postMessage listener
-  if (typeof window !== 'undefined') {
-    window.addEventListener('message', async (e) => {
-      if (e.data && e.data.type === 'GCAL_AUTH_SUCCESS') {
-        calendarSettings.googleCalendarConnected = true;
-        saveCalendarSettings();
-        updateSyncStatusBadge();
-        await syncGoogleCalendar();
-      }
-    });
-
-    if (window.location && window.location.search && window.location.search.includes('gcal_connected=true')) {
-      calendarSettings.googleCalendarConnected = true;
-      saveCalendarSettings();
-      updateSyncStatusBadge();
-      setTimeout(() => syncGoogleCalendar(), 400);
-      try {
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete('gcal_connected');
-        window.history.replaceState({}, document.title, cleanUrl.toString());
-      } catch (e) {}
-    }
-
-    // Periodic 5-minute background auto-sync
-    setInterval(() => {
-      if (calendarSettings.googleCalendarConnected) {
-        syncGoogleCalendar();
-      }
-    }, 5 * 60 * 1000);
-
-    // Auto-sync when user returns focus to the LuminaVista window/tab
-    window.addEventListener('focus', () => {
-      if (calendarSettings.googleCalendarConnected) {
-        syncGoogleCalendar();
-      }
-    });
+  // If LuminaCalendarSync already loaded, augment
+  if (window.LuminaCalendarSync) {
+    Object.assign(window.LuminaCalendar, window.LuminaCalendarSync);
   }
 
   if (typeof document !== 'undefined') {
