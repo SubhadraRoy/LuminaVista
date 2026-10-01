@@ -1312,6 +1312,19 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
 
   // Route: DELETE_FILE
   if (route === 'DELETE_FILE') {
+    const isDeleteAll = /\b(remove|delete|clean|wipe|clear|purge|erase|drop|destroy)\s+(all|every|the\s+entire|everything)\b/i.test(pTrim) ||
+      /\b(clean|clear|wipe)\s+(?:the\s+)?(?:vfs|workspace|files|all\s+files)\b/i.test(pTrim) ||
+      /\b(full\s+clean|clean\s+slate|wipe\s+out)\b/i.test(pTrim) ||
+      /\b(clean\s+all\s+(?:the\s+)?files|remove\s+all\s+(?:the\s+)?files|delete\s+all\s+(?:the\s+)?files)\b/i.test(pTrim);
+
+    if (isDeleteAll) {
+      if (vfsFiles.length > 0) {
+        const deleteDirectives = vfsFiles.map(f => `[TOOL:DELETE_FILE filename="${f}"][/TOOL:DELETE_FILE]`).join('\n');
+        return thoughts + `Executing complete workspace cleanup:\n\n${deleteDirectives}\n\n[TOOL:TASK_COMPLETE summary="All ${vfsFiles.length} files successfully removed from workspace. Clean slate established."][/TOOL:TASK_COMPLETE]\n\nAll files have been cleanly deleted from the workspace.`;
+      }
+      return thoughts + `Inspecting workspace files:\n\n[TOOL:LIST_DIR][/TOOL:LIST_DIR]\n\n[TOOL:TASK_COMPLETE summary="Workspace is already empty. Clean slate verified."][/TOOL:TASK_COMPLETE]\n\nWorkspace is completely clean and empty.`;
+    }
+
     const fileToDelete = targetFile || vfsFiles[0] || 'temp.txt';
     return thoughts + `Removing file \`${fileToDelete}\` from the workspace:\n\n[TOOL:DELETE_FILE filename="${fileToDelete}"][/TOOL:DELETE_FILE]\n\n[TOOL:TASK_COMPLETE summary="File ${fileToDelete} deleted from workspace."][/TOOL:TASK_COMPLETE]`;
   }

@@ -185,7 +185,14 @@
     }
 
     // C. DELETE_FILE Scoring
-    if (hasDeleteVerb && (targetFile || targetExists)) {
+    const isDeleteAll = /\b(remove|delete|clean|wipe|clear|purge|erase|drop|destroy)\s+(all|every|the\s+entire|everything)\b/i.test(p) ||
+      /\b(clean|clear|wipe)\s+(?:the\s+)?(?:vfs|workspace|files|all\s+files)\b/i.test(p) ||
+      /\b(full\s+clean|clean\s+slate|wipe\s+out)\b/i.test(p) ||
+      /\b(clean\s+all\s+(?:the\s+)?files|remove\s+all\s+(?:the\s+)?files|delete\s+all\s+(?:the\s+)?files)\b/i.test(p);
+
+    if (isDeleteAll) {
+      scores.DELETE_FILE += 85;
+    } else if (hasDeleteVerb && (targetFile || targetExists)) {
       scores.DELETE_FILE += 65;
       if (targetExists) scores.DELETE_FILE += 25;
     }
@@ -722,6 +729,7 @@ When taking action, output the appropriate tool directives:
   2. Clear & Consistent Naming: Use concise, standard naming conventions (e.g. 'app.js', 'chart-card.js', 'style.css').
   3. No Clutter or Redundant Files: Never create temporary junk files ('test1.js', 'temp.txt', 'file2.js'). Clean up obsolete files using [TOOL:DELETE_FILE].
   4. Pristine Structure: Maintain clear entry points ('index.html', 'main.py', 'README.md') so anyone navigating the file tree finds everything immediately.
+  5. Immediate Execution of Workspace Deletions & Cleanups: When the user requests to clean, delete, remove, or wipe files (e.g. "remove all files", "clean all the files", "delete X"): Execute the deletion immediately using [TOOL:DELETE_FILE filename="..."][/TOOL:DELETE_FILE] without hesitation, refusal, or conversational stalling. When the user requests to clean or remove all files, emit a [TOOL:DELETE_FILE] directive for every file in the workspace and conclude with [TOOL:TASK_COMPLETE].
 
 Always keep the workspace clean, maintain pristine architecture, and conclude with [TOOL:TASK_COMPLETE] when finished.`;
   }
@@ -779,6 +787,14 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
 
   function executeDeleteFile(filename) {
     window.vfs = window.vfs || {};
+    if (filename === '*' || filename === 'all' || filename === 'ALL') {
+      const count = Object.keys(window.vfs).length;
+      window.vfs = {};
+      localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+      if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
+      if (window.rebuildGraphData) window.rebuildGraphData();
+      return `Successfully wiped all ${count} files from VFS.`;
+    }
     if (window.vfs[filename] !== undefined) {
       delete window.vfs[filename];
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
@@ -1324,7 +1340,12 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
 
         if (window.currentAgentLoop < MAX_AGENT_LOOPS && !window.isAgentAborted) {
           const feedbackContent = `[SYSTEM AUTO-FEEDBACK TOOL RESULTS]:\n${results.join('\n\n')}\n\nPlease analyze the above tool results and continue the autonomous task toward completion.`;
-          window.aiConversation.push({ role: "user", content: feedbackContent });
+          window.aiConversation.push({
+            role: "user",
+            content: feedbackContent,
+            isSystemFeedback: true,
+            isAutonomousFeedback: true
+          });
         } else {
           window.isAgentRunning = false;
         }
@@ -1653,6 +1674,7 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
   window.updateAiSubTabArtifactBadge = updateAiSubTabArtifactBadge;
   window.checkCompletedOfflineCloudJobs = checkCompletedOfflineCloudJobs;
   window.executeWebSearch = executeWebSearch;
+  window.executeDeleteFile = executeDeleteFile;
 
 })(window);
 

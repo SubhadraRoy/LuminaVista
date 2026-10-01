@@ -125,6 +125,14 @@
     @keyframes thinkingShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     .thinking-skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(0,242,254,0.12) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: thinkingShimmer 2.5s infinite; }
 
+    /* Antigravity Work Done Collapsible UI */
+    .work-done-card { background: rgba(10, 15, 26, 0.75); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 0.875rem; margin: 0.75rem 0; overflow: hidden; transition: all 0.25s ease; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+    .work-done-card[open] { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 8px 30px rgba(16, 185, 129, 0.12); }
+    .work-done-summary { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1rem; cursor: pointer; background: rgba(16, 185, 129, 0.08); font-family: 'Inter', sans-serif; font-size: 0.75rem; color: #6ee7b7; user-select: none; transition: background 0.2s; }
+    .work-done-summary:hover { background: rgba(16, 185, 129, 0.14); }
+    .work-done-summary::-webkit-details-marker { display: none; }
+    .work-done-content { padding: 0.75rem 1rem; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(5, 8, 15, 0.65); display: flex; flex-direction: column; gap: 0.5rem; }
+
     /* ========================================================
        COLLAPSED SIDEBAR (68px) PRECISION ORIENTATION & ALIGNMENT
        ======================================================== */

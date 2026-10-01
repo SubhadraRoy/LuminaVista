@@ -1956,6 +1956,10 @@ Deliver your completion report using this structure:
   const runWhiteboardSuite = require('./suite-whiteboard.cjs');
   await runWhiteboardSuite({ assert, window, document, rootDir });
 
+  // Suite 27: Antigravity Collapsible Chat UI, Feedback Privacy & Deletion Engine
+  const runAntigravityChatFlowSuite = require('./suite-antigravity-chat-flow.cjs');
+  await runAntigravityChatFlowSuite({ assert, window, document, rootDir });
+
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {
     console.log("🎉 ALL TESTS PASSED WITH ZERO ERRORS!");

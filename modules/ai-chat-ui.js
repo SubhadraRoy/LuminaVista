@@ -197,10 +197,16 @@
       return `__HTML_SNIPPET_${htmlSnippets.length - 1}__`;
     }
 
-    // 1. Thinking / Cognitive Architecture Card with exact requested banner
-    let processed = t.replace(/<(?:thought_process|thought)>([\s\S]*?)<\/(?:thought_process|thought)>/gi, (m, thoughts) => {
+    // 0. Strip any raw internal tool results or system auto-feedback blocks
+    let processed = t
+      .replace(/\[TOOL_RESULT:[^\]]*\][\s\S]*?\[\/TOOL_RESULT:[^\]]*\]/gi, "")
+      .replace(/\[TOOL_RESULT:[^\]]*\][\s\S]*?\[\/TOOL_RESULT\]/gi, "")
+      .replace(/\[SYSTEM AUTO-FEEDBACK[\s\S]*?(?:completion\.|(?=\n\n)|$)/gi, "");
+
+    // 1. Thinking / Cognitive Architecture Card with exact requested banner (collapsed by default)
+    processed = processed.replace(/<(?:thought_process|thought)>([\s\S]*?)<\/(?:thought_process|thought)>/gi, (m, thoughts) => {
       return storeSnippet(`
-        <details class="thought-card group" open>
+        <details class="thought-card group">
           <summary class="thought-summary">
             <span class="flex items-center gap-2">
               <span class="relative flex h-2 w-2">
@@ -218,28 +224,34 @@
       `);
     });
 
-    // 2. Transform Antigravity Autonomous Tools into Sleek Action Cards
+    // 2. Transform Antigravity Autonomous Tools into Sleek Action Cards grouped in Collapsible "Work Done" container
+    const toolCards = [];
+    function recordToolCard(cardHtml) {
+      toolCards.push(cardHtml);
+      return `___TOOL_ACTION_${toolCards.length - 1}___`;
+    }
+
     processed = processed
       .replace(/\[TOOL:SEARCH_WEB query="([^"]+)"\]\[\/TOOL:SEARCH_WEB\]/g, (m, q) => {
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-sky-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-sky-300">
+        return recordToolCard(`<div class="my-1.5 p-3 bg-surface-950/90 border border-sky-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-sky-300">
           <i data-lucide="search" class="w-4 h-4 text-sky-400 shrink-0"></i>
           <span><strong>Autonomous Web Search:</strong> "${escapeHtml(q)}"</span>
         </div>`);
       })
       .replace(/\[TOOL:VIEW_FILE filename="([^"]+)"\]\[\/TOOL:VIEW_FILE\]/g, (m, f) => {
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-indigo-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-indigo-300">
+        return recordToolCard(`<div class="my-1.5 p-3 bg-surface-950/90 border border-indigo-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-indigo-300">
           <i data-lucide="file-text" class="w-4 h-4 text-indigo-400 shrink-0"></i>
           <span><strong>Inspecting VFS File:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code></span>
         </div>`);
       })
       .replace(/\[TOOL:LIST_DIR\]\[\/TOOL:LIST_DIR\]/g, () => {
-        return storeSnippet(`<div class="my-2 p-2.5 bg-surface-950/90 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-zinc-300">
+        return recordToolCard(`<div class="my-1.5 p-2.5 bg-surface-950/90 border border-zinc-700 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-zinc-300">
           <i data-lucide="folder" class="w-4 h-4 text-cyan-400 shrink-0"></i>
           <span><strong>Inspecting VFS Directory Tree</strong></span>
         </div>`);
       })
       .replace(/\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g, (m, f, c) => {
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-emerald-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-emerald-300">
+        return recordToolCard(`<div class="my-1.5 p-3 bg-surface-950/90 border border-emerald-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-emerald-300">
           <div class="flex items-center gap-2">
             <i data-lucide="file-code" class="w-4 h-4 text-emerald-400 shrink-0"></i>
             <span><strong>Created / Updated VFS Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code> (${c.trim().length} bytes)</span>
@@ -250,7 +262,7 @@
         </div>`);
       })
       .replace(/\[TOOL:EDIT_FILE filename="([^"]+)"\]\s*<target>([\s\S]*?)<\/target>\s*<replacement>([\s\S]*?)<\/replacement>\s*\[\/TOOL:EDIT_FILE\]/g, (m, f, t, r) => {
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-amber-500/30 rounded-xl shadow-lg font-mono text-xs text-amber-300 space-y-2">
+        return recordToolCard(`<div class="my-1.5 p-3 bg-surface-950/90 border border-amber-500/30 rounded-xl shadow-lg font-mono text-xs text-amber-300 space-y-2">
           <div class="flex items-center gap-2">
             <i data-lucide="edit-3" class="w-4 h-4 text-amber-400 shrink-0"></i>
             <span><strong>Targeted Edit on Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code></span>
@@ -262,13 +274,13 @@
         </div>`);
       })
       .replace(/\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g, (m, f) => {
-        return storeSnippet(`<div class="my-2 p-2.5 bg-surface-950/90 border border-rose-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-rose-400">
+        return recordToolCard(`<div class="my-1.5 p-2.5 bg-surface-950/90 border border-rose-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-rose-400">
           <i data-lucide="trash" class="w-4 h-4 text-rose-500 shrink-0"></i>
           <span><strong>Deleted VFS Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code></span>
         </div>`);
       })
       .replace(/\[TOOL:EXEC\]([\s\S]*?)\[\/TOOL:EXEC\]/g, (m, cmd) => {
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-cyan-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-cyan-300">
+        return recordToolCard(`<div class="my-1.5 p-3 bg-surface-950/90 border border-cyan-500/30 rounded-xl shadow-lg flex items-center gap-2.5 font-mono text-xs text-cyan-300">
           <i data-lucide="terminal" class="w-4 h-4 text-cyan-400 shrink-0"></i>
           <span><strong>MicroVM Terminal Exec:</strong> <code class="text-cyan-200 bg-black/40 px-2 py-0.5 rounded">➜ ${escapeHtml(cmd.trim())}</code></span>
         </div>`);
@@ -307,7 +319,7 @@
           detail = titleStr;
         }
 
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-${badgeColor}-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-${badgeColor}-300">
+        return recordToolCard(`<div class="my-1.5 p-3 bg-surface-950/90 border border-${badgeColor}-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-${badgeColor}-300">
           <div class="flex items-center gap-2">
             <i data-lucide="${iconName}" class="w-4 h-4 text-${badgeColor}-400 shrink-0"></i>
             <span><strong>${label}:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(detail)}</code></span>
@@ -339,7 +351,7 @@
           badgeColor = 'cyan';
         }
 
-        return storeSnippet(`<div class="my-2 p-3 bg-surface-950/90 border border-${badgeColor}-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-${badgeColor}-300">
+        return recordToolCard(`<div class="my-1.5 p-3 bg-surface-950/90 border border-${badgeColor}-500/30 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-${badgeColor}-300">
           <div class="flex items-center gap-2">
             <i data-lucide="${iconName}" class="w-4 h-4 text-${badgeColor}-400 shrink-0"></i>
             <span><strong>${label}:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(titleStr)}</code></span>
@@ -351,16 +363,43 @@
       })
       .replace(/\[TOOL:TASK_COMPLETE(?: summary="([^"]*)")?\](?:([\s\S]*?)\[\/TOOL:TASK_COMPLETE\])?/g, (m, s1, s2) => {
         const sum = s1 || (s2 ? s2.trim() : "All autonomous tasks completed.");
-        return storeSnippet(`<div class="my-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl shadow-xl flex items-start gap-3 font-sans text-xs text-emerald-200">
-          <div class="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+        return recordToolCard(`<div class="my-2 p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl shadow-lg flex items-start gap-3 font-sans text-xs text-emerald-200">
+          <div class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
             <i data-lucide="check-circle" class="w-4 h-4"></i>
           </div>
           <div>
-            <div class="font-bold text-sm text-emerald-300">Autonomous Objective Complete</div>
-            <div class="mt-0.5 text-zinc-300 font-mono text-xs">${escapeHtml(sum)}</div>
+            <div class="font-bold text-xs text-emerald-300">Autonomous Objective Complete</div>
+            <div class="mt-0.5 text-zinc-300 font-mono text-[11px]">${escapeHtml(sum)}</div>
           </div>
         </div>`);
       });
+
+    // Bundle all tool actions into an Antigravity Collapsible Work Done card
+    if (toolCards.length > 0) {
+      const workDoneSnippet = storeSnippet(`
+        <details class="work-done-card group">
+          <summary class="work-done-summary">
+            <span class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold font-mono">⚡</span>
+              <span class="font-bold text-zinc-200 text-xs">Work Done <span class="text-zinc-500 font-normal">·</span> <span class="text-cyan-300 font-mono text-[11px]">${toolCards.length} action${toolCards.length > 1 ? 's' : ''} completed</span></span>
+            </span>
+            <span class="text-[10px] text-zinc-500 group-open:rotate-180 transition-transform duration-200">▼</span>
+          </summary>
+          <div class="work-done-content">
+            ${toolCards.join('\n')}
+          </div>
+        </details>
+      `);
+
+      let firstToolPlaced = false;
+      processed = processed.replace(/___TOOL_ACTION_\d+___/g, () => {
+        if (!firstToolPlaced) {
+          firstToolPlaced = true;
+          return workDoneSnippet;
+        }
+        return "";
+      });
+    }
 
     // 3. Extract code blocks safely
     processed = processed.replace(/```(?:([a-zA-Z0-9_-]+):([a-zA-Z0-9._-]+)|([a-zA-Z0-9_-]+))\n([\s\S]*?)```/g, (match, l1, f1, l2, code) => {
@@ -623,8 +662,22 @@
     }
 
     conversation.forEach((m, index) => {
+      // Filter out internal agentic system loop feedback and tool results so they never leak into user chat bubbles
+      if (
+        m.isSystemFeedback === true ||
+        m.isAutonomousFeedback === true ||
+        m.role === "system" ||
+        m.role === "tool" ||
+        (typeof m.content === "string" && (
+          m.content.startsWith("[SYSTEM AUTO-FEEDBACK") ||
+          m.content.includes("[SYSTEM AUTO-FEEDBACK") ||
+          m.content.includes("[TOOL_RESULT:")
+        ))
+      ) {
+        return;
+      }
+
       const isUser = m.role === "user";
-      if (isUser && m.content.startsWith("[SYSTEM AUTO-FEEDBACK]")) return;
 
       const row = document.createElement("div");
       row.className = `group flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;

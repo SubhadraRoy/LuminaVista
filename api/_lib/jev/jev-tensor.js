@@ -112,7 +112,14 @@ export function scoreJevTensor(prompt = '', { entities = {}, targetFile = '', ta
   // =========================================================================
   // 3. DELETE_FILE Ontology Scoring
   // =========================================================================
-  if (hasDeleteVerb && (targetFile || targetExists)) {
+  const isDeleteAll = /\b(remove|delete|clean|wipe|clear|purge|erase|drop|destroy)\s+(all|every|the\s+entire|everything)\b/i.test(p) ||
+    /\b(clean|clear|wipe)\s+(?:the\s+)?(?:vfs|workspace|files|all\s+files)\b/i.test(p) ||
+    /\b(full\s+clean|clean\s+slate|wipe\s+out)\b/i.test(p) ||
+    /\b(clean\s+all\s+(?:the\s+)?files|remove\s+all\s+(?:the\s+)?files|delete\s+all\s+(?:the\s+)?files)\b/i.test(p);
+
+  if (isDeleteAll) {
+    scores.DELETE_FILE += 85;
+  } else if (hasDeleteVerb && (targetFile || targetExists)) {
     scores.DELETE_FILE += 65;
     if (targetExists) scores.DELETE_FILE += 25;
   }

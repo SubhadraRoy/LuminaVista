@@ -19,17 +19,41 @@
   // 1. MULTI-SESSION CONVERSATION MANAGEMENT
   // =========================================================================
 
+  function sanitizeSessionMessages(msgs) {
+    if (!Array.isArray(msgs)) return [];
+    return msgs.filter(m => {
+      if (!m) return false;
+      if (m.isSystemFeedback === true || m.isAutonomousFeedback === true) return false;
+      if (m.role === "system" || m.role === "tool") return false;
+      if (typeof m.content === "string" && (
+        m.content.startsWith("[SYSTEM AUTO-FEEDBACK") ||
+        m.content.includes("[SYSTEM AUTO-FEEDBACK") ||
+        m.content.includes("[TOOL_RESULT:")
+      )) {
+        return false;
+      }
+      return true;
+    });
+  }
+
   function initChatSessions() {
     try {
       const stored = localStorage.getItem("lumina_chat_sessions");
       window.aiSessions = stored ? JSON.parse(stored) : [];
+      if (Array.isArray(window.aiSessions)) {
+        window.aiSessions.forEach(s => {
+          if (s && Array.isArray(s.messages)) {
+            s.messages = sanitizeSessionMessages(s.messages);
+          }
+        });
+      }
     } catch (e) {
       window.aiSessions = [];
     }
 
     if (!Array.isArray(window.aiSessions) || window.aiSessions.length === 0) {
       const defaultId = "sess_" + Date.now();
-      const legacyHistory = JSON.parse(localStorage.getItem("lumina_ai_history") || "[]");
+      const legacyHistory = sanitizeSessionMessages(JSON.parse(localStorage.getItem("lumina_ai_history") || "[]"));
       const initialSession = {
         id: defaultId,
         title: legacyHistory.length > 0 ? (legacyHistory[0].content.substring(0, 30) + "...") : "Welcome Session",
@@ -65,7 +89,7 @@
   function syncActiveSessionToConversation() {
     const sess = getActiveSession();
     if (sess) {
-      window.aiConversation = sess.messages || [];
+      window.aiConversation = sanitizeSessionMessages(sess.messages || []);
       localStorage.setItem("lumina_ai_history", JSON.stringify(window.aiConversation));
     }
   }

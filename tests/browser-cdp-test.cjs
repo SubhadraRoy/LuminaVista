@@ -413,6 +413,52 @@ async function runBrowserTest() {
   const isEditorCleared = await evaluate("document.getElementById('inlineEditPromptTextarea_0') === null");
   test("Inline prompt editor clears on cancelEditingPrompt", isEditorCleared);
 
+  // Test Antigravity Collapsible Chat & Feedback Privacy in Chrome
+  await evaluate(`
+    window.aiConversation = [
+      { role: 'user', content: 'remove all files i want clean' },
+      { role: 'assistant', content: '<thought>Removing files</thought>[TOOL:LIST_DIR][/TOOL:LIST_DIR][TOOL:DELETE_FILE filename="demo.txt"][/TOOL:DELETE_FILE]\\nFiles removed cleanly.' },
+      { role: 'user', content: '[SYSTEM AUTO-FEEDBACK TOOL RESULTS]:\\n[TOOL_RESULT:DELETE_FILE]done[/TOOL_RESULT:DELETE_FILE]', isSystemFeedback: true },
+      { role: 'assistant', content: '[TOOL:TASK_COMPLETE summary="Done."]Clean slate verified.' }
+    ];
+    window.renderAiChat();
+  `);
+
+  const thoughtCardCollapsed = await evaluate(`
+    (() => {
+      const el = document.querySelector('.thought-card');
+      return el !== null && !el.hasAttribute('open');
+    })()
+  `);
+  test("Thought card is collapsed by default in Chrome", thoughtCardCollapsed);
+
+  const workDoneCardCollapsed = await evaluate(`
+    (() => {
+      const el = document.querySelector('.work-done-card');
+      return el !== null && !el.hasAttribute('open');
+    })()
+  `);
+  test("Antigravity Work Done card is collapsed by default in Chrome", workDoneCardCollapsed);
+
+  const userBubblesCount = await evaluate(`document.querySelectorAll('#aiChatHistory .flex-row-reverse').length`);
+  test("Internal system feedback is never rendered under ME (Found: 1)", userBubblesCount === 1);
+
+  const noFeedbackLeaked = await evaluate(`
+    !document.getElementById('aiChatHistory').innerHTML.includes('[SYSTEM AUTO-FEEDBACK') &&
+    !document.getElementById('aiChatHistory').innerHTML.includes('[TOOL_RESULT:')
+  `);
+  test("Chat history is completely free of leaked system feedback and tool results in Chrome", noFeedbackLeaked);
+
+  // Click summary to expand Work Done card in Chrome
+  await evaluate(`
+    (() => {
+      const s = document.querySelector('.work-done-summary');
+      if (s) s.click();
+    })()
+  `);
+  const workDoneExpanded = await evaluate(`document.querySelector('.work-done-card').hasAttribute('open')`);
+  test("Work Done card expands on click to reveal action details in Chrome", workDoneExpanded);
+
   // Test Mobile Sidebar Drawer
   await evaluate("openMobileSidebar()");
   const isMobileSidebarOpen = await evaluate("document.getElementById('mainSidebar').classList.contains('translate-x-0') && !document.getElementById('mainSidebar').classList.contains('-translate-x-full')");
