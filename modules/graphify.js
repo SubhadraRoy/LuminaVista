@@ -22,10 +22,12 @@
     { id: 'modules/sidebar.js', label: 'sidebar.js', cat: 'frontend', type: 'Navigation Core', loc: 320, size: '14 KB', desc: 'Responsive off-canvas sidebar drawer, workspace switcher, and mobile drawer controls.' },
     { id: 'modules/system.js', label: 'system.js', cat: 'frontend', type: 'System Core', loc: 430, size: '15 KB', desc: 'Command palette (Ctrl+K), zero-trust cryptographic lock screen, and system clock.' },
     { id: 'modules/state.js', label: 'state.js', cat: 'frontend', type: 'State Bus', loc: 210, size: '9 KB', desc: 'Central reactive state store, active tab routing, and session state persistence.' },
+    { id: 'modules/cloud-sync.js', label: 'cloud-sync.js', cat: 'frontend', type: 'Continuous Sync', loc: 485, size: '22 KB', desc: 'Continuous multi-device sovereign cloud sync engine with atomic localStorage hydration.' },
 
     // AI & Inference Engine
     { id: 'modules/ai-studio.js', label: 'ai-studio.js', cat: 'ai', type: 'Core Orchestrator', loc: 1363, size: '64 KB', desc: 'Autonomous AI Studio core orchestrator, Jev intent classifier, provider settings, and tool execution protocol.' },
     { id: 'modules/ai-simulation.js', label: 'ai-simulation.js', cat: 'ai', type: 'Simulation Engine', loc: 1225, size: '58 KB', desc: 'Client-side autonomous agent simulation sandbox, chaos engineering drill generator, and offline tool execution.' },
+    { id: 'modules/ai-chat-ui.js', label: 'ai-chat-ui.js', cat: 'ai', type: 'Chat UI Core', loc: 730, size: '32 KB', desc: 'Collapsible Antigravity tool results, thinking drawer, inline prompt editor, and markdown stream.' },
     { id: 'modules/ai-tasks-sessions.js', label: 'ai-tasks-sessions.js', cat: 'ai', type: 'Task & Session Core', loc: 550, size: '24 KB', desc: 'Multi-session conversation history, scheduled autonomous background tasks, and cloud worker synchronization.' },
     { id: 'personas.js', label: 'personas.js', cat: 'ai', type: 'Persona Orchestrator', loc: 357, size: '15 KB', desc: 'Master orchestrator aggregating 1,813+ specialist persona directives across 35 categories and 13 modular domain files.' },
     { id: 'modules/personas/general.js', label: 'personas/general.js', cat: 'ai', type: 'Persona Domain', loc: 967, size: '48 KB', desc: '105 General, Cognitive Mentors, and Everyday Life Assistant personas.' },
@@ -65,6 +67,9 @@
     { id: 'modules/calendar-sync.js', label: 'calendar-sync.js', cat: 'workspace', type: 'Sync & iCal Engine', loc: 650, size: '25 KB', desc: 'Google Calendar two-way OAuth2 synchronization controller, status badge, modal, and RFC 5545 iCalendar import/export.' },
     { id: 'modules/codespace.js', label: 'codespace.js', cat: 'workspace', type: 'Artifacts IDE', loc: 850, size: '36 KB', desc: 'In-browser Monaco/Ace Artifacts IDE, multi-tab file editor, live preview engine, and collapsible VFS tree.' },
     { id: 'modules/whiteboard.js', label: 'whiteboard.js', cat: 'workspace', type: 'Canvas Engine', loc: 560, size: '24 KB', desc: 'Whiteboard Pro vector drawing studio with touchscreen pointer events, dual-canvas preview, and sticky notes.' },
+    { id: 'modules/whiteboard-ai.js', label: 'whiteboard-ai.js', cat: 'workspace', type: 'Whiteboard AI', loc: 1571, size: '54 KB', desc: 'AI Whiteboard assistant, vector illustration generator for animals/objects & cognitive diagram synthesis.' },
+    { id: 'modules/whiteboard-gallery.js', label: 'whiteboard-gallery.js', cat: 'workspace', type: 'Gallery & Templates', loc: 240, size: '11 KB', desc: 'Whiteboard gallery board manager with architectural blueprints and template presets.' },
+    { id: 'modules/whiteboard-export.js', label: 'whiteboard-export.js', cat: 'workspace', type: 'Export Engine', loc: 140, size: '6 KB', desc: 'High-resolution PNG/JPG canvas exporter with transparent & chalkboard backgrounds.' },
     { id: 'modules/notes.js', label: 'notes.js', cat: 'workspace', type: 'Markdown Studio', loc: 420, size: '18 KB', desc: 'Multi-document Markdown notes vault with split real-time HTML preview.' },
     { id: 'modules/projects.js', label: 'projects.js', cat: 'workspace', type: 'Explorer Module', loc: 310, size: '13 KB', desc: 'Interactive projects directory with multi-device viewport frame switcher.' },
     { id: 'modules/compiler.js', label: 'compiler.js', cat: 'workspace', type: 'IDE Module', loc: 380, size: '15 KB', desc: 'Code runner with Monaco/Ace editors, SQL schemas, and stdin input buffer.' },
@@ -97,7 +102,14 @@
     { source: 'dashboard.html', target: 'modules/sidebar.js' },
     { source: 'dashboard.html', target: 'modules/system.js' },
     { source: 'dashboard.html', target: 'modules/state.js' },
+    { source: 'dashboard.html', target: 'modules/cloud-sync.js' },
     { source: 'dashboard.html', target: 'middleware.js' },
+
+    { source: 'modules/cloud-sync.js', target: 'api/sync.js' },
+    { source: 'modules/whiteboard.js', target: 'modules/whiteboard-ai.js' },
+    { source: 'modules/whiteboard.js', target: 'modules/whiteboard-gallery.js' },
+    { source: 'modules/whiteboard.js', target: 'modules/whiteboard-export.js' },
+    { source: 'modules/ai-studio.js', target: 'modules/whiteboard-ai.js' },
 
     { source: 'modules/ai-studio.js', target: 'modules/ai-simulation.js' },
     { source: 'modules/ai-studio.js', target: 'modules/ai-tasks-sessions.js' },
@@ -223,7 +235,14 @@
   function rebuildGraphData() {
     const existingMap = new Map();
     nodes.forEach(n => {
-      existingMap.set(n.id, { x: n.x, y: n.y, vx: n.vx, vy: n.vy });
+      existingMap.set(n.id, {
+        x: n.x,
+        y: n.y,
+        vx: n.vx,
+        vy: n.vy,
+        phase: n.phase,
+        floatSpeed: n.floatSpeed
+      });
     });
 
     const newNodes = BASE_NODES.map(n => {
@@ -234,6 +253,8 @@
         y: existing && Number.isFinite(existing.y) ? existing.y : (Math.random() - 0.5) * 280,
         vx: existing && Number.isFinite(existing.vx) ? existing.vx : 0,
         vy: existing && Number.isFinite(existing.vy) ? existing.vy : 0,
+        phase: existing && Number.isFinite(existing.phase) ? existing.phase : Math.random() * Math.PI * 2,
+        floatSpeed: existing && Number.isFinite(existing.floatSpeed) ? existing.floatSpeed : 0.0012 + Math.random() * 0.0008,
         radius: n.cat === 'frontend' ? 26 : (n.cat === 'ai' || n.cat === 'api' ? 22 : 18)
       };
     });
@@ -262,13 +283,32 @@
         y: existing && Number.isFinite(existing.y) ? existing.y : hubY + (Math.random() - 0.5) * 160,
         vx: existing && Number.isFinite(existing.vx) ? existing.vx : 0,
         vy: existing && Number.isFinite(existing.vy) ? existing.vy : 0,
+        phase: existing && Number.isFinite(existing.phase) ? existing.phase : Math.random() * Math.PI * 2,
+        floatSpeed: existing && Number.isFinite(existing.floatSpeed) ? existing.floatSpeed : 0.0015,
         radius: 16
       });
       newLinks.push({ source: 'VFS', target: vfsId });
     });
 
+    // Particle state for links
+    const existingParticles = new Map();
+    links.forEach(l => {
+      const key = `${l.source}->${l.target}`;
+      if (l.particles) existingParticles.set(key, l.particles);
+    });
+
     nodes = newNodes;
-    links = newLinks;
+    links = newLinks.map(l => {
+      const key = `${l.source}->${l.target}`;
+      const prev = existingParticles.get(key);
+      return {
+        ...l,
+        particles: prev || [
+          { t: Math.random(), speed: 0.004 + Math.random() * 0.003 },
+          { t: (Math.random() + 0.5) % 1, speed: 0.004 + Math.random() * 0.003 }
+        ]
+      };
+    });
 
     if (selectedNode) {
       const updatedSelected = nodes.find(n => n.id === selectedNode.id);
@@ -444,65 +484,74 @@
         return;
       }
 
-      // 1. Force calculation (Coulomb repulsion with softening)
+      // Check kinetic energy to avoid burning CPU once layout settles
+      let totalVelocity = 0;
       for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const na = nodes[i];
-          const nb = nodes[j];
-          const dx = nb.x - na.x;
-          const dy = nb.y - na.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          if (dist < 260) {
-            const repForce = Math.min(15, (260 - dist) / Math.max(dist, 15)) * 0.35;
-            const fx = (dx / dist) * repForce;
-            const fy = (dy / dist) * repForce;
-            na.vx -= fx;
-            na.vy -= fy;
-            nb.vx += fx;
-            nb.vy += fy;
-          }
-        }
+        totalVelocity += Math.abs(nodes[i].vx) + Math.abs(nodes[i].vy);
       }
 
-      // 2. Spring attraction along links (Hooke's law with unit vector)
-      links.forEach(l => {
-        const na = nodes.find(n => n.id === l.source);
-        const nb = nodes.find(n => n.id === l.target);
-        if (na && nb) {
-          const dx = nb.x - na.x;
-          const dy = nb.y - na.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const targetDist = 110;
-          const springForce = (dist - targetDist) * 0.035;
-          const fx = (dx / dist) * springForce;
-          const fy = (dy / dist) * springForce;
-          na.vx += fx;
-          na.vy += fy;
-          nb.vx -= fx;
-          nb.vy -= fy;
+      // Run physical forces only while system has kinetic energy or is interacted with
+      if (totalVelocity > 0.04 || isDragging || dragNode) {
+        // 1. Force calculation (Coulomb repulsion with softening)
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const na = nodes[i];
+            const nb = nodes[j];
+            const dx = nb.x - na.x;
+            const dy = nb.y - na.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            if (dist < 260) {
+              const repForce = Math.min(15, (260 - dist) / Math.max(dist, 15)) * 0.35;
+              const fx = (dx / dist) * repForce;
+              const fy = (dy / dist) * repForce;
+              na.vx -= fx;
+              na.vy -= fy;
+              nb.vx += fx;
+              nb.vy += fy;
+            }
+          }
         }
-      });
 
-      // 3. Center gravity, velocity damping, and clamping
-      const MAX_VELOCITY = 10;
-      nodes.forEach(n => {
-        if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) {
-          n.x = (Math.random() - 0.5) * 200;
-          n.y = (Math.random() - 0.5) * 200;
-          n.vx = 0;
-          n.vy = 0;
-        }
-        n.vx -= n.x * 0.002;
-        n.vy -= n.y * 0.002;
-        n.vx *= 0.86;
-        n.vy *= 0.86;
-        n.vx = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, n.vx));
-        n.vy = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, n.vy));
-        if (n !== dragNode) {
-          n.x += n.vx;
-          n.y += n.vy;
-        }
-      });
+        // 2. Spring attraction along links (Hooke's law with unit vector)
+        links.forEach(l => {
+          const na = nodes.find(n => n.id === l.source);
+          const nb = nodes.find(n => n.id === l.target);
+          if (na && nb) {
+            const dx = nb.x - na.x;
+            const dy = nb.y - na.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const targetDist = 110;
+            const springForce = (dist - targetDist) * 0.035;
+            const fx = (dx / dist) * springForce;
+            const fy = (dy / dist) * springForce;
+            na.vx += fx;
+            na.vy += fy;
+            nb.vx -= fx;
+            nb.vy += fy;
+          }
+        });
+
+        // 3. Center gravity, velocity damping, and clamping
+        const MAX_VELOCITY = 10;
+        nodes.forEach(n => {
+          if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) {
+            n.x = (Math.random() - 0.5) * 200;
+            n.y = (Math.random() - 0.5) * 200;
+            n.vx = 0;
+            n.vy = 0;
+          }
+          n.vx -= n.x * 0.002;
+          n.vy -= n.y * 0.002;
+          n.vx *= 0.86;
+          n.vy *= 0.86;
+          n.vx = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, n.vx));
+          n.vy = Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, n.vy));
+          if (n !== dragNode) {
+            n.x += n.vx;
+            n.y += n.vy;
+          }
+        });
+      }
 
       render();
       animId = requestAnimationFrame(step);
@@ -517,74 +566,229 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    const now = Date.now();
+
     ctx.save();
     ctx.scale(dpr, dpr);
     ctx.translate(panX, panY);
     ctx.scale(zoom, zoom);
 
-    // 1. Draw Links
+    // 0. Cybernetic Coordinate Grid & Starlight Markers
+    const gridSize = 100;
+    const minX = Math.floor((-panX / zoom) / gridSize) * gridSize - gridSize;
+    const maxX = Math.ceil(((width - panX) / zoom) / gridSize) * gridSize + gridSize;
+    const minY = Math.floor((-panY / zoom) / gridSize) * gridSize - gridSize;
+    const maxY = Math.ceil(((height - panY) / zoom) / gridSize) * gridSize + gridSize;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+    ctx.lineWidth = 1 / zoom;
+    ctx.beginPath();
+    for (let gx = minX; gx <= maxX; gx += gridSize) {
+      ctx.moveTo(gx, minY);
+      ctx.lineTo(gx, maxY);
+    }
+    for (let gy = minY; gy <= maxY; gy += gridSize) {
+      ctx.moveTo(minX, gy);
+      ctx.lineTo(maxX, gy);
+    }
+    ctx.stroke();
+
+    // Crosshair intersections
+    ctx.fillStyle = 'rgba(0, 242, 254, 0.12)';
+    for (let gx = minX; gx <= maxX; gx += gridSize * 2) {
+      for (let gy = minY; gy <= maxY; gy += gridSize * 2) {
+        ctx.fillRect(gx - 1.5, gy - 1.5, 3, 3);
+      }
+    }
+    ctx.restore();
+
+    // Calculate dynamic node render positions with gentle harmonic breathing float
+    const renderPos = new Map();
+    nodes.forEach(n => {
+      const isAnchor = (n === dragNode);
+      const floatX = isAnchor ? 0 : Math.cos(now * (n.floatSpeed || 0.0015) + (n.phase || 0)) * 1.5;
+      const floatY = isAnchor ? 0 : Math.sin(now * (n.floatSpeed || 0.0015) + (n.phase || 0)) * 2.0;
+      renderPos.set(n.id, { x: n.x + floatX, y: n.y + floatY });
+    });
+
+    // 1. Draw Links & Animated Particle Packets
     links.forEach(l => {
       const na = nodes.find(n => n.id === l.source);
       const nb = nodes.find(n => n.id === l.target);
       if (!na || !nb) return;
 
-      const isHighlighted = (hoveredNode && (hoveredNode.id === na.id || hoveredNode.id === nb.id)) ||
-                            (selectedNode && (selectedNode.id === na.id || selectedNode.id === nb.id));
+      const pa = renderPos.get(na.id) || na;
+      const pb = renderPos.get(nb.id) || nb;
 
+      const isConnectedToHover = hoveredNode && (hoveredNode.id === na.id || hoveredNode.id === nb.id);
+      const isConnectedToSelected = selectedNode && (selectedNode.id === na.id || selectedNode.id === nb.id);
+      const isHighlighted = isConnectedToHover || isConnectedToSelected;
+
+      // Draw link line
       ctx.beginPath();
-      ctx.moveTo(na.x, na.y);
-      ctx.lineTo(nb.x, nb.y);
-      ctx.strokeStyle = isHighlighted ? 'rgba(0, 242, 254, 0.8)' : 'rgba(255, 255, 255, 0.1)';
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.strokeStyle = isHighlighted ? 'rgba(0, 242, 254, 0.85)' : 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = isHighlighted ? 2.5 : 1;
       ctx.stroke();
+
+      // Draw traveling particle packets
+      if (!l.particles) {
+        l.particles = [
+          { t: Math.random(), speed: 0.004 + Math.random() * 0.003 },
+          { t: (Math.random() + 0.5) % 1, speed: 0.004 + Math.random() * 0.003 }
+        ];
+      }
+
+      l.particles.forEach(p => {
+        p.t = (p.t + (isHighlighted ? p.speed * 2 : p.speed)) % 1;
+        const px = pa.x + (pb.x - pa.x) * p.t;
+        const py = pa.y + (pb.y - pa.y) * p.t;
+
+        ctx.beginPath();
+        ctx.arc(px, py, isHighlighted ? 3 : 2, 0, Math.PI * 2);
+        ctx.fillStyle = isHighlighted ? '#00f2fe' : (CATEGORIES[na.cat] ? CATEGORIES[na.cat].color : '#38bdf8');
+        ctx.shadowColor = isHighlighted ? '#00f2fe' : 'rgba(0, 242, 254, 0.4)';
+        ctx.shadowBlur = isHighlighted ? 8 : 4;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
     });
 
     // 2. Draw Nodes
     nodes.forEach(n => {
+      const p = renderPos.get(n.id) || n;
       const catMeta = CATEGORIES[n.cat] || CATEGORIES.frontend;
       const isFilteredOut = activeFilter !== 'all' && n.cat !== activeFilter;
       const matchesSearch = !searchQuery || n.label.toLowerCase().includes(searchQuery.toLowerCase()) || n.desc.toLowerCase().includes(searchQuery.toLowerCase());
       const isHovered = hoveredNode && hoveredNode.id === n.id;
       const isSelected = selectedNode && selectedNode.id === n.id;
+      const isMajorHub = n.id === 'dashboard.html' || n.id === 'modules/ai-studio.js' || n.id === 'VFS' || n.id === 'api/_lib/jev-engine.js';
 
       const alpha = isFilteredOut ? 0.15 : (matchesSearch ? 1 : 0.25);
 
       ctx.save();
       ctx.globalAlpha = alpha;
 
-      // Outer Glow
+      // Concentric Expanding Beacon Aura Pulse (for hovered, selected, or major hubs)
+      if (isHovered || isSelected || isMajorHub) {
+        const pulsePeriod = isHovered ? 1400 : 2600;
+        const pulseProgress = ((now + (n.id.length * 370)) % pulsePeriod) / pulsePeriod;
+        const pulseR = n.radius + pulseProgress * (isHovered ? 18 : 12);
+        const pulseAlpha = (1 - pulseProgress) * (isHovered ? 0.45 : 0.22);
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, pulseR, 0, Math.PI * 2);
+        ctx.strokeStyle = catMeta.color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = pulseAlpha * alpha;
+        ctx.stroke();
+        ctx.globalAlpha = alpha;
+      }
+
+      // Outer Glow Aura
       if (isHovered || isSelected) {
         ctx.beginPath();
-        ctx.arc(n.x, n.y, n.radius + 8, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, n.radius + 7, 0, Math.PI * 2);
         ctx.fillStyle = catMeta.color;
-        ctx.globalAlpha = 0.25;
+        ctx.globalAlpha = 0.25 * alpha;
         ctx.fill();
         ctx.globalAlpha = alpha;
       }
 
-      // Main Circle
+      // Frosted Node Body Circle
       ctx.beginPath();
-      ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, n.radius, 0, Math.PI * 2);
       ctx.fillStyle = catMeta.bg;
       ctx.fill();
       ctx.strokeStyle = (isHovered || isSelected) ? '#ffffff' : catMeta.border;
       ctx.lineWidth = (isHovered || isSelected) ? 2.5 : 1.5;
       ctx.stroke();
 
-      // Center Icon or Dot
+      // Dual-ring accent for core orchestrators
+      if (isMajorHub || n.cat === 'frontend') {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, n.radius - 3.5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Center Core Dot / Badge
       ctx.beginPath();
-      ctx.arc(n.x, n.y, 4, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
       ctx.fillStyle = catMeta.color;
       ctx.fill();
 
-      // Label
+      // Label below node
       ctx.fillStyle = (isHovered || isSelected) ? '#ffffff' : '#d4d4d8';
       ctx.font = `${isHovered ? 'bold ' : ''}10px 'JetBrains Mono', monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText(n.label, n.x, n.y + n.radius + 12);
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(n.label, p.x, p.y + n.radius + 12);
+      ctx.shadowBlur = 0;
 
       ctx.restore();
     });
+
+    // 3. Floating In-Canvas HUD Tooltip Card on Hover
+    if (hoveredNode) {
+      const hp = renderPos.get(hoveredNode.id) || hoveredNode;
+      const catMeta = CATEGORIES[hoveredNode.cat] || CATEGORIES.frontend;
+      drawHoverHudCard(ctx, hp.x, hp.y, hoveredNode, catMeta);
+    }
+
+    ctx.restore();
+  }
+
+  function drawHoverHudCard(ctx, hx, hy, node, catMeta) {
+    const cardW = 210;
+    const cardH = 68;
+    const cardX = hx - cardW / 2;
+    const cardY = hy - node.radius - cardH - 14;
+
+    ctx.save();
+    // Glassmorphic dark card
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(cardX, cardY, cardW, cardH, 10) : ctx.rect(cardX, cardY, cardW, cardH);
+    ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 4;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Glowing border in category color
+    ctx.strokeStyle = catMeta.border;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Category indicator dot
+    ctx.beginPath();
+    ctx.arc(cardX + 14, cardY + 16, 4, 0, Math.PI * 2);
+    ctx.fillStyle = catMeta.color;
+    ctx.fill();
+
+    // Node Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    const displayLabel = node.label.length > 22 ? node.label.slice(0, 20) + '..' : node.label;
+    ctx.fillText(displayLabel, cardX + 24, cardY + 20);
+
+    // Classification & Type Badge
+    ctx.fillStyle = catMeta.color;
+    ctx.font = '10px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(`${catMeta.label} • ${node.type}`, cardX + 12, cardY + 38);
+
+    // Stats bar: LOC & Connections
+    const inCount = links.filter(l => l.target === node.id).length;
+    const outCount = links.filter(l => l.source === node.id).length;
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.fillText(`${node.loc} LOC | ${node.size} | ↑${inCount} ↓${outCount}`, cardX + 12, cardY + 54);
 
     ctx.restore();
   }

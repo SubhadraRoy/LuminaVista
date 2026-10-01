@@ -658,6 +658,7 @@ async function runBrowserTest() {
 
   // 10. Google Calendar Replica & AI Life Scheduler
   await evaluate("switchTab('tab-calendar')");
+  await new Promise(r => setTimeout(r, 80));
   const isCalendarOpen = await evaluate("!document.getElementById('tab-calendar').classList.contains('hidden')");
   test("Navigated to Google Calendar tab", isCalendarOpen);
 
@@ -739,7 +740,31 @@ async function runBrowserTest() {
   const hasSessionTimeoutFn = await evaluate("typeof window.handleSessionTimeout === 'function'");
   test("20-minute session auto-logout & cloud flush function initialized in Chrome", hasSessionTimeoutFn);
 
-  // 17. Check for Uncaught Exceptions
+  // 17. Handcrafted Vector Art & Graphify Visualizer in Chrome
+  const pencilArtResult = await evaluate(`(() => {
+    const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Artist Pencil', type: 'illustration' }, 'draw a pencil') : null;
+    return res && res.success && res.subject === 'pencil' && res.shapeCount > 0;
+  })()`);
+  test("Whiteboard AI synthesizes handcrafted Artist Pencil vector art in Chrome", pencilArtResult);
+
+  const cakeArtResult = await evaluate(`(() => {
+    const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Celebration Cake', type: 'illustration' }, 'draw a cake') : null;
+    return res && res.success && res.subject === 'cake' && res.shapeCount > 0;
+  })()`);
+  test("Whiteboard AI synthesizes handcrafted Celebration Cake vector art in Chrome", cakeArtResult);
+
+  await evaluate("switchTab('tab-graphify')");
+  await new Promise(r => setTimeout(r, 100));
+  const isGraphifyActive = await evaluate(`(() => {
+    const col = document.getElementById('aiGraphifyColumn');
+    const cv = document.getElementById('graphifyCanvas');
+    const nodes = typeof window.getGraphifyBaseNodes === 'function' ? window.getGraphifyBaseNodes() : [];
+    const hasCloudSyncNode = nodes.some(n => n.id === 'modules/cloud-sync.js');
+    return col && !col.classList.contains('hidden') && cv !== null && hasCloudSyncNode;
+  })()`);
+  test("Graphify Knowledge Graph switches, animates, and includes cloud-sync architecture in Chrome", isGraphifyActive);
+
+  // 18. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {
     console.error("Console Errors logged:", consoleErrors);

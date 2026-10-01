@@ -129,6 +129,7 @@
       { label: "Jump to Telemetry", act: () => switchTab('tab-analytics') },
       { label: "Jump to Notes Markdown", act: () => switchTab('tab-scratchpad') },
       { label: "Jump to Calendar", act: () => switchTab('tab-calendar') },
+      { label: "Jump to Graphify Knowledge Graph (/graphify)", act: () => switchTab('tab-graphify') },
       { label: "AI Real-Life Daily Auto-Schedule", act: () => { switchTab('tab-calendar'); if (window.LuminaCalendar) window.LuminaCalendar.aiAutoPlanDay(); } },
       { label: "Sync Google Calendar", act: () => { if (window.LuminaCalendar) window.LuminaCalendar.openSyncModal(); } },
       { label: "Jump to Settings", act: () => switchTab('tab-controls') },

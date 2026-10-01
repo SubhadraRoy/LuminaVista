@@ -211,7 +211,85 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   assert(drawPenguinRes.subject === 'penguin', "Result correctly identifies subject as penguin");
   assert(drawPenguinRes.shapeCount > 0, "Penguin illustration drew vector shapes");
 
-  // 13. Modal UI Elements Integrity
+  // 13. Handcrafted Pencil Illustration Engine
+  const pencilPrompts = [
+    "draw a pencil",
+    "sketch a pencil on whiteboard",
+    "draw an artist pencil"
+  ];
+  for (const pPrompt of pencilPrompts) {
+    const pTensor = scoreJevTensor(pPrompt, {});
+    assert(pTensor.winner.route === 'DRAW_WHITEBOARD', `Tensor routes "${pPrompt}" to DRAW_WHITEBOARD`);
+    const pClassified = jevClassifyIntent(pPrompt, {});
+    assert(pClassified.route === 'DRAW_WHITEBOARD', `Jev classifies "${pPrompt}" to DRAW_WHITEBOARD`);
+  }
+  const pencilBespoke = jevGenerateBespokeResponse("draw a pencil", 1, {});
+  assert(pencilBespoke.includes('type="illustration"'), "Server generator sets type='illustration' for pencil drawing");
+  assert(pencilBespoke.includes('title="Artist Pencil"'), "Server generator gives title Artist Pencil");
+
+  const clientPencilReply = await window.generateSimulatedAutonomousReply("draw a pencil on whiteboard", 1, {});
+  assert(clientPencilReply.includes('type="illustration"'), "Client simulated reply sets type='illustration' for pencil");
+
+  const drawPencilRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Artist Pencil',
+    type: 'illustration'
+  }, "draw a pencil");
+  assert(drawPencilRes.success === true, "Whiteboard AI renders pencil illustration successfully");
+  assert(drawPencilRes.type === 'illustration', "Result confirms pencil illustration type");
+  assert(drawPencilRes.subject === 'pencil', "Result correctly identifies subject as pencil");
+  assert(drawPencilRes.shapeCount > 0, "Pencil illustration drew vector shapes");
+
+  // 14. Handcrafted Cake Illustration Engine
+  const cakePrompts = [
+    "draw a cake",
+    "sketch a celebration cake on whiteboard",
+    "draw a birthday cake"
+  ];
+  for (const cPrompt of cakePrompts) {
+    const cTensor = scoreJevTensor(cPrompt, {});
+    assert(cTensor.winner.route === 'DRAW_WHITEBOARD', `Tensor routes "${cPrompt}" to DRAW_WHITEBOARD`);
+    const cClassified = jevClassifyIntent(cPrompt, {});
+    assert(cClassified.route === 'DRAW_WHITEBOARD', `Jev classifies "${cPrompt}" to DRAW_WHITEBOARD`);
+  }
+  const cakeBespoke = jevGenerateBespokeResponse("draw a cake", 1, {});
+  assert(cakeBespoke.includes('type="illustration"'), "Server generator sets type='illustration' for cake drawing");
+  assert(cakeBespoke.includes('title="Celebration Cake"'), "Server generator gives title Celebration Cake");
+
+  const clientCakeReply = await window.generateSimulatedAutonomousReply("draw a cake on whiteboard", 1, {});
+  assert(clientCakeReply.includes('type="illustration"'), "Client simulated reply sets type='illustration' for cake");
+
+  const drawCakeRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Celebration Cake',
+    type: 'illustration'
+  }, "draw a cake");
+  assert(drawCakeRes.success === true, "Whiteboard AI renders cake illustration successfully");
+  assert(drawCakeRes.type === 'illustration', "Result confirms cake illustration type");
+  assert(drawCakeRes.subject === 'cake', "Result correctly identifies subject as cake");
+  assert(drawCakeRes.shapeCount > 0, "Cake illustration drew vector shapes");
+
+  // 15. Graphify Architecture, Modern Animations & Nodes Integration
+  assert(typeof window.getGraphifyBaseNodes === 'function', "getGraphifyBaseNodes helper exposed");
+  assert(typeof window.getGraphifyBaseLinks === 'function', "getGraphifyBaseLinks helper exposed");
+  const graphNodes = window.getGraphifyBaseNodes();
+  const graphNodeIds = graphNodes.map(n => n.id);
+  assert(graphNodeIds.includes('modules/cloud-sync.js'), "Graphify contains modules/cloud-sync.js");
+  assert(graphNodeIds.includes('modules/ai-chat-ui.js'), "Graphify contains modules/ai-chat-ui.js");
+  assert(graphNodeIds.includes('modules/whiteboard-ai.js'), "Graphify contains modules/whiteboard-ai.js");
+  assert(graphNodeIds.includes('modules/whiteboard-gallery.js'), "Graphify contains modules/whiteboard-gallery.js");
+  assert(graphNodeIds.includes('modules/whiteboard-export.js'), "Graphify contains modules/whiteboard-export.js");
+
+  const graphLinks = window.getGraphifyBaseLinks();
+  const cloudSyncLinks = graphLinks.filter(l => l.source === 'modules/cloud-sync.js' || l.target === 'modules/cloud-sync.js');
+  assert(cloudSyncLinks.length > 0, "Graphify connects cloud-sync module to system architecture");
+
+  // Test /graphify slash command navigation
+  window.switchTab('tab-graphify');
+  const graphifyTab = document.getElementById('aiGraphifyColumn');
+  assert(graphifyTab && !graphifyTab.classList.contains('hidden'), "/graphify routes user directly to active Graphify visualizer");
+
+  // 16. Modal UI Elements Integrity
   const galleryModal = document.getElementById('whiteboardGalleryModal');
   const aiModal = document.getElementById('whiteboardAiModal');
   assert(galleryModal !== null, "whiteboardGalleryModal markup mounted in DOM");

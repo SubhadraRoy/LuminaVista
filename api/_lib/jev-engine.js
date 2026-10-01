@@ -1206,11 +1206,13 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
         `[TOOL:TASK_COMPLETE summary="Rendered ${templateName} on Whiteboard Pro."][/TOOL:TASK_COMPLETE]`;
     }
 
-    const isIllustration = /\b(penguin|emperor\s*penguin|tux|cat|kitten|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration)\b/i.test(pTrim) ||
+    const isIllustration = /\b(penguin|emperor\s*penguin|tux|pencil|pen|crayon|marker|cake|birthday\s*cake|cupcake|pastry|dessert|cat|kitten|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration)\b/i.test(pTrim) ||
       (/\b(draw|sketch|paint|illustrate|doodle)\b/i.test(pTrim) && !/\b(architecture|diagram|flowchart|erd|system|component|mesh|pipeline|network)\b/i.test(pTrim));
 
     if (isIllustration) {
       if (/\b(penguin|emperor\s*penguin|tux)\b/i.test(pTrim)) cleanTitle = 'Emperor Penguin';
+      else if (/\b(pencil|pen|crayon|marker)\b/i.test(pTrim)) cleanTitle = 'Artist Pencil';
+      else if (/\b(cake|birthday\s*cake|cupcake|pastry|dessert)\b/i.test(pTrim)) cleanTitle = 'Celebration Cake';
       else if (/\b(cat|kitten|kitty)\b/i.test(pTrim)) cleanTitle = 'Playful Kitten';
       else if (/\b(dog|puppy)\b/i.test(pTrim)) cleanTitle = 'Loyal Puppy';
       else if (/\b(house|cottage|castle)\b/i.test(pTrim)) cleanTitle = 'Cozy Cottage';

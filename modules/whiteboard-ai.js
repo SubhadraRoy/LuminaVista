@@ -124,7 +124,7 @@
     const p = prompt.toLowerCase();
 
     // 1. Check for Illustration / Drawing requests (Animals, Objects, Scenes, Cartoons)
-    const isArtSubject = /\b(penguin|emperor\s*penguin|tux|cat|kitten|kitty|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|home|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|smile|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration)\b/i.test(p);
+    const isArtSubject = /\b(penguin|emperor\s*penguin|tux|pencil|pen|crayon|marker|cake|birthday\s*cake|cupcake|pastry|dessert|cat|kitten|kitty|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|home|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|smile|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration)\b/i.test(p);
     const isDrawAction = /\b(draw|sketch|paint|illustrate|doodle)\b/i.test(p);
     const isExplicitTechnical = /\b(microservice|architecture|database|erd|schema|oauth|kanban|pipeline|mesh|network|system\s*flow|relational|topology|load\s*balancer)\b/i.test(p);
 
@@ -163,10 +163,20 @@
     const p = prompt.toLowerCase();
     let illustrationType = 'procedural';
     let title = 'AI Illustration';
+    let stickyDetails = '• Handcrafted Vector AI Drawing\n• Mode: Multi-layer vector rendering';
 
     if (p.includes('penguin') || p.includes('tux') || p.includes('pingu')) {
       illustrationType = 'penguin';
       title = 'Emperor Penguin';
+      stickyDetails = '• Species: Emperor Penguin (Aptenodytes forsteri)\n• Mode: Multi-layer vector rendering\n• Anatomy: Tuxedo coat, golden patches, flippers & feet';
+    } else if (p.includes('pencil') || p.includes('sketching pencil') || p.includes('lead pencil') || p.includes('pen') || p.includes('crayon') || p.includes('marker')) {
+      illustrationType = 'pencil';
+      title = 'Artist Pencil';
+      stickyDetails = '• Handcrafted Vector AI Drawing\n• Spec: Hexagonal HB graphite pencil with faceted wood, metallic ferrule & eraser\n• Dynamic expressive graphite doodle stroke';
+    } else if (p.includes('cake') || p.includes('birthday cake') || p.includes('cupcake') || p.includes('pastry') || p.includes('dessert') || p.includes('gateau')) {
+      illustrationType = 'cake';
+      title = 'Celebration Cake';
+      stickyDetails = '• Handcrafted Vector AI Drawing\n• Spec: Multi-tiered frosted cake with dripping chocolate ganache, glazed cherries & lit candle\n• Illuminated glowing flame with ambient light';
     } else if (p.includes('cat') || p.includes('kitten') || p.includes('kitty')) {
       illustrationType = 'cat';
       title = 'Playful Kitten';
@@ -198,6 +208,7 @@
       illustrationType = 'procedural';
       let clean = prompt.replace(/\b(draw|sketch|paint|doodle|illustrate|me|a|an|the|on|canvas|whiteboard|blackboard|pro)\b/gi, '').trim();
       title = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Creative Artwork';
+      stickyDetails = `• Handcrafted Vector Studio Drawing\n• Subject: ${title}\n• Mode: Multi-layer vector rendering`;
     }
 
     return {
@@ -217,7 +228,7 @@
         {
           x: 520,
           y: 160,
-          text: `🎨 ${title}\n• Handcrafted Vector AI Drawing\n• Mode: Multi-layer vector rendering\n• Subject: ${title}`,
+          text: `🎨 ${title}\n${stickyDetails}`,
           color: '#fef08a'
         }
       ]
@@ -274,6 +285,11 @@
     if (mainCv && wrap) {
       const ctx = mainCv.getContext("2d");
       if (ctx) {
+        if (!ctx.bezierCurveTo) ctx.bezierCurveTo = (cp1x, cp1y, cp2x, cp2y, x, y) => { if (ctx.quadraticCurveTo) ctx.quadraticCurveTo(cp1x, cp1y, x, y); else if (ctx.lineTo) ctx.lineTo(x, y); };
+        if (!ctx.rotate) ctx.rotate = () => {};
+        if (!ctx.clip) ctx.clip = () => {};
+        if (!ctx.createRadialGradient) ctx.createRadialGradient = () => ({ addColorStop: () => {} });
+
         const w = wrap.clientWidth || 1200;
         const h = wrap.clientHeight || 800;
         const cx = Math.floor(w / 2.7);
@@ -283,6 +299,10 @@
         ctx.save();
         if (iType === 'penguin') {
           drawnCount = drawPenguin(ctx, cx, cy, isWhiteboard) || 16;
+        } else if (iType === 'pencil') {
+          drawnCount = drawPencil(ctx, cx, cy, isWhiteboard) || 16;
+        } else if (iType === 'cake') {
+          drawnCount = drawCake(ctx, cx, cy, isWhiteboard) || 18;
         } else if (iType === 'cat') {
           drawnCount = drawCat(ctx, cx, cy, isWhiteboard) || 12;
         } else if (iType === 'dog') {
@@ -302,7 +322,7 @@
         } else if (iType === 'face') {
           drawnCount = drawFace(ctx, cx, cy, isWhiteboard) || 8;
         } else {
-          drawnCount = drawProceduralArt(ctx, cx, cy, spec.title || 'Creative Art', isWhiteboard) || 10;
+          drawnCount = drawProceduralArt(ctx, cx, cy, spec.title || 'Creative Art', isWhiteboard) || 14;
         }
         ctx.restore();
       }
@@ -943,40 +963,537 @@
     ctx.fill();
   }
 
-  // --- Procedural Art Synthesizer for arbitrary subjects ---
-  function drawProceduralArt(ctx, cx, cy, title, isWb) {
-    // Outer Frame
+  // --- Handcrafted Drawing Routine: Artist Pencil ---
+  function drawPencil(ctx, cx, cy, isWb) {
+    ctx.save();
+
+    // Slanted artist pencil angle (-35 degrees)
+    const angle = -0.62;
+    const bodyLen = 220;
+    const bodyW = 34;
+    const ferruleLen = 30;
+    const eraserLen = 38;
+    const coneLen = 65;
+
+    // Draw wavy sketch stroke curling out from the pencil tip first
+    const tipX = cx - 135;
+    const tipY = cy + 90;
+
+    // 1. Expressive Graphite Sketch Line curving on the canvas
     ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(cx - 130, cy - 110, 260, 220, 18) : ctx.rect(cx - 130, cy - 110, 260, 220);
-    ctx.fillStyle = isWb ? '#f8fafc' : 'rgba(15, 23, 42, 0.8)';
-    ctx.fill();
-    ctx.strokeStyle = isWb ? '#0f172a' : '#00f2fe';
-    ctx.lineWidth = 3;
+    ctx.moveTo(tipX, tipY);
+    ctx.bezierCurveTo(tipX - 60, tipY + 45, tipX - 110, tipY - 20, tipX - 80, tipY - 80);
+    ctx.bezierCurveTo(tipX - 50, tipY - 140, tipX + 20, tipY - 110, tipX + 50, tipY - 150);
+    ctx.strokeStyle = isWb ? '#334155' : 'rgba(56, 189, 248, 0.7)';
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
     ctx.stroke();
 
-    // Concentric Rosette / Star
+    // Graphite accent sketch hatch marks
     ctx.beginPath();
-    ctx.arc(cx, cy - 10, 60, 0, Math.PI * 2);
-    ctx.fillStyle = isWb ? '#e0f2fe' : 'rgba(0, 242, 254, 0.15)';
-    ctx.fill();
-    ctx.strokeStyle = '#38bdf8';
+    for (let i = 0; i < 4; i++) {
+      const hx = tipX - 40 - i * 14;
+      const hy = tipY + 15 + i * 8;
+      ctx.moveTo(hx - 8, hy - 8);
+      ctx.lineTo(hx + 8, hy + 8);
+    }
+    ctx.strokeStyle = isWb ? '#64748b' : '#38bdf8';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Radiating rays
-    for (let i = 0; i < 12; i++) {
-      const angle = (i * Math.PI) / 6;
+    // Move to pencil anchor and rotate
+    ctx.translate(cx + 30, cy - 20);
+    ctx.rotate(angle);
+
+    // 2. Rubber Eraser End Cap
+    const eraserX = bodyLen / 2 + ferruleLen;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(eraserX, -bodyW / 2, eraserLen, bodyW, [0, 8, 8, 0]) : ctx.rect(eraserX, -bodyW / 2, eraserLen, bodyW);
+    ctx.fillStyle = '#f43f5e'; // Vibrant pink eraser
+    ctx.fill();
+    ctx.strokeStyle = '#be123c';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Eraser highlight
+    ctx.beginPath();
+    ctx.moveTo(eraserX + 4, -bodyW / 2 + 5);
+    ctx.lineTo(eraserX + eraserLen - 6, -bodyW / 2 + 5);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 3. Polished Metallic Ferrule Band
+    const ferruleX = bodyLen / 2;
+    ctx.beginPath();
+    ctx.rect(ferruleX, -bodyW / 2, ferruleLen, bodyW);
+    ctx.fillStyle = '#cbd5e1'; // Silver/aluminum metal
+    ctx.fill();
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Ferrule crimped ribs / ring grooves
+    [-ferruleLen * 0.25, 0, ferruleLen * 0.25].forEach(offset => {
       ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(angle) * 35, cy - 10 + Math.sin(angle) * 35);
-      ctx.lineTo(cx + Math.cos(angle) * 55, cy - 10 + Math.sin(angle) * 55);
+      ctx.moveTo(ferruleX + ferruleLen / 2 + offset, -bodyW / 2);
+      ctx.lineTo(ferruleX + ferruleLen / 2 + offset, bodyW / 2);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // 4. Hexagonal Wooden Pencil Body (3-D faceted bevels)
+    const shaftX = -bodyLen / 2;
+    const facetH = bodyW / 3;
+
+    // Top Facet (Highlighted bevel)
+    ctx.beginPath();
+    ctx.rect(shaftX, -bodyW / 2, bodyLen, facetH);
+    ctx.fillStyle = '#fcd34d'; // bright golden amber
+    ctx.fill();
+
+    // Center Facet (Main face)
+    ctx.beginPath();
+    ctx.rect(shaftX, -bodyW / 2 + facetH, bodyLen, facetH);
+    ctx.fillStyle = '#f59e0b'; // rich amber
+    ctx.fill();
+
+    // Bottom Facet (Shaded bevel)
+    ctx.beginPath();
+    ctx.rect(shaftX, -bodyW / 2 + facetH * 2, bodyLen, facetH);
+    ctx.fillStyle = '#d97706'; // darker amber shadow
+    ctx.fill();
+
+    // Shaft Outer Border
+    ctx.beginPath();
+    ctx.rect(shaftX, -bodyW / 2, bodyLen, bodyW);
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Facet Divider Lines
+    ctx.beginPath();
+    ctx.moveTo(shaftX, -bodyW / 2 + facetH);
+    ctx.lineTo(shaftX + bodyLen, -bodyW / 2 + facetH);
+    ctx.moveTo(shaftX, -bodyW / 2 + facetH * 2);
+    ctx.lineTo(shaftX + bodyLen, -bodyW / 2 + facetH * 2);
+    ctx.strokeStyle = 'rgba(180, 83, 9, 0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Gold Foil Stamped Lettering
+    ctx.save();
+    ctx.fillStyle = '#78350f';
+    ctx.font = 'bold 9px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('LUMINA NO. 2 • HB SOFT GRAPHITE', 0, 3);
+    ctx.restore();
+
+    // 5. Sharpened Wood Cone Collar (Cedar Wood Grain)
+    const collarTipX = shaftX - coneLen;
+    ctx.beginPath();
+    ctx.moveTo(shaftX, -bodyW / 2);
+    // Scalloped cut where sharpener met wood
+    ctx.quadraticCurveTo(shaftX - 6, -bodyW / 4, shaftX, 0);
+    ctx.quadraticCurveTo(shaftX - 6, bodyW / 4, shaftX, bodyW / 2);
+    ctx.lineTo(collarTipX, 0);
+    ctx.closePath();
+    ctx.fillStyle = '#fde68a'; // Natural cedar wood
+    ctx.fill();
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    // Wood shaving grain lines
+    ctx.beginPath();
+    ctx.moveTo(shaftX - 12, -bodyW / 3); ctx.lineTo(collarTipX + 18, -3);
+    ctx.moveTo(shaftX - 12, bodyW / 3); ctx.lineTo(collarTipX + 18, 3);
+    ctx.strokeStyle = 'rgba(217, 119, 6, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 6. Sharpened Graphite Lead Cone Tip
+    ctx.beginPath();
+    ctx.moveTo(collarTipX + 18, -bodyW * 0.16);
+    ctx.lineTo(collarTipX - 6, 0);
+    ctx.lineTo(collarTipX + 18, bodyW * 0.16);
+    ctx.closePath();
+    ctx.fillStyle = '#1e293b'; // Dark graphite
+    ctx.fill();
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Graphite metallic shine reflection
+    ctx.beginPath();
+    ctx.moveTo(collarTipX + 14, -bodyW * 0.08);
+    ctx.lineTo(collarTipX, 0);
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.restore();
+    return 16;
+  }
+
+  // --- Handcrafted Drawing Routine: Celebration Cake ---
+  function drawCake(ctx, cx, cy, isWb) {
+    ctx.save();
+    const s = 1.0;
+
+    // 1. Ceramic Pedestal Cake Stand Base & Stem
+    // Foot
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 130 * s, 65 * s, 14 * s, 0, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? '#e2e8f0' : '#1e293b';
+    ctx.fill();
+    ctx.strokeStyle = isWb ? '#94a3b8' : '#38bdf8';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Pedestal stem column
+    ctx.beginPath();
+    ctx.moveTo(cx - 16 * s, cy + 128 * s);
+    ctx.quadraticCurveTo(cx - 8 * s, cy + 110 * s, cx - 18 * s, cy + 96 * s);
+    ctx.lineTo(cx + 18 * s, cy + 96 * s);
+    ctx.quadraticCurveTo(cx + 8 * s, cy + 110 * s, cx + 16 * s, cy + 128 * s);
+    ctx.closePath();
+    ctx.fillStyle = isWb ? '#f1f5f9' : '#334155';
+    ctx.fill();
+    ctx.stroke();
+
+    // Main serving platter plate
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 96 * s, 130 * s, 20 * s, 0, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? '#ffffff' : '#0f172a';
+    ctx.fill();
+    ctx.strokeStyle = isWb ? '#94a3b8' : '#00f2fe';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 2. Bottom Cake Tier (Spacious Layer)
+    const bW = 190 * s;
+    const bH = 65 * s;
+    const bY = cy + 32 * s;
+
+    // Cylinder body
+    ctx.beginPath();
+    ctx.rect(cx - bW / 2, bY, bW, bH);
+    ctx.fillStyle = isWb ? '#fdf2f8' : '#831843'; // Rose cream / berry sponge
+    ctx.fill();
+    ctx.strokeStyle = isWb ? '#f472b6' : '#ec4899';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Bottom tier top surface
+    ctx.beginPath();
+    ctx.ellipse(cx, bY, bW / 2, 18 * s, 0, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? '#fce7f3' : '#9d174d';
+    ctx.fill();
+    ctx.stroke();
+
+    // Decorative piping bead border along platter
+    const beads = 12;
+    for (let i = 0; i <= beads; i++) {
+      const bx = cx - bW / 2 + (i * bW) / beads;
+      ctx.beginPath();
+      ctx.arc(bx, bY + bH, 6 * s, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 1.2;
       ctx.stroke();
     }
 
+    // 3. Top Cake Tier (Upper Layer)
+    const tW = 125 * s;
+    const tH = 55 * s;
+    const tY = cy - 25 * s;
+
+    // Cylinder body
+    ctx.beginPath();
+    ctx.rect(cx - tW / 2, tY, tW, tH);
+    ctx.fillStyle = isWb ? '#fce7f3' : '#be185d';
+    ctx.fill();
+    ctx.strokeStyle = isWb ? '#ec4899' : '#f472b6';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Top tier surface
+    ctx.beginPath();
+    ctx.ellipse(cx, tY, tW / 2, 14 * s, 0, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? '#ffffff' : '#f472b6';
+    ctx.fill();
+    ctx.stroke();
+
+    // 4. Dripping Chocolate Ganache
+    ctx.beginPath();
+    ctx.moveTo(cx - tW / 2, tY + 2);
+    // Flowing drips across front
+    const drips = [14, 26, 12, 32, 16, 28, 10];
+    const segW = tW / (drips.length - 1);
+    for (let i = 0; i < drips.length - 1; i++) {
+      const x0 = cx - tW / 2 + i * segW;
+      const x1 = x0 + segW;
+      const dripLen = drips[i] * s;
+      ctx.bezierCurveTo(x0 + segW * 0.3, tY + dripLen, x0 + segW * 0.7, tY + dripLen, x1, tY + 2);
+    }
+    ctx.lineTo(cx + tW / 2, tY);
+    ctx.ellipse(cx, tY, tW / 2, 14 * s, 0, 0, Math.PI, true);
+    ctx.closePath();
+    ctx.fillStyle = '#78350f'; // Rich chocolate ganache
+    ctx.fill();
+
+    // 5. Whipped Cream Rosettes & Glazed Red Cherries along top rim
+    const rosetteCount = 5;
+    for (let i = 0; i < rosetteCount; i++) {
+      const rx = cx - 44 * s + i * 22 * s;
+      const ry = tY - 4 * s;
+
+      // Puffy cream swirl
+      ctx.beginPath();
+      ctx.arc(rx, ry, 7 * s, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Shiny red cherry
+      ctx.beginPath();
+      ctx.arc(rx, ry - 6 * s, 5.5 * s, 0, Math.PI * 2);
+      ctx.fillStyle = '#ef4444';
+      ctx.fill();
+      ctx.strokeStyle = '#b91c1c';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Specular highlight on cherry
+      ctx.beginPath();
+      ctx.arc(rx - 1.8 * s, ry - 7.5 * s, 1.5 * s, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      // Curved green cherry stem
+      ctx.beginPath();
+      ctx.moveTo(rx, ry - 11 * s);
+      ctx.quadraticCurveTo(rx + 4 * s, ry - 16 * s, rx + 7 * s, ry - 18 * s);
+      ctx.strokeStyle = '#15803d';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+
+    // 6. Central Festive Birthday Candle
+    const cW = 10 * s;
+    const cH = 46 * s;
+    const cX = cx - cW / 2;
+    const cY = tY - cH - 5 * s;
+
+    // Candle body
+    ctx.beginPath();
+    ctx.rect(cX, cY, cW, cH);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Diagonal candy-cane stripes
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cX, cY, cW, cH);
+    ctx.clip();
+    for (let y = cY - 10; y < cY + cH + 10; y += 10) {
+      ctx.beginPath();
+      ctx.moveTo(cX - 2, y);
+      ctx.lineTo(cX + cW + 2, y + 8);
+      ctx.strokeStyle = '#0ea5e9';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Candle black wick
+    ctx.beginPath();
+    ctx.moveTo(cx, cY);
+    ctx.lineTo(cx, cY - 7 * s);
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    // 7. Ambient Golden Light Halo Aura
+    const flameBaseY = cY - 8 * s;
+    const grad = ctx.createRadialGradient(cx, flameBaseY - 10 * s, 4 * s, cx, flameBaseY - 10 * s, 32 * s);
+    grad.addColorStop(0, 'rgba(254, 240, 138, 0.6)');
+    grad.addColorStop(0.5, 'rgba(249, 115, 22, 0.25)');
+    grad.addColorStop(1, 'rgba(249, 115, 22, 0)');
+    ctx.beginPath();
+    ctx.arc(cx, flameBaseY - 10 * s, 32 * s, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // 8. Glowing Teardrop Flame (Outer amber, inner bright gold)
+    ctx.beginPath();
+    ctx.moveTo(cx, flameBaseY);
+    ctx.quadraticCurveTo(cx - 9 * s, flameBaseY - 10 * s, cx, flameBaseY - 26 * s);
+    ctx.quadraticCurveTo(cx + 9 * s, flameBaseY - 10 * s, cx, flameBaseY);
+    ctx.closePath();
+    ctx.fillStyle = '#f97316'; // Vivid orange flame
+    ctx.fill();
+
+    // Inner bright yellow flame core
+    ctx.beginPath();
+    ctx.moveTo(cx, flameBaseY - 2 * s);
+    ctx.quadraticCurveTo(cx - 5 * s, flameBaseY - 9 * s, cx, flameBaseY - 20 * s);
+    ctx.quadraticCurveTo(cx + 5 * s, flameBaseY - 9 * s, cx, flameBaseY - 2 * s);
+    ctx.closePath();
+    ctx.fillStyle = '#fef08a'; // White-hot core
+    ctx.fill();
+
+    // 9. Floating Confetti Celebratory Sparkles
+    const confetti = [
+      { x: cx - 110 * s, y: cy - 70 * s, color: '#f43f5e', r: 4 },
+      { x: cx + 115 * s, y: cy - 60 * s, color: '#fbbf24', r: 3.5 },
+      { x: cx - 80 * s, y: cy - 110 * s, color: '#00f2fe', r: 4.5 },
+      { x: cx + 85 * s, y: cy - 100 * s, color: '#a855f7', r: 3 },
+      { x: cx - 125 * s, y: cy + 10 * s, color: '#10b981', r: 4 },
+      { x: cx + 120 * s, y: cy + 20 * s, color: '#f43f5e', r: 3.5 }
+    ];
+    confetti.forEach(c => {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.fillStyle = c.color;
+      ctx.fill();
+    });
+
+    ctx.restore();
+    return 18;
+  }
+
+  // --- Procedural Art Synthesizer: Authentic Studio Easel & Canvas ---
+  function drawProceduralArt(ctx, cx, cy, title, isWb) {
+    ctx.save();
+
+    // 1. Artist Wooden Easel Legs
+    ctx.beginPath();
+    // Left leg
+    ctx.moveTo(cx - 5, cy - 120); ctx.lineTo(cx - 105, cy + 135);
+    // Right leg
+    ctx.moveTo(cx + 5, cy - 120); ctx.lineTo(cx + 105, cy + 135);
+    // Center back leg
+    ctx.moveTo(cx, cy - 120); ctx.lineTo(cx, cy + 130);
+    // Shelf crossbar
+    ctx.moveTo(cx - 115, cy + 50); ctx.lineTo(cx + 115, cy + 50);
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // 2. Stretched Art Canvas Board sitting on easel shelf
+    const cW = 200;
+    const cH = 140;
+    const cX = cx - cW / 2;
+    const cY = cy - 75;
+
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(cX, cY, cW, cH, 8) : ctx.rect(cX, cY, cW, cH);
+    ctx.fillStyle = isWb ? '#ffffff' : '#0f172a';
+    ctx.fill();
+    ctx.strokeStyle = isWb ? '#cbd5e1' : '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 3. Canvas Landscape Sunset / Artistic Sky Painting
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(cX + 6, cY + 6, cW - 12, cH - 12, 4) : ctx.rect(cX + 6, cY + 6, cW - 12, cH - 12);
+    ctx.clip();
+
+    // Sunset gradient sky
+    const skyGrad = ctx.createLinearGradient(cX, cY, cX, cY + cH);
+    skyGrad.addColorStop(0, '#f43f5e');
+    skyGrad.addColorStop(0.4, '#fb923c');
+    skyGrad.addColorStop(0.7, '#fde047');
+    skyGrad.addColorStop(1, '#0284c7');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(cX, cY, cW, cH);
+
+    // Golden sun setting
+    ctx.beginPath();
+    ctx.arc(cx, cY + 70, 24, 0, Math.PI * 2);
+    ctx.fillStyle = '#fef08a';
+    ctx.fill();
+
+    // Silhouette mountains
+    ctx.beginPath();
+    ctx.moveTo(cX, cY + cH);
+    ctx.lineTo(cX + 40, cY + 65);
+    ctx.lineTo(cX + 90, cY + 95);
+    ctx.lineTo(cX + 140, cY + 55);
+    ctx.lineTo(cX + cW, cY + 90);
+    ctx.lineTo(cX + cW, cY + cH);
+    ctx.closePath();
+    ctx.fillStyle = '#1e1b4b';
+    ctx.fill();
+    ctx.restore();
+
+    // 4. Wooden Artist Painter's Palette (Resting by the easel shelf)
+    const px = cx + 85;
+    const py = cy + 65;
+    ctx.beginPath();
+    ctx.ellipse(px, py, 38, 26, -0.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#d97706';
+    ctx.fill();
+    ctx.strokeStyle = '#92400e';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Thumbhole
+    ctx.beginPath();
+    ctx.arc(px - 16, py + 4, 5, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? '#f8fafc' : '#020617';
+    ctx.fill();
+    ctx.stroke();
+
+    // Paint Blobs on palette (Crimson, Gold, Cyan, Emerald, Violet)
+    const blobs = [
+      { dx: -10, dy: -12, c: '#ef4444' },
+      { dx: 6, dy: -14, c: '#f59e0b' },
+      { dx: 20, dy: -8, c: '#00f2fe' },
+      { dx: 22, dy: 8, c: '#10b981' },
+      { dx: 8, dy: 14, c: '#a855f7' }
+    ];
+    blobs.forEach(b => {
+      ctx.beginPath();
+      ctx.arc(px + b.dx, py + b.dy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = b.c;
+      ctx.fill();
+    });
+
+    // 5. Paintbrush resting across palette
+    ctx.beginPath();
+    ctx.moveTo(px - 32, py + 26);
+    ctx.lineTo(px + 36, py - 24);
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    // Metal ferrule
+    ctx.beginPath();
+    ctx.moveTo(px + 26, py - 16); ctx.lineTo(px + 32, py - 21);
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.stroke();
+    // Blue tip
+    ctx.beginPath();
+    ctx.arc(px + 37, py - 25, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#00f2fe'; ctx.fill();
+
     // Title label
     ctx.fillStyle = isWb ? '#0f172a' : '#ffffff';
-    ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
+    ctx.font = 'bold 14px "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(title, cx, cy + 80);
+    ctx.fillText(title, cx, cy + 115);
+
+    ctx.restore();
+    return 14;
   }
 
   // ---------------------------------------------------------------------------
