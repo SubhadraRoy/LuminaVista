@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       await redis.del(rateLimitKey);
 
       const sessionId = crypto.randomUUID();
-      const sessionTtl = 2592000; // 30-day sliding window for seamless multi-device persistence
+      const sessionTtl = 1200; // 20-minute active session window (1,200s)
       await redis.set(`session:${sessionId}`, 'active', { ex: sessionTtl });
 
       res.setHeader('Set-Cookie', serialize('godx_session', sessionId, {

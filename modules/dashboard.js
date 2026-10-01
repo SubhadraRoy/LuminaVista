@@ -61,6 +61,12 @@
     if (window.startAutonomousSyncPoller) window.startAutonomousSyncPoller();
     if (window.initAmbientParticles) window.initAmbientParticles();
     if (window.initIdleTimer) window.initIdleTimer();
+
+    // Reopen exact same tab where user left off
+    const savedActiveTab = localStorage.getItem("lumina_active_tab_id");
+    if (savedActiveTab && savedActiveTab !== "tab-ai-studio" && window.switchTab) {
+      window.switchTab(savedActiveTab);
+    }
   }
 
   if (document.readyState === "loading") {

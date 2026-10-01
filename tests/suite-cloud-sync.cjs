@@ -101,6 +101,7 @@ module.exports = async function runCloudSyncSuite({ assert, window, document, ro
     whiteboardActiveBoardId: "board_phone",
     whiteboardTheme: "whiteboard",
     theme: "emerald",
+    activeTabId: "tab-whiteboard",
     updatedAt: Date.now() + 1000
   };
 
@@ -123,6 +124,7 @@ module.exports = async function runCloudSyncSuite({ assert, window, document, ro
 
   assert(window.localStorage.getItem("lumina_whiteboard_theme") === "whiteboard", "Whiteboard theme hydrated into storage");
   assert(window.localStorage.getItem("lumina_theme") === "emerald", "Theme hydrated into storage");
+  assert(window.localStorage.getItem("lumina_active_tab_id") === "tab-whiteboard", "Active tab restored to open where last closed");
 
   // 5. Test Push to Mock Cloud API
   let pushedBody = null;
@@ -154,6 +156,7 @@ module.exports = async function runCloudSyncSuite({ assert, window, document, ro
     assert(pushedBody !== null, "Pushed body captured by API mock");
     assert(pushedBody.data && Array.isArray(pushedBody.data.calendar), "Pushed body contains calendar data");
     assert(pushedBody.data && pushedBody.data.vfs["mobile_entry.js"] !== undefined, "Pushed body contains VFS files");
+    assert(pushedBody.data && pushedBody.data.activeTabId !== undefined, "Pushed body contains activeTabId for same-tab resume");
 
     // 6. Test Pull from Cloud
     const pullOk = await window.LuminaCloudSync.pullFromCloud();
@@ -162,21 +165,29 @@ module.exports = async function runCloudSyncSuite({ assert, window, document, ro
     window.fetch = originalFetch;
   }
 
-  // 7. Test Session Durability (30-day sliding window in backend code)
+  // 7. Test Active Session Window (20-minute active session window & auto-logout policy)
   const authGuardPath = require('path').join(rootDir, 'api', '_lib', 'auth-guard.js');
   const authGuardSrc = require('fs').readFileSync(authGuardPath, 'utf8');
-  assert(/2592000/.test(authGuardSrc) || /30\s*\*\s*24\s*\*\s*60\s*\*\s*60/.test(authGuardSrc), "auth-guard.js sets 30-day session sliding window (2592000s)");
+  assert(/1200/.test(authGuardSrc) || /20\s*\*\s*60/.test(authGuardSrc), "auth-guard.js enforces 20-minute active session window (1200s)");
 
   const authApiPath = require('path').join(rootDir, 'api', 'auth.js');
   const authApiSrc = require('fs').readFileSync(authApiPath, 'utf8');
-  assert(/2592000/.test(authApiSrc) || /30\s*\*\s*24\s*\*\s*60\s*\*\s*60/.test(authApiSrc), "api/auth.js sets 30-day cookie maxAge (2592000s)");
+  assert(/1200/.test(authApiSrc) || /20\s*\*\s*60/.test(authApiSrc), "api/auth.js sets 20-minute cookie maxAge (1200s)");
   assert(/sessionId/.test(authApiSrc), "api/auth.js returns sessionId in JSON response");
 
-  // 8. Test Login Warp Prefetch in index.html
+  // 8. Test 20-Minute Idle Auto-Logout & Exact Last Trigger Cloud Flush
+  const systemPath = require('path').join(rootDir, 'modules', 'system.js');
+  const systemSrc = require('fs').readFileSync(systemPath, 'utf8');
+  assert(/IDLE_TIMEOUT_MS\s*=\s*20\s*\*\s*60\s*\*\s*1000/.test(systemSrc), "system.js sets active session timeout to exactly 20 minutes");
+  assert(systemSrc.includes('handleSessionTimeout'), "system.js defines handleSessionTimeout");
+  assert(systemSrc.includes('flushSync'), "system.js flushes cloud sync on session timeout at exact last trigger");
+
+  // 9. Test Login Warp Prefetch & Tab Hydration in index.html
   const indexPath = require('path').join(rootDir, 'index.html');
   const indexSrc = require('fs').readFileSync(indexPath, 'utf8');
   assert(indexSrc.includes('/api/sync'), "index.html prefetches /api/sync during login warp transition");
   assert(indexSrc.includes('lumina_session_id'), "index.html preserves lumina_session_id in localStorage");
+  assert(indexSrc.includes('lumina_active_tab_id'), "index.html preserves lumina_active_tab_id for opening same tab where last closed");
 
   // 9. Test Debounced Queueing
   let queueTriggered = false;

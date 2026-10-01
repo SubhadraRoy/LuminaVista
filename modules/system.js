@@ -46,6 +46,13 @@
       activeBtn.classList.add("nav-tab-active");
       activeBtn.classList.remove("text-zinc-400");
     }
+
+    window.currentActiveTab = id;
+    try {
+      localStorage.setItem("lumina_active_tab_id", id);
+      if (subView) localStorage.setItem("lumina_active_subview", subView);
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
+    } catch (e) {}
     
     if (id === "tab-whiteboard") {
       setTimeout(() => {
@@ -158,8 +165,12 @@
   }
 
   function handleLogout() {
+    if (window.LuminaCloudSync?.flushSync) {
+      try { window.LuminaCloudSync.flushSync(); } catch (e) {}
+    }
     fetch("/api/logout", { method: "POST", credentials: "include" }).finally(() => {
       sessionStorage.clear();
+      localStorage.removeItem("lumina_session_id");
       window.location.href = "/index.html";
     });
   }
@@ -269,18 +280,42 @@
   }
 
   // =========================================================================
-  // 15-MINUTE IDLE INACTIVITY TIMEOUT & SECURITY AUTO-LOCK
+  // 20-MINUTE ACTIVE SESSION TIMEOUT, LAST TRIGGER CLOUD SAVE & AUTO-LOGOUT
   // =========================================================================
   let idleTimer = null;
-  const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 Minutes
+  const IDLE_TIMEOUT_MS = 20 * 60 * 1000; // 20 Minutes (1,200,000 ms)
   let isSessionLocked = false;
+  let isLoggingOut = false;
+
+  async function handleSessionTimeout() {
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+
+    // Save all data to the cloud at this exact last trigger
+    if (window.LuminaCloudSync?.flushSync) {
+      try {
+        await window.LuminaCloudSync.flushSync();
+      } catch (e) {
+        console.warn("Cloud flush on session timeout error:", e);
+      }
+    }
+
+    try {
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    } catch (e) {}
+
+    sessionStorage.clear();
+    localStorage.removeItem("lumina_session_id");
+    localStorage.setItem("lumina_session_expired_notice", "true");
+    window.location.href = "/index.html?timeout=1";
+  }
 
   function resetIdleTimer() {
     if (idleTimer) clearTimeout(idleTimer);
-    if (isSessionLocked) return;
+    if (isSessionLocked || isLoggingOut) return;
 
     idleTimer = setTimeout(() => {
-      lockSession(true);
+      handleSessionTimeout();
     }, IDLE_TIMEOUT_MS);
   }
 
@@ -428,5 +463,6 @@
   window.resetIdleTimer = resetIdleTimer;
   window.lockSession = lockSession;
   window.unlockSession = unlockSession;
+  window.handleSessionTimeout = handleSessionTimeout;
 
 })(window);

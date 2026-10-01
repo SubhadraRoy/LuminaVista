@@ -733,6 +733,12 @@ async function runBrowserTest() {
   const canFlushSync = await evaluate("typeof window.LuminaCloudSync.flushSync === 'function'");
   test("Cloud sync flush API callable in Chrome", canFlushSync);
 
+  const activeTabStored = await evaluate("typeof localStorage.getItem('lumina_active_tab_id') === 'string'");
+  test("Current active tab ID persisted to localStorage for same-tab resume", activeTabStored);
+
+  const hasSessionTimeoutFn = await evaluate("typeof window.handleSessionTimeout === 'function'");
+  test("20-minute session auto-logout & cloud flush function initialized in Chrome", hasSessionTimeoutFn);
+
   // 17. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {

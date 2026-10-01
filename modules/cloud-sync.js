@@ -143,6 +143,7 @@
       noteViewMode,
       projects,
       theme,
+      activeTabId: localStorage.getItem('lumina_active_tab_id') || window.currentActiveTab || 'tab-ai-studio',
       updatedAt: Date.now()
     };
   }
@@ -365,6 +366,17 @@
 
     if (hasProjectsUpdated && window.renderProjectsList) {
       window.renderProjectsList();
+    }
+
+    // 8. Reopen Exact Same Tab Where Last Closed
+    if (state.activeTabId && typeof state.activeTabId === 'string') {
+      try {
+        localStorage.setItem('lumina_active_tab_id', state.activeTabId);
+        window.currentActiveTab = state.activeTabId;
+        if (window.switchTab) {
+          window.switchTab(state.activeTabId);
+        }
+      } catch (e) {}
     }
   }
 

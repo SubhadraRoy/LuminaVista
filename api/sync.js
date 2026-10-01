@@ -74,7 +74,8 @@ export default async function handler(req, res) {
         try { currentState = JSON.parse(rawCurrent); } catch (e) { currentState = {}; }
       }
 
-      const b = req.body || {};
+      const rawBody = req.body || {};
+      const b = rawBody.data ? rawBody.data : rawBody;
       const newState = {
         calendar: b.calendar !== undefined ? b.calendar : currentState.calendar,
         calendarSettings: b.calendarSettings !== undefined ? b.calendarSettings : currentState.calendarSettings,
@@ -94,6 +95,7 @@ export default async function handler(req, res) {
         noteViewMode: b.noteViewMode !== undefined ? b.noteViewMode : currentState.noteViewMode,
         projects: b.projects !== undefined ? b.projects : currentState.projects,
         theme: b.theme !== undefined ? b.theme : currentState.theme,
+        activeTabId: b.activeTabId !== undefined ? b.activeTabId : currentState.activeTabId,
         updatedAt: Date.now()
       };
 

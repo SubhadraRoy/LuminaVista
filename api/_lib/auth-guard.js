@@ -40,8 +40,8 @@ export async function validateSession(req, redisClient = null) {
       return { valid: false, status: 401, error: 'Session Expired / Unauthorized' };
     }
 
-    // Refresh 30-day sliding window (2592000 seconds)
-    await redis.expire(`session:${sessionId}`, 2592000);
+    // Refresh 20-minute sliding window (1200 seconds)
+    await redis.expire(`session:${sessionId}`, 1200);
 
     return { valid: true, sessionId };
   } catch (error) {
