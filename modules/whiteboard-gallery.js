@@ -224,6 +224,7 @@
   function saveStoredBoards(boards) {
     try {
       localStorage.setItem(STORAGE_KEY_BOARDS, JSON.stringify(boards));
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
     } catch (e) {
       console.warn('[Whiteboard Gallery] Error saving boards:', e);
     }

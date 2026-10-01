@@ -57,9 +57,53 @@ const server = http.createServer((req, res) => {
     }
   }
 
+  let mockCloudWorkspace = null;
+
+  if (pathname === '/api/sync') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-session-id, authorization');
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        data: mockCloudWorkspace,
+        timestamp: mockCloudWorkspace ? mockCloudWorkspace.updatedAt : Date.now()
+      }));
+      return;
+    }
+
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          mockCloudWorkspace = {
+            ...(parsed.data || {}),
+            updatedAt: Date.now()
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, message: 'Cloud sync updated', timestamp: mockCloudWorkspace.updatedAt }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+  }
+
   if (pathname === '/api/auth') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Set-Cookie': 'godx_session=mock_dev_session; Path=/;' });
-    res.end(JSON.stringify({ success: true, message: 'Authenticated' }));
+    res.end(JSON.stringify({ success: true, message: 'Authenticated', sessionId: 'mock_dev_session' }));
     return;
   }
 

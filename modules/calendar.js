@@ -129,12 +129,14 @@
   function saveCalendarEvents() {
     try {
       localStorage.setItem('luminavista_calendar_events_v1', JSON.stringify(calendarEvents));
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
     } catch (e) {}
   }
 
   function saveCalendarSettings() {
     try {
       localStorage.setItem('luminavista_calendar_settings_v1', JSON.stringify(calendarSettings));
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
     } catch (e) {}
   }
 
@@ -1589,6 +1591,13 @@
     getUpcomingEvents,
     getEvents: () => [...calendarEvents],
     getRawEvents: () => calendarEvents,
+    loadFromStorage: loadCalendarFromStorage,
+    init: () => {
+      loadCalendarFromStorage();
+      renderCalendar();
+    },
+    render: renderCalendar,
+    renderCalendar: renderCalendar,
     setEvents: (evts) => {
       calendarEvents = evts;
       saveCalendarEvents();

@@ -80,6 +80,7 @@
     localStorage.setItem("lumina_chat_sessions", JSON.stringify(window.aiSessions));
     localStorage.setItem("lumina_active_session_id", window.activeSessionId);
     updateSessionsBadge();
+    if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
   }
 
   function getActiveSession() {

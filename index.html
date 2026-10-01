@@ -1171,6 +1171,41 @@
           playSciFiSound('success');
           beam.classList.add('success-beam');
 
+          if (d.sessionId) {
+            try { localStorage.setItem('lumina_session_id', d.sessionId); } catch (e) {}
+          }
+
+          // Pre-fetch and cache master cloud workspace state during warp transition
+          fetch("/api/sync", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-session-id": d.sessionId || ""
+            },
+            credentials: "include"
+          }).then(r => r.ok ? r.json() : null).then(syncRes => {
+            const s = syncRes?.state || syncRes;
+            if (s) {
+              if (s.calendar) localStorage.setItem('luminavista_calendar_events_v1', JSON.stringify(s.calendar));
+              if (s.calendarSettings) localStorage.setItem('luminavista_calendar_settings_v1', JSON.stringify(s.calendarSettings));
+              if (s.chatSessions) localStorage.setItem('lumina_chat_sessions', JSON.stringify(s.chatSessions));
+              if (s.activeSessionId) localStorage.setItem('lumina_active_session_id', s.activeSessionId);
+              if (s.aiConversation) localStorage.setItem('lumina_ai_history', JSON.stringify(s.aiConversation));
+              if (s.whiteboard) localStorage.setItem('lumina_wb_state', s.whiteboard);
+              if (s.whiteboardBoards) localStorage.setItem('lumina_wb_boards', JSON.stringify(s.whiteboardBoards));
+              if (s.whiteboardActiveBoardId) localStorage.setItem('lumina_wb_active_board_id', s.whiteboardActiveBoardId);
+              if (s.whiteboardStickies) localStorage.setItem('lumina_wb_stickies', JSON.stringify(s.whiteboardStickies));
+              if (s.whiteboardTheme) localStorage.setItem('lumina_wb_theme', s.whiteboardTheme);
+              if (s.whiteboardBg) localStorage.setItem('lumina_wb_bg', s.whiteboardBg);
+              if (s.vfs) localStorage.setItem('lumina_codespace_vfs', JSON.stringify(s.vfs));
+              if (s.notes) localStorage.setItem('lumina_godx_multi_notes', JSON.stringify(s.notes));
+              if (s.activeNoteId) localStorage.setItem('lumina_active_note_id', s.activeNoteId);
+              if (s.noteViewMode) localStorage.setItem('lumina_note_view_mode', s.noteViewMode);
+              if (s.projects) localStorage.setItem('lumina_exm_projects', JSON.stringify(s.projects));
+              if (s.theme) localStorage.setItem('lumina_theme', s.theme);
+            }
+          }).catch(() => {});
+
           // Trigger circular shockwave ripple
           const sw = document.getElementById('shockwave');
           gsap.fromTo(sw, 

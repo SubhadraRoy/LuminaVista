@@ -70,6 +70,9 @@
   function saveNotesToStorage() {
     localStorage.setItem("lumina_godx_multi_notes", JSON.stringify(window.vaultNotes));
     localStorage.setItem("lumina_active_note_id", window.activeNoteId);
+    if (window.LuminaCloudSync?.queueSync) {
+      window.LuminaCloudSync.queueSync();
+    }
   }
 
   function renderNoteTabs() {
@@ -259,7 +262,10 @@
   // View Mode: 'split' | 'editor' | 'preview'
   function setNoteViewMode(mode, save = true) {
     window.noteViewMode = mode;
-    if (save) localStorage.setItem("lumina_note_view_mode", mode);
+    if (save) {
+      localStorage.setItem("lumina_note_view_mode", mode);
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
+    }
 
     const btnSplit = document.getElementById("btnNoteViewSplit");
     const btnEditor = document.getElementById("btnNoteViewEditor");

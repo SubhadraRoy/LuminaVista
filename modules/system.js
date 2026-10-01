@@ -77,7 +77,7 @@
     }
 
     if (id === "tab-calendar") {
-      if (window.LuminaCalendar) {
+      if (window.LuminaCalendar && typeof window.LuminaCalendar.init === 'function') {
         window.LuminaCalendar.init();
       }
     }

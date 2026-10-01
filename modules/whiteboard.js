@@ -162,6 +162,7 @@
     window.wbRedoStack = [];
     localStorage.setItem("lumina_wb_state", data);
     updateUndoRedoButtons();
+    if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
   }
 
   function updateUndoRedoButtons() {

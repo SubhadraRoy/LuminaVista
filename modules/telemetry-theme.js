@@ -83,6 +83,7 @@
   function setDashboardTheme(t) {
     document.documentElement.setAttribute("data-theme", t);
     localStorage.setItem("lumina_theme", t);
+    if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
   }
 
   function applyCustomAccentColor(h) {

@@ -260,6 +260,7 @@
       if (ed) {
         window.vfs[window.csActiveFile] = ed.value;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+        if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
         updateStorageQuotaMeter();
         if (window.rebuildGraphData) window.rebuildGraphData();
       }
@@ -388,6 +389,7 @@
       if (!window.vfs[clean]) {
         window.vfs[clean] = `// File: ${clean}\n`;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+        if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
         switchCodespaceFile(clean);
         if (window.rebuildGraphData) window.rebuildGraphData();
         if (window.showToast) window.showToast("File Created", clean);
@@ -402,6 +404,7 @@
       if (!window.vfs[clean]) {
         window.vfs[clean] = `# ${folder.trim()}`;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+        if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
         switchCodespaceFile(clean);
         if (window.rebuildGraphData) window.rebuildGraphData();
       }
@@ -417,6 +420,7 @@
       
       window.codespaceOpenTabs = window.codespaceOpenTabs.filter(f => f !== window.csActiveFile);
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
       switchCodespaceFile(nextName.trim());
       if (window.rebuildGraphData) window.rebuildGraphData();
     }
@@ -431,6 +435,7 @@
     if (confirm(`Delete ${file}?`)) {
       delete window.vfs[file];
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
       removeSpecificTab(file);
       if (window.rebuildGraphData) window.rebuildGraphData();
       if (window.showToast) window.showToast("Deleted", file);
@@ -481,6 +486,7 @@
           if (Array.isArray(d.workspaceFiles)) {
             d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
             localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
+            if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
             renderCodespaceFileTree();
           }
         } else {
@@ -520,6 +526,7 @@
     try {
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       localStorage.setItem("lumina_open_tabs", JSON.stringify(window.codespaceOpenTabs));
+      if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
     } catch (e) {}
 
     renderCodespaceFileTree();

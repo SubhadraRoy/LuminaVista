@@ -43,18 +43,23 @@ export default async function handler(req, res) {
       await redis.del(rateLimitKey);
 
       const sessionId = crypto.randomUUID();
-      await redis.set(`session:${sessionId}`, 'active', { ex: 1200 }); // 20-minute sliding window
+      const sessionTtl = 2592000; // 30-day sliding window for seamless multi-device persistence
+      await redis.set(`session:${sessionId}`, 'active', { ex: sessionTtl });
 
       res.setHeader('Set-Cookie', serialize('godx_session', sessionId, {
         httpOnly: true,
         secure: true,
-        sameSite: 'strict',
-        maxAge: 1200,
+        sameSite: 'lax',
+        maxAge: sessionTtl,
         path: '/'
       }));
 
       auditLog('AUTH_SUCCESS', req, 'Session granted');
-      return sendSecureJson(res, 200, { success: true, message: 'Welcome to LuminaVista' });
+      return sendSecureJson(res, 200, {
+        success: true,
+        sessionId,
+        message: 'Welcome to LuminaVista'
+      });
     }
 
     // 3. Register failed attempt with 15-minute TTL

@@ -361,6 +361,11 @@
       </div>
 
       <div class="flex items-center gap-2.5 sm:gap-4 text-xs text-zinc-400 font-mono">
+        <span id="cloudSyncIndicator" class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-white/5 bg-surface-900/50 cursor-pointer text-[11px] text-zinc-400 hover:text-white transition-colors" title="Sovereign Multi-Device Cloud Sync" onclick="window.LuminaCloudSync?.flushSync?.()">
+          <span id="cloudSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="cloudSyncText" class="hidden md:inline">Cloud Synced</span>
+        </span>
+        <span class="text-zinc-700 hidden md:inline">•</span>
         <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i><span class="hidden xs:inline">00:00:00</span></span>
         <span class="text-zinc-700 hidden sm:inline">•</span>
         <span class="text-white hidden sm:inline">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Anish x</span></span>
@@ -1872,5 +1877,6 @@
   <script src="./modules/telemetry-theme.js"></script>
   <script src="./modules/system.js"></script>
   <script src="./modules/dashboard.js"></script>
+  <script src="./modules/cloud-sync.js"></script>
 </body>
 </html>

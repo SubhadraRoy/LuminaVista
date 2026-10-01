@@ -127,7 +127,8 @@ const moduleFiles = [
   'modules/projects.js',
   'modules/telemetry-theme.js',
   'modules/system.js',
-  'modules/dashboard.js'
+  'modules/dashboard.js',
+  'modules/cloud-sync.js'
 ];
 
 moduleFiles.forEach(file => {
@@ -1959,6 +1960,10 @@ Deliver your completion report using this structure:
   // Suite 27: Antigravity Collapsible Chat UI, Feedback Privacy & Deletion Engine
   const runAntigravityChatFlowSuite = require('./suite-antigravity-chat-flow.cjs');
   await runAntigravityChatFlowSuite({ assert, window, document, rootDir });
+
+  // Suite 28: Sovereign Cloud Sync & Multi-Device Continuity
+  const runCloudSyncSuite = require('./suite-cloud-sync.cjs');
+  await runCloudSyncSuite({ assert, window, document, rootDir });
 
   console.log(`\n=== TEST RESULTS: ${passed}/${total} ASSERTIONS PASSED ===\n`);
   if (passed === total) {

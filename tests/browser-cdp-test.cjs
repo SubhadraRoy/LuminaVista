@@ -34,9 +34,53 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  let mockCdpWorkspace = null;
+
+  if (pathname === '/api/sync') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-session-id, authorization');
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        data: mockCdpWorkspace,
+        timestamp: mockCdpWorkspace ? mockCdpWorkspace.updatedAt : Date.now()
+      }));
+      return;
+    }
+
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          mockCdpWorkspace = {
+            ...(parsed.data || {}),
+            updatedAt: Date.now()
+          };
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, message: 'Cloud sync updated', timestamp: mockCdpWorkspace.updatedAt }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+  }
+
   if (pathname === '/api/auth') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Set-Cookie': 'godx_session=mock_session_ok; Path=/;' });
-    res.end(JSON.stringify({ success: true }));
+    res.end(JSON.stringify({ success: true, sessionId: 'mock_session_ok' }));
     return;
   }
 
@@ -676,7 +720,20 @@ async function runBrowserTest() {
   const isVoiceModalClosed = await evaluate("document.getElementById('aiVoiceModal')?.style.display === 'none' || document.getElementById('aiVoiceModal')?.classList.contains('opacity-0')");
   test("Voice Studio modal closes cleanly in Chrome", isVoiceModalClosed);
 
-  // 15. Check for Uncaught Exceptions
+  // 16. Sovereign Multi-Device Cloud Sync in Chrome
+  const hasSyncIndicator = await evaluate("document.getElementById('cloudSyncIndicator') !== null");
+  test("Cloud sync indicator pill rendered in header in Chrome", hasSyncIndicator);
+
+  const hasCloudSyncEngine = await evaluate("typeof window.LuminaCloudSync === 'object' && typeof window.LuminaCloudSync.pullFromCloud === 'function'");
+  test("LuminaCloudSync engine initialized on window in Chrome", hasCloudSyncEngine);
+
+  const syncDotVisible = await evaluate("document.getElementById('cloudSyncDot') !== null");
+  test("Cloud sync pulse indicator light visible in Chrome", syncDotVisible);
+
+  const canFlushSync = await evaluate("typeof window.LuminaCloudSync.flushSync === 'function'");
+  test("Cloud sync flush API callable in Chrome", canFlushSync);
+
+  // 17. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);
   if (consoleErrors.length > 0) {
     console.error("Console Errors logged:", consoleErrors);
