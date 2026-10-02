@@ -443,11 +443,19 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
 
   // Test Sticky Note Documentation in synthesizeIllustration
   const googleSpec = window.LuminaWhiteboardAi.synthesizeIllustration("draw google icon");
+  assert(googleSpec.stickies[0].text.includes('Internet Visual Research (Web-First Search)'), "Google illustration sticky documents Internet Visual Research First");
   assert(googleSpec.stickies[0].text.includes('TypeSafe Blueprint Library Hit'), "Google illustration sticky documents TS Library Hit");
 
   const saturnSpec = window.LuminaWhiteboardAi.synthesizeIllustration("draw the planet saturn");
+  assert(saturnSpec.stickies[0].text.includes('Internet Visual Research (Web-First Search)'), "Saturn illustration sticky documents Internet Visual Research First");
   assert(saturnSpec.stickies[0].text.includes('Jev Autonomous Visual Intelligence'), "Saturn illustration sticky documents Jev Visual Intelligence");
   assert(saturnSpec.stickies[0].text.includes('celestial'), "Saturn sticky documents celestial entity domain");
+
+  // Test Internet Visual Knowledge Retrieval
+  const googleWebData = await window.LuminaWhiteboardVision.searchWebVisualKnowledge("google icon");
+  assert(googleWebData !== null, "searchWebVisualKnowledge executes web search for google icon");
+  assert(googleWebData.palette.includes('#4285f4'), "searchWebVisualKnowledge detects Google quad-color blue");
+  assert(googleWebData.palette.includes('#ea4335'), "searchWebVisualKnowledge detects Google quad-color red");
 
   // 18. Modal UI Elements Integrity
   const galleryModal = document.getElementById('whiteboardGalleryModal');

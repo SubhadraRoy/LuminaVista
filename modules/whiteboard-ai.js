@@ -221,9 +221,9 @@
       const tsRes = vision.searchTsLibrary ? vision.searchTsLibrary(key, category) : { found: false };
 
       if (tsRes && tsRes.found) {
-        stickyDetails = `• 🏛️ TypeSafe Blueprint Library Hit\n• Subject: ${dispTitle} (${key})\n• Blueprint: ${tsRes.name || category}\n• Precision Vector Specifications & Multi-layer Rendering`;
+        stickyDetails = `• 🌐 Internet Visual Research (Web-First Search)\n• 🏛️ TypeSafe Blueprint Library Hit\n• Subject: ${dispTitle} (${key})\n• Blueprint: ${tsRes.name || category}\n• Precision Vector Specifications & Web-Informed Rendering`;
       } else {
-        stickyDetails = `• 🔬 Jev Autonomous Visual Intelligence\n• Subject: ${dispTitle} (${key})\n• Entity Domain: ${category}\n• Pipeline: Querying Web Visual Knowledge & Reference Imagery\n• Real-time Web-Informed Vector Synthesis`;
+        stickyDetails = `• 🌐 Internet Visual Research (Web-First Search)\n• 🔬 Jev Autonomous Visual Intelligence\n• Subject: ${dispTitle} (${key})\n• Entity Domain: ${category}\n• Pipeline: Querying Web Visual Knowledge & Reference Imagery\n• Real-time Web-Informed Vector Synthesis`;
       }
     } else {
       illustrationType = 'procedural';

@@ -198,8 +198,9 @@ async function runBrowserTest() {
       consoleErrors.push(data.params.exceptionDetails);
     }
     if (data.method === 'Log.entryAdded' && data.params.entry.level === 'error') {
-      // Ignore favicon or benign warnings
-      if (!data.params.entry.text.includes("favicon")) {
+      // Ignore favicon or external network status responses from 3rd party web APIs
+      const txt = data.params.entry.text || '';
+      if (!txt.includes("favicon") && !txt.includes("Failed to load resource")) {
         consoleErrors.push(data.params.entry.text);
       }
     }
@@ -805,6 +806,14 @@ async function runBrowserTest() {
     return res && res.success && res.shapeCount >= 8;
   })()`);
   test("Whiteboard AI synthesizes anatomical Planet Saturn vector geometry with rings in Chrome", saturnArtResult);
+
+  const webFirstSearchTest = await evaluate(`(async () => {
+    const vision = window.LuminaWhiteboardVision;
+    if (!vision || !vision.searchWebVisualKnowledge) return false;
+    const res = await vision.searchWebVisualKnowledge('google icon');
+    return res !== null && Array.isArray(res.palette) && res.palette.length >= 4;
+  })()`);
+  test("Whiteboard AI searches internet first and retrieves web visual knowledge in Chrome", webFirstSearchTest);
 
   await evaluate("switchTab('tab-graphify')");
   await new Promise(r => setTimeout(r, 100));
