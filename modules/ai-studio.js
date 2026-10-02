@@ -1040,7 +1040,7 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
           attrs[aMatch[1]] = aMatch[2];
         }
 
-        const wbRes = window.LuminaWhiteboard.handleAgentDirective(attrs, bodyContent);
+        const wbRes = await window.LuminaWhiteboard.handleAgentDirective(attrs, bodyContent);
         if (wbRes && wbRes.success) {
           results.push(`[TOOL_RESULT:WHITEBOARD action="${wbRes.action}" status="success" nodes="${wbRes.nodeCount}"]\n${wbRes.summary}\n[/TOOL_RESULT:WHITEBOARD]`);
         } else {

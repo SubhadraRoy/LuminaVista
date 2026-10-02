@@ -205,10 +205,17 @@
       illustrationType = 'face';
       title = 'Joyful Expression';
     } else {
-      illustrationType = 'procedural';
-      let clean = prompt.replace(/\b(draw|sketch|paint|doodle|illustrate|me|a|an|the|on|canvas|whiteboard|blackboard|pro)\b/gi, '').trim();
-      title = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Creative Artwork';
-      stickyDetails = `• Handcrafted Vector Studio Drawing\n• Subject: ${title}\n• Mode: Multi-layer vector rendering`;
+      const visionSubject = window.LuminaWhiteboardVision ? window.LuminaWhiteboardVision.resolveSubject(prompt) : null;
+      if (visionSubject) {
+        illustrationType = visionSubject.key;
+        title = visionSubject.title;
+        stickyDetails = `• AI Vision Redraw: ${visionSubject.title}\n• Mode: Generative vector contours & anatomical rendering\n• Subject: ${visionSubject.key}\n• Dynamic multi-layer whiteboard strokes`;
+      } else {
+        illustrationType = 'procedural';
+        let clean = prompt.replace(/\b(draw|sketch|paint|doodle|illustrate|me|a|an|the|on|canvas|whiteboard|blackboard|pro)\b/gi, '').trim();
+        title = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Creative Artwork';
+        stickyDetails = `• Handcrafted Vector Studio Drawing\n• Subject: ${title}\n• Mode: Multi-layer vector rendering`;
+      }
     }
 
     return {
@@ -321,6 +328,8 @@
           drawnCount = drawRobot(ctx, cx, cy, isWhiteboard) || 13;
         } else if (iType === 'face') {
           drawnCount = drawFace(ctx, cx, cy, isWhiteboard) || 8;
+        } else if (window.LuminaWhiteboardVision && window.LuminaWhiteboardVision.drawIllustration) {
+          drawnCount = window.LuminaWhiteboardVision.drawIllustration(ctx, cx, cy, spec, isWhiteboard) || 16;
         } else {
           drawnCount = drawProceduralArt(ctx, cx, cy, spec.title || 'Creative Art', isWhiteboard) || 14;
         }

@@ -68,6 +68,7 @@
     { id: 'modules/codespace.js', label: 'codespace.js', cat: 'workspace', type: 'Artifacts IDE', loc: 850, size: '36 KB', desc: 'In-browser Monaco/Ace Artifacts IDE, multi-tab file editor, live preview engine, and collapsible VFS tree.' },
     { id: 'modules/whiteboard.js', label: 'whiteboard.js', cat: 'workspace', type: 'Canvas Engine', loc: 560, size: '24 KB', desc: 'Whiteboard Pro vector drawing studio with touchscreen pointer events, dual-canvas preview, and sticky notes.' },
     { id: 'modules/whiteboard-ai.js', label: 'whiteboard-ai.js', cat: 'workspace', type: 'Whiteboard AI', loc: 1571, size: '54 KB', desc: 'AI Whiteboard assistant, vector illustration generator for animals/objects & cognitive diagram synthesis.' },
+    { id: 'modules/whiteboard-vision.js', label: 'whiteboard-vision.js', cat: 'workspace', type: 'Vision Redraw AI', loc: 1137, size: '42 KB', desc: 'AI image model and internet reference contour extraction & vector stroke redrawing engine.' },
     { id: 'modules/whiteboard-gallery.js', label: 'whiteboard-gallery.js', cat: 'workspace', type: 'Gallery & Templates', loc: 240, size: '11 KB', desc: 'Whiteboard gallery board manager with architectural blueprints and template presets.' },
     { id: 'modules/whiteboard-export.js', label: 'whiteboard-export.js', cat: 'workspace', type: 'Export Engine', loc: 140, size: '6 KB', desc: 'High-resolution PNG/JPG canvas exporter with transparent & chalkboard backgrounds.' },
     { id: 'modules/notes.js', label: 'notes.js', cat: 'workspace', type: 'Markdown Studio', loc: 420, size: '18 KB', desc: 'Multi-document Markdown notes vault with split real-time HTML preview.' },
@@ -107,6 +108,8 @@
 
     { source: 'modules/cloud-sync.js', target: 'api/sync.js' },
     { source: 'modules/whiteboard.js', target: 'modules/whiteboard-ai.js' },
+    { source: 'modules/whiteboard-ai.js', target: 'modules/whiteboard-vision.js' },
+    { source: 'modules/whiteboard.js', target: 'modules/whiteboard-vision.js' },
     { source: 'modules/whiteboard.js', target: 'modules/whiteboard-gallery.js' },
     { source: 'modules/whiteboard.js', target: 'modules/whiteboard-export.js' },
     { source: 'modules/ai-studio.js', target: 'modules/whiteboard-ai.js' },

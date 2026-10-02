@@ -753,6 +753,28 @@ async function runBrowserTest() {
   })()`);
   test("Whiteboard AI synthesizes handcrafted Celebration Cake vector art in Chrome", cakeArtResult);
 
+  // Whiteboard Vision & Generative Redraw in Chrome
+  const hasVisionEngine = await evaluate("typeof window.LuminaWhiteboardVision === 'object' && typeof window.LuminaWhiteboardVision.drawIllustration === 'function'");
+  test("LuminaWhiteboardVision engine initialized in Chrome", hasVisionEngine);
+
+  const giraffeArtResult = await evaluate(`(() => {
+    const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Graceful Giraffe', type: 'illustration' }, 'draw a giraffe') : null;
+    return res && res.success && res.subject === 'giraffe' && res.shapeCount > 0;
+  })()`);
+  test("Whiteboard AI synthesizes Graceful Giraffe vector art in Chrome", giraffeArtResult);
+
+  const guitarArtResult = await evaluate(`(() => {
+    const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Electric Guitar', type: 'illustration' }, 'draw an electric guitar') : null;
+    return res && res.success && res.subject === 'guitar' && res.shapeCount > 0;
+  })()`);
+  test("Whiteboard AI synthesizes Electric Guitar vector art in Chrome", guitarArtResult);
+
+  const dragonArtResult = await evaluate(`(() => {
+    const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Mythical Dragon', type: 'illustration' }, 'draw a dragon') : null;
+    return res && res.success && res.subject === 'dragon' && res.shapeCount > 0;
+  })()`);
+  test("Whiteboard AI synthesizes Mythical Dragon vector art in Chrome", dragonArtResult);
+
   await evaluate("switchTab('tab-graphify')");
   await new Promise(r => setTimeout(r, 100));
   const isGraphifyActive = await evaluate(`(() => {
@@ -760,9 +782,10 @@ async function runBrowserTest() {
     const cv = document.getElementById('graphifyCanvas');
     const nodes = typeof window.getGraphifyBaseNodes === 'function' ? window.getGraphifyBaseNodes() : [];
     const hasCloudSyncNode = nodes.some(n => n.id === 'modules/cloud-sync.js');
-    return col && !col.classList.contains('hidden') && cv !== null && hasCloudSyncNode;
+    const hasVisionNode = nodes.some(n => n.id === 'modules/whiteboard-vision.js');
+    return col && !col.classList.contains('hidden') && cv !== null && hasCloudSyncNode && hasVisionNode;
   })()`);
-  test("Graphify Knowledge Graph switches, animates, and includes cloud-sync architecture in Chrome", isGraphifyActive);
+  test("Graphify Knowledge Graph switches, animates, and includes cloud-sync & whiteboard-vision architecture in Chrome", isGraphifyActive);
 
   // 18. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);

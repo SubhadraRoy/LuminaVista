@@ -277,6 +277,7 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   assert(graphNodeIds.includes('modules/cloud-sync.js'), "Graphify contains modules/cloud-sync.js");
   assert(graphNodeIds.includes('modules/ai-chat-ui.js'), "Graphify contains modules/ai-chat-ui.js");
   assert(graphNodeIds.includes('modules/whiteboard-ai.js'), "Graphify contains modules/whiteboard-ai.js");
+  assert(graphNodeIds.includes('modules/whiteboard-vision.js'), "Graphify contains modules/whiteboard-vision.js");
   assert(graphNodeIds.includes('modules/whiteboard-gallery.js'), "Graphify contains modules/whiteboard-gallery.js");
   assert(graphNodeIds.includes('modules/whiteboard-export.js'), "Graphify contains modules/whiteboard-export.js");
 
@@ -289,7 +290,81 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   const graphifyTab = document.getElementById('aiGraphifyColumn');
   assert(graphifyTab && !graphifyTab.classList.contains('hidden'), "/graphify routes user directly to active Graphify visualizer");
 
-  // 16. Modal UI Elements Integrity
+  // 16. Whiteboard Vision & Generative AI Vector Redraw Engine
+  assert(typeof window.LuminaWhiteboardVision === 'object', "window.LuminaWhiteboardVision is exposed");
+  assert(typeof window.LuminaWhiteboardVision.resolveSubject === 'function', "resolveSubject is exposed on LuminaWhiteboardVision");
+  assert(typeof window.LuminaWhiteboardVision.drawIllustration === 'function', "drawIllustration is exposed on LuminaWhiteboardVision");
+
+  // Test subject resolution across diverse categories
+  const giraffeSubject = window.LuminaWhiteboardVision.resolveSubject("draw a graceful giraffe");
+  assert(giraffeSubject.key === 'giraffe', "Resolves giraffe entity key");
+  assert(giraffeSubject.category === 'animal', "Resolves giraffe animal category");
+
+  const guitarSubject = window.LuminaWhiteboardVision.resolveSubject("sketch an electric guitar on whiteboard");
+  assert(guitarSubject.key === 'guitar', "Resolves guitar entity key");
+  assert(guitarSubject.category === 'instrument', "Resolves guitar instrument category");
+
+  const dragonSubject = window.LuminaWhiteboardVision.resolveSubject("draw a mythical dragon with fire");
+  assert(dragonSubject.key === 'dragon', "Resolves dragon entity key");
+
+  const planeSubject = window.LuminaWhiteboardVision.resolveSubject("draw a supersonic airplane");
+  assert(planeSubject.key === 'airplane', "Resolves airplane entity key");
+
+  // Test Handcrafted & Generative Vector Redraw on Whiteboard Pro
+  const drawGiraffeRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Graceful Giraffe',
+    type: 'illustration'
+  }, "draw a giraffe");
+  assert(drawGiraffeRes.success === true, "Whiteboard AI renders giraffe illustration successfully");
+  assert(drawGiraffeRes.subject === 'giraffe', "Result identifies subject as giraffe");
+  assert(drawGiraffeRes.shapeCount > 0, "Giraffe drawing generated vector shapes");
+
+  const drawGuitarRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Electric Guitar',
+    type: 'illustration'
+  }, "draw an electric guitar");
+  assert(drawGuitarRes.success === true, "Whiteboard AI renders guitar illustration successfully");
+  assert(drawGuitarRes.subject === 'guitar', "Result identifies subject as guitar");
+  assert(drawGuitarRes.shapeCount > 0, "Guitar drawing generated vector shapes");
+
+  const drawDragonRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Mythical Dragon',
+    type: 'illustration'
+  }, "draw a dragon");
+  assert(drawDragonRes.success === true, "Whiteboard AI renders dragon illustration successfully");
+  assert(drawDragonRes.subject === 'dragon', "Result identifies subject as dragon");
+  assert(drawDragonRes.shapeCount > 0, "Dragon drawing generated vector shapes");
+
+  const drawBicycleRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'City Bicycle',
+    type: 'illustration'
+  }, "draw a bicycle");
+  assert(drawBicycleRes.success === true, "Whiteboard AI renders bicycle illustration successfully");
+  assert(drawBicycleRes.subject === 'bicycle', "Result identifies subject as bicycle");
+  assert(drawBicycleRes.shapeCount > 0, "Bicycle drawing generated vector shapes");
+
+  // Test Edge & Contour Redraw Engine with synthetic trace data
+  const mainCv = document.getElementById("whiteboardCanvas");
+  const ctx = mainCv ? mainCv.getContext("2d") : null;
+  assert(ctx !== null, "Whiteboard canvas context accessible");
+  const syntheticTrace = {
+    paths: [
+      [{ x: 0.2, y: 0.2 }, { x: 0.4, y: 0.3 }, { x: 0.6, y: 0.5 }],
+      [{ x: 0.6, y: 0.5 }, { x: 0.7, y: 0.8 }, { x: 0.3, y: 0.9 }],
+      [{ x: 0.3, y: 0.9 }, { x: 0.2, y: 0.2 }]
+    ],
+    palette: ['#00f2fe', '#f59e0b', '#ec4899'],
+    width: 240,
+    height: 240
+  };
+  const redrawnStrokes = window.LuminaWhiteboardVision.redrawAnalyzedContours(ctx, 300, 300, syntheticTrace, false, 200);
+  assert(redrawnStrokes >= 3, "redrawAnalyzedContours successfully rendered vector stroke paths on canvas");
+
+  // 17. Modal UI Elements Integrity
   const galleryModal = document.getElementById('whiteboardGalleryModal');
   const aiModal = document.getElementById('whiteboardAiModal');
   assert(galleryModal !== null, "whiteboardGalleryModal markup mounted in DOM");

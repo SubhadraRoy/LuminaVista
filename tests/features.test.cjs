@@ -121,6 +121,7 @@ const moduleFiles = [
   'modules/compiler.js',
   'modules/terminal.js',
   'modules/whiteboard-gallery.js',
+  'modules/whiteboard-vision.js',
   'modules/whiteboard-ai.js',
   'modules/whiteboard.js',
   'modules/notes.js',
