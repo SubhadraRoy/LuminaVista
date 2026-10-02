@@ -840,7 +840,7 @@
     toolIds.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
-        el.className = "p-2 rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-colors";
+        el.className = "w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors";
       }
     });
 
@@ -865,7 +865,7 @@
 
     const activeEl = document.getElementById(activeMap[tool]);
     if (activeEl) {
-      activeEl.className = "p-2 rounded-lg bg-cyan-500 text-black cursor-pointer transition-colors";
+      activeEl.className = "w-7 h-7 flex items-center justify-center rounded-md bg-cyan-500 text-black cursor-pointer transition-colors";
     }
 
     // Cursor indicator
@@ -951,10 +951,10 @@
     const colors = THEME_PALETTES[theme] || THEME_PALETTES.blackboard;
     container.innerHTML = colors.map(c => {
       const isSelected = window.wbColor && window.wbColor.toLowerCase() === c.hex.toLowerCase();
-      return `<button onclick="setWbPresetColor('${c.hex}')" class="w-5 h-5 rounded-full border-2 ${isSelected ? 'border-cyan-400 scale-110 shadow-md ring-2 ring-cyan-400/50' : 'border-black/20 hover:scale-110'} transition-transform cursor-pointer" style="background-color: ${c.hex};" title="${c.name}"></button>`;
+      return `<button onclick="setWbPresetColor('${c.hex}')" class="w-4 h-4 rounded-full border-2 ${isSelected ? 'border-cyan-400 scale-110 shadow-md ring-2 ring-cyan-400/50' : 'border-black/20 hover:scale-110'} transition-transform cursor-pointer" style="background-color: ${c.hex};" title="${c.name}"></button>`;
     }).join('') + `
-      <div class="w-px h-4 bg-white/10 mx-0.5"></div>
-      <input type="color" id="wbColorPicker" value="${window.wbColor || (theme === 'whiteboard' ? '#0f172a' : '#00f2fe')}" onchange="updateWbColor(this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent" title="Custom Color" />
+      <div class="w-px h-3.5 bg-white/10 mx-0.5"></div>
+      <input type="color" id="wbColorPicker" value="${window.wbColor || (theme === 'whiteboard' ? '#0f172a' : '#00f2fe')}" onchange="updateWbColor(this.value)" class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent" title="Custom Color" />
     `;
   }
 
@@ -963,10 +963,10 @@
     if (!btn) return;
     if (theme === 'whiteboard') {
       btn.innerHTML = `<i data-lucide="sun" class="w-3.5 h-3.5 text-amber-500 inline mr-1"></i> <span class="font-bold text-slate-900">Whiteboard</span>`;
-      btn.className = "px-2.5 py-1.5 rounded-lg bg-white text-slate-900 border border-slate-300 font-semibold cursor-pointer shadow-sm flex items-center text-xs transition-all";
+      btn.className = "px-2 py-1 rounded-md bg-white text-slate-900 border border-slate-300 font-semibold cursor-pointer shadow-sm flex items-center text-[11px] transition-all";
     } else {
       btn.innerHTML = `<i data-lucide="moon" class="w-3.5 h-3.5 text-cyan-400 inline mr-1"></i> <span class="font-bold text-cyan-300">Blackboard</span>`;
-      btn.className = "px-2.5 py-1.5 rounded-lg bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/20 font-semibold cursor-pointer flex items-center text-xs transition-all";
+      btn.className = "px-2 py-1 rounded-md bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/20 font-semibold cursor-pointer flex items-center text-[11px] transition-all";
     }
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
   }
