@@ -812,21 +812,8 @@
         scrambleHeader();
       }, 400);
 
-      // Check for 20-minute session timeout notice
-      if (window.location.search.includes('timeout=1') || localStorage.getItem('lumina_session_expired_notice') === 'true') {
-        localStorage.removeItem('lumina_session_expired_notice');
-        const err = document.getElementById('err');
-        if (err) {
-          err.className = 'text-amber-400 text-xs mb-4 bg-amber-500/10 py-2.5 px-3 rounded-xl border border-amber-500/30 flex items-center justify-center gap-2 font-mono';
-          err.innerHTML = `
-            <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>Session expired after 20 mins. All changes safely preserved in cloud.</span>
-          `;
-          err.classList.remove('hidden');
-        }
-      }
+      // Clean up any legacy timeout notice flags
+      localStorage.removeItem('lumina_session_expired_notice');
     });
 
     // ==========================================

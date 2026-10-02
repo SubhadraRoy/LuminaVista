@@ -307,8 +307,8 @@
 
     sessionStorage.clear();
     localStorage.removeItem("lumina_session_id");
-    localStorage.setItem("lumina_session_expired_notice", "true");
-    window.location.href = "/index.html?timeout=1";
+    localStorage.removeItem("lumina_session_expired_notice");
+    window.location.href = "/index.html";
   }
 
   function resetIdleTimer() {
