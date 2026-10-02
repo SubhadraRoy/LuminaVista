@@ -145,12 +145,17 @@
         setVisualizerState('listening');
       };
 
+      recognition.onspeechstart = () => {
+        // True Duplex Interruption: user speaking immediately cancels AI speech
+        if (isSpeaking) {
+          triggerBargeInInterruption('Speech started by user');
+        }
+      };
+
       recognition.onresult = (event) => {
         // If AI is currently speaking, user speech immediately interrupts it!
         if (isSpeaking) {
-          stopSpeaking();
-          updateVoiceStatus('listening', 'Listening to you...');
-          setVisualizerState('listening');
+          triggerBargeInInterruption('Speech detected during playback');
         }
 
         let interimTranscript = '';
@@ -205,11 +210,15 @@
 
       recognition.onend = () => {
         isListening = false;
-        // Auto-restart if voice mode is still open and we are waiting for user
+        // Auto-restart if voice mode is still open (keep listening even while speaking for duplex interruption)
         const modal = document.getElementById('aiVoiceModal');
-        if (modal && modal.style.display !== 'none' && continuousMode && !isSpeaking && !isThinking) {
+        if (modal && modal.style.display !== 'none' && continuousMode && !isThinking) {
           try {
-            recognition.start();
+            setTimeout(() => {
+              if (!isListening && !isThinking) {
+                try { recognition.start(); } catch (_) {}
+              }
+            }, 60);
           } catch (e) {}
         }
       };
@@ -381,15 +390,25 @@
 
       utterance.onstart = () => {
         isSpeaking = true;
-        updateVoiceStatus('speaking', `AI Speaking (${currentIdx}/${sentences.length})...`);
+        updateVoiceStatus('speaking', `AI Speaking (${currentIdx}/${sentences.length})... [Speak or Tap to Interrupt]`);
         setVisualizerState('speaking');
-        // Pause mic while speaking to avoid echo loop
-        if (recognition && isListening) {
-          try { recognition.stop(); } catch (e) {}
+        const btn = document.getElementById('btnVoiceInterrupt');
+        if (btn) {
+          btn.classList.remove('hidden');
+          btn.classList.add('flex');
+        }
+        // Ensure microphone continues listening so user can interrupt at any word!
+        if (recognition && !isListening) {
+          try { recognition.start(); } catch (e) {}
         }
       };
 
       utterance.onend = () => {
+        const btn = document.getElementById('btnVoiceInterrupt');
+        if (btn && currentIdx >= sentences.length) {
+          btn.classList.add('hidden');
+          btn.classList.remove('flex');
+        }
         speakNext();
       };
 
@@ -404,11 +423,40 @@
     speakNext();
   }
 
+  // --- True Duplex Barge-In Interruption Engine ---
+  function triggerBargeInInterruption(reason = 'Barge-In') {
+    if (!isSpeaking) return;
+    console.log('[VoiceStudio] ⚡ Duplex Interruption (Barge-In) triggered:', reason);
+    stopSpeaking();
+    updateVoiceStatus('listening', '⚡ Interrupted — Listening to you...');
+    setVisualizerState('listening');
+
+    const btn = document.getElementById('btnVoiceInterrupt');
+    if (btn) {
+      btn.classList.add('hidden');
+      btn.classList.remove('flex');
+    }
+
+    // Immediately re-arm recognition if needed
+    if (recognition && !isListening) {
+      try { recognition.start(); } catch (e) {}
+    }
+
+    if (window.showToast) {
+      window.showToast('Voice Interrupted', 'AI speech cancelled. Listening to you...');
+    }
+  }
+
   function stopSpeaking() {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     isSpeaking = false;
+    const btn = document.getElementById('btnVoiceInterrupt');
+    if (btn) {
+      btn.classList.add('hidden');
+      btn.classList.remove('flex');
+    }
   }
 
   // 5. Handle Received Voice Input -> Send to AI
@@ -653,7 +701,16 @@
     }, 10);
 
     const canvas = document.getElementById('voiceCanvas');
-    if (canvas) initVisualizer(canvas);
+    if (canvas) {
+      initVisualizer(canvas);
+      canvas.style.cursor = 'pointer';
+      canvas.title = 'Tap to Interrupt AI';
+      canvas.onclick = () => {
+        if (isSpeaking) {
+          triggerBargeInInterruption('Canvas Tap');
+        }
+      };
+    }
 
     loadSpeechVoices();
 
@@ -664,7 +721,7 @@
     }
 
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
-    if (window.showToast) window.showToast('Voice Interaction', 'Two-Way Sovereign Voice Mode Active.');
+    if (window.showToast) window.showToast('Voice Interaction', 'Two-Way Sovereign Voice Mode Active (Duplex Barge-In Enabled).');
   }
 
   function closeVoiceInteractionMode() {
@@ -733,6 +790,7 @@
   window.toggleContinuousMode = toggleContinuousMode;
   window.onVoiceDropdownChange = onVoiceDropdownChange;
   window.stopVoiceSpeaking = stopSpeaking;
+  window.triggerBargeInInterruption = triggerBargeInInterruption;
   window.requestMicrophonePermission = requestMicrophonePermission;
   window.retryMicrophoneAccess = retryMicrophoneAccess;
   window.getLiveAudioVolume = getLiveAudioVolume;

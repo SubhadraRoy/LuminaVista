@@ -40,7 +40,15 @@
       { key: 'microscope', regex: /\b(microscope|scientific\s*scope)\b/i, category: 'science', title: 'Laboratory Microscope' },
       { key: 'telescope', regex: /\b(telescope|stargazer|observatory)\b/i, category: 'science', title: 'Astronomical Telescope' },
       { key: 'butterfly', regex: /\b(butterfly|butterflies|monarch)\b/i, category: 'nature', title: 'Monarch Butterfly' },
-      { key: 'robot', regex: /\b(robot|android|mecha|cyborg)\b/i, category: 'tech', title: 'Autonomous Mecha' }
+      { key: 'robot', regex: /\b(robot|android|mecha|cyborg)\b/i, category: 'tech', title: 'Autonomous Mecha' },
+      // Jev Brand & Iconography Ontology Blueprints
+      { key: 'google', regex: /\b(google|google\s*icon|google\s*logo|google\s*g|g\s*logo)\b/i, category: 'brand_icon', title: 'Google Icon' },
+      { key: 'apple', regex: /\b(apple\s*icon|apple\s*logo|apple\s*brand)\b/i, category: 'brand_icon', title: 'Apple Icon' },
+      { key: 'github', regex: /\b(github|github\s*icon|github\s*logo|octocat)\b/i, category: 'brand_icon', title: 'GitHub Icon' },
+      { key: 'python', regex: /\b(python\s*icon|python\s*logo|python\s*snake)\b/i, category: 'brand_icon', title: 'Python Icon' },
+      { key: 'youtube', regex: /\b(youtube|youtube\s*icon|youtube\s*logo)\b/i, category: 'brand_icon', title: 'YouTube Icon' },
+      { key: 'windows', regex: /\b(windows\s*icon|windows\s*logo|microsoft\s*icon)\b/i, category: 'brand_icon', title: 'Windows Icon' },
+      { key: 'chrome', regex: /\b(chrome|chrome\s*icon|chrome\s*logo|google\s*chrome)\b/i, category: 'brand_icon', title: 'Chrome Icon' }
     ];
 
     for (const bp of blueprints) {
@@ -55,11 +63,18 @@
       }
     }
 
-    // Dynamic subject from prompt
-    const words = cleanPrompt.split(/\s+/).filter(w => w.length > 1);
-    const mainWord = words[words.length - 1] || 'artwork';
-    const capTitle = cleanPrompt
-      ? cleanPrompt.charAt(0).toUpperCase() + cleanPrompt.slice(1)
+    // Dynamic subject from prompt with clean word deduplication
+    const rawWords = cleanPrompt.split(/\s+/).filter(w => w.length > 0);
+    const dedupedWords = [];
+    rawWords.forEach(w => {
+      if (dedupedWords.length === 0 || dedupedWords[dedupedWords.length - 1].toLowerCase() !== w.toLowerCase()) {
+        dedupedWords.push(w);
+      }
+    });
+    const normalizedPrompt = dedupedWords.join(' ');
+    const mainWord = dedupedWords[dedupedWords.length - 1] || 'artwork';
+    const capTitle = normalizedPrompt
+      ? normalizedPrompt.charAt(0).toUpperCase() + normalizedPrompt.slice(1)
       : 'Visual Art';
 
     return {
@@ -67,7 +82,7 @@
       category: 'custom_ai',
       title: capTitle,
       isParametric: false,
-      prompt: cleanPrompt || capTitle
+      prompt: normalizedPrompt || capTitle
     };
   }
 
@@ -993,29 +1008,228 @@
     return 16;
   }
 
+  // --- Handcrafted Drawing Routine: Google 'G' Icon & Logo ---
+  function drawGoogleIcon(ctx, cx, cy, isWb) {
+    ctx.save();
+    const s = 1.35; // Bold prominent scale
+    const R = 95 * s; // Outer radius ~128px
+    const r = 50 * s; // Inner radius ~68px
+    const barH = 21 * s;
+
+    // 1. Drop shadow / subtle glow background disc
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + 14 * s, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? 'rgba(241, 245, 249, 0.95)' : 'rgba(15, 23, 42, 0.9)';
+    ctx.fill();
+    ctx.strokeStyle = isWb ? '#e2e8f0' : 'rgba(56, 189, 248, 0.35)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // 2. Google Red Segment (Top Arc: ~225° to 318° / -42°)
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI * 0.22, -Math.PI * 0.78, true);
+    ctx.lineTo(cx + Math.cos(-Math.PI * 0.78) * r, cy + Math.sin(-Math.PI * 0.78) * r);
+    ctx.arc(cx, cy, r, -Math.PI * 0.78, -Math.PI * 0.22, false);
+    ctx.closePath();
+    ctx.fillStyle = '#EA4335'; // Official Google Red
+    ctx.fill();
+
+    // 3. Google Yellow Segment (Bottom-Left Arc: ~138° to 225°)
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI * 0.78, -Math.PI * 1.25, true);
+    ctx.lineTo(cx + Math.cos(-Math.PI * 1.25) * r, cy + Math.sin(-Math.PI * 1.25) * r);
+    ctx.arc(cx, cy, r, -Math.PI * 1.25, -Math.PI * 0.78, false);
+    ctx.closePath();
+    ctx.fillStyle = '#FBBC05'; // Official Google Yellow
+    ctx.fill();
+
+    // 4. Google Green Segment (Bottom Arc: ~45° to 138°)
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI * 1.25, -Math.PI * 1.76, true);
+    ctx.lineTo(cx + Math.cos(-Math.PI * 1.76) * r, cy + Math.sin(-Math.PI * 1.76) * r);
+    ctx.arc(cx, cy, r, -Math.PI * 1.76, -Math.PI * 1.25, false);
+    ctx.closePath();
+    ctx.fillStyle = '#34A853'; // Official Google Green
+    ctx.fill();
+
+    // 5. Google Blue Segment (Right Crossbar & Top-Right Arc: ~-18° to 45°)
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI * 1.76, -Math.PI * 2.1, true);
+    ctx.lineTo(cx, cy - barH);
+    ctx.lineTo(cx, cy + barH);
+    ctx.lineTo(cx + R, cy + barH);
+    ctx.closePath();
+    ctx.fillStyle = '#4285F4'; // Official Google Blue
+    ctx.fill();
+
+    // 6. Central Horizontal Crossbar
+    ctx.beginPath();
+    ctx.rect(cx - 2 * s, cy - barH, R + 4 * s, barH * 2);
+    ctx.fillStyle = '#4285F4';
+    ctx.fill();
+
+    // 7. Center Hollow Cutout Disc (Matches active canvas background)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? '#ffffff' : '#0f172a';
+    ctx.fill();
+
+    // 8. Re-draw clean right bar into center
+    ctx.beginPath();
+    ctx.rect(cx, cy - barH, r + 4 * s, barH * 2);
+    ctx.fillStyle = '#4285F4';
+    ctx.fill();
+
+    // 9. Official Google 4-Color Floating Accent Dots Below
+    const dotY = cy + R + 34 * s;
+    const dotColors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
+    dotColors.forEach((color, i) => {
+      const dx = cx - 45 * s + i * 30 * s;
+      ctx.beginPath();
+      ctx.arc(dx, dotY, 6.5 * s, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = isWb ? '#ffffff' : '#1e293b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // 10. Branded Typography Label
+    ctx.save();
+    ctx.fillStyle = isWb ? '#1e293b' : '#f8fafc';
+    ctx.font = `bold ${Math.round(15 * s)}px "Product Sans", "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('GOOGLE', cx, dotY + 28 * s);
+    ctx.restore();
+
+    ctx.restore();
+    return 24;
+  }
+
+  // --- Handcrafted Drawing Routine: Apple Icon & Logo ---
+  function drawAppleIcon(ctx, cx, cy, isWb) {
+    ctx.save();
+    const s = 1.35;
+    const appleColor = isWb ? '#0f172a' : '#f8fafc';
+
+    ctx.translate(cx, cy);
+
+    // Apple Body (Bitten silhouette)
+    ctx.beginPath();
+    ctx.moveTo(0, -60 * s);
+    ctx.bezierCurveTo(45 * s, -65 * s, 75 * s, -20 * s, 75 * s, 25 * s);
+    ctx.bezierCurveTo(75 * s, 65 * s, 45 * s, 95 * s, 22 * s, 95 * s);
+    ctx.bezierCurveTo(0, 95 * s, -5 * s, 85 * s, -22 * s, 95 * s);
+    ctx.bezierCurveTo(-45 * s, 95 * s, -75 * s, 65 * s, -75 * s, 25 * s);
+    ctx.bezierCurveTo(-75 * s, -20 * s, -45 * s, -65 * s, 0, -60 * s);
+    ctx.closePath();
+    ctx.fillStyle = appleColor;
+    ctx.fill();
+
+    // Bite Cutout on right side
+    ctx.beginPath();
+    ctx.arc(68 * s, 5 * s, 32 * s, 0, Math.PI * 2);
+    ctx.fillStyle = isWb ? '#ffffff' : '#0f172a';
+    ctx.fill();
+
+    // Leaf on top
+    ctx.beginPath();
+    ctx.moveTo(0, -68 * s);
+    ctx.quadraticCurveTo(28 * s, -100 * s, 38 * s, -78 * s);
+    ctx.quadraticCurveTo(15 * s, -55 * s, 0, -68 * s);
+    ctx.fillStyle = appleColor;
+    ctx.fill();
+
+    ctx.restore();
+    return 16;
+  }
+
+  // --- Handcrafted Drawing Routine: GitHub Octocat Icon ---
+  function drawGithubIcon(ctx, cx, cy, isWb) {
+    ctx.save();
+    const s = 1.35;
+    const badgeColor = isWb ? '#0f172a' : '#f8fafc';
+    const catFill = isWb ? '#ffffff' : '#0f172a';
+
+    // Outer Circular Badge
+    ctx.beginPath();
+    ctx.arc(cx, cy, 90 * s, 0, Math.PI * 2);
+    ctx.fillStyle = badgeColor;
+    ctx.fill();
+
+    // Octocat Silhouette with Ears
+    ctx.beginPath();
+    ctx.arc(cx, cy + 10 * s, 48 * s, 0, Math.PI * 2);
+    // Ears
+    ctx.moveTo(cx - 38 * s, cy - 25 * s); ctx.lineTo(cx - 45 * s, cy - 65 * s); ctx.lineTo(cx - 15 * s, cy - 35 * s);
+    ctx.moveTo(cx + 38 * s, cy - 25 * s); ctx.lineTo(cx + 45 * s, cy - 65 * s); ctx.lineTo(cx + 15 * s, cy - 35 * s);
+    ctx.fillStyle = catFill;
+    ctx.fill();
+
+    ctx.restore();
+    return 18;
+  }
+
+  // --- Handcrafted Drawing Routine: Python Dual-Snake Icon ---
+  function drawPythonIcon(ctx, cx, cy, isWb) {
+    ctx.save();
+    const s = 1.35;
+
+    // Top Blue Snake
+    ctx.beginPath();
+    ctx.arc(cx - 18 * s, cy - 25 * s, 35 * s, Math.PI, 0, false);
+    ctx.lineTo(cx + 25 * s, cy - 25 * s);
+    ctx.arc(cx + 25 * s, cy - 10 * s, 15 * s, -Math.PI / 2, Math.PI / 2, false);
+    ctx.lineTo(cx - 18 * s, cy + 5 * s);
+    ctx.fillStyle = '#3776AB';
+    ctx.fill();
+    // Blue Snake Eye
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx - 28 * s, cy - 36 * s, 4 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bottom Yellow Snake
+    ctx.beginPath();
+    ctx.arc(cx + 18 * s, cy + 25 * s, 35 * s, 0, Math.PI, false);
+    ctx.lineTo(cx - 25 * s, cy + 25 * s);
+    ctx.arc(cx - 25 * s, cy + 10 * s, 15 * s, Math.PI / 2, -Math.PI / 2, false);
+    ctx.lineTo(cx + 18 * s, cy - 5 * s);
+    ctx.fillStyle = '#FFD43B';
+    ctx.fill();
+    // Yellow Snake Eye
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(cx + 28 * s, cy + 36 * s, 4 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    return 18;
+  }
+
   // --- 8. Universal Morphological Parametric Synthesizer (Catches Any Open Subject) ---
   function drawParametricSubject(ctx, cx, cy, subjectKey, title, isWb) {
     ctx.save();
-    const s = 1.0;
+    const s = 1.35; // Increased scale for bold high-resolution presentation
     const isDark = !isWb;
     const strokeColor = isDark ? '#00f2fe' : '#0f172a';
-    const accentFill = isDark ? 'rgba(56, 189, 248, 0.25)' : 'rgba(37, 99, 235, 0.15)';
+    const accentFill = isDark ? 'rgba(56, 189, 248, 0.22)' : 'rgba(37, 99, 235, 0.12)';
     const glowFill = isDark ? '#38bdf8' : '#2563eb';
 
     // 1. Decorative Subject Silhouette Capsule
     ctx.beginPath();
-    ctx.ellipse(cx, cy, 110 * s, 85 * s, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, 155 * s, 115 * s, 0, 0, Math.PI * 2);
     ctx.fillStyle = accentFill;
     ctx.fill();
     ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 2.8;
+    ctx.lineWidth = 3;
     ctx.stroke();
 
     // 2. Artistic Landscaping Orbit Arcs
     ctx.beginPath();
-    ctx.ellipse(cx, cy, 145 * s, 45 * s, -0.35, 0, Math.PI * 2);
-    ctx.strokeStyle = isDark ? 'rgba(245, 158, 11, 0.6)' : 'rgba(217, 119, 6, 0.6)';
-    ctx.lineWidth = 1.8;
+    ctx.ellipse(cx, cy, 195 * s, 60 * s, -0.32, 0, Math.PI * 2);
+    ctx.strokeStyle = isDark ? 'rgba(245, 158, 11, 0.65)' : 'rgba(217, 119, 6, 0.65)';
+    ctx.lineWidth = 2.2;
     ctx.stroke();
 
     // 3. Central Focal Motif based on Subject Hash
@@ -1024,35 +1238,35 @@
 
     for (let i = 0; i < petals; i++) {
       const ang = (i * 2 * Math.PI) / petals;
-      const px = cx + Math.cos(ang) * 55 * s;
-      const py = cy + Math.sin(ang) * 45 * s;
+      const px = cx + Math.cos(ang) * 75 * s;
+      const py = cy + Math.sin(ang) * 60 * s;
 
       ctx.beginPath();
-      ctx.arc(px, py, 18 * s, 0, Math.PI * 2);
+      ctx.arc(px, py, 24 * s, 0, Math.PI * 2);
       ctx.fillStyle = isDark ? 'rgba(244, 63, 94, 0.35)' : 'rgba(239, 68, 68, 0.2)';
       ctx.fill();
       ctx.strokeStyle = isDark ? '#f43f5e' : '#dc2626';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
       ctx.stroke();
     }
 
     // Central Core Beacon
     ctx.beginPath();
-    ctx.arc(cx, cy, 26 * s, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 38 * s, 0, Math.PI * 2);
     ctx.fillStyle = glowFill;
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
     // 4. Stamped Subject Label
     ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
-    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.font = `bold ${Math.round(15 * s)}px "JetBrains Mono", monospace`;
     ctx.textAlign = 'center';
-    ctx.fillText(title.toUpperCase(), cx, cy + 125 * s);
+    ctx.fillText(title.toUpperCase(), cx, cy + 155 * s);
 
     ctx.restore();
-    return 16;
+    return 20;
   }
 
   // ---------------------------------------------------------------------------
@@ -1071,7 +1285,15 @@
     let shapeCount = 16;
 
     // 1. Render Immediate Vector Blueprint
-    if (key === 'giraffe') {
+    if (key === 'google') {
+      shapeCount = drawGoogleIcon(ctx, cx, cy, isWhiteboard);
+    } else if (key === 'apple') {
+      shapeCount = drawAppleIcon(ctx, cx, cy, isWhiteboard);
+    } else if (key === 'github') {
+      shapeCount = drawGithubIcon(ctx, cx, cy, isWhiteboard);
+    } else if (key === 'python') {
+      shapeCount = drawPythonIcon(ctx, cx, cy, isWhiteboard);
+    } else if (key === 'giraffe') {
       shapeCount = drawGiraffe(ctx, cx, cy, isWhiteboard);
     } else if (key === 'guitar') {
       shapeCount = drawGuitar(ctx, cx, cy, isWhiteboard);
@@ -1124,6 +1346,10 @@
     extractVectorContours,
     redrawAnalyzedContours,
     drawIllustration,
+    drawGoogleIcon,
+    drawAppleIcon,
+    drawGithubIcon,
+    drawPythonIcon,
     drawGiraffe,
     drawGuitar,
     drawDragon,
@@ -1134,3 +1360,4 @@
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);
+

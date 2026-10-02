@@ -347,6 +347,33 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   assert(drawBicycleRes.subject === 'bicycle', "Result identifies subject as bicycle");
   assert(drawBicycleRes.shapeCount > 0, "Bicycle drawing generated vector shapes");
 
+  // Test Brand & Icon Vector Blueprints: Google Icon, Apple, GitHub, Python
+  const googleSubject = window.LuminaWhiteboardVision.resolveSubject("draw google icon");
+  assert(googleSubject.key === 'google', "Resolves google brand entity key");
+  assert(googleSubject.title === 'Google Icon', "Resolves formatted title 'Google Icon'");
+
+  const drawGoogleRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Google Icon',
+    type: 'illustration'
+  }, "draw google icon");
+  assert(drawGoogleRes.success === true, "Whiteboard AI renders Google icon illustration successfully");
+  assert(drawGoogleRes.subject === 'google', "Result identifies subject as google");
+  assert(drawGoogleRes.shapeCount >= 16, "Google icon drawing generated authentic vector shapes");
+
+  const drawAppleRes = window.LuminaWhiteboard.handleAgentDirective({
+    action: 'draw',
+    title: 'Apple Logo',
+    type: 'illustration'
+  }, "draw apple icon");
+  assert(drawAppleRes.success === true, "Whiteboard AI renders Apple logo successfully");
+  assert(drawAppleRes.subject === 'apple', "Result identifies subject as apple");
+
+  // Test Voice Studio Duplex Barge-In Interruption Integration
+  assert(typeof window.triggerBargeInInterruption === 'function', "Voice Studio exposes triggerBargeInInterruption globally");
+  const btnVoiceInterrupt = document.getElementById('btnVoiceInterrupt');
+  assert(btnVoiceInterrupt !== null, "Voice Studio has #btnVoiceInterrupt in DOM");
+
   // Test Edge & Contour Redraw Engine with synthetic trace data
   const mainCv = document.getElementById("whiteboardCanvas");
   const ctx = mainCv ? mainCv.getContext("2d") : null;

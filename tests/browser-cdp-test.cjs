@@ -717,6 +717,12 @@ async function runBrowserTest() {
   const hasRetryMicBtn = await evaluate("document.getElementById('voiceRetryMicBtn') !== null");
   test("Retry microphone permission button exists in Chrome", hasRetryMicBtn);
 
+  const hasVoiceInterruptBtn = await evaluate("document.getElementById('btnVoiceInterrupt') !== null");
+  test("Voice Studio duplex barge-in interrupt button exists in Chrome", hasVoiceInterruptBtn);
+
+  const hasBargeInFn = await evaluate("typeof window.triggerBargeInInterruption === 'function'");
+  test("Voice Studio triggerBargeInInterruption function initialized in Chrome", hasBargeInFn);
+
   await evaluate("closeVoiceInteractionMode()");
   const isVoiceModalClosed = await evaluate("document.getElementById('aiVoiceModal')?.style.display === 'none' || document.getElementById('aiVoiceModal')?.classList.contains('opacity-0')");
   test("Voice Studio modal closes cleanly in Chrome", isVoiceModalClosed);
@@ -774,6 +780,12 @@ async function runBrowserTest() {
     return res && res.success && res.subject === 'dragon' && res.shapeCount > 0;
   })()`);
   test("Whiteboard AI synthesizes Mythical Dragon vector art in Chrome", dragonArtResult);
+
+  const googleIconResult = await evaluate(`(() => {
+    const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Google Icon', type: 'illustration' }, 'draw google icon') : null;
+    return res && res.success && res.subject === 'google' && res.shapeCount >= 16;
+  })()`);
+  test("Whiteboard AI synthesizes authentic quad-color Google Icon vector art in Chrome", googleIconResult);
 
   await evaluate("switchTab('tab-graphify')");
   await new Promise(r => setTimeout(r, 100));

@@ -71,7 +71,11 @@
 
       // If no valid JSON provided, synthesize diagram or illustration from intent & prompt
       if (!parsedSpec) {
-        parsedSpec = synthesizeDiagramFromPrompt(title + ' ' + cleanBody, type);
+        let combinedPrompt = cleanBody || title || '';
+        if (title && cleanBody && !cleanBody.toLowerCase().includes(title.toLowerCase())) {
+          combinedPrompt = `${title} ${cleanBody}`;
+        }
+        parsedSpec = synthesizeDiagramFromPrompt(combinedPrompt, type);
       }
 
       if (parsedSpec) {
@@ -123,8 +127,8 @@
   function synthesizeDiagramFromPrompt(prompt = '', categoryHint = 'architecture') {
     const p = prompt.toLowerCase();
 
-    // 1. Check for Illustration / Drawing requests (Animals, Objects, Scenes, Cartoons)
-    const isArtSubject = /\b(penguin|emperor\s*penguin|tux|pencil|pen|crayon|marker|cake|birthday\s*cake|cupcake|pastry|dessert|cat|kitten|kitty|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|home|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|smile|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration)\b/i.test(p);
+    // 1. Check for Illustration / Drawing requests (Animals, Objects, Brands, Scenes, Cartoons)
+    const isArtSubject = /\b(penguin|emperor\s*penguin|tux|pencil|pen|crayon|marker|cake|birthday\s*cake|cupcake|pastry|dessert|google|google\s*icon|google\s*logo|apple|apple\s*logo|github|octocat|python|python\s*logo|cat|kitten|kitty|dog|puppy|bird|duck|owl|lion|tiger|bear|rabbit|bunny|animal|animals|car|truck|rocket|spaceship|plane|train|ship|boat|house|home|building|castle|tree|forest|flower|sun|moon|star|mountain|river|cloud|face|smile|portrait|robot|android|avatar|person|character|comic|cartoon|doodle|landscape|scene|picture|art|drawing|illustration|icon|logo)\b/i.test(p);
     const isDrawAction = /\b(draw|sketch|paint|illustrate|doodle)\b/i.test(p);
     const isExplicitTechnical = /\b(microservice|architecture|database|erd|schema|oauth|kanban|pipeline|mesh|network|system\s*flow|relational|topology|load\s*balancer)\b/i.test(p);
 
@@ -299,8 +303,8 @@
 
         const w = wrap.clientWidth || 1200;
         const h = wrap.clientHeight || 800;
-        const cx = Math.floor(w / 2.7);
-        const cy = Math.floor(h / 2.0);
+        const cx = Math.floor(w * 0.45);
+        const cy = Math.floor(h * 0.48);
         const isWhiteboard = (window.wbTheme === 'whiteboard');
 
         ctx.save();
@@ -338,8 +342,11 @@
 
       // Render stickies
       if (Array.isArray(spec.stickies) && window.createStickyNote) {
+        const wrapW = wrap.clientWidth || 1200;
         spec.stickies.forEach(s => {
-          window.createStickyNote(s.x, s.y, s.text, s.color || '#fef08a');
+          const stickyX = (!s.x || s.x <= 540) ? Math.min(wrapW - 270, Math.floor(wrapW * 0.72)) : s.x;
+          const stickyY = (!s.y || s.y <= 180) ? 120 : s.y;
+          window.createStickyNote(stickyX, stickyY, s.text, s.color || '#fef08a');
         });
       }
 

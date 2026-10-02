@@ -1522,6 +1522,9 @@
           <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> Listening
         </div>
         <p id="voiceStateLabel" class="text-xs text-zinc-400 font-mono">Speak naturally into your microphone...</p>
+        <button id="btnVoiceInterrupt" onclick="window.triggerBargeInInterruption && window.triggerBargeInInterruption('Tap Button')" class="hidden px-4 py-1.5 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 transition-all cursor-pointer shadow-lg animate-pulse items-center gap-1.5">
+          <i data-lucide="hand" class="w-3.5 h-3.5"></i> Tap to Interrupt AI
+        </button>
         <button id="voiceRetryMicBtn" onclick="window.retryMicrophoneAccess && window.retryMicrophoneAccess()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 transition-all cursor-pointer shadow-lg animate-pulse flex items-center gap-2">
           <i data-lucide="mic" class="w-3.5 h-3.5"></i> Allow Microphone &amp; Retry
         </button>
