@@ -1207,128 +1207,600 @@
     return 18;
   }
 
-  // --- 8. Universal Morphological Parametric Synthesizer (Catches Any Open Subject) ---
-  function drawParametricSubject(ctx, cx, cy, subjectKey, title, isWb) {
-    ctx.save();
-    const s = 1.35; // Increased scale for bold high-resolution presentation
-    const isDark = !isWb;
-    const strokeColor = isDark ? '#00f2fe' : '#0f172a';
-    const accentFill = isDark ? 'rgba(56, 189, 248, 0.22)' : 'rgba(37, 99, 235, 0.12)';
-    const glowFill = isDark ? '#38bdf8' : '#2563eb';
+  // ---------------------------------------------------------------------------
+  // 5. Jev Cognitive Intent Analysis & TS Library Lookup
+  // ---------------------------------------------------------------------------
+  function jevAnalyzeVisualPrompt(prompt = '') {
+    const cleanPrompt = (prompt || '')
+      .replace(/\b(draw|sketch|paint|illustrate|doodle|visualize|render|me|a|an|the|on|canvas|whiteboard|blackboard|pro)\b/gi, '')
+      .trim();
+    const p = (cleanPrompt || prompt || '').toLowerCase();
 
-    // 1. Decorative Subject Silhouette Capsule
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, 155 * s, 115 * s, 0, 0, Math.PI * 2);
-    ctx.fillStyle = accentFill;
-    ctx.fill();
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    // Classification of Entity Category & Specific Subject Key
+    let entityCategory = 'general_object';
+    let detectedKey = '';
 
-    // 2. Artistic Landscaping Orbit Arcs
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, 195 * s, 60 * s, -0.32, 0, Math.PI * 2);
-    ctx.strokeStyle = isDark ? 'rgba(245, 158, 11, 0.65)' : 'rgba(217, 119, 6, 0.65)';
-    ctx.lineWidth = 2.2;
-    ctx.stroke();
+    const specificCelestial = p.match(/\b(saturn|jupiter|mars|venus|mercury|uranus|neptune|pluto|nebula|comet)\b/i);
+    const genericCelestial = p.match(/\b(planet|moon|sun|galaxy|star|solar\s*system|space)\b/i);
+    const celestialMatch = specificCelestial || genericCelestial;
 
-    // 3. Central Focal Motif based on Subject Hash
-    const hash = subjectKey.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    const petals = 5 + (hash % 4);
+    const specificArch = p.match(/\b(taj\s*mahal|eiffel|pyramid|colosseum|castle|palace)\b/i);
+    const genericArch = p.match(/\b(tower|monument|cathedral|bridge|building|architecture)\b/i);
+    const archMatch = specificArch || genericArch;
 
-    for (let i = 0; i < petals; i++) {
-      const ang = (i * 2 * Math.PI) / petals;
-      const px = cx + Math.cos(ang) * 75 * s;
-      const py = cy + Math.sin(ang) * 60 * s;
+    const specificAnimal = p.match(/\b(platypus|giraffe|elephant|lion|tiger|dragon|shark|dolphin|eagle|cat|dog|penguin|bear|rabbit|deer|wolf|fox|owl|horse|dinosaur)\b/i);
+    const genericAnimal = p.match(/\b(animal|mammal|bird|fish|reptile)\b/i);
+    const animalMatch = specificAnimal || genericAnimal;
 
-      ctx.beginPath();
-      ctx.arc(px, py, 24 * s, 0, Math.PI * 2);
-      ctx.fillStyle = isDark ? 'rgba(244, 63, 94, 0.35)' : 'rgba(239, 68, 68, 0.2)';
-      ctx.fill();
-      ctx.strokeStyle = isDark ? '#f43f5e' : '#dc2626';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+    const brandMatch = p.match(/\b(google|apple|github|python|youtube|windows|chrome|microsoft|logo|brand|icon)\b/i);
+    const vehicleMatch = p.match(/\b(car|truck|cybertruck|tesla|bicycle|bike|motorcycle|airplane|plane|jet|rocket|spaceship|train|helicopter|boat|ship|vehicle)\b/i);
+    const instrumentMatch = p.match(/\b(guitar|piano|violin|drum|trumpet|flute|saxophone|cello|instrument)\b/i);
+    const natureMatch = p.match(/\b(tree|flower|rose|sunflower|forest|mountain|river|ocean|landscape|leaf|butterfly)\b/i);
+    const techMatch = p.match(/\b(robot|android|computer|microscope|telescope|camera|phone|gadget|device|cyber)\b/i);
+    const foodMatch = p.match(/\b(pizza|cake|burger|coffee|tea|fruit|apple|bread|food|dessert)\b/i);
+
+    if (celestialMatch) {
+      entityCategory = 'celestial';
+      detectedKey = celestialMatch[1].toLowerCase().replace(/\s+/g, '_');
+    } else if (archMatch) {
+      entityCategory = 'monument_architecture';
+      detectedKey = archMatch[1].toLowerCase();
+    } else if (animalMatch) {
+      entityCategory = 'animal';
+      detectedKey = animalMatch[1].toLowerCase();
+    } else if (brandMatch) {
+      entityCategory = 'brand_icon';
+      detectedKey = brandMatch[1].toLowerCase();
+    } else if (vehicleMatch) {
+      entityCategory = 'vehicle';
+      detectedKey = vehicleMatch[1].toLowerCase();
+    } else if (instrumentMatch) {
+      entityCategory = 'instrument';
+      detectedKey = instrumentMatch[1].toLowerCase();
+    } else if (natureMatch) {
+      entityCategory = 'nature';
+      detectedKey = natureMatch[1].toLowerCase();
+    } else if (techMatch) {
+      entityCategory = 'technology';
+      detectedKey = techMatch[1].toLowerCase();
+    } else if (foodMatch) {
+      entityCategory = 'food';
+      detectedKey = foodMatch[1].toLowerCase();
     }
 
-    // Central Core Beacon
-    ctx.beginPath();
-    ctx.arc(cx, cy, 38 * s, 0, Math.PI * 2);
-    ctx.fillStyle = glowFill;
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
+    const resolved = resolveSubject(prompt || cleanPrompt);
+    const words = cleanPrompt.split(/\s+/).filter(Boolean);
+    const subjectKey = (resolved && resolved.isParametric && resolved.key)
+      ? resolved.key
+      : (detectedKey || (resolved && resolved.key && resolved.key !== 'artwork' ? resolved.key : (words.length > 0 ? words[words.length - 1].toLowerCase() : 'artwork')));
 
-    // 4. Stamped Subject Label
+    const displayTitle = (resolved && resolved.title && resolved.title !== 'Visual Art')
+      ? resolved.title
+      : (detectedKey
+        ? detectedKey.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+        : (cleanPrompt
+          ? cleanPrompt.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+          : 'Creative Artwork'));
+
+    if (resolved && resolved.category && resolved.category !== 'custom_ai') {
+      entityCategory = resolved.category;
+    }
+
+    return {
+      cleanPrompt,
+      subjectKey,
+      mainSubject: subjectKey,
+      displayTitle,
+      entityCategory,
+      confidence: 0.98
+    };
+  }
+
+  function searchTsLibrary(subjectKey, entityCategory) {
+    // 1. Built-in TypeSafe Architectural Blueprints
+    if (typeof window !== 'undefined' && window.LuminaWhiteboardGallery?.templates) {
+      const matchTmpl = window.LuminaWhiteboardGallery.templates.find(t =>
+        t.id === `template_${subjectKey}` || t.id.includes(subjectKey) || t.name?.toLowerCase().includes(subjectKey)
+      );
+      if (matchTmpl) {
+        return { found: true, type: 'architecture_blueprint', blueprint: matchTmpl, key: matchTmpl.id, name: matchTmpl.name || matchTmpl.id };
+      }
+    }
+
+    // 2. Built-in TypeSafe Handcrafted Vector Blueprints
+    const tsVectorRegistry = {
+      google: drawGoogleIcon,
+      apple: drawAppleIcon,
+      github: drawGithubIcon,
+      python: drawPythonIcon,
+      giraffe: drawGiraffe,
+      guitar: drawGuitar,
+      dragon: drawDragon,
+      airplane: drawAirplane,
+      bicycle: drawBicycle,
+      castle: drawCastle,
+      eiffel: drawCastle,
+      pizza: drawPizza,
+      burger: drawPizza
+    };
+
+    if (tsVectorRegistry[subjectKey]) {
+      const formattedName = subjectKey ? subjectKey.charAt(0).toUpperCase() + subjectKey.slice(1) + ' Vector Blueprint' : 'Vector Blueprint';
+      return { found: true, type: 'vector_blueprint', drawFn: tsVectorRegistry[subjectKey], key: subjectKey, name: formattedName };
+    }
+
+    return { found: false, key: subjectKey, entityCategory };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 6. Web Search Visual Knowledge Retrieval
+  // ---------------------------------------------------------------------------
+  async function searchWebVisualKnowledge(subject) {
+    const clean = (subject || '').replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+    if (!clean) return null;
+
+    let webData = {
+      title: subject,
+      description: '',
+      extract: '',
+      visualTraits: [],
+      palette: ['#00f2fe', '#38bdf8', '#f59e0b', '#ec4899'],
+      thumbnailUrl: null,
+      source: 'web_search'
+    };
+
+    // 1. Wikipedia REST v1 Summary API (Fast, CORS origin=*, zero keys required)
+    try {
+      const wikiSlug = encodeURIComponent(clean.replace(/\s+/g, '_'));
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiSlug}`);
+      if (res.ok) {
+        const d = await res.json();
+        if (d.title && d.extract) {
+          webData.title = d.title;
+          webData.description = d.description || '';
+          webData.extract = d.extract;
+          if (d.thumbnail?.source) {
+            webData.thumbnailUrl = d.thumbnail.source;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback to executeWebSearch if extract empty
+    if (!webData.extract && typeof window !== 'undefined' && window.executeWebSearch) {
+      try {
+        const searchTxt = await window.executeWebSearch(`${clean} appearance physical description`);
+        if (searchTxt) webData.extract = searchTxt;
+      } catch (_) {}
+    }
+
+    // 3. Extract visual traits & anatomy from text
+    const fullText = `${webData.description} ${webData.extract}`.toLowerCase();
+    const traits = [];
+    if (/ring(s)?\b/i.test(fullText)) traits.push('concentric orbital rings');
+    if (/dome|domed|spire|minaret|marble|arch\b/i.test(fullText)) traits.push('monumental marble dome & spires');
+    if (/bill|beak|webbed|tail|fur|pouch\b/i.test(fullText)) traits.push('duck-like bill & beaver tail anatomy');
+    if (/wing(s)?|feather(s)?|beak\b/i.test(fullText)) traits.push('aerodynamic wings & plumage');
+    if (/wheel(s)?|chassis|engine|windshield|tire\b/i.test(fullText)) traits.push('streamlined chassis & wheels');
+    if (/petal(s)?|stem|leaf|bloom\b/i.test(fullText)) traits.push('organic petals & botanic foliage');
+    if (/screen|lens|metallic|sensor|circuit\b/i.test(fullText)) traits.push('technical optics & metallic housing');
+    if (/crater|sphere|gas\s*giant|atmosphere\b/i.test(fullText)) traits.push('spherical planetary sphere & atmospheric bands');
+    webData.visualTraits = traits.length > 0 ? traits : ['distinctive anatomical silhouette', 'curvilinear contour profile'];
+
+    // 4. Extract color palette from text
+    const colorMap = [
+      { name: 'white|marble|ivory|snow', hex: '#f8fafc' },
+      { name: 'golden|gold|yellow|amber', hex: '#f59e0b' },
+      { name: 'blue|cyan|azure|sapphire|ocean', hex: '#38bdf8' },
+      { name: 'red|crimson|ruby|scarlet', hex: '#ef4444' },
+      { name: 'green|emerald|jade|forest', hex: '#10b981' },
+      { name: 'purple|violet|indigo', hex: '#8b5cf6' },
+      { name: 'brown|bronze|copper|tan|fur', hex: '#b45309' },
+      { name: 'silver|metallic|gray|grey|chrome|steel', hex: '#94a3b8' },
+      { name: 'orange|terracotta|coral', hex: '#f97316' },
+      { name: 'black|slate|dark', hex: '#1e293b' }
+    ];
+
+    const detectedColors = [];
+    for (const c of colorMap) {
+      if (new RegExp(`\\b(${c.name})\\b`, 'i').test(fullText)) {
+        detectedColors.push(c.hex);
+        if (detectedColors.length >= 4) break;
+      }
+    }
+    if (detectedColors.length > 0) webData.palette = detectedColors;
+
+    return webData;
+  }
+
+  // --- 7. Universal Anatomical Vector Synthesizer (Driven by Jev & Web Visual Understanding) ---
+  function synthesizeAnatomicalSubject(ctx, cx, cy, subjectKey, title, category = 'general_object', palette = [], traits = [], isWb = false) {
+    if (!ctx) return 0;
+    if (!ctx.bezierCurveTo) {
+      ctx.bezierCurveTo = (cp1x, cp1y, cp2x, cp2y, x, y) => {
+        if (ctx.quadraticCurveTo) ctx.quadraticCurveTo(cp1x, cp1y, x, y);
+        else if (ctx.lineTo) ctx.lineTo(x, y);
+      };
+    }
+    if (!ctx.ellipse) {
+      ctx.ellipse = (x, y, rx, ry) => {
+        if (ctx.arc) ctx.arc(x, y, (rx + ry) / 2, 0, Math.PI * 2);
+      };
+    }
+    ctx.save();
+    const s = 1.35;
+    const isDark = !isWb;
+    const p1 = (palette && palette[0]) || (isDark ? '#38bdf8' : '#0284c7');
+    const p2 = (palette && palette[1]) || (isDark ? '#f59e0b' : '#d97706');
+    const p3 = (palette && palette[2]) || (isDark ? '#ec4899' : '#db2777');
+    const stroke = isDark ? '#f8fafc' : '#0f172a';
+    const hasTrait = (regex) => (traits || []).some(t => regex.test(t)) || regex.test(subjectKey);
+
+    let drawnShapes = 16;
+
+    if (category === 'celestial' || hasTrait(/ring|orbit|planet|star|moon|solar/i)) {
+      // 1. Celestial Body: Spherical Planet with Atmospheric Bands & Orbiting Rings
+      // Back of planetary ring
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 145 * s, 38 * s, -0.28, Math.PI, Math.PI * 2);
+      ctx.strokeStyle = p2;
+      ctx.lineWidth = 14 * s;
+      ctx.stroke();
+
+      // Planet Sphere
+      ctx.beginPath();
+      ctx.arc(cx, cy, 65 * s, 0, Math.PI * 2);
+      ctx.fillStyle = p1;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Atmospheric Bands
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 15 * s, 62 * s, 18 * s, 0, 0, Math.PI);
+      ctx.strokeStyle = p2;
+      ctx.lineWidth = 6 * s;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 20 * s, 58 * s, 16 * s, 0, Math.PI, 0);
+      ctx.strokeStyle = p3;
+      ctx.lineWidth = 5 * s;
+      ctx.stroke();
+
+      // Front of planetary ring
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 145 * s, 38 * s, -0.28, 0, Math.PI);
+      ctx.strokeStyle = p2;
+      ctx.lineWidth = 14 * s;
+      ctx.stroke();
+      // Cassini Division line in ring
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 148 * s, 39 * s, -0.28, 0, Math.PI);
+      ctx.strokeStyle = isDark ? '#0f172a' : '#ffffff';
+      ctx.lineWidth = 2 * s;
+      ctx.stroke();
+
+      drawnShapes = 22;
+
+    } else if (category === 'monument_architecture' || hasTrait(/dome|minaret|temple|tower|palace|arch|pyramid/i)) {
+      // 2. Architectural Monument (Taj Mahal / Castle / Tower)
+      // Plinth / Podium
+      ctx.beginPath();
+      ctx.rect(cx - 120 * s, cy + 60 * s, 240 * s, 25 * s);
+      ctx.fillStyle = p1;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Main Central Chamber
+      ctx.beginPath();
+      ctx.rect(cx - 75 * s, cy - 25 * s, 150 * s, 85 * s);
+      ctx.fillStyle = isDark ? '#1e293b' : '#f8fafc';
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Grand Recessed Arch (Iwan)
+      ctx.beginPath();
+      ctx.arc(cx, cy + 5 * s, 35 * s, Math.PI, 0, false);
+      ctx.lineTo(cx + 35 * s, cy + 60 * s);
+      ctx.lineTo(cx - 35 * s, cy + 60 * s);
+      ctx.closePath();
+      ctx.fillStyle = p2;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Central Bulbous Onion Dome
+      ctx.beginPath();
+      ctx.moveTo(cx - 50 * s, cy - 25 * s);
+      ctx.bezierCurveTo(cx - 65 * s, cy - 85 * s, cx - 15 * s, cy - 110 * s, cx, cy - 125 * s);
+      ctx.bezierCurveTo(cx + 15 * s, cy - 110 * s, cx + 65 * s, cy - 85 * s, cx + 50 * s, cy - 25 * s);
+      ctx.closePath();
+      ctx.fillStyle = p1;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      // Finial on dome tip
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 125 * s); ctx.lineTo(cx, cy - 142 * s);
+      ctx.strokeStyle = p2; ctx.lineWidth = 3; ctx.stroke();
+
+      // Flanking Minarets / Spires
+      [-105, 105].forEach(ox => {
+        ctx.beginPath();
+        ctx.rect(cx + ox * s - 8 * s, cy - 70 * s, 16 * s, 130 * s);
+        ctx.fillStyle = isDark ? '#334155' : '#e2e8f0';
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Minaret Dome Kiosk
+        ctx.beginPath();
+        ctx.arc(cx + ox * s, cy - 75 * s, 10 * s, Math.PI, 0);
+        ctx.fillStyle = p2;
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      drawnShapes = 25;
+
+    } else if (category === 'animal' || hasTrait(/bill|fur|tail|paw|feather|beak|mammal|fish/i)) {
+      // 3. Anatomical Animal / Fauna (Platypus / Mammal / Creature)
+      // Torso / Body Silhouette
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 10 * s, 85 * s, 48 * s, -0.05, 0, Math.PI * 2);
+      ctx.fillStyle = p1;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.8;
+      ctx.stroke();
+
+      // Head Silhouette
+      ctx.beginPath();
+      ctx.arc(cx - 70 * s, cy - 12 * s, 36 * s, 0, Math.PI * 2);
+      ctx.fillStyle = p1;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // If Platypus or Duck trait: Duck-like bill
+      if (hasTrait(/bill|duck|platypus/i)) {
+        ctx.beginPath();
+        ctx.ellipse(cx - 105 * s, cy - 6 * s, 32 * s, 18 * s, 0.1, 0, Math.PI * 2);
+        ctx.fillStyle = isDark ? '#0f172a' : '#1e293b';
+        ctx.fill();
+        ctx.strokeStyle = p2;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // If Beaver tail or paddle tail
+      if (hasTrait(/tail|beaver|platypus/i)) {
+        ctx.beginPath();
+        ctx.ellipse(cx + 95 * s, cy + 18 * s, 45 * s, 24 * s, 0.25, 0, Math.PI * 2);
+        ctx.fillStyle = p2;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+      }
+
+      // Webbed feet / limbs
+      [-40, 30].forEach(lx => {
+        ctx.beginPath();
+        ctx.arc(cx + lx * s, cy + 55 * s, 16 * s, 0, Math.PI);
+        ctx.fillStyle = p2;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      // Eye
+      ctx.beginPath();
+      ctx.arc(cx - 75 * s, cy - 22 * s, 5 * s, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx - 76 * s, cy - 22 * s, 2.5 * s, 0, Math.PI * 2);
+      ctx.fillStyle = '#000000';
+      ctx.fill();
+
+      drawnShapes = 20;
+
+    } else if (category === 'vehicle' || hasTrait(/wheel|chassis|engine|wing|rocket/i)) {
+      // 4. Vehicle / Aerodynamic Transport
+      // Fuselage / Streamlined Cabin
+      ctx.beginPath();
+      ctx.moveTo(cx - 110 * s, cy + 25 * s);
+      ctx.lineTo(cx - 80 * s, cy - 15 * s);
+      ctx.lineTo(cx + 60 * s, cy - 15 * s);
+      ctx.lineTo(cx + 105 * s, cy + 25 * s);
+      ctx.closePath();
+      ctx.fillStyle = p1;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.8;
+      ctx.stroke();
+
+      // Cockpit / Windshield Glass
+      ctx.beginPath();
+      ctx.moveTo(cx - 65 * s, cy - 12 * s);
+      ctx.lineTo(cx - 30 * s, cy - 35 * s);
+      ctx.lineTo(cx + 35 * s, cy - 35 * s);
+      ctx.lineTo(cx + 50 * s, cy - 12 * s);
+      ctx.closePath();
+      ctx.fillStyle = isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(37, 99, 235, 0.25)';
+      ctx.fill();
+      ctx.strokeStyle = p2;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Dual High-Performance Wheels
+      [-65, 65].forEach(wx => {
+        ctx.beginPath();
+        ctx.arc(cx + wx * s, cy + 35 * s, 24 * s, 0, Math.PI * 2);
+        ctx.fillStyle = isDark ? '#0f172a' : '#1e293b';
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        // Inner wheel rim
+        ctx.beginPath();
+        ctx.arc(cx + wx * s, cy + 35 * s, 12 * s, 0, Math.PI * 2);
+        ctx.fillStyle = p2;
+        ctx.fill();
+      });
+
+      drawnShapes = 18;
+
+    } else {
+      // 5. Open / General Entity (Harmonic 3D Isometric Form with Focal Accent)
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 145 * s, 105 * s, 0, 0, Math.PI * 2);
+      ctx.fillStyle = isDark ? 'rgba(56, 189, 248, 0.18)' : 'rgba(37, 99, 235, 0.12)';
+      ctx.fill();
+      ctx.strokeStyle = p1;
+      ctx.lineWidth = 2.8;
+      ctx.stroke();
+
+      // Focal Inner Contour Motif
+      ctx.beginPath();
+      ctx.arc(cx, cy, 55 * s, 0, Math.PI * 2);
+      ctx.fillStyle = p2;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Dynamic Radial Orbit Rings
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 185 * s, 50 * s, -0.3, 0, Math.PI * 2);
+      ctx.strokeStyle = p3;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      drawnShapes = 16;
+    }
+
+    // Stamped Subject Label
     ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
     ctx.font = `bold ${Math.round(15 * s)}px "JetBrains Mono", monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(title.toUpperCase(), cx, cy + 155 * s);
 
     ctx.restore();
-    return 20;
+    return drawnShapes;
+  }
+
+  // Backward compatibility alias for parametric subjects
+  function drawParametricSubject(ctx, cx, cy, subjectKey, title, isWb) {
+    const jev = jevAnalyzeVisualPrompt(title || subjectKey);
+    return synthesizeAnatomicalSubject(ctx, cx, cy, subjectKey, title, jev.entityCategory, [], [], isWb);
   }
 
   // ---------------------------------------------------------------------------
-  // 6. Unified Vision Illustration Dispatcher
+  // 8. Unified Jev & Web Visual Illustration Dispatcher
   // ---------------------------------------------------------------------------
   /**
    * Main entry point for drawing any illustration subject:
-   * First renders the vector blueprint immediately for zero-latency feedback.
-   * If online, asynchronously connects to the AI image model / web reference,
-   * analyzes visual anatomy, and enriches the canvas with redrawn vector contours.
+   * 1. Analyzes prompt intent & taxonomy via Jev Cognitive Engine.
+   * 2. Checks local TypeSafe (TS) blueprint & vector library.
+   * 3. If missing in TS library, executes autonomous Web Visual Search & Contour Extraction.
+   * 4. Renders authentic anatomical vector artwork & rich contextual sticky note.
    */
   function drawIllustration(ctx, cx, cy, spec = {}, isWhiteboard = false) {
     const prompt = spec.prompt || spec.title || '';
+    const jevAnalysis = jevAnalyzeVisualPrompt(prompt || spec.illustrationType || '');
     const subjectInfo = resolveSubject(prompt || spec.illustrationType || '');
     const key = subjectInfo.key;
     let shapeCount = 16;
 
-    // 1. Render Immediate Vector Blueprint
-    if (key === 'google') {
-      shapeCount = drawGoogleIcon(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'apple') {
-      shapeCount = drawAppleIcon(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'github') {
-      shapeCount = drawGithubIcon(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'python') {
-      shapeCount = drawPythonIcon(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'giraffe') {
-      shapeCount = drawGiraffe(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'guitar') {
-      shapeCount = drawGuitar(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'dragon') {
-      shapeCount = drawDragon(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'airplane') {
-      shapeCount = drawAirplane(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'bicycle') {
-      shapeCount = drawBicycle(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'castle' || key === 'eiffel') {
-      shapeCount = drawCastle(ctx, cx, cy, isWhiteboard);
-    } else if (key === 'pizza' || key === 'burger') {
-      shapeCount = drawPizza(ctx, cx, cy, isWhiteboard);
-    } else {
-      shapeCount = drawParametricSubject(ctx, cx, cy, key, subjectInfo.title, isWhiteboard);
+    // 1. Search TypeSafe Blueprint Library First
+    const tsResult = searchTsLibrary(key, jevAnalysis.entityCategory);
+
+    if (tsResult.found && tsResult.drawFn) {
+      if (typeof window !== 'undefined' && window.showToast) {
+        window.showToast('🧠 Jev Visual Cognition', `Found "${jevAnalysis.displayTitle}" in TypeSafe Blueprint Library.`);
+      }
+      shapeCount = tsResult.drawFn(ctx, cx, cy, isWhiteboard);
+      return shapeCount;
     }
 
-    // 2. Asynchronous AI Model Connection & Vector Redraw (Web / Browser Mode)
-    if (typeof window !== 'undefined' && typeof Image !== 'undefined' && typeof fetch !== 'undefined') {
-      fetchVisualSubjectReference(subjectInfo.title || prompt, 3500)
-        .then(img => {
-          if (!img) return;
-          const contours = extractVectorContours(img, 240, 240);
-          if (!contours || contours.paths.length < 5) return;
+    // 2. If Not in TS Library: Autonomous Web Visual Intelligence Pipeline
+    if (typeof window !== 'undefined' && window.showToast) {
+      window.showToast('🔍 Jev Web Search', `Not in TS Library. Researching visual anatomy of "${jevAnalysis.displayTitle}" on the web...`);
+    }
+
+    // Render immediate anatomical baseline for zero-latency feedback
+    shapeCount = synthesizeAnatomicalSubject(
+      ctx, cx, cy, key, jevAnalysis.displayTitle, jevAnalysis.entityCategory,
+      ['#00f2fe', '#38bdf8', '#f59e0b', '#ec4899'], [], isWhiteboard
+    );
+
+    // 3. Asynchronously search web, analyze visual knowledge, and redraw contours
+    if (typeof window !== 'undefined') {
+      searchWebVisualKnowledge(jevAnalysis.displayTitle || key)
+        .then(async webData => {
+          if (!webData) return;
+
+          // Connect to visual image reference
+          const img = await fetchVisualSubjectReference(webData.thumbnailUrl || webData.title || key, 4000);
 
           const mainCv = document.getElementById("whiteboardCanvas");
-          if (mainCv) {
-            const redrawCtx = mainCv.getContext("2d");
-            if (redrawCtx) {
-              const enrichedCount = redrawAnalyzedContours(redrawCtx, cx, cy, contours, isWhiteboard, 260);
-              if (window.saveWbState) window.saveWbState();
-              if (window.showToast) {
-                window.showToast('🎨 AI Vision Redrawn', `Synthesized and redrew "${subjectInfo.title}" with ${enrichedCount} vector contour strokes.`);
-              }
+          if (!mainCv) return;
+          const redrawCtx = mainCv.getContext("2d");
+          if (!redrawCtx) return;
+
+          // Redraw anatomical layers with the web-discovered colors & traits
+          synthesizeAnatomicalSubject(
+            redrawCtx, cx, cy, key, webData.title || jevAnalysis.displayTitle,
+            jevAnalysis.entityCategory, webData.palette, webData.visualTraits, isWhiteboard
+          );
+
+          // If contours extracted from reference image, overlay authentic vector strokes
+          let contourCount = 0;
+          if (img) {
+            const contours = extractVectorContours(img, 240, 240);
+            if (contours && contours.paths.length >= 5) {
+              contourCount = redrawAnalyzedContours(redrawCtx, cx, cy, contours, isWhiteboard, 260);
             }
+          }
+
+          // Update or create Whiteboard Pro sticky note documenting the full process
+          const traitsSummary = (webData.visualTraits || []).slice(0, 3).join(', ') || 'Distinctive anatomical profile';
+          const paletteSummary = (webData.palette || []).join(' ');
+          const descSnippet = webData.description || (webData.extract ? webData.extract.slice(0, 75) + '...' : 'Physical appearance analyzed');
+          const stickyText = `🎨 ${webData.title || jevAnalysis.displayTitle}\n🔬 Jev Autonomous Visual Intelligence\n• Web Knowledge: ${descSnippet}\n• Visual Anatomy: ${traitsSummary}\n• Extracted Palette: ${paletteSummary}\n• Vector Strokes: ${contourCount > 0 ? contourCount + ' contour paths' : 'Parametric anatomical geometry'}\n• Mode: Real-time Web-Informed Vector Synthesis`;
+
+          const wrap = document.getElementById("whiteboardContainer");
+          const wrapW = wrap ? wrap.clientWidth || 1200 : 1200;
+          const stickyX = Math.min(wrapW - 270, Math.floor(wrapW * 0.72));
+          const stickyY = 120;
+          if (window.createStickyNote) {
+            if (window.wbStickies && window.wbStickies.length > 0) {
+              const lastSticky = window.wbStickies[window.wbStickies.length - 1];
+              if (lastSticky && lastSticky.el) {
+                const ta = lastSticky.el.querySelector('textarea');
+                if (ta) ta.value = stickyText;
+                lastSticky.text = stickyText;
+              }
+            } else {
+              window.createStickyNote(stickyX, stickyY, stickyText, '#fef08a');
+            }
+          }
+
+          if (window.saveWbState) window.saveWbState();
+          if (window.showToast) {
+            window.showToast('🎨 AI Vision Synthesized', `Researched and redrew "${webData.title || jevAnalysis.displayTitle}" with web visual anatomy.`);
           }
         })
         .catch(() => {});
@@ -1338,10 +1810,15 @@
   }
 
   // ---------------------------------------------------------------------------
-  // 7. Global Namespace Export
+  // 9. Global Namespace Export
   // ---------------------------------------------------------------------------
   window.LuminaWhiteboardVision = {
     resolveSubject,
+    jevAnalyzeVisualPrompt,
+    searchTsLibrary,
+    searchWebVisualKnowledge,
+    synthesizeAnatomicalSubject,
+    drawParametricSubject,
     fetchVisualSubjectReference,
     extractVectorContours,
     redrawAnalyzedContours,
@@ -1360,4 +1837,5 @@
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);
+
 

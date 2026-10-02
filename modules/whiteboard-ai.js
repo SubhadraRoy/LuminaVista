@@ -208,18 +208,28 @@
     } else if (p.includes('face') || p.includes('smile') || p.includes('avatar') || p.includes('emoji')) {
       illustrationType = 'face';
       title = 'Joyful Expression';
-    } else {
-      const visionSubject = window.LuminaWhiteboardVision ? window.LuminaWhiteboardVision.resolveSubject(prompt) : null;
-      if (visionSubject) {
-        illustrationType = visionSubject.key;
-        title = visionSubject.title;
-        stickyDetails = `• AI Vision Redraw: ${visionSubject.title}\n• Mode: Generative vector contours & anatomical rendering\n• Subject: ${visionSubject.key}\n• Dynamic multi-layer whiteboard strokes`;
+    } else if (typeof window !== 'undefined' && window.LuminaWhiteboardVision) {
+      const vision = window.LuminaWhiteboardVision;
+      const jevAnalysis = vision.jevAnalyzeVisualPrompt ? vision.jevAnalyzeVisualPrompt(prompt) : null;
+      const key = jevAnalysis ? jevAnalysis.subjectKey : (vision.resolveSubject(prompt)?.key || 'subject');
+      const dispTitle = jevAnalysis ? jevAnalysis.displayTitle : (vision.resolveSubject(prompt)?.title || 'Artwork');
+      const category = jevAnalysis ? jevAnalysis.entityCategory : 'general_object';
+
+      illustrationType = key;
+      title = dispTitle;
+
+      const tsRes = vision.searchTsLibrary ? vision.searchTsLibrary(key, category) : { found: false };
+
+      if (tsRes && tsRes.found) {
+        stickyDetails = `• 🏛️ TypeSafe Blueprint Library Hit\n• Subject: ${dispTitle} (${key})\n• Blueprint: ${tsRes.name || category}\n• Precision Vector Specifications & Multi-layer Rendering`;
       } else {
-        illustrationType = 'procedural';
-        let clean = prompt.replace(/\b(draw|sketch|paint|doodle|illustrate|me|a|an|the|on|canvas|whiteboard|blackboard|pro)\b/gi, '').trim();
-        title = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Creative Artwork';
-        stickyDetails = `• Handcrafted Vector Studio Drawing\n• Subject: ${title}\n• Mode: Multi-layer vector rendering`;
+        stickyDetails = `• 🔬 Jev Autonomous Visual Intelligence\n• Subject: ${dispTitle} (${key})\n• Entity Domain: ${category}\n• Pipeline: Querying Web Visual Knowledge & Reference Imagery\n• Real-time Web-Informed Vector Synthesis`;
       }
+    } else {
+      illustrationType = 'procedural';
+      let clean = prompt.replace(/\b(draw|sketch|paint|doodle|illustrate|me|a|an|the|on|canvas|whiteboard|blackboard|pro)\b/gi, '').trim();
+      title = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Creative Artwork';
+      stickyDetails = `• Handcrafted Vector Studio Drawing\n• Subject: ${title}\n• Mode: Multi-layer vector rendering`;
     }
 
     return {

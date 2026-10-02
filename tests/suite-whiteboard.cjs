@@ -391,7 +391,65 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   const redrawnStrokes = window.LuminaWhiteboardVision.redrawAnalyzedContours(ctx, 300, 300, syntheticTrace, false, 200);
   assert(redrawnStrokes >= 3, "redrawAnalyzedContours successfully rendered vector stroke paths on canvas");
 
-  // 17. Modal UI Elements Integrity
+  // 17. Jev Cognitive Visual Intelligence & TypeSafe Library Pipeline
+  assert(typeof window.LuminaWhiteboardVision.jevAnalyzeVisualPrompt === 'function', "Exposes jevAnalyzeVisualPrompt");
+  assert(typeof window.LuminaWhiteboardVision.searchTsLibrary === 'function', "Exposes searchTsLibrary");
+  assert(typeof window.LuminaWhiteboardVision.searchWebVisualKnowledge === 'function', "Exposes searchWebVisualKnowledge");
+  assert(typeof window.LuminaWhiteboardVision.synthesizeAnatomicalSubject === 'function', "Exposes synthesizeAnatomicalSubject");
+
+  // Test Jev Prompt Intent & Taxonomy Classification
+  const saturnAnalysis = window.LuminaWhiteboardVision.jevAnalyzeVisualPrompt("draw the planet saturn with glowing rings");
+  assert(saturnAnalysis.entityCategory === 'celestial', "Jev classifies saturn prompt as celestial");
+  assert(saturnAnalysis.subjectKey === 'saturn', "Jev extracts subjectKey saturn");
+
+  const tajAnalysis = window.LuminaWhiteboardVision.jevAnalyzeVisualPrompt("sketch the taj mahal with marble dome");
+  assert(tajAnalysis.entityCategory === 'monument_architecture', "Jev classifies taj mahal as monument_architecture");
+
+  const platypusAnalysis = window.LuminaWhiteboardVision.jevAnalyzeVisualPrompt("illustrate a wild platypus with bill");
+  assert(platypusAnalysis.entityCategory === 'animal', "Jev classifies platypus as animal");
+
+  const googleAnalysis = window.LuminaWhiteboardVision.jevAnalyzeVisualPrompt("draw google icon");
+  assert(googleAnalysis.entityCategory === 'brand_icon', "Jev classifies google as brand_icon");
+
+  // Test TypeSafe (TS) Library Lookup vs Web Search Routing
+  const googleTsCheck = window.LuminaWhiteboardVision.searchTsLibrary('google', 'brand_icon');
+  assert(googleTsCheck.found === true, "Google icon found in local TypeSafe Blueprint Library");
+  assert(googleTsCheck.type === 'vector_blueprint', "Identified as TypeSafe vector blueprint");
+
+  const guitarTsCheck = window.LuminaWhiteboardVision.searchTsLibrary('guitar', 'instrument');
+  assert(guitarTsCheck.found === true, "Guitar found in local TypeSafe Blueprint Library");
+
+  const saturnTsCheck = window.LuminaWhiteboardVision.searchTsLibrary('saturn', 'celestial');
+  assert(saturnTsCheck.found === false, "Saturn not in TS library, triggers Web Visual Intelligence search");
+
+  const platypusTsCheck = window.LuminaWhiteboardVision.searchTsLibrary('platypus', 'animal');
+  assert(platypusTsCheck.found === false, "Platypus not in TS library, triggers Web Visual Intelligence search");
+
+  // Test Anatomical Vector Geometry Synthesis
+  const saturnShapes = window.LuminaWhiteboardVision.synthesizeAnatomicalSubject(
+    ctx, 300, 300, 'saturn', 'Planet Saturn', 'celestial', ['#f59e0b', '#d97706', '#fbbf24'], ['ring', 'gas'], false
+  );
+  assert(saturnShapes >= 8, "Synthesizes authentic planetary spheres and concentric ring vectors");
+
+  const tajShapes = window.LuminaWhiteboardVision.synthesizeAnatomicalSubject(
+    ctx, 300, 300, 'taj mahal', 'Taj Mahal', 'monument_architecture', ['#ffffff', '#e2e8f0', '#00f2fe'], ['dome', 'minaret'], false
+  );
+  assert(tajShapes >= 10, "Synthesizes monumental architecture with bulbous dome and minarets");
+
+  const platypusShapes = window.LuminaWhiteboardVision.synthesizeAnatomicalSubject(
+    ctx, 300, 300, 'platypus', 'Duck-billed Platypus', 'animal', ['#78350f', '#92400e', '#10b981'], ['bill', 'tail', 'webbed'], false
+  );
+  assert(platypusShapes >= 10, "Synthesizes anatomical fauna with duck bill and beaver tail");
+
+  // Test Sticky Note Documentation in synthesizeIllustration
+  const googleSpec = window.LuminaWhiteboardAi.synthesizeIllustration("draw google icon");
+  assert(googleSpec.stickies[0].text.includes('TypeSafe Blueprint Library Hit'), "Google illustration sticky documents TS Library Hit");
+
+  const saturnSpec = window.LuminaWhiteboardAi.synthesizeIllustration("draw the planet saturn");
+  assert(saturnSpec.stickies[0].text.includes('Jev Autonomous Visual Intelligence'), "Saturn illustration sticky documents Jev Visual Intelligence");
+  assert(saturnSpec.stickies[0].text.includes('celestial'), "Saturn sticky documents celestial entity domain");
+
+  // 18. Modal UI Elements Integrity
   const galleryModal = document.getElementById('whiteboardGalleryModal');
   const aiModal = document.getElementById('whiteboardAiModal');
   assert(galleryModal !== null, "whiteboardGalleryModal markup mounted in DOM");

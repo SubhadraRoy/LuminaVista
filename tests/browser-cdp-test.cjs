@@ -787,6 +787,25 @@ async function runBrowserTest() {
   })()`);
   test("Whiteboard AI synthesizes authentic quad-color Google Icon vector art in Chrome", googleIconResult);
 
+  const jevVisionAnalysisResult = await evaluate(`(() => {
+    const vision = window.LuminaWhiteboardVision;
+    if (!vision || !vision.jevAnalyzeVisualPrompt || !vision.searchTsLibrary) return false;
+    const p1 = vision.jevAnalyzeVisualPrompt('draw the planet saturn with glowing rings');
+    const p2 = vision.jevAnalyzeVisualPrompt('sketch the taj mahal dome');
+    const tsGoogle = vision.searchTsLibrary('google', 'brand_icon');
+    const tsSaturn = vision.searchTsLibrary('saturn', 'celestial');
+    return p1.entityCategory === 'celestial' && p1.subjectKey === 'saturn' &&
+           p2.entityCategory === 'monument_architecture' &&
+           tsGoogle.found === true && tsSaturn.found === false;
+  })()`);
+  test("Jev Cognitive Visual Intelligence classifies prompt ontology and distinguishes TS Library from Web Research in Chrome", jevVisionAnalysisResult);
+
+  const saturnArtResult = await evaluate(`(() => {
+    const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Planet Saturn', type: 'illustration' }, 'draw the planet saturn with rings') : null;
+    return res && res.success && res.shapeCount >= 8;
+  })()`);
+  test("Whiteboard AI synthesizes anatomical Planet Saturn vector geometry with rings in Chrome", saturnArtResult);
+
   await evaluate("switchTab('tab-graphify')");
   await new Promise(r => setTimeout(r, 100));
   const isGraphifyActive = await evaluate(`(() => {
