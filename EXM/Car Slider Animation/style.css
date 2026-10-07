@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    height: 100vh;
+    width: 100vw;
+    font-family: "Poppins", sans-serif;
+}
+
+.logo{
+    font-family: "Kaushan Script", sans-serif;
+    font-weight: bolder;
+}
+
+main{
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.swiper{
+    width: 100%;
+    height: 100%;
+}
+
+.swiper-slide{
+    width: 100%;
+    height: 100%;
+}
+
+.content{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.content .image{
+    height: 60%;
+    width: 60%;
+    margin-top: 100px;
+}
+
+.content .image img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.yellow,.blue,.red{
+    position: absolute;
+    top: 0;
+    height: 100%;
+    bottom: 0;
+    width: 40%;
+    background: #EFCA29;
+    z-index: -1;
+}
+
+.blue{
+    background: #00D2FA;
+}
+
+.blue-c{
+    color: #00D2FA !important;
+    border-color: #00D2FA !important;
+}
+
+.red{
+    background: #972826;
+}
+
+.red-c{
+    color: #d23f3d !important;
+    border-color: #ca3634 !important;
+}
+
+
+.black{
+    position: absolute;
+    top: 0;
+    height: 100%;
+    bottom: 0;
+    right: 0;
+    width: 60%;
+    background: #1A1A15;
+    z-index: -1;
+}
+
+.title{
+    position: absolute;
+    color: #fff;
+    padding-bottom: 170px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.big{
+    font-weight: bold;
+    font-size: 280px;
+    z-index: -1;
+    position: relative;
+}
+
+.big span{
+    display: inline-block;
+}
+
+.small{
+    position: absolute;
+    font-size: 50px;
+    font-family: "Kaushan Script";
+    top: 8%;
+    left: 10px;
+}
+
+.logo{
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    z-index: 10;
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+
+.social{
+    position: absolute;
+    bottom: 20px;
+    left: 40px;
+    z-index: 10;
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.social .bar{
+    width: 1px;
+    height: 350px;
+    background: #fff;
+    margin-bottom: 60px;
+}
+
+.social a{
+    color: #fff;
+    transform: rotate(-90deg);
+}
+
+.specs{
+    position: absolute;
+    bottom: 40px;
+    left: 40%;
+    color: #EFCA29;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+
+.specs span{
+    margin-left: 70px;
+}
+
+
+.specs button{
+    margin-left: 70px;
+    padding: 8px 40px;
+    border-radius: 100px;
+    border: 1px solid #EFCA29;
+    background: none;
+    font-family: "Poppins", sans-serif;
+    color: #EFCA29;
+    cursor: pointer;
+}
+
+
+.menu{
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    z-index: 10;
+    font-size: 18px;
+    color: #fff;
+    height: 40px;
+    width: 40px;
+    display: grid;
+    place-content: center;
+    border-radius: 50%;
+    border: 1px solid #fff;
+}
+
+.swiper-pagination{
+    position: absolute;
+    right: 40px !important;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.swiper-pagination-bullet{
+    width: 50px;
+    height: 50px;
+    background: none;
+    color: #fff;
+    font-family: "Poppins", sans-serif;
+    opacity: 0.5;
+    display: grid !important;
+    place-content: center;
+}
+
+
+.swiper-pagination-bullet-active{
+    opacity: 1;
+    font-size: 20px;
+    border: 1px solid #fff;
+}

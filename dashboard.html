@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" data-theme="cyan">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; object-src 'none';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  
+  <title>LuminaVista OS — Sovereign Cloud Workspace</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Plus Jakarta Sans', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          colors: { surface: { 950: '#030712', 900: '#0b0f19', 850: '#111827', 800: '#1e293b', 750: '#283548' } },
+          animation: { 'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- MODULAR PERSONAS ECOSYSTEM (13 Domain Modules, All < 2,000 Lines) -->
+  <script src="./modules/personas/general.js"></script>
+  <script src="./modules/personas/software-eng.js"></script>
+  <script src="./modules/personas/frontend-ui.js"></script>
+  <script src="./modules/personas/backend-cloud.js"></script>
+  <script src="./modules/personas/devops-security.js"></script>
+  <script src="./modules/personas/ai-data.js"></script>
+  <script src="./modules/personas/hardware-robotics.js"></script>
+  <script src="./modules/personas/mobile-game-database.js"></script>
+  <script src="./modules/personas/deeptech-space.js"></script>
+  <script src="./modules/personas/business-finance-legal.js"></script>
+  <script src="./modules/personas/creative-arts.js"></script>
+  <script src="./modules/personas/lifestyle-wellness.js"></script>
+  <script src="./modules/personas/education-support.js"></script>
+  <script src="./personas.js"></script>
+
+  <style>
+    :root { --primary: #00f2fe; --primary-glow: rgba(0, 242, 254, 0.35); --secondary: #4facfe; --accent-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%); }
+    [data-theme="emerald"] { --primary: #10b981; --primary-glow: rgba(16, 185, 129, 0.35); --secondary: #059669; --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 50%, #059669 100%); }
+    [data-theme="amber"] { --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.35); --secondary: #d97706; --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%); }
+    [data-theme="rose"] { --primary: #f43f5e; --primary-glow: rgba(244, 63, 94, 0.35); --secondary: #e11d48; --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #e11d48 100%); }
+    
+    body { background-color: #030712; color: #f8fafc; overflow: hidden; }
+    
+    .glass-panel { background: rgba(11, 15, 25, 0.75); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.6), 0 0 35px -10px var(--primary-glow); }
+    .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 0.75rem; }
+    
+    .godx-input { background-color: rgba(15, 23, 42, 0.6) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; border-radius: 0.75rem !important; font-size: 0.875rem !important; outline: none !important; transition: all 0.2s ease !important; }
+    .godx-input:focus { background-color: rgba(30, 41, 59, 0.8) !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--primary-glow) !important; }
+    
+    .btn-gradient { background-size: 200% auto; background-image: var(--accent-gradient); transition: 0.3s ease; }
+    .btn-gradient:hover { background-position: right center; box-shadow: 0 0 25px var(--primary-glow); }
+    
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+    
+    .nav-tab-active { background: linear-gradient(90deg, rgba(0,242,254,0.12) 0%, transparent 100%); border-left: 3px solid var(--primary); color: #ffffff; text-shadow: 0 0 10px var(--primary-glow); }
+    .bg-dot-pattern { background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px); background-size: 20px 20px; }
+    .bg-grid-pattern { background-image: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px); background-size: 24px 24px; }
+    .bg-blueprint-pattern { background-image: linear-gradient(to right, rgba(0, 242, 254, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 242, 254, 0.15) 1px, transparent 1px); background-size: 32px 32px; }
+    .bg-clean { background-image: none !important; }
+
+    /* Whiteboard vs Blackboard Canvas Surface Themes */
+    #whiteboardContainer.wb-theme-whiteboard {
+      background-color: #ffffff !important;
+      border-color: rgba(203, 213, 225, 0.8) !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-dot-pattern {
+      background-image: radial-gradient(rgba(15, 23, 42, 0.15) 1.5px, transparent 1.5px) !important;
+      background-size: 20px 20px !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-grid-pattern {
+      background-image: linear-gradient(to right, rgba(15, 23, 42, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(15, 23, 42, 0.08) 1px, transparent 1px) !important;
+      background-size: 24px 24px !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-blueprint-pattern {
+      background-image: linear-gradient(to right, rgba(2, 132, 199, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(2, 132, 199, 0.15) 1px, transparent 1px) !important;
+      background-size: 32px 32px !important;
+    }
+    #whiteboardContainer.wb-theme-whiteboard.bg-clean {
+      background-image: none !important;
+    }
+
+    #whiteboardContainer.wb-theme-blackboard {
+      background-color: #0b0f19 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-dot-pattern {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px) !important;
+      background-size: 20px 20px !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-grid-pattern {
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px) !important;
+      background-size: 24px 24px !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-blueprint-pattern {
+      background-image: linear-gradient(to right, rgba(0, 242, 254, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 242, 254, 0.15) 1px, transparent 1px) !important;
+      background-size: 32px 32px !important;
+    }
+    #whiteboardContainer.wb-theme-blackboard.bg-clean {
+      background-image: none !important;
+    }
+    .sidebar-resizer:hover, .sidebar-resizer.resizing { background: var(--primary); }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+
+    /* Claude Thinking UI */
+    .thought-card { background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 0.875rem; margin: 0.75rem 0; overflow: hidden; transition: all 0.3s; }
+    .thought-card[open] { border-color: rgba(0, 242, 254, 0.45); box-shadow: 0 10px 25px -5px rgba(0, 242, 254, 0.1); }
+    .thought-summary { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1rem; cursor: pointer; background: rgba(30, 41, 59, 0.4); font-family: 'JetBrains Mono', monospace; font-size: 0.725rem; color: #38bdf8; }
+    .thought-summary::-webkit-details-marker { display: none; }
+    .thought-content { padding: 0.875rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.725rem; color: #94a3b8; background: rgba(3, 7, 18, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.05); }
+    @keyframes thinkingShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    .thinking-skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(0,242,254,0.12) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: thinkingShimmer 2.5s infinite; }
+
+    /* Antigravity Work Done Collapsible UI */
+    .work-done-card { background: rgba(10, 15, 26, 0.75); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 0.875rem; margin: 0.75rem 0; overflow: hidden; transition: all 0.25s ease; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+    .work-done-card[open] { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 8px 30px rgba(16, 185, 129, 0.12); }
+    .work-done-summary { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1rem; cursor: pointer; background: rgba(16, 185, 129, 0.08); font-family: 'Inter', sans-serif; font-size: 0.75rem; color: #6ee7b7; user-select: none; transition: background 0.2s; }
+    .work-done-summary:hover { background: rgba(16, 185, 129, 0.14); }
+    .work-done-summary::-webkit-details-marker { display: none; }
+    .work-done-content { padding: 0.75rem 1rem; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(5, 8, 15, 0.65); display: flex; flex-direction: column; gap: 0.5rem; }
+
+    /* ========================================================
+       COLLAPSED SIDEBAR (68px) PRECISION ORIENTATION & ALIGNMENT
+       ======================================================== */
+    #mainSidebar.sidebar-collapsed {
+      width: 68px !important;
+    }
+    /* 1. Header: Stack GX logo and toggle button cleanly, preventing overlap */
+    #mainSidebar.sidebar-collapsed #sidebarHeader {
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0.625rem !important;
+      padding: 0.875rem 0.5rem !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarBrand {
+      margin: 0 auto !important;
+      justify-content: center !important;
+      width: auto !important;
+      cursor: pointer;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarBrand .sidebar-label {
+      display: none !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarControls {
+      width: 100% !important;
+      display: flex !important;
+      justify-content: center !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarToggleBtn {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 38px !important;
+      height: 30px !important;
+      border-radius: 0.625rem !important;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #38bdf8 !important;
+      margin: 0 auto !important;
+      transition: all 0.2s ease;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarToggleBtn:hover {
+      background: rgba(0, 242, 254, 0.15) !important;
+      border-color: rgba(0, 242, 254, 0.4) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
+    }
+
+    /* 2. Navigation Items: Center all icons in exact vertical axis */
+    #mainSidebar.sidebar-collapsed nav {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn {
+      width: 44px !important;
+      height: 44px !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0 !important;
+      border-radius: 0.75rem !important;
+      border-left: 1px solid transparent !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn i,
+    #mainSidebar.sidebar-collapsed .tab-btn svg {
+      margin: 0 !important;
+      width: 1.125rem !important;
+      height: 1.125rem !important;
+      flex-shrink: 0 !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn .sidebar-label {
+      display: none !important;
+    }
+
+    /* Active Tab in Collapsed State: Centered glowing badge */
+    #mainSidebar.sidebar-collapsed .tab-btn.nav-tab-active {
+      background: rgba(0, 242, 254, 0.14) !important;
+      border: 1px solid var(--primary) !important;
+      box-shadow: 0 0 16px var(--primary-glow), inset 0 0 10px rgba(0, 242, 254, 0.1) !important;
+    }
+    #mainSidebar.sidebar-collapsed .tab-btn:hover:not(.nav-tab-active) {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: #ffffff !important;
+    }
+
+    /* 3. Footer: Center logout button, hide ping text */
+    #mainSidebar.sidebar-collapsed #sidebarFooter {
+      padding: 0.75rem 0.5rem !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarFooterContainer {
+      justify-content: center !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarFooterStatus {
+      display: none !important;
+    }
+    #mainSidebar.sidebar-collapsed #sidebarLogoutBtn {
+      margin: 0 auto !important;
+      width: 42px !important;
+      height: 42px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 0.75rem !important;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    #mainSidebar.sidebar-collapsed #sidebarLogoutBtn:hover {
+      background: rgba(244, 63, 94, 0.15) !important;
+      border-color: rgba(244, 63, 94, 0.4) !important;
+      color: #f43f5e !important;
+    }
+  </style>
+</head>
+<body class="flex h-screen font-sans selection:bg-cyan-500 selection:text-black relative bg-surface-950 select-none">
+
+  <!-- Interactive Ambient Backdrop -->
+  <canvas id="ambientCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+  <div class="fixed top-[-20%] left-[10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse-slow z-0"></div>
+  <div class="fixed bottom-[-10%] right-[5%] w-[700px] h-[700px] bg-indigo-600/10 rounded-full blur-[180px] pointer-events-none animate-pulse-slow z-0" style="animation-delay: 2s;"></div>
+
+  <!-- ROOT APP CONTAINER (Blur-isolated on security lock) -->
+  <div id="app-root" class="flex h-full w-full transition-all duration-300">
+
+  <!-- Mobile Sidebar Overlay Backdrop -->
+  <div id="sidebarBackdrop" onclick="closeMobileSidebar()" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
+
+  <!-- ADJUSTABLE & MINIMIZABLE SIDEBAR (Mobile Off-Canvas & Desktop Resizable) -->
+  <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 border-r border-white/5 bg-surface-950/95 backdrop-blur-2xl flex flex-col h-full shrink-0 transition-[width,transform] duration-200 shadow-2xl md:shadow-none" style="width: 250px;">
+    
+    <!-- Sidebar Header -->
+    <div id="sidebarHeader" class="p-4 border-b border-white/5 flex items-center justify-between transition-all duration-200">
+      <div id="sidebarBrand" class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="if(window.isSidebarMinimized) toggleSidebarMinimize()" title="LuminaVista OS">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 via-teal-300 to-indigo-500 flex items-center justify-center font-display font-extrabold text-black text-sm shadow-[0_0_15px_rgba(0,242,254,0.3)] shrink-0">GX</div>
+        <div class="sidebar-label whitespace-nowrap">
+          <h1 class="font-heading font-bold text-base text-white tracking-tight leading-none">LuminaVista</h1>
+          <p class="text-[10px] text-cyan-400 font-mono mt-1 tracking-wider uppercase">Cloud OS v14</p>
+        </div>
+      </div>
+      <div id="sidebarControls" class="flex items-center gap-1">
+        <button onclick="closeMobileSidebar()" class="md:hidden p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Close Menu" aria-label="Close Navigation Drawer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        <button id="sidebarToggleBtn" onclick="toggleSidebarMinimize()" class="hidden md:inline-flex p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Toggle Sidebar" aria-label="Toggle Sidebar Navigation">
+          <i data-lucide="chevrons-left" id="sidebarToggleIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Items ("The Slider") -->
+    <nav class="flex-1 overflow-y-auto py-4 px-2 space-y-1 custom-scrollbar">
+      <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer" title="AI-Studio" aria-label="AI-Studio">
+        <i data-lucide="bot" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">AI-Studio</span>
+      </button>
+      <button onclick="switchTab('tab-artifacts')" id="btn-tab-artifacts" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Artifacts IDE" aria-label="Artifacts IDE">
+        <i data-lucide="folder-code" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Artifacts IDE</span>
+      </button>
+      <button onclick="switchTab('tab-graphify')" id="btn-tab-graphify" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Graphify Graph" aria-label="Graphify Graph">
+        <i data-lucide="network" class="w-4 h-4 shrink-0 text-purple-400"></i><span class="sidebar-label">Graphify Graph</span>
+      </button>
+      <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Projects Explorer" aria-label="Projects Explorer">
+        <i data-lucide="folder-tree" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Projects</span>
+      </button>
+      <button onclick="switchTab('tab-sandbox')" id="btn-tab-sandbox" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Compilers & SQL" aria-label="Compilers & SQL">
+        <i data-lucide="code-2" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Compilers & SQL</span>
+      </button>
+      <button onclick="switchTab('tab-whiteboard')" id="btn-tab-whiteboard" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Whiteboard Pro" aria-label="Whiteboard Pro">
+        <i data-lucide="pen-tool" class="w-4 h-4 shrink-0 text-purple-400"></i><span class="sidebar-label">Whiteboard Pro</span>
+      </button>
+      <button onclick="switchTab('tab-design')" id="btn-tab-design" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="UI Generator" aria-label="UI Generator">
+        <i data-lucide="palette" class="w-4 h-4 shrink-0 text-pink-400"></i><span class="sidebar-label">UI Generator</span>
+      </button>
+      <button onclick="switchTab('tab-split')" id="btn-tab-split" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Split Compare" aria-label="Split Compare">
+        <i data-lucide="columns" class="w-4 h-4 shrink-0 text-indigo-400"></i><span class="sidebar-label">Split Compare</span>
+      </button>
+      <button onclick="switchTab('tab-terminal')" id="btn-tab-terminal" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Terminal MicroVM" aria-label="Terminal MicroVM">
+        <i data-lucide="terminal" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Terminal MicroVM</span>
+      </button>
+      <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Telemetry & Waveforms" aria-label="Telemetry & Waveforms">
+        <i data-lucide="activity" class="w-4 h-4 shrink-0 text-amber-400"></i><span class="sidebar-label">Telemetry</span>
+      </button>
+      <button onclick="switchTab('tab-scratchpad')" id="btn-tab-scratchpad" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Notes Markdown" aria-label="Notes Markdown">
+        <i data-lucide="book-open" class="w-4 h-4 shrink-0 text-sky-400"></i><span class="sidebar-label">Notes Markdown</span>
+      </button>
+      <button onclick="switchTab('tab-calendar')" id="btn-tab-calendar" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Calendar & Agenda" aria-label="Calendar & Agenda">
+        <i data-lucide="calendar" class="w-4 h-4 shrink-0 text-cyan-400"></i><span class="sidebar-label">Calendar</span>
+      </button>
+      <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Settings & Theme" aria-label="Settings & Theme">
+        <i data-lucide="settings" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Settings</span>
+      </button>
+      <button onclick="switchTab('tab-smartlock')" id="btn-tab-smartlock" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Smart Door Lock & Logs" aria-label="Smart Door Lock & Logs">
+        <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Smart Door Lock</span>
+      </button>
+    </nav>
+    
+    <!-- Sidebar Footer -->
+    <div id="sidebarFooter" class="p-3.5 border-t border-white/5 bg-surface-900/40 transition-all duration-200">
+      <div id="sidebarFooterContainer" class="flex items-center justify-between">
+        <div id="sidebarFooterStatus" class="flex items-center gap-2 overflow-hidden">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+          <span class="font-mono text-[10px] text-zinc-400 sidebar-label whitespace-nowrap">Edge Secured</span>
+        </div>
+        <button id="sidebarLogoutBtn" onclick="handleLogout()" class="text-zinc-500 hover:text-rose-400 transition-colors p-2 rounded-xl hover:bg-white/5 cursor-pointer" title="Lock System" aria-label="Lock System and Sign Out">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- DRAGGABLE ADJUSTER (Desktop Only) -->
+  <div id="sidebarResizer" class="hidden md:block sidebar-resizer h-full z-40 bg-white/5" title="Drag to resize sidebar"></div>
+
+  <!-- MAIN VIEWPORT CONTAINER -->
+  <div class="flex-1 flex flex-col h-full relative z-10 min-w-0 overflow-hidden">
+    
+    <!-- Top System Bar -->
+    <header class="w-full border-b border-white/5 bg-surface-950/60 backdrop-blur-xl px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between z-30 shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Mobile Navigation Menu Button -->
+        <button id="mobileMenuToggleBtn" onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-cyan-400 hover:text-white cursor-pointer transition-colors shadow-sm" aria-label="Open Navigation Menu">
+          <i data-lucide="menu" class="w-4 h-4"></i>
+        </button>
+        <button onclick="openCommandPalette()" class="flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs text-zinc-300 transition-colors cursor-pointer shadow-sm">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span class="hidden sm:inline">Command Palette</span>
+          <kbd class="hidden sm:inline px-1.5 py-0.5 text-[9px] bg-black/40 border border-white/10 rounded font-mono text-zinc-400 ml-1">⌘K</kbd>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2.5 sm:gap-4 text-xs text-zinc-400 font-mono">
+        <span id="cloudSyncIndicator" class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-white/5 bg-surface-900/50 cursor-pointer text-[11px] text-zinc-400 hover:text-white transition-colors" title="Sovereign Multi-Device Cloud Sync" onclick="window.LuminaCloudSync?.flushSync?.()">
+          <span id="cloudSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="cloudSyncText" class="hidden md:inline">Cloud Synced</span>
+        </span>
+        <span class="text-zinc-700 hidden md:inline">•</span>
+        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i><span class="hidden xs:inline">00:00:00</span></span>
+        <span class="text-zinc-700 hidden sm:inline">•</span>
+        <span class="text-white hidden sm:inline">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Sovereign</span></span>
+        <span class="text-zinc-700">•</span>
+        <button onclick="openSourceInspector()" class="p-1.5 hover:text-white transition-colors cursor-pointer" title="View Source"><i data-lucide="code" class="w-4 h-4"></i></button>
+        <span class="text-zinc-700">•</span>
+        <button onclick="lockSession()" class="p-1.5 hover:text-cyan-400 transition-colors cursor-pointer" title="Lock Session (15m Inactivity Lock)" aria-label="Lock Session"><i data-lucide="lock" class="w-4 h-4"></i></button>
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <main class="flex-1 overflow-hidden p-2.5 sm:p-4 lg:p-5 w-full max-w-[2100px] mx-auto flex flex-col min-h-0 select-text">
+      
+      <!-- ===================================================================== -->
+      <!-- ===================================================================== -->
+      <!-- TAB 1: ai-llm STUDIO (Chat, Artifacts & Files, Graphify Graph)        -->
+      <!-- ===================================================================== -->
+      <section id="tab-ai-studio" class="tab-pane h-full flex flex-col gap-3 min-h-0">
+        
+        <!-- AI Studio Top Sub-Navigation Bar (Hidden: Relocated to Navigation Slider) -->
+        <div id="aiSubTabsBar" class="hidden">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <button id="btnAiSubTabChat" onclick="switchAiSubTab('chat')" class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm">
+              <i data-lucide="message-square" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Chat</span>
+            </button>
+            <button id="btnAiSubTabArtifacts" onclick="switchAiSubTab('artifacts')" class="px-3.5 py-1.5 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all">
+              <i data-lucide="folder-code" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Artifacts &amp; Files</span>
+              <span id="aiSubTabArtifactCount" class="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-300 font-mono">0</span>
+            </button>
+            <button id="btnAiSubTabGraphify" onclick="switchAiSubTab('graphify')" class="px-3.5 py-1.5 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all">
+              <i data-lucide="network" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Graphify Graph</span>
+              <span class="px-1.5 py-0.2 rounded text-[9px] bg-purple-500/20 text-purple-300 font-mono">Live</span>
+            </button>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] text-zinc-400 font-mono hidden md:inline-flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+              Lumina Sovereign AI v14.0
+            </span>
+          </div>
+        </div>
+
+        <!-- Sub-View Container -->
+        <div class="flex-1 flex min-h-0 relative w-full overflow-hidden">
+          
+          <!-- SUB-VIEW 1: CHAT VIEW (with optional Left Sessions Drawer) -->
+          <div id="aiChatView" class="w-full h-full flex flex-col lg:flex-row gap-4 min-h-0">
+            <!-- Left Slide-out Sessions Drawer -->
+            <div id="aiSessionsDrawer" class="hidden w-72 max-w-[85vw] glass-panel rounded-2xl flex flex-col overflow-hidden absolute md:relative z-30 inset-y-0 left-0 border border-white/10 shadow-2xl h-full transition-all duration-300 shrink-0 bg-surface-950/95 md:bg-transparent backdrop-blur-2xl md:backdrop-blur-none">
+              <div class="p-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
+                  <span class="font-heading font-bold text-xs text-white">Chat Sessions</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button onclick="createNewChatSession()" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[11px] font-bold border border-cyan-500/30 flex items-center gap-1 cursor-pointer transition-colors" title="Start New Conversation">
+                    <i data-lucide="plus" class="w-3 h-3"></i> New
+                  </button>
+                  <button onclick="toggleSessionsDrawer(false)" class="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+              <div class="p-2 border-b border-white/5 bg-surface-950/60">
+                <div class="relative">
+                  <input type="text" id="sessionsSearchInput" oninput="filterSessionsList(this.value)" placeholder="Search conversations..." class="godx-input w-full px-2.5 py-1.5 pl-7 text-[11px] font-sans" />
+                  <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2.5 top-2.5"></i>
+                </div>
+              </div>
+              <div id="aiSessionsList" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar"></div>
+            </div>
+
+            <!-- Center Chat Box (Maximized Real Estate) -->
+            <div id="aiChatColumn" class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-white/5 shadow-2xl h-full transition-all duration-300">
+              <!-- ai-llm Header -->
+              <div class="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-white/5 bg-surface-900/60 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 z-10 shrink-0 backdrop-blur-xl">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                  <canvas id="headerThinkingOrb" width="36" height="36" class="shrink-0 cursor-pointer rounded-lg bg-surface-950/80 border border-cyan-500/30 shadow-[0_0_12px_rgba(0,242,254,0.2)]" title="Antigravity Cognitive Engine State"></canvas>
+                  <div>
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                      <h3 class="font-heading font-bold text-sm text-white leading-tight">AI-Studio</h3>
+                      <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
+                      <span id="failoverIndicatorBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-300 font-mono border border-amber-500/30 items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Key #1
+                      </span>
+                      <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20 items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
+                      </span>
+                      <!-- TypeSafe Jev System-1 Telemetry HUD -->
+                      <button type="button" id="jevStudioHud" onclick="toggleJevInspectorModal()" class="px-2 py-0.5 rounded-md text-[9px] bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 font-mono border border-purple-500/30 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Jev System-1 Cognitive Matrix Telemetry & HUD • Click to inspect">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" id="jevStatusDot"></span>
+                        <span class="font-bold tracking-wide">JEV-S1</span>
+                        <span id="jevRouteLabel" class="text-zinc-200 font-semibold">IDLE</span>
+                        <span id="jevConfidenceLabel" class="text-cyan-400 font-bold hidden xs:inline">99%</span>
+                        <span id="jevLatencyLabel" class="text-emerald-400 hidden sm:inline">&lt;1ms</span>
+                      </button>
+                    </div>
+                    <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-[170px] xs:max-w-xs sm:max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
+                  </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                  <button onclick="toggleSessionsDrawer()" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Multi-Session History">
+                    <i data-lucide="history" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span class="hidden sm:inline">Sessions</span>
+                    <span id="sessionCountBadge" class="px-1.5 py-0.2 rounded text-[9px] bg-cyan-500/20 text-cyan-300 font-mono">1</span>
+                  </button>
+                  <button onclick="openScheduledTasksModal()" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Autonomous Scheduled Tasks">
+                    <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-purple-400"></i>
+                    <span class="hidden sm:inline">Scheduled</span>
+                    <span id="scheduledCountBadge" class="hidden px-1.5 py-0.2 rounded-full text-[9px] bg-purple-500 text-white font-mono">0</span>
+                  </button>
+                  <button onclick="openAiConfigModal()" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 cursor-pointer transition-colors" title="Configure AI &amp; Personas">
+                    <i data-lucide="sliders" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span class="hidden sm:inline">Settings</span>
+                  </button>
+                  <button onclick="clearAiChat()" class="p-1.5 rounded-xl hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors" title="Clear Current Chat">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Chat Conversation Scroll Area -->
+              <div id="aiChatHistory" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 bg-transparent font-sans text-[13px] leading-relaxed relative min-h-0 custom-scrollbar"></div>
+
+              <!-- Floating Input Bar -->
+              <div class="p-4 pt-1 z-10 relative shrink-0">
+                <form id="aiChatForm" class="relative max-w-4xl mx-auto" onsubmit="handleSendAiPrompt(event)">
+                  <!-- Antigravity Quoted Message Context Banner -->
+                  <div id="aiQuoteBanner" class="hidden mb-2 px-3 py-2 rounded-xl bg-surface-900/90 border border-cyan-500/30 flex items-center justify-between text-xs text-zinc-300 shadow-xl">
+                    <div class="flex items-center gap-2 overflow-hidden flex-1 mr-2">
+                      <div class="p-1 rounded-md bg-cyan-500/10 text-cyan-400 shrink-0">
+                        <i data-lucide="quote" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div class="truncate font-mono text-[11px] text-zinc-400">
+                        <span class="text-cyan-300 font-bold mr-1" id="aiQuoteRoleLabel">Replying:</span>
+                        <span id="aiQuotePreviewText" class="italic text-zinc-300"></span>
+                      </div>
+                    </div>
+                    <button type="button" onclick="clearQuotedMessage()" class="text-zinc-500 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" title="Cancel Quote">
+                      <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+
+                  <div class="relative bg-surface-900/80 backdrop-blur-xl border border-white/10 rounded-2xl focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all p-1.5 flex items-end shadow-2xl">
+                    <textarea id="aiPromptTextarea" rows="1" placeholder="Message AI-Studio, edit files, execute bash in microVM... (Ctrl+Enter)" class="w-full bg-transparent border-0 outline-none text-[13px] text-white pl-3 pr-2 py-2.5 resize-none max-h-40 custom-scrollbar" style="min-height: 42px;" oninput="autoResizeTextarea(this)" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey || !event.shiftKey)){ event.preventDefault(); handleSendAiPrompt(event); }"></textarea>
+                    <button type="button" id="btnAiAbort" onclick="abortAgentLoop()" class="hidden px-2.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-mono font-bold border border-rose-500/30 flex items-center gap-1.5 mb-0.5 mr-1 cursor-pointer transition-colors" title="Abort Autonomous Agent Loop">
+                      <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i> Abort
+                    </button>
+                    <button type="button" id="btnAiVoiceMode" onclick="window.toggleVoiceInteractionMode && window.toggleVoiceInteractionMode()" class="w-9 h-9 shrink-0 rounded-xl bg-white/5 hover:bg-cyan-500/20 text-cyan-300 hover:text-white border border-white/10 flex items-center justify-center shadow-lg transition-all mb-0.5 mr-1 cursor-pointer group" title="Full Voice Interaction Mode (100% Free Hands-Free Voice)">
+                      <i data-lucide="mic" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    </button>
+                    <button type="submit" id="btnAiSend" class="w-9 h-9 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-colors mb-0.5 mr-0.5 cursor-pointer">
+                      <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 2: ARTIFACTS & FILES CODESPACE (Full Width) -->
+          <div id="aiCodespaceColumn" class="hidden w-full h-full glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl transition-all duration-300">
+            <!-- IDE Top Header -->
+            <div class="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/10 bg-surface-900/90 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shrink-0">
+              <div class="flex items-center gap-2">
+                <i data-lucide="folder-code" class="w-4 h-4 text-emerald-400"></i>
+                <span class="font-heading font-bold text-xs text-white truncate max-w-[130px] xs:max-w-xs sm:max-w-none">Artifacts Codespace</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
+                  <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Preview</button>
+                  <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2 sm:px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Code</button>
+                  <button onclick="setCodespaceView('terminal')" id="btnCsViewTerminal" class="px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Terminal</button>
+                  <button onclick="setCodespaceView('split')" id="btnCsViewSplit" class="px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Split</button>
+                </div>
+                <button onclick="runActiveFile()" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold flex items-center gap-1 hover:bg-emerald-400 transition-colors cursor-pointer" title="Execute Code or Reload HTML">
+                  <i data-lucide="play" class="w-3 h-3"></i> <span class="hidden xs:inline">Run</span>
+                </button>
+                <button onclick="switchAiSubTab('chat')" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer flex items-center gap-1 text-xs" title="Return to Chat">
+                  <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                  <span class="hidden sm:inline">Back to Chat</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Advanced Sub-Bar: Breadcrumbs & Actions -->
+            <div class="px-3 py-1.5 bg-surface-950 border-b border-white/5 flex items-center justify-between text-xs font-mono shrink-0">
+              <div class="flex items-center gap-1.5 text-zinc-400">
+                <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>vfs://</span>
+                <span id="csBreadcrumbFile" class="text-white font-bold truncate max-w-[140px] sm:max-w-none">index.html</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <label class="px-2 py-1 rounded hover:bg-emerald-500/10 text-emerald-400 flex items-center gap-1 text-[11px] cursor-pointer transition-colors" title="Upload Files into VFS">
+                  <i data-lucide="upload" class="w-3 h-3"></i><span>Upload</span>
+                  <input type="file" id="vfsUploadInput" multiple class="hidden" onchange="uploadVfsFiles(this.files)" />
+                </label>
+                <button onclick="promptCreateFile()" class="px-2 py-1 rounded hover:bg-white/5 text-cyan-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Create File">
+                  <i data-lucide="file-plus" class="w-3 h-3"></i><span>+File</span>
+                </button>
+                <button onclick="promptCreateFolder()" class="px-2 py-1 rounded hover:bg-white/5 text-cyan-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Create Folder">
+                  <i data-lucide="folder-plus" class="w-3 h-3"></i><span>+Folder</span>
+                </button>
+                <button onclick="renameActiveFile()" class="px-2 py-1 rounded hover:bg-white/5 text-zinc-400 hover:text-white flex items-center gap-1 text-[11px] cursor-pointer" title="Rename File">
+                  <i data-lucide="edit-2" class="w-3 h-3"></i>
+                </button>
+                <button onclick="deleteActiveFile()" class="px-2 py-1 rounded hover:bg-rose-500/20 text-rose-400 flex items-center gap-1 text-[11px] cursor-pointer" title="Delete File">
+                  <i data-lucide="trash" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- File Tabs Bar -->
+            <div class="px-2 pt-1.5 bg-surface-900/60 border-b border-white/5 flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 custom-scrollbar" id="codespaceFileTabs"></div>
+
+            <!-- Main Workspace: Explorer Tree + Code/Preview/Terminal -->
+            <div class="flex-1 flex min-h-0 relative bg-surface-950">
+              <!-- File Tree Sidebar -->
+              <div class="w-36 sm:w-48 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
+                <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center">
+                  <span>Explorer</span>
+                  <div class="flex items-center gap-2">
+                    <label class="hover:text-emerald-400 cursor-pointer text-zinc-400" title="Upload Files">
+                      <i data-lucide="upload-cloud" class="w-3 h-3"></i>
+                      <input type="file" multiple class="hidden" onchange="uploadVfsFiles(this.files)" />
+                    </label>
+                    <span id="vfsFileCount" class="text-cyan-400">0 files</span>
+                  </div>
+                </div>
+                <div id="vfsTreeContainer" class="flex-1 p-2 space-y-1 overflow-y-auto custom-scrollbar"></div>
+                <!-- VFS Storage Quota Bar & Telemetry -->
+                <div class="p-2.5 border-t border-white/10 bg-surface-950/80 font-mono text-[10px] space-y-1.5 shrink-0">
+                  <div class="flex items-center justify-between text-zinc-400">
+                    <span class="flex items-center gap-1" title="100% Free Sovereign Browser Storage"><i data-lucide="database" class="w-3 h-3 text-cyan-400"></i> Storage</span>
+                    <span id="vfsStoragePercent" class="text-cyan-300 font-semibold">0%</span>
+                  </div>
+                  <div class="w-full bg-zinc-800/80 rounded-full h-1.5 overflow-hidden border border-white/5">
+                    <div id="vfsStorageBar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-300" style="width: 2%;"></div>
+                  </div>
+                  <div class="flex items-center justify-between text-zinc-500 text-[9px]">
+                    <span id="vfsStorageText" class="truncate font-mono">0 KB / 1 GB (Free)</span>
+                    <span id="vfsStorageChars" class="truncate font-mono text-zinc-400">0 chars</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Code Editor Container -->
+              <div id="csEditorContainer" class="flex-1 h-full flex-col border-r border-white/5 relative flex">
+                <textarea id="csCodeEditor" oninput="onEditorContentChange()" class="w-full flex-1 bg-surface-950 p-4 font-mono text-xs text-zinc-200 outline-none resize-none leading-relaxed selection:bg-cyan-500 selection:text-black custom-scrollbar"></textarea>
+              </div>
+
+              <!-- Live Browser Preview Container -->
+              <div id="csPreviewContainer" class="hidden flex-1 h-full bg-white relative">
+                <iframe id="csPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 bg-white"></iframe>
+              </div>
+
+              <!-- Embedded Terminal Container -->
+              <div id="csTerminalContainer" class="hidden flex-1 h-full bg-[#0d1117] flex-col relative font-mono text-[11px] overflow-hidden">
+                <div id="csTermOutput" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-zinc-300 leading-relaxed whitespace-pre-wrap break-all custom-scrollbar">
+                  <div class="text-cyan-400 font-bold">LuminaVista Embedded MicroVM CLI</div>
+                  <div class="text-zinc-500">Autonomous loop execution output will stream here.</div>
+                </div>
+                <form onsubmit="handleIdeTerminalCommand(event)" class="border-t border-white/5 bg-black/50 flex items-center p-2 shrink-0">
+                  <span class="text-emerald-400 font-bold mr-2">➜</span>
+                  <input type="text" id="csTermInput" class="flex-1 bg-transparent outline-none text-white text-xs font-mono" placeholder="Execute terminal command in mounted VFS..." autocomplete="off">
+                </form>
+              </div>
+            </div>
+
+            <!-- Codespace Status Footer -->
+            <div class="px-4 py-2 border-t border-white/10 bg-surface-900/90 font-mono text-[11px] flex justify-between items-center text-zinc-400 shrink-0">
+              <span id="csStatusBadge" class="flex items-center gap-1.5 text-emerald-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Runtime Synced
+              </span>
+              <div class="flex items-center gap-3">
+                <button onclick="exportCodespaceZip()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="download" class="w-3 h-3"></i> Export Bundle</button>
+                <button onclick="openCodespacePopout()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="external-link" class="w-3 h-3"></i> Popout</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 3: GRAPHIFY ARCHITECTURE GRAPH (Full Width) -->
+          <div id="aiGraphifyColumn" class="hidden w-full h-full glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-purple-500/30 shadow-2xl transition-all duration-300">
+            <!-- Graphify Header -->
+            <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
+                  <i data-lucide="network" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-heading font-bold text-xs text-white leading-tight">LuminaVista Graphify Architecture</h3>
+                  <p class="text-[10px] text-zinc-400 font-mono" id="graphifyNodeCount">Loading architecture graph...</p>
+                </div>
+              </div>
+
+              <!-- Filter Pills & Search -->
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[11px] font-mono">
+                  <button onclick="setGraphifyFilter('all')" data-cat="all" class="graphify-filter-btn px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">All</button>
+                  <button onclick="setGraphifyFilter('frontend')" data-cat="frontend" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Frontend</button>
+                  <button onclick="setGraphifyFilter('ai')" data-cat="ai" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">AI</button>
+                  <button onclick="setGraphifyFilter('api')" data-cat="api" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">APIs</button>
+                  <button onclick="setGraphifyFilter('security')" data-cat="security" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Security</button>
+                  <button onclick="setGraphifyFilter('runtime')" data-cat="runtime" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Sandboxes</button>
+                  <button onclick="setGraphifyFilter('vfs')" data-cat="vfs" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">VFS Files</button>
+                </div>
+
+                <div class="relative">
+                  <input type="text" oninput="setGraphifySearch(this.value)" placeholder="Search node..." class="godx-input px-2.5 py-1 pl-7 text-[11px] font-mono w-28 sm:w-32 focus:w-44 transition-all" />
+                  <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2 top-2"></i>
+                </div>
+
+                <!-- Zoom & Export Controls -->
+                <div class="flex items-center gap-1">
+                  <button onclick="zoomGraphify(0.15)" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Zoom In"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="zoomGraphify(-0.15)" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Zoom Out"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="resetGraphifyView()" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Reset View"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="exportGraphifyImage()" class="px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer" title="Export PNG Diagram"><i data-lucide="image" class="w-3 h-3"></i> PNG</button>
+                  <button onclick="exportGraphifyJson()" class="px-2 py-1 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer" title="Export Architecture Manifest JSON"><i data-lucide="code" class="w-3 h-3"></i> JSON</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="flex-1 relative min-h-0 bg-[#06080d] overflow-hidden select-none">
+              <canvas id="graphifyCanvas" class="w-full h-full cursor-grab active:cursor-grabbing block"></canvas>
+
+              <!-- Node Inspector Drawer (Slide-out panel) -->
+              <div id="graphifyInspectorDrawer" class="hidden absolute top-3 right-3 w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 max-w-sm glass-panel rounded-2xl border border-white/15 shadow-2xl z-20 overflow-hidden bg-surface-900/95 backdrop-blur-2xl"></div>
+
+              <!-- Canvas Bottom Legend Bar -->
+              <div class="absolute bottom-3 left-3 bg-surface-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-[10px] font-mono text-zinc-400 hidden sm:flex items-center gap-3">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#00f2fe]"></span> Frontend</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#818cf8]"></span> AI</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#10b981]"></span> APIs</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#f43f5e]"></span> Security</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#c084fc]"></span> Sandboxes</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#2dd4bf]"></span> VFS Files</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 2: EXM PROJECTS & LIVE VIEWPORT                                   -->
+      <!-- ===================================================================== -->
+      <section id="tab-projects" class="tab-pane space-y-4 hidden h-full flex flex-col">
+        <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shrink-0">
+          <div>
+            <div class="inline-flex items-center gap-1.5 text-xs text-cyan-300 font-mono"><i data-lucide="folder-check" class="w-3.5 h-3.5 text-cyan-400"></i><span>EXM WORKSPACE</span></div>
+            <h2 class="font-heading font-extrabold text-lg text-white">GitHub Mounted Workspaces</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="fetchRepoProjects()" class="px-3.5 py-2 rounded-xl bg-surface-900 border border-white/10 text-xs text-zinc-300 hover:text-white flex items-center gap-2 cursor-pointer"><i data-lucide="refresh-cw" id="refreshIcon" class="w-3.5 h-3.5 text-cyan-400"></i> Scan /EXM/</button>
+            <div class="bg-surface-900/90 px-3.5 py-1.5 rounded-xl border border-white/5 text-xs font-bold text-cyan-400 font-mono" id="projectCountBadge">0 Detected</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
+          <div class="lg:col-span-4 glass-panel rounded-2xl p-4 space-y-3 flex flex-col h-full">
+            <div class="relative shrink-0">
+              <input type="text" id="projectFilterInput" oninput="filterProjectList()" placeholder="Quick filter projects..." class="godx-input w-full pl-8 pr-3 py-2 text-xs font-mono" />
+              <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2"></i>
+            </div>
+            <div id="projectChipsContainer" class="flex flex-col gap-1.5 flex-1 overflow-y-auto custom-scrollbar"></div>
+            <div class="pt-2 border-t border-white/5 flex gap-2 shrink-0">
+              <input type="text" id="customProjectInput" placeholder="EXM/folder_name" class="godx-input flex-1 px-3 py-2 text-xs font-mono" />
+              <button type="button" onclick="addCustomProject()" class="px-3 py-2 rounded-xl bg-surface-850 hover:bg-surface-800 border border-white/10 text-xs text-zinc-200 cursor-pointer">Add</button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-8 glass-panel rounded-2xl p-4 flex flex-col space-y-3 h-full">
+            <div class="flex items-center justify-between pb-2 border-b border-white/5 shrink-0">
+              <span class="text-xs font-mono text-cyan-300 bg-surface-900 px-2.5 py-1 rounded-md border border-white/5 flex items-center gap-1.5"><i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i><span id="activeProjectTitle">EXM/...</span></span>
+              <div class="flex items-center gap-1.5 bg-surface-900/90 p-1 rounded-xl border border-white/5">
+                <button type="button" onclick="setViewportDevice('100%')" class="device-btn p-1.5 rounded-lg bg-cyan-500 text-black text-xs cursor-pointer" id="btnDeviceDesktop"><i data-lucide="monitor" class="w-3.5 h-3.5"></i></button>
+                <button type="button" onclick="setViewportDevice('768px')" class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs cursor-pointer" id="btnDeviceTablet"><i data-lucide="tablet" class="w-3.5 h-3.5"></i></button>
+                <button type="button" onclick="setViewportDevice('375px')" class="device-btn p-1.5 rounded-lg text-zinc-400 hover:text-white text-xs cursor-pointer" id="btnDeviceMobile"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+            <div id="iframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300 w-full mx-auto relative">
+              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-popups allow-modals" class="w-full h-full border-0 bg-white"></iframe>
+              <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-3">
+                <i data-lucide="folder-search" class="w-8 h-8 text-cyan-400 mb-1"></i>
+                <h4 class="font-heading font-bold text-sm text-white">No Project Mounted</h4>
+                <button type="button" onclick="fetchRepoProjects()" class="px-4 py-2 rounded-xl btn-gradient text-black text-xs font-bold cursor-pointer">Scan Repository</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 3: CLOUD COMPILERS & SQL (E2B ROUTED)                             -->
+      <!-- ===================================================================== -->
+      <section id="tab-sandbox" class="tab-pane space-y-4 hidden h-full flex flex-col">
+        <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shrink-0">
+          <div>
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+              <i data-lucide="code-2" class="w-4 h-4 text-emerald-400"></i> Cloud Compiler Engine & SQL
+            </h3>
+            <p class="text-xs text-zinc-400">Execute native Python 3.10, C++ 10.2, Java 15, and Bash via E2B MicroVM.</p>
+          </div>
+          <div class="flex items-center gap-1.5 sm:gap-2 bg-surface-900 p-1.5 rounded-xl border border-white/10 text-xs font-mono overflow-x-auto no-scrollbar max-w-full">
+            <button onclick="setSandboxLanguage('html')" id="sbLangHtml" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold cursor-pointer">HTML</button>
+            <button onclick="setSandboxLanguage('python')" id="sbLangPy" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Python</button>
+            <button onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">C++</button>
+            <button onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Java</button>
+            <button onclick="setSandboxLanguage('bash')" id="sbLangBash" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Bash</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+          <div class="flex flex-col space-y-2 h-full">
+            <div class="flex justify-between items-center text-xs font-mono text-zinc-400 px-1">
+              <span>Source Buffer:</span>
+              <button onclick="runSandboxCode()" class="text-black bg-emerald-400 hover:bg-emerald-300 px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-colors">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i> Compile & Run
+              </button>
+            </div>
+            <textarea id="sandboxCodeInput" oninput="onSandboxCodeChange()" class="godx-input w-full flex-1 p-4 font-mono text-xs outline-none resize-none leading-relaxed custom-scrollbar"></textarea>
+          </div>
+
+          <div class="flex flex-col space-y-2 h-full">
+            <div class="flex justify-between items-center text-xs font-mono text-zinc-400 px-1">
+              <span id="sandboxOutputHeader">Runtime Output Stream:</span>
+              <button onclick="clearCompilerOutput()" class="text-zinc-500 hover:text-white text-[11px]">Clear</button>
+            </div>
+            <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white relative">
+              <iframe id="sandboxPreviewFrame" class="w-full h-full border-0 absolute inset-0"></iframe>
+            </div>
+            <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-5 bg-surface-950 font-mono text-xs text-zinc-200 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-inner custom-scrollbar"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 4: WHITEBOARD PRO (Advanced Vector & Freehand Studio)            -->
+      <!-- ===================================================================== -->
+      <section id="tab-whiteboard" class="tab-pane hidden h-full flex flex-col gap-1.5 min-h-0">
+        <div class="glass-panel rounded-xl py-1 px-2 flex items-center justify-between gap-1 shrink-0 overflow-x-auto no-scrollbar shadow-sm">
+          
+          <!-- Board Manager & Templates + Whiteboard/Blackboard Theme Toggle (Zero AI Clutter) -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-lg border border-white/10 text-xs shrink-0">
+            <select id="wbBoardSelector" onchange="LuminaWhiteboardGallery.switchBoard(this.value)" class="godx-input px-2 py-0.5 text-[11px] font-mono cursor-pointer rounded-md bg-surface-955 border border-white/10 text-cyan-300 max-w-[120px] truncate" title="Active Whiteboard">
+              <option value="board_default">Main Whiteboard</option>
+            </select>
+            <button onclick="openWhiteboardGallery('templates')" class="px-2 py-1 rounded-md bg-surface-950 hover:bg-surface-850 text-cyan-400 font-semibold border border-cyan-500/20 cursor-pointer flex items-center gap-1 text-[11px]" title="Blueprint Templates & Gallery">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Gallery
+            </button>
+            <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+            <!-- Whiteboard vs Blackboard Theme Mode Toggle -->
+            <button id="btnWbThemeToggle" onclick="toggleWhiteboardTheme()" class="px-2 py-1 rounded-md bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/20 font-semibold cursor-pointer flex items-center gap-1 text-[11px] transition-all" title="Toggle Whiteboard (White) vs Blackboard (Dark)">
+              <i data-lucide="moon" class="w-3.5 h-3.5 text-cyan-400"></i> Blackboard
+            </button>
+          </div>
+
+          <!-- Tool Palette (with Smart Shapes & Laser Presentation Mode) -->
+          <div class="flex items-center gap-0.5 bg-surface-900/90 p-1 rounded-lg border border-white/10 text-xs shrink-0">
+            <button onclick="setWbTool('select')" id="wbToolSelect" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Select / Move"><i data-lucide="mouse-pointer" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('pen')" id="wbToolPen" class="w-7 h-7 flex items-center justify-center rounded-md bg-cyan-500 text-black cursor-pointer transition-colors" title="Brush / Freehand"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('highlighter')" id="wbToolHighlighter" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Highlighter (Glow Marker)"><i data-lucide="highlighter" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('laser')" id="wbToolLaser" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Laser Pointer (Presentation Trail)"><i data-lucide="zap" class="w-3.5 h-3.5"></i></button>
+            <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+            <button onclick="setWbTool('line')" id="wbToolLine" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Straight Line"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('arrow')" id="wbToolArrow" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Directional Arrow"><i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('rect')" id="wbToolRect" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Rectangle"><i data-lucide="square" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('roundedRect')" id="wbToolRoundedRect" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Rounded Rectangle"><i data-lucide="rectangle-horizontal" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('circle')" id="wbToolCircle" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Circle / Ellipse"><i data-lucide="circle" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('diamond')" id="wbToolDiamond" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Decision Diamond"><i data-lucide="rhombus" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('cylinder')" id="wbToolCylinder" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Database Cylinder"><i data-lucide="database" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('cloud')" id="wbToolCloud" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Cloud Boundary"><i data-lucide="cloud" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('star')" id="wbToolStar" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Star Badge"><i data-lucide="star" class="w-3.5 h-3.5"></i></button>
+            <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+            <button onclick="setWbTool('sticky')" id="wbToolSticky" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Sticky Note"><i data-lucide="sticky-note" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('text')" id="wbToolText" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Text Label"><i data-lucide="type" class="w-3.5 h-3.5"></i></button>
+            <button onclick="setWbTool('eraser')" id="wbToolEraser" class="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Eraser"><i data-lucide="eraser" class="w-3.5 h-3.5"></i></button>
+          </div>
+
+          <!-- Color Presets & Custom Picker (Dynamically Swapped for Whiteboard / Blackboard) -->
+          <div id="wbColorSwatches" class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-lg border border-white/10 shrink-0">
+            <button onclick="setWbPresetColor('#00f2fe')" class="w-4 h-4 rounded-full bg-[#00f2fe] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Cyan"></button>
+            <button onclick="setWbPresetColor('#10b981')" class="w-4 h-4 rounded-full bg-[#10b981] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Emerald"></button>
+            <button onclick="setWbPresetColor('#f59e0b')" class="w-4 h-4 rounded-full bg-[#f59e0b] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Amber"></button>
+            <button onclick="setWbPresetColor('#f43f5e')" class="w-4 h-4 rounded-full bg-[#f43f5e] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Rose"></button>
+            <button onclick="setWbPresetColor('#a855f7')" class="w-4 h-4 rounded-full bg-[#a855f7] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="Purple"></button>
+            <button onclick="setWbPresetColor('#ffffff')" class="w-4 h-4 rounded-full bg-[#ffffff] border-2 border-white/20 hover:scale-110 transition-transform cursor-pointer" title="White"></button>
+            <div class="w-px h-3.5 bg-white/10 mx-0.5"></div>
+            <input type="color" id="wbColorPicker" value="#00f2fe" onchange="updateWbColor(this.value)" class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent" title="Custom Color" />
+          </div>
+
+          <!-- Stroke Size & Fill Mode -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-lg border border-white/10 shrink-0">
+            <button onclick="updateWbSize(2)" class="px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-300 hover:text-white cursor-pointer">2px</button>
+            <button onclick="updateWbSize(4)" class="px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-300 hover:text-white cursor-pointer font-bold">4px</button>
+            <button onclick="updateWbSize(8)" class="px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-300 hover:text-white cursor-pointer">8px</button>
+            <button onclick="updateWbSize(16)" class="px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-300 hover:text-white cursor-pointer">16px</button>
+            <input type="range" id="wbSizeSlider" min="1" max="30" value="4" oninput="updateWbSize(this.value)" class="w-12 accent-cyan-400 cursor-pointer hidden sm:block" />
+            <span id="wbSizeLabel" class="text-[10px] font-mono text-cyan-400 w-4">4px</span>
+            <div class="w-px h-3.5 bg-white/10 mx-0.5"></div>
+            <button onclick="toggleWbFill()" id="btnWbFill" class="px-1.5 py-0.5 rounded text-[10px] font-mono text-zinc-400 hover:text-white cursor-pointer transition-colors" title="Toggle Shape Fill Mode">Fill: Off</button>
+          </div>
+
+          <!-- Canvas Zoom & Background Style -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-lg border border-white/10 text-xs shrink-0">
+            <select id="wbBgSelector" onchange="setWhiteboardBackground(this.value)" class="godx-input px-1.5 py-0.5 text-[10px] font-mono cursor-pointer rounded-md bg-surface-950 border border-white/10 text-zinc-300" title="Canvas Background Style">
+              <option value="dots" selected>Dots</option>
+              <option value="grid">Grid</option>
+              <option value="blueprint">Blueprint</option>
+              <option value="clean">Clean</option>
+            </select>
+            <div class="w-px h-3.5 bg-white/10 mx-0.5"></div>
+            <button onclick="zoomOut()" class="w-6 h-6 flex items-center justify-center rounded-md bg-surface-950 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Zoom Out"><i data-lucide="zoom-out" class="w-3 h-3"></i></button>
+            <span id="wbZoomVal" class="text-[10px] font-mono text-cyan-400 w-8 text-center">100%</span>
+            <button onclick="zoomIn()" class="w-6 h-6 flex items-center justify-center rounded-md bg-surface-950 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Zoom In"><i data-lucide="zoom-in" class="w-3 h-3"></i></button>
+            <button onclick="resetZoom()" class="px-1.5 py-0.5 rounded-md bg-surface-950 hover:bg-surface-850 text-[10px] font-mono text-zinc-400 hover:text-white border border-white/10 cursor-pointer" title="Fit Canvas to Screen">Fit</button>
+          </div>
+
+          <!-- Canvas State Actions (Undo, Redo, Clear, Multi-Format Exports) -->
+          <div class="flex items-center gap-1 shrink-0">
+            <button onclick="undoWhiteboard()" id="btnWbUndo" class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Undo (Ctrl+Z)"><i data-lucide="undo" class="w-3.5 h-3.5"></i></button>
+            <button onclick="redoWhiteboard()" id="btnWbRedo" class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Redo (Ctrl+Y)"><i data-lucide="redo" class="w-3.5 h-3.5"></i></button>
+            <button onclick="clearWhiteboard()" class="px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[11px] cursor-pointer transition-colors" title="Clear Canvas">Clear</button>
+            <button onclick="copyWhiteboardImage()" class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-900/90 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Copy to Clipboard"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+            
+            <!-- Export Buttons (PNG & JPG Dual-Format Options - No SVG) -->
+            <button onclick="downloadWhiteboard('png')" id="btnDownloadWbPng" class="btn-gradient px-2 py-1 rounded-lg text-[11px] font-bold text-black cursor-pointer shadow-md flex items-center gap-1" title="Export High-Resolution PNG">
+              <i data-lucide="download" class="w-3 h-3"></i> PNG
+            </button>
+            <button onclick="downloadWhiteboard('jpg')" id="btnDownloadWbJpg" class="px-2 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] font-mono font-bold text-amber-400 border border-amber-500/20 cursor-pointer flex items-center gap-1" title="Export High-Resolution JPG">
+              <i data-lucide="download" class="w-3 h-3"></i> JPG
+            </button>
+            <button onclick="downloadWhiteboardRetina(2, 'png')" class="px-2 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[10px] font-mono font-bold text-cyan-400 border border-cyan-500/20 cursor-pointer" title="Export Ultra Retina (2x) PNG">
+              2x
+            </button>
+            <button onclick="exportWhiteboardJson()" class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Export Scene JSON">
+              <i data-lucide="file-json" class="w-3.5 h-3.5"></i>
+            </button>
+            <button onclick="document.getElementById('wbImportJsonFile').click()" class="w-7 h-7 flex items-center justify-center rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer" title="Import Scene JSON">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+            </button>
+            <input type="file" id="wbImportJsonFile" accept=".json" class="hidden" onchange="importWhiteboardJson(event)" />
+          </div>
+        </div>
+
+        <!-- Canvas Container with Dual-Canvas & Sticky Note Overlay (Hardware Touchscreen & Stylus Enabled) -->
+        <div id="whiteboardContainer" class="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-surface-950 relative shadow-inner bg-dot-pattern min-h-0 touch-none wb-theme-blackboard" style="touch-action: none;">
+          <canvas id="whiteboardCanvas" class="absolute inset-0 w-full h-full cursor-crosshair touch-none" style="touch-action: none;"></canvas>
+          <canvas id="whiteboardTempCanvas" class="absolute inset-0 w-full h-full pointer-events-none touch-none" style="touch-action: none;"></canvas>
+          <div id="whiteboardStickyContainer" class="absolute inset-0 pointer-events-none overflow-hidden touch-none" style="touch-action: none;"></div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 5: UI DESIGN STUDIO                                               -->
+      <!-- ===================================================================== -->
+      <section id="tab-design" class="tab-pane space-y-4 hidden h-full">
+        <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="font-heading font-bold text-base text-white flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i> Glassmorphism Token Generator</h3>
+            <p class="text-xs text-zinc-400">Manipulate GPU hardware rendering parameters in real time.</p>
+          </div>
+          <button onclick="copyGeneratedDesignCss()" class="btn-gradient px-4 py-2 rounded-xl text-xs font-bold text-black cursor-pointer shadow-md">Copy CSS Token</button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+          <div class="bg-surface-900/60 p-6 rounded-2xl border border-white/5 space-y-6 flex flex-col justify-center">
+            <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Backdrop Blur:</span><span id="lblBlurVal" class="text-cyan-400 font-bold">20px</span></div><input type="range" id="sliderBlur" min="0" max="50" value="20" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+            <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Panel Opacity:</span><span id="lblOpacityVal" class="text-cyan-400 font-bold">85%</span></div><input type="range" id="sliderOpacity" min="5" max="100" value="85" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+            <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Corner Radius:</span><span id="lblRadiusVal" class="text-cyan-400 font-bold">24px</span></div><input type="range" id="sliderRadius" min="0" max="48" value="24" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+            <div class="space-y-2"><div class="flex justify-between text-xs font-mono"><span class="text-zinc-400">Neon Glow:</span><span id="lblGlowVal" class="text-cyan-400 font-bold">35%</span></div><input type="range" id="sliderGlow" min="0" max="100" value="35" oninput="updateDesignPreview()" class="w-full accent-cyan-400 cursor-pointer" /></div>
+          </div>
+          <div class="bg-surface-950 p-6 rounded-2xl border border-white/10 flex items-center justify-center relative overflow-hidden h-full bg-dot-pattern">
+            <div class="absolute w-72 h-72 bg-cyan-500/30 rounded-full blur-3xl -top-10 -left-10"></div>
+            <div class="absolute w-72 h-72 bg-pink-500/20 rounded-full blur-3xl -bottom-10 -right-10"></div>
+            <div id="glassPreviewCard" class="w-full max-w-sm p-6 relative z-10 transition-all flex flex-col gap-3 border border-white/20 shadow-2xl">
+              <h4 class="font-heading font-bold text-white text-base">CSS Token Active</h4>
+              <p class="text-xs text-zinc-300">Live preview of hardware accelerated backdrop filters.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 6: DUAL SPLIT VIEW                                                -->
+      <!-- ===================================================================== -->
+      <section id="tab-split" class="tab-pane space-y-4 hidden h-full flex flex-col overflow-y-auto overflow-x-hidden min-h-0">
+        <div class="glass-panel rounded-2xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shrink-0">
+          <h3 class="font-heading font-bold text-sm sm:text-base text-white flex items-center gap-2 whitespace-nowrap"><i data-lucide="columns" class="w-4 h-4 text-indigo-400"></i> Dual Split Comparator</h3>
+          <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto min-w-0">
+            <select id="splitLeftSelect" onchange="updateSplitFrames()" class="godx-input px-2.5 sm:px-3 py-1.5 text-xs cursor-pointer flex-1 lg:w-48 xl:w-56 min-w-0 truncate"></select>
+            <span class="text-xs text-zinc-500 font-mono shrink-0">VS</span>
+            <select id="splitRightSelect" onchange="updateSplitFrames()" class="godx-input px-2.5 sm:px-3 py-1.5 text-xs cursor-pointer flex-1 lg:w-48 xl:w-56 min-w-0 truncate"></select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 7: QUANTUM TERMINAL CLI (Agentic E2B MicroVM)                     -->
+      <!-- ===================================================================== -->
+      <section id="tab-terminal" class="tab-pane space-y-3 hidden h-full flex flex-col min-w-0 overflow-x-hidden">
+        <div class="glass-panel rounded-2xl p-3 sm:p-4 flex-1 flex flex-col min-h-0 space-y-3 min-w-0 overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-white/5 shrink-0 min-w-0">
+            <div class="flex items-center gap-2 font-mono text-xs min-w-0 max-w-full">
+              <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-rose-500 shrink-0"></span>
+              <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-500 shrink-0"></span>
+              <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500 shrink-0"></span>
+              <span class="text-zinc-400 ml-1 truncate min-w-0">godx-terminal <span class="hidden sm:inline">— E2B Firecracker MicroVM</span></span>
+            </div>
+            <div class="text-[10px] sm:text-[11px] font-mono text-zinc-500 shrink-0">Use <span class="text-cyan-400 font-bold">ai &lt;command&gt;</span> for Agent</div>
+          </div>
+          
+          <div id="terminalScreen" class="bg-surface-950/95 rounded-xl p-3 sm:p-5 font-mono text-xs text-zinc-300 flex-1 overflow-y-auto overflow-x-hidden space-y-2 border border-white/5 leading-relaxed custom-scrollbar break-words">
+            <div class="text-cyan-400 font-bold">LuminaVista Quantum Terminal [v10 Linux MicroVM]</div>
+            <div class="text-zinc-500 break-words">VFS Files automatically mounted. Execute bash, node, python, or use autonomous agent mode.</div>
+            <div class="border-b border-white/5 my-2"></div>
+          </div>
+
+          <form onsubmit="handleTerminalCommand(event)" class="flex items-center gap-2 shrink-0 bg-surface-900/60 p-1.5 sm:p-2 rounded-xl border border-white/5 min-w-0">
+            <span class="font-mono text-xs text-cyan-400 font-bold pl-1 shrink-0"><span class="hidden sm:inline">sovereign@microvm:</span>~$</span>
+            <input type="text" id="terminalInput" autocomplete="off" onkeydown="handleTerminalKeyDown(event)" placeholder="ls -la, python3 script.py, ai create a server in node.js, clear..." class="w-full min-w-0 bg-transparent border-0 outline-none text-white font-mono text-xs px-2 py-1.5" />
+            <button type="submit" class="btn-gradient px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-mono font-bold text-black cursor-pointer shrink-0">Run</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 8: TELEMETRY                                                      -->
+      <!-- ===================================================================== -->
+      <section id="tab-analytics" class="tab-pane space-y-4 hidden flex-col">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div class="glass-panel p-5 rounded-2xl"><span class="text-[10px] font-mono text-zinc-400 uppercase">Frame Latency</span><div class="text-3xl font-heading font-extrabold text-white mt-1">0.24 ms</div></div>
+          <div class="glass-panel p-5 rounded-2xl"><span class="text-[10px] font-mono text-zinc-400 uppercase">Memory Load</span><div class="text-3xl font-heading font-extrabold text-cyan-300 mt-1">16.4 MB</div></div>
+          <div class="glass-panel p-5 rounded-2xl"><span class="text-[10px] font-mono text-zinc-400 uppercase">Vercel Session</span><div class="text-3xl font-heading font-extrabold text-emerald-400 mt-1">Authorized</div></div>
+        </div>
+        <div class="glass-panel rounded-2xl p-5 space-y-3 flex-1 flex flex-col">
+          <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i> Hardware 60fps Waveform</h3>
+          <canvas id="metricsChart" class="w-full flex-1 rounded-xl bg-surface-950/80 border border-white/5"></canvas>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 9: NOTES MARKDOWN (Notes Vault Pro)                              -->
+      <!-- ===================================================================== -->
+      <section id="tab-scratchpad" class="tab-pane space-y-3 hidden h-full flex flex-col min-h-0">
+        <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shrink-0">
+          
+          <!-- Markdown Formatting Tools -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs overflow-x-auto no-scrollbar max-w-full">
+            <button onclick="insertMd('**', '**')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-bold cursor-pointer transition-colors" title="Bold (Ctrl+B)">B</button>
+            <button onclick="insertMd('*', '*')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white italic cursor-pointer transition-colors" title="Italic (Ctrl+I)">I</button>
+            <button onclick="insertMd('~~', '~~')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white line-through cursor-pointer transition-colors" title="Strikethrough">S</button>
+            <button onclick="insertMd('`', '`')" class="p-1.5 rounded hover:bg-white/10 text-pink-300 font-mono cursor-pointer transition-colors" title="Inline Code">`c`</button>
+            <div class="w-px h-4 bg-white/10 mx-1 shrink-0"></div>
+            <button onclick="insertMd('# ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono font-bold cursor-pointer transition-colors" title="Heading 1">H1</button>
+            <button onclick="insertMd('## ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono font-bold cursor-pointer transition-colors" title="Heading 2">H2</button>
+            <button onclick="insertMd('### ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white font-mono cursor-pointer transition-colors" title="Heading 3">H3</button>
+            <div class="w-px h-4 bg-white/10 mx-1 shrink-0"></div>
+            <button onclick="insertMd('- [ ] ')" class="p-1.5 rounded hover:bg-white/10 text-cyan-400 hover:text-white cursor-pointer transition-colors" title="Interactive Task Checkbox"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></button>
+            <button onclick="insertMd('> ')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer transition-colors" title="Blockquote"><i data-lucide="quote" class="w-3.5 h-3.5"></i></button>
+            <button onclick="insertMd('```javascript\n', '\n```')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer transition-colors" title="Code Block"><i data-lucide="code" class="w-3.5 h-3.5"></i></button>
+            <button onclick="insertMd('| Col 1 | Col 2 |\n|---|---|\n| Val 1 | Val 2 |\n')" class="p-1.5 rounded hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer transition-colors" title="Table"><i data-lucide="table" class="w-3.5 h-3.5"></i></button>
+          </div>
+
+          <!-- Note Stats (Words, Chars, Read Time) -->
+          <div class="flex items-center gap-2.5 text-xs font-mono text-zinc-400 bg-surface-900/60 px-3 py-1.5 rounded-xl border border-white/5">
+            <span id="noteWordCount">0 words</span>
+            <span>•</span>
+            <span id="noteCharCount">0 chars</span>
+            <span>•</span>
+            <span id="noteReadTime" class="text-cyan-400">0 min read</span>
+          </div>
+
+          <!-- View Mode Switcher -->
+          <div class="flex items-center gap-1 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs font-mono">
+            <button onclick="setNoteViewMode('split')" id="btnNoteViewSplit" class="px-2.5 py-1 rounded bg-sky-500 text-black font-bold cursor-pointer transition-colors">Split</button>
+            <button onclick="setNoteViewMode('editor')" id="btnNoteViewEditor" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Editor</button>
+            <button onclick="setNoteViewMode('preview')" id="btnNoteViewPreview" class="px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer transition-colors">Preview</button>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-1.5">
+            <input type="file" id="noteUploadInput" accept=".txt,.md" class="hidden" onchange="handleNoteUpload(event)" />
+            <button onclick="document.getElementById('noteUploadInput').click()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Import .txt / .md"><i data-lucide="upload" class="w-4 h-4"></i></button>
+            <button onclick="createNewNote()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono cursor-pointer flex items-center gap-1 transition-colors"><i data-lucide="plus" class="w-3.5 h-3.5"></i> New Note</button>
+            <button onclick="renameCurrentNote()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Rename Note"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            <button onclick="deleteCurrentNote()" class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 cursor-pointer transition-colors" title="Delete Note"><i data-lucide="trash" class="w-4 h-4"></i></button>
+            <button onclick="downloadNoteFile()" class="p-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Download .md"><i data-lucide="download" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+
+        <!-- Note Tabs List -->
+        <div id="noteTabsContainer" class="flex gap-2 overflow-x-auto pb-1 text-xs font-mono shrink-0 custom-scrollbar"></div>
+
+        <!-- Notes Split / Full Editor & Preview Grid -->
+        <div id="noteLayoutGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+          <textarea id="adminScratchpad" oninput="onNoteContentChange()" placeholder="Type notes here in Markdown... (Markdown formatting supported)" class="godx-input w-full p-4 font-mono text-xs resize-none h-full min-h-[220px] lg:min-h-0 leading-relaxed custom-scrollbar"></textarea>
+          <div id="notePreviewCol" class="bg-surface-950 p-6 rounded-xl border border-white/10 overflow-y-auto text-xs text-zinc-300 space-y-3 font-sans h-full min-h-[220px] lg:min-h-0 leading-relaxed custom-scrollbar select-text"></div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 11: GOOGLE CALENDAR REPLICA & AI REAL-LIFE SCHEDULER               -->
+      <!-- ===================================================================== -->
+      <section id="tab-calendar" class="tab-pane hidden flex flex-col h-[calc(100vh-105px)] space-y-3">
+        <!-- Top Calendar Header Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-surface-900/80 rounded-2xl border border-white/10 shrink-0 shadow-lg">
+          <!-- Left: Drawer Toggle, Today, Steppers, Month/Year Title -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            <button onclick="LuminaCalendar.toggleMiniSidebar()" class="p-2 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-400 hover:text-white border border-white/10 cursor-pointer transition-colors" title="Toggle Drawer" aria-label="Toggle Calendar Drawer">
+              <i data-lucide="panel-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="LuminaCalendar.goToToday()" class="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold border border-white/10 cursor-pointer transition-colors">
+              Today
+            </button>
+            <div class="flex items-center bg-surface-850 rounded-xl border border-white/10 p-0.5">
+              <button onclick="LuminaCalendar.navigateCalendar(-1)" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors" aria-label="Previous">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="LuminaCalendar.navigateCalendar(1)" class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors" aria-label="Next">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <h2 id="calHeaderTitle" class="text-sm sm:text-base font-heading font-bold text-white tracking-wide ml-1">September 2026</h2>
+          </div>
+
+          <!-- Center: Search Filter Input -->
+          <div class="relative flex-1 max-w-xs min-w-[160px] hidden md:block">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-2.5"></i>
+            <input type="text" id="calSearchInput" oninput="LuminaCalendar.handleSearchInput(event)" placeholder="Search events..." class="godx-input w-full pl-8 pr-3 py-1.5 text-xs font-mono" />
+          </div>
+
+          <!-- Right: AI Plan, Sync Status, View Selector, + Create Button -->
+          <div class="flex items-center gap-2">
+            <button onclick="LuminaCalendar.aiAutoPlanDay()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all hover:scale-102" title="AI Real-Life Daily Auto-Schedule">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i> <span class="hidden sm:inline">AI Smart Plan</span>
+            </button>
+
+            <!-- Google Sync Badge -->
+            <button onclick="LuminaCalendar.openSyncModal()" id="calSyncStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-surface-850 text-zinc-400 border border-white/10 hover:text-white cursor-pointer transition-colors" title="Google Calendar Sync Settings">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span> <span class="text-[10px]">Local Sovereign</span>
+            </button>
+
+            <!-- Google Segmented View Pill Buttons (Desktop) -->
+            <div class="hidden xl:flex items-center bg-surface-950/80 p-0.5 rounded-xl border border-white/10 text-xs font-mono">
+              <button id="btnCalView-month" onclick="LuminaCalendar.setView('month')" class="cal-view-tab-btn px-3 py-1.5 rounded-lg text-black font-bold btn-gradient shadow-md shadow-cyan-500/20 transition-all cursor-pointer">Month</button>
+              <button id="btnCalView-week" onclick="LuminaCalendar.setView('week')" class="cal-view-tab-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer font-medium">Week</button>
+              <button id="btnCalView-day" onclick="LuminaCalendar.setView('day')" class="cal-view-tab-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer font-medium">Day</button>
+              <button id="btnCalView-fourday" onclick="LuminaCalendar.setView('fourday')" class="cal-view-tab-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer font-medium">4 Days</button>
+              <button id="btnCalView-agenda" onclick="LuminaCalendar.setView('agenda')" class="cal-view-tab-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer font-medium">Schedule</button>
+              <button id="btnCalView-year" onclick="LuminaCalendar.setView('year')" class="cal-view-tab-btn px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer font-medium">Year</button>
+            </div>
+
+            <!-- View Selector Dropdown (Mobile/Tablet & Fallback) -->
+            <select id="calViewSelect" onchange="LuminaCalendar.setView(this.value)" class="xl:hidden godx-input px-2.5 py-1.5 text-xs font-mono cursor-pointer font-bold">
+              <option value="month">Month</option>
+              <option value="week">Week</option>
+              <option value="day">Day</option>
+              <option value="fourday">4 Days</option>
+              <option value="agenda">Schedule</option>
+              <option value="year">Year</option>
+            </select>
+
+            <!-- + Create Button -->
+            <button onclick="LuminaCalendar.openEventModal()" class="px-3.5 py-1.5 rounded-xl btn-gradient text-black font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 cursor-pointer transition-all hover:scale-102">
+              <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Create</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Body: Collapsible Left Drawer + Active Calendar View Container -->
+        <div class="flex-1 flex gap-3 min-h-0 overflow-hidden">
+          <!-- Left Collapsible Mini Drawer -->
+          <div id="calMiniSidebar" class="w-64 shrink-0 flex flex-col gap-3 overflow-y-auto custom-scrollbar p-3 bg-surface-900/60 rounded-2xl border border-white/5 transition-all">
+            <!-- Mini Month Calendar -->
+            <div id="calMiniMonthContainer"></div>
+
+            <!-- AI Real-Life Scheduler Controls -->
+            <div class="p-3 bg-surface-950/70 rounded-xl border border-cyan-500/20 space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono font-bold text-cyan-300">
+                <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i> AI Life Scheduler</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Auto</span>
+              </div>
+              
+              <div class="space-y-1.5 text-[11px] font-mono text-zinc-300">
+                <label class="flex items-center justify-between cursor-pointer py-0.5">
+                  <span>Exclude Weekends</span>
+                  <input type="checkbox" id="calCheckExcludeWeekends" checked onchange="LuminaCalendar.setSettings({ excludeWeekends: this.checked })" class="w-3.5 h-3.5 accent-cyan-400 rounded" />
+                </label>
+                <label class="flex items-center justify-between cursor-pointer py-0.5">
+                  <span>Human Jitter (±5m)</span>
+                  <input type="checkbox" id="calCheckJitter" checked onchange="LuminaCalendar.setSettings({ enableHumanJitter: this.checked })" class="w-3.5 h-3.5 accent-cyan-400 rounded" />
+                </label>
+                <div class="flex items-center justify-between text-[10px] text-zinc-500 pt-1 border-t border-white/5">
+                  <span>Sleep Blackout</span>
+                  <span class="text-zinc-400">23:00 – 07:00</span>
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-zinc-500">
+                  <span>Meal Protection</span>
+                  <span class="text-zinc-400">12:30 & 19:30</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- My Calendars Categories -->
+            <div class="p-2.5 bg-surface-950/50 rounded-xl border border-white/5 space-y-1">
+              <div class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold px-2 py-1">My Calendars</div>
+              <div id="calCategoryFiltersContainer" class="space-y-0.5"></div>
+            </div>
+
+            <!-- Sync & Export Actions -->
+            <div class="p-2.5 bg-surface-950/50 rounded-xl border border-white/5 space-y-2 mt-auto text-xs font-mono">
+              <div class="text-[10px] uppercase tracking-wider text-zinc-400 font-bold px-1">Sync &amp; Export</div>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="LuminaCalendar.exportToIcs()" class="p-2 rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 text-[11px] flex items-center justify-center gap-1 cursor-pointer transition-colors" title="Export universal .ics file">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Export .ics
+                </button>
+                <input type="file" id="calIcsFileInput" accept=".ics" class="hidden" onchange="const file = this.files[0]; if (file) { const reader = new FileReader(); reader.onload = e => LuminaCalendar.importFromIcs(e.target.result); reader.readAsText(file); }" />
+                <button onclick="document.getElementById('calIcsFileInput').click()" class="p-2 rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 hover:text-white border border-white/10 text-[11px] flex items-center justify-center gap-1 cursor-pointer transition-colors" title="Import universal .ics file">
+                  <i data-lucide="upload" class="w-3.5 h-3.5"></i> Import .ics
+                </button>
+              </div>
+              <button onclick="LuminaCalendar.openSyncModal()" class="w-full py-1.5 px-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                <i data-lucide="link" class="w-3.5 h-3.5"></i> Google Account Sync
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Calendar View Canvas -->
+          <div id="calendarViewContainer" class="flex-1 min-w-0 h-full overflow-hidden">
+            <!-- Dynamic Month / Week / Day / Agenda / Year renders here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 10: SETTINGS                                                      -->
+      <!-- ===================================================================== -->
+      <section id="tab-controls" class="tab-pane space-y-4 hidden">
+        <!-- Settings Sub-Tabs Navigation -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+          <div class="flex items-center gap-2">
+            <button id="btnSettingsGeneral" onclick="switchSettingsSubTab('general')" class="settings-subtab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 cursor-pointer">
+              <i data-lucide="sliders" class="w-3.5 h-3.5"></i> System Preferences
+            </button>
+            <button id="btnSettingsAdmin" onclick="switchSettingsSubTab('admin')" class="settings-subtab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all text-zinc-400 hover:text-white border border-transparent cursor-pointer">
+              <i data-lucide="key" class="w-3.5 h-3.5"></i> Admin Security
+            </button>
+          </div>
+        </div>
+
+        <!-- General Settings Pane -->
+        <div id="settingsGeneralPane" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-cyan-400"></i> Frame Sandbox Policy</h3>
+            <label class="flex justify-between p-3 rounded-xl bg-surface-900 text-xs cursor-pointer">
+              <span>Allow Scripts in Iframes</span>
+              <input type="checkbox" id="checkAllowScripts" checked class="w-4 h-4 accent-cyan-500"/>
+            </label>
+            <button onclick="applySandboxPolicy()" class="w-full py-2.5 rounded-xl bg-cyan-500 text-black text-xs font-bold cursor-pointer">Apply Strict Policy</button>
+          </div>
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4 text-amber-400"></i> Accent Theme Engine</h3>
+            <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+              <button onclick="setDashboardTheme('cyan')" class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-300 cursor-pointer border border-cyan-500/20">Cyan</button>
+              <button onclick="setDashboardTheme('emerald')" class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-300 cursor-pointer border border-emerald-500/20">Matrix</button>
+              <button onclick="setDashboardTheme('amber')" class="p-2.5 rounded-xl bg-amber-500/10 text-amber-300 cursor-pointer border border-amber-500/20">Solar</button>
+              <button onclick="setDashboardTheme('rose')" class="p-2.5 rounded-xl bg-rose-500/10 text-rose-300 cursor-pointer border border-rose-500/20">Laser</button>
+            </div>
+            <input type="color" onchange="applyCustomAccentColor(this.value)" class="w-full h-9 cursor-pointer rounded-xl bg-surface-900 border border-white/10 mt-1" />
+          </div>
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="hard-drive" class="w-4 h-4 text-sky-400"></i> Storage Vault Management</h3>
+            <button onclick="exportDashboardConfig()" class="w-full py-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-300 text-xs font-semibold cursor-pointer">Export Configuration JSON</button>
+            <button onclick="flushWorkspaceCache()" class="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold cursor-pointer">Flush Local Browser Cache</button>
+          </div>
+        </div>
+
+        <!-- Admin Access Pane -->
+        <div id="settingsAdminPane" class="hidden space-y-4"></div>
+      </section>
+      <section id="tab-smartlock" class="tab-pane hidden h-full flex flex-col gap-3 sm:gap-4 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 pb-6"></section>
+    </main>
+  </div>
+  </div> <!-- /app-root -->
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: AI-LLM CONFIGURATION (Pop-up via Button)                  -->
+  <!-- ========================================================================= -->
+  <div id="aiConfigModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-lg w-[94vw] sm:w-full p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> AI-Studio Settings
+        </h3>
+        <button onclick="closeAiConfigModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Settings"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- Execution Mode Selector -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-mono text-zinc-400">Execution Engine &amp; Provider Pool:</label>
+        <select id="modalAiProviderSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="onModalProviderChange()">
+          <option value="hybrid_pool">⚡ Universal Hybrid Engine (All Ollama Cloud + NVIDIA NIM) — Default</option>
+          <option value="ollama_pool">Ollama Cloud Pool (Multi-Key Auto-Failover)</option>
+          <option value="nvidia_pool">NVIDIA NIM Cloud Pool (Multi-Key Auto-Failover)</option>
+          <option value="custom">Direct Custom Endpoint &amp; API Key</option>
+        </select>
+      </div>
+
+      <!-- Custom / Dedicated Personal API Key Input -->
+      <div id="modalCustomAiKeyWrapper" class="space-y-2 p-3 bg-surface-900/80 border border-cyan-500/20 rounded-xl">
+        <div class="space-y-1">
+          <div class="flex items-center justify-between">
+            <label for="modalCustomAiKey" class="text-xs font-mono text-cyan-300">Personal API Key (Optional Override / Direct Key):</label>
+            <span class="text-[10px] text-zinc-400 font-mono">Ollama, Nematron or NVIDIA</span>
+          </div>
+          <input type="password" id="modalCustomAiKey" placeholder="Paste personal ollama2 or nematron / nvapi key..." class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
+        </div>
+        <div id="modalCustomEndpointRow" class="hidden space-y-1">
+          <label for="modalCustomAiEndpoint" class="text-xs font-mono text-zinc-400">Endpoint URL (Optional):</label>
+          <input type="text" id="modalCustomAiEndpoint" placeholder="https://integrate.api.nvidia.com/v1/chat/completions" class="godx-input w-full px-3 py-2 text-xs font-mono" oninput="saveAiConfigFromModal()" />
+        </div>
+      </div>
+
+      <!-- Tri-State Capability Toggles -->
+      <div class="space-y-2 p-3 bg-surface-900/80 border border-white/5 rounded-2xl">
+        <div class="text-[11px] font-mono text-cyan-300 uppercase tracking-wider font-bold mb-1">Autonomous Capabilities &amp; Permissions</div>
+        
+        <div class="flex items-center justify-between py-1.5 border-b border-white/5">
+          <div>
+            <label for="modalCheckWebSearch" class="text-xs font-bold text-white cursor-pointer block">Live Internet &amp; Web Search</label>
+            <span class="text-[10px] text-zinc-400">Autonomous DuckDuckGo live knowledge discovery</span>
+          </div>
+          <input type="checkbox" id="modalCheckWebSearch" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" />
+        </div>
+
+        <div class="flex items-center justify-between py-1.5 border-b border-white/5">
+          <div>
+            <label for="modalCheckVfs" class="text-xs font-bold text-white cursor-pointer block">Virtual File System (VFS)</label>
+            <span class="text-[10px] text-zinc-400">Read, write, edit, and audit workspace artifacts</span>
+          </div>
+          <input type="checkbox" id="modalCheckVfs" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" checked />
+        </div>
+
+        <div class="flex items-center justify-between py-1.5">
+          <div>
+            <label for="modalCheckTerminal" class="text-xs font-bold text-white cursor-pointer block">Terminal &amp; MicroVM Execution</label>
+            <span class="text-[10px] text-zinc-400">Execute bash &amp; python scripts in Firecracker MicroVM</span>
+          </div>
+          <input type="checkbox" id="modalCheckTerminal" onchange="saveAiConfigFromModal()" class="w-4 h-4 accent-cyan-400 cursor-pointer rounded" checked />
+        </div>
+      </div>
+
+      <!-- Model Selector -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-mono text-zinc-400">Active Model:</label>
+        <select id="modalAiModelSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="saveAiConfigFromModal()">
+          <optgroup label="⚡ Cheap &amp; Fast (Low Latency / Free Quota)">
+            <option value="gpt-oss:20b">gpt-oss:20b (Ollama Cloud Free Quota • Fast Default)</option>
+            <option value="nemotron-3-nano:30b">nemotron-3-nano:30b (Ollama Cloud Free Quota • Ultra-Low Latency)</option>
+            <option value="nvidia/nemotron-nano-3-30b-a3b">nvidia/nemotron-nano-3-30b-a3b (NVIDIA NIM • Instant Speed)</option>
+            <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (Groq Cloud • High Throughput)</option>
+          </optgroup>
+          <optgroup label="⚖️ Medium &amp; Balanced (Daily Driver / High Precision)">
+            <option value="gemma4:31b">gemma4:31b (Ollama Cloud Free Quota • High Accuracy)</option>
+            <option value="nemotron-3-super">nemotron-3-super (Ollama Cloud Free Quota • Balanced Enterprise)</option>
+            <option value="nvidia/llama-3.1-nemotron-51b-instruct">nvidia/llama-3.1-nemotron-51b-instruct (NVIDIA NIM • Balanced Flagship)</option>
+            <option value="qwen2.5:72b">qwen2.5:72b (Ollama Cloud • Knowledge Polyglot)</option>
+          </optgroup>
+          <optgroup label="🧠 Heavy &amp; Flagship (Deep Reasoning / Frontier Intelligence)">
+            <option value="gpt-oss:120b">gpt-oss:120b (Ollama Cloud Free Quota • Deep Reasoning)</option>
+            <option value="nemotron-3-ultra">nemotron-3-ultra (Ollama Cloud Free Quota • Frontier Synthetic)</option>
+            <option value="nvidia/nemotron-3-ultra-550b-a55b">nvidia/nemotron-3-ultra-550b-a55b (NVIDIA NIM Frontier MoE)</option>
+            <option value="nvidia/llama-3.1-nemotron-70b-instruct">nvidia/llama-3.1-nemotron-70b-instruct (NVIDIA NIM Premier 70B)</option>
+          </optgroup>
+          <optgroup label="💻 Specialized Coding &amp; Architecture">
+            <option value="qwen2.5-coder:32b">qwen2.5-coder:32b (Ollama Cloud • Code Specialist)</option>
+            <option value="meta/codellama-70b">meta/codellama-70b (NVIDIA NIM • Full-Stack Architecture)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- 2-Tier Personas: Main Category Dropdown -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-mono text-cyan-300 font-bold">1. Main Category (30 Global Domains):</label>
+        <select id="modalAiCategorySelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer" onchange="onModalCategoryChange()"></select>
+      </div>
+
+      <!-- 2-Tier Personas: Super Specialist Dropdown -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-mono text-cyan-300 font-bold">2. Super Specialist (50 per Category):</label>
+        <select id="modalAiPersonaSelect" class="godx-input w-full px-3 py-2 text-xs cursor-pointer" onchange="onModalPersonaChange()"></select>
+      </div>
+
+      <!-- Custom Directive Textarea -->
+      <div id="modalCustomPersonaWrapper" class="hidden space-y-1.5">
+        <label class="text-xs font-mono text-cyan-400">Custom System Directive:</label>
+        <textarea id="modalCustomPersonaPrompt" rows="3" placeholder="Define exact instructions..." class="godx-input w-full p-2.5 text-xs font-mono resize-none leading-relaxed custom-scrollbar" oninput="saveAiConfigFromModal()"></textarea>
+      </div>
+
+      <div class="pt-2 flex gap-3">
+        <button onclick="checkProviderQuota()" class="flex-1 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-cyan-400 border border-white/10 cursor-pointer">Quota Telemetry</button>
+        <button onclick="closeAiConfigModal()" class="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer">Save &amp; Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: AUTONOMOUS SCHEDULED TASKS                                -->
+  <!-- ========================================================================= -->
+  <div id="aiScheduledModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-lg w-[94vw] sm:w-full p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-purple-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="calendar-clock" class="w-4 h-4 text-purple-400"></i> Autonomous Scheduled Tasks
+        </h3>
+        <button onclick="closeScheduledTasksModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- New Task Form -->
+      <form id="newScheduledTaskForm" onsubmit="handleCreateScheduledTask(event)" class="p-3.5 bg-surface-900/80 border border-purple-500/20 rounded-2xl space-y-3">
+        <div class="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Register Scheduled Task
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="schedTaskName" placeholder="Task Name (e.g. Audit VFS)" required class="godx-input px-3 py-1.5 text-xs font-sans" />
+          <select id="schedTaskInterval" class="godx-input px-3 py-1.5 text-xs font-mono cursor-pointer">
+            <option value="60">Every 1 Minute</option>
+            <option value="300" selected>Every 5 Minutes</option>
+            <option value="900">Every 15 Minutes</option>
+            <option value="1800">Every 30 Minutes</option>
+            <option value="3600">Every 1 Hour</option>
+          </select>
+        </div>
+        <textarea id="schedTaskPrompt" rows="2" placeholder="Autonomous Directive Prompt (e.g. Inspect index.html and verify layout tokens)..." required class="godx-input w-full p-2 text-xs font-mono resize-none custom-scrollbar"></textarea>
+        <button type="submit" class="w-full py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-black text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2">
+          <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> Register Scheduled Task
+        </button>
+      </form>
+
+      <!-- Task List -->
+      <div class="space-y-2">
+        <div class="text-xs font-mono text-zinc-400 flex items-center justify-between">
+          <span>Active Schedules</span>
+          <span id="schedTasksStatusBadge" class="text-[10px] text-purple-300 font-bold">0 Active</span>
+        </div>
+        <div id="schedTasksList" class="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar"></div>
+      </div>
+
+      <div class="pt-2 flex justify-end">
+        <button onclick="closeScheduledTasksModal()" class="px-4 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-bold text-white border border-white/10 cursor-pointer">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECURITY LOCK MODAL (15-Minute Inactivity Protection) -->
+  <div id="lockModal" style="display: none;" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-2xl flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="glass-panel max-w-md w-[94vw] sm:w-full p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-[0_0_60px_rgba(0,242,254,0.18)] flex flex-col items-center text-center relative">
+      <div class="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-5 shadow-[0_0_25px_rgba(0,242,254,0.35)]">
+        <i data-lucide="shield-alert" class="w-8 h-8"></i>
+      </div>
+      <h3 class="font-heading font-extrabold text-xl text-white tracking-tight">Security Perimeter Locked</h3>
+      <p class="text-xs text-zinc-400 font-sans mt-2 max-w-xs leading-relaxed">
+        Workspace locked due to 15-minute inactivity timeout. Re-enter your administrator credentials to resume.
+      </p>
+
+      <form onsubmit="unlockSession(event)" class="w-full mt-6 space-y-4">
+        <div class="relative">
+          <input
+            type="password"
+            id="lockPasswordInput"
+            placeholder="Enter Administrator Password..."
+            class="godx-input w-full px-4 py-3 pl-10 text-sm font-mono text-center tracking-wider"
+            autocomplete="current-password"
+            required
+          />
+          <i data-lucide="key" class="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5"></i>
+        </div>
+
+        <div id="lockErrorMessage" class="hidden text-xs text-rose-400 font-mono py-1"></div>
+
+        <div class="flex flex-col gap-2.5 pt-2">
+          <button
+            type="submit"
+            id="lockUnlockBtn"
+            class="w-full py-3 rounded-xl btn-gradient text-xs font-bold text-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20"
+          >
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Unlock Workspace</span>
+          </button>
+          
+          <button
+            type="button"
+            onclick="handleLogout()"
+            class="w-full py-2.5 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-mono text-zinc-400 hover:text-rose-400 border border-white/5 transition-colors cursor-pointer"
+          >
+            End Session &amp; Sign Out
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Command Palette Modal (⌘K) -->
+  <div id="cmdModal" style="display: none;" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-24 p-4 opacity-0 transition-opacity duration-200">
+    <div class="bg-surface-900/90 backdrop-blur-2xl max-w-xl w-[94vw] sm:w-full p-2 rounded-2xl border border-white/10 shadow-2xl transform scale-95 transition-transform duration-200">
+      <div class="flex items-center gap-3 p-3 border-b border-white/5">
+        <i data-lucide="search" class="w-4 h-4 text-cyan-400"></i>
+        <input type="text" id="cmdSearchInput" oninput="handleCmdSearch(event)" placeholder="Jump to tab, execute commands, or open files..." class="bg-transparent flex-1 text-sm text-white outline-none font-sans" />
+        <kbd class="px-2 py-0.5 text-[10px] bg-surface-800 border border-white/10 rounded text-zinc-400 font-mono">ESC</kbd>
+      </div>
+      <div id="cmdResults" class="py-2 max-h-64 overflow-y-auto custom-scrollbar"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3 p-4 rounded-2xl glass-panel border border-cyan-500/30 text-white shadow-2xl">
+    <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20"><i data-lucide="check" class="w-4 h-4"></i></div>
+    <div><h4 id="toastTitle" class="text-sm font-bold text-white">Notice</h4><p id="toastMsg" class="text-xs text-zinc-300"></p></div>
+  </div>
+
+  <!-- Source Modal -->
+  <div id="sourceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-4xl w-[94vw] sm:w-full p-4 sm:p-6 rounded-2xl sm:rounded-3xl relative flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-heading font-bold text-base text-white">Source Inspector</h3>
+        <button onclick="document.getElementById('sourceModal').style.display='none'" class="p-1.5 text-zinc-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="flex-1 overflow-y-auto bg-surface-950 p-4 rounded-xl my-3 border border-white/5 custom-scrollbar"><pre><code id="sourceCodeBlock" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap custom-scrollbar">Loading...</code></pre></div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: 100% FREE SOVEREIGN VOICE INTERACTION MODE                -->
+  <!-- ========================================================================= -->
+  <div id="aiVoiceModal" style="display: none;" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-xl w-[94vw] sm:w-full p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,242,254,0.15)] relative transform scale-95 transition-transform duration-200 flex flex-col items-center text-center space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      
+      <!-- Top Bar Controls -->
+      <div class="w-full flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+          <h3 class="font-heading font-extrabold text-sm sm:text-base text-white tracking-wide">Sovereign Voice Studio</h3>
+          <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30">100% Free</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="voiceContinuousToggleBtn" onclick="toggleContinuousMode()" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-mono font-bold cursor-pointer transition-colors" title="Toggle automatic hands-free conversation loop">
+            Hands-Free Loop: ON
+          </button>
+          <button onclick="closeVoiceInteractionMode()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer transition-colors">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Audio Orb Visualizer Canvas -->
+      <div class="relative w-56 h-56 flex items-center justify-center">
+        <canvas id="voiceCanvas" width="224" height="224" class="w-full h-full"></canvas>
+      </div>
+
+      <!-- Dynamic Voice Status & HUD -->
+      <div class="flex flex-col items-center space-y-2">
+        <div id="voiceStateBadge" class="px-3.5 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 shadow-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> Listening
+        </div>
+        <p id="voiceStateLabel" class="text-xs text-zinc-400 font-mono">Speak naturally into your microphone...</p>
+        <button id="btnVoiceInterrupt" onclick="window.triggerBargeInInterruption && window.triggerBargeInInterruption('Tap Button')" class="hidden px-4 py-1.5 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 transition-all cursor-pointer shadow-lg animate-pulse items-center gap-1.5">
+          <i data-lucide="hand" class="w-3.5 h-3.5"></i> Tap to Interrupt AI
+        </button>
+        <button id="voiceRetryMicBtn" onclick="window.retryMicrophoneAccess && window.retryMicrophoneAccess()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 transition-all cursor-pointer shadow-lg animate-pulse flex items-center gap-2">
+          <i data-lucide="mic" class="w-3.5 h-3.5"></i> Allow Microphone &amp; Retry
+        </button>
+      </div>
+
+      <!-- Live Transcript Cards -->
+      <div class="w-full space-y-3">
+        <!-- Speculative In-Flight Stream Telemetry -->
+        <div id="voiceSpeculativeStream" class="min-h-[20px] flex items-center justify-center transition-all"></div>
+
+        <!-- User Live Transcript -->
+        <div class="p-3.5 bg-surface-900/90 border border-white/10 rounded-2xl text-left shadow-lg">
+          <div class="text-[10px] uppercase tracking-wider font-mono text-cyan-400 font-bold mb-1 flex items-center gap-1.5">
+            <i data-lucide="mic" class="w-3 h-3"></i> You said:
+          </div>
+          <div id="voiceUserTranscript" class="text-sm text-white font-sans min-h-[24px]">Listening for your voice...</div>
+        </div>
+
+        <!-- AI Voice Output Preview -->
+        <div class="p-3.5 bg-surface-950/90 border border-cyan-500/20 rounded-2xl text-left shadow-lg">
+          <div class="text-[10px] uppercase tracking-wider font-mono text-emerald-400 font-bold mb-1 flex items-center gap-1.5">
+            <i data-lucide="volume-2" class="w-3 h-3"></i> AI Answer:
+          </div>
+          <div id="voiceAiResponse" class="text-xs text-zinc-300 font-sans leading-relaxed min-h-[24px]">Ready.</div>
+        </div>
+      </div>
+
+      <!-- Bottom Voice Controls -->
+      <div class="w-full pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/10 text-xs font-mono">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <i data-lucide="audio-lines" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+          <select id="voiceSelectDropdown" class="godx-input w-full sm:w-60 px-2.5 py-1.5 text-[11px] cursor-pointer" onchange="onVoiceDropdownChange(this.value)">
+            <option value="">Default Neural Voice</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="stopVoiceSpeaking()" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 hover:text-rose-300 text-zinc-400 text-xs cursor-pointer border border-white/10 transition-colors">
+            Interrupt / Stop
+          </button>
+          <button onclick="closeVoiceInteractionMode()" class="px-4 py-1.5 rounded-xl btn-gradient text-xs font-bold text-black cursor-pointer shadow-lg">
+            Done
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: CALENDAR EVENT CREATE / EDIT (Google Calendar Replica)     -->
+  <!-- ========================================================================= -->
+  <div id="calendarEventModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-lg w-[94vw] sm:w-full p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 id="calModalHeaderTitle" class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-4 h-4 text-cyan-400"></i> Create New Event
+        </h3>
+        <button onclick="LuminaCalendar.closeEventModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Modal">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Title Input -->
+      <div class="space-y-1">
+        <label for="calEventTitleInput" class="text-xs font-mono text-zinc-400">Event Title</label>
+        <input type="text" id="calEventTitleInput" placeholder="Add title (e.g. Architecture Review, Deep Work)" class="godx-input w-full px-3 py-2 text-sm font-semibold" />
+      </div>
+
+      <!-- Date & Time Range -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <label for="calEventStartInput" class="text-xs font-mono text-zinc-400">Start Time</label>
+          <input type="datetime-local" id="calEventStartInput" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+        </div>
+        <div class="space-y-1">
+          <label for="calEventEndInput" class="text-xs font-mono text-zinc-400">End Time</label>
+          <input type="datetime-local" id="calEventEndInput" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between py-1">
+        <label class="flex items-center gap-2 text-xs font-mono text-zinc-300 cursor-pointer">
+          <input type="checkbox" id="calEventAllDayCheck" class="w-4 h-4 accent-cyan-400 rounded" />
+          <span>All Day Event</span>
+        </label>
+        <label class="flex items-center gap-2 text-xs font-mono text-cyan-300 cursor-pointer">
+          <input type="checkbox" id="calEventAutonomousCheck" class="w-4 h-4 accent-cyan-400 rounded" />
+          <span>AI Autonomous Routine</span>
+        </label>
+      </div>
+
+      <!-- Category & Color -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <label for="calEventCategorySelect" class="text-xs font-mono text-zinc-400">Calendar Category</label>
+          <select id="calEventCategorySelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
+            <option value="work">Work</option>
+            <option value="personal">Personal</option>
+            <option value="focus">Focus &amp; Deep Work</option>
+            <option value="ai_autonomous">AI Autonomous Tasks</option>
+            <option value="health">Health &amp; Meals</option>
+            <option value="blackout">Blackout / Rest</option>
+          </select>
+        </div>
+        <div class="space-y-1">
+          <label for="calEventColorSelect" class="text-xs font-mono text-zinc-400">Event Color (Google Palette)</label>
+          <select id="calEventColorSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
+            <option value="#039be5">Peacock (Cyan)</option>
+            <option value="#3f51b5">Blueberry (Blue)</option>
+            <option value="#0b8043">Basil (Green)</option>
+            <option value="#33b679">Sage (Teal)</option>
+            <option value="#f6bf26">Banana (Yellow)</option>
+            <option value="#f4511e">Tangerine (Orange)</option>
+            <option value="#e67c73">Flamingo (Rose)</option>
+            <option value="#d50000">Tomato (Red)</option>
+            <option value="#8e24aa">Grape (Purple)</option>
+            <option value="#7986cb">Lavender (Violet)</option>
+            <option value="#616161">Graphite (Zinc)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Recurrence -->
+      <div class="space-y-1">
+        <label for="calEventRecurrenceSelect" class="text-xs font-mono text-zinc-400">Recurrence</label>
+        <select id="calEventRecurrenceSelect" class="godx-input w-full px-3 py-2 text-xs font-mono cursor-pointer">
+          <option value="NONE">Does not repeat</option>
+          <option value="DAILY">Daily</option>
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="YEARLY">Yearly</option>
+        </select>
+      </div>
+
+      <!-- Location / Meet Link -->
+      <div class="space-y-1">
+        <label for="calEventLocationInput" class="text-xs font-mono text-zinc-400">Location or Conference Link</label>
+        <input type="text" id="calEventLocationInput" placeholder="e.g. Google Meet, Conference Room A, Home" class="godx-input w-full px-3 py-2 text-xs font-mono" />
+      </div>
+
+      <!-- Description Notes -->
+      <div class="space-y-1">
+        <label for="calEventDescInput" class="text-xs font-mono text-zinc-400">Description &amp; Agenda</label>
+        <textarea id="calEventDescInput" rows="3" placeholder="Add description, agenda items, or autonomous objectives..." class="godx-input w-full px-3 py-2 text-xs font-mono resize-none"></textarea>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex items-center justify-between pt-3 border-t border-white/10">
+        <button id="calBtnDeleteEvent" onclick="LuminaCalendar.deleteEvent()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-mono cursor-pointer transition-colors hidden">
+          Delete
+        </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick="LuminaCalendar.closeEventModal()" class="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-mono cursor-pointer transition-colors">
+            Cancel
+          </button>
+          <button onclick="LuminaCalendar.saveEventFromModal()" class="px-5 py-1.5 rounded-xl btn-gradient text-black font-bold text-xs font-mono cursor-pointer shadow-lg">
+            Save Event
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: GOOGLE CALENDAR ACCOUNT SYNC                               -->
+  <!-- ========================================================================= -->
+  <div id="calendarSyncModal" style="display: none;" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+    <div class="glass-panel max-w-md w-[94vw] sm:w-full p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative transform scale-95 transition-transform duration-200 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-heading font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="cloud-cog" class="w-4 h-4 text-cyan-400"></i> Google Calendar Two-Way Sync
+        </h3>
+        <button onclick="LuminaCalendar.closeSyncModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Sync Settings">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs font-mono text-zinc-300">
+        <!-- Backend Status Card -->
+        <div class="p-3 bg-surface-900/90 rounded-xl border border-white/10 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-zinc-400 font-bold uppercase tracking-wider">Sync Status</span>
+            <span id="calSyncModalStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-mono">Vercel Managed</span>
+          </div>
+          <div id="calSyncModalStatusText" class="text-xs text-zinc-300 font-sans">
+            Checking backend OAuth configuration...
+          </div>
+        </div>
+
+        <!-- Google One-Click OAuth Sync -->
+        <div class="space-y-2 pt-1">
+          <button onclick="LuminaCalendar.connectGoogleAccount()" class="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-100 text-black font-heading font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-all hover:scale-101">
+            <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            Sign in &amp; Sync with Google
+          </button>
+          
+          <button onclick="LuminaCalendar.syncGoogleCalendar(true)" class="w-full py-2 px-4 rounded-xl bg-surface-900 hover:bg-surface-850 text-cyan-300 border border-cyan-500/30 font-mono text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Trigger Immediate Sync
+          </button>
+        </div>
+
+        <!-- Universal Sovereign iCalendar -->
+        <div class="pt-2 border-t border-white/5 space-y-2">
+          <span class="text-[10px] text-zinc-400 uppercase tracking-wider block font-bold">Universal Sovereign iCal (.ics)</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="LuminaCalendar.exportToIcs()" class="py-2 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-200 border border-white/10 text-xs font-mono flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-cyan-400"></i> Export .ics
+            </button>
+            <label class="py-2 px-3 rounded-xl bg-surface-850 hover:bg-surface-800 text-zinc-200 border border-white/10 text-xs font-mono flex items-center justify-center gap-1.5 cursor-pointer transition-colors text-center">
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i> Import .ics
+              <input type="file" id="calIcsFileInput" accept=".ics,text/calendar" class="hidden" onchange="const f = this.files[0]; if (f) { const r = new FileReader(); r.onload = e => LuminaCalendar.importFromIcs(e.target.result); r.readAsText(f); }" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end pt-2 border-t border-white/10">
+        <button onclick="LuminaCalendar.closeSyncModal()" class="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-heading font-semibold text-xs cursor-pointer transition-colors">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: WHITEBOARD PRO GALLERY & TEMPLATES                        -->
+  <!-- ========================================================================= -->
+  <div id="whiteboardGalleryModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-4xl w-[96vw] max-h-[90vh] p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative flex flex-col space-y-4 overflow-hidden">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-base text-white">Whiteboard Gallery &amp; Blueprints</h3>
+            <p class="text-xs text-zinc-400">Manage multiple boards or insert production architecture templates.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="LuminaWhiteboardGallery.promptNewBoard()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 text-xs font-mono font-bold cursor-pointer transition-colors flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Board
+          </button>
+          <button onclick="LuminaWhiteboardGallery.closeGalleryModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Gallery"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+      </div>
+
+      <!-- Tab Switcher (Templates vs Saved Boards) -->
+      <div class="flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2 bg-surface-900/90 p-1 rounded-xl border border-white/10 text-xs">
+          <button id="galleryTabTemplatesBtn" onclick="LuminaWhiteboardGallery.switchGalleryTab('templates')" class="px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-400 font-heading font-semibold text-xs border border-cyan-500/30 cursor-pointer">
+            Architectural Blueprints
+          </button>
+          <button id="galleryTabBoardsBtn" onclick="LuminaWhiteboardGallery.switchGalleryTab('boards')" class="px-4 py-2 rounded-xl text-zinc-400 hover:text-white font-heading font-semibold text-xs cursor-pointer">
+            My Whiteboards
+          </button>
+        </div>
+
+        <!-- Filter Chips for Templates -->
+        <div id="galleryCategoryChips" class="hidden sm:flex items-center gap-1.5 overflow-x-auto py-1">
+          <button data-category="all" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('all')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-cyan-500 text-black font-bold cursor-pointer">All</button>
+          <button data-category="architecture" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('architecture')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Architecture</button>
+          <button data-category="ai_cloud" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('ai_cloud')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">AI &amp; Cloud</button>
+          <button data-category="security" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('security')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Security</button>
+          <button data-category="database" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('database')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Database</button>
+          <button data-category="workflow" onclick="LuminaWhiteboardGallery.filterTemplatesByCategory('workflow')" class="gallery-category-chip px-3 py-1.5 rounded-lg text-xs font-mono bg-surface-900 text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Workflows</button>
+        </div>
+      </div>
+
+      <!-- Templates View Container -->
+      <div id="galleryTemplatesView" class="flex-1 overflow-y-auto custom-scrollbar pr-1">
+        <div id="galleryTemplatesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+      </div>
+
+      <!-- Boards View Container -->
+      <div id="galleryBoardsView" class="hidden flex-1 overflow-y-auto custom-scrollbar pr-1">
+        <div id="galleryBoardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FLOATING MODAL: AI DIAGRAM & FLOWCHART ASSISTANT                         -->
+  <!-- ========================================================================= -->
+  <div id="whiteboardAiModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-4">
+    <div class="glass-panel max-w-xl w-[94vw] sm:w-full p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-cyan-500/30 shadow-2xl relative flex flex-col space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-black flex items-center justify-center font-bold shadow-lg shadow-cyan-500/20">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-heading font-bold text-base text-white">AI Diagram Assistant</h3>
+            <p class="text-xs text-zinc-400">Describe any flowchart, architecture, or workflow in natural language.</p>
+          </div>
+        </div>
+        <button onclick="LuminaWhiteboardAi.closeAiModal()" class="p-1 rounded-lg text-zinc-400 hover:text-white cursor-pointer" aria-label="Close Assistant"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- Prompt Input -->
+      <div class="space-y-2">
+        <label for="wbAiPromptInput" class="text-xs font-mono text-zinc-400">Describe what you want to visualize:</label>
+        <textarea id="wbAiPromptInput" rows="3" placeholder="e.g. Draw a 4-step CI/CD pipeline with GitHub Actions, Docker Build, Test Runner, and Vercel Deploy..." class="godx-input w-full p-3 text-xs font-sans resize-none custom-scrollbar leading-relaxed"></textarea>
+      </div>
+
+      <!-- Quick Presets -->
+      <div class="space-y-1.5">
+        <span class="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">Quick Presets:</span>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('Microservices architecture with Envoy API Gateway, Auth Service, Kafka bus and Postgres database')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">Microservices Architecture</button>
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('OAuth2.0 PKCE authentication sequence between Single Page App, Auth Gateway, Token Validator and User Profile DB')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">OAuth2 Authentication</button>
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('E-commerce database relational schema with Users, Orders, Products, Payments and Inventory')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">Database ERD</button>
+          <button onclick="LuminaWhiteboardAi.setAiPromptPreset('Agile 3-column sprint Kanban with Backlog, In-Progress deep work, and Verified production releases')" class="px-2.5 py-1 rounded-lg bg-surface-900 hover:bg-surface-850 text-[11px] text-zinc-300 border border-white/10 cursor-pointer">Kanban Workflow</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="pt-2 flex items-center justify-between border-t border-white/10">
+        <button onclick="LuminaWhiteboardAi.closeAiModal()" class="px-4 py-2 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-semibold text-zinc-400 hover:text-white border border-white/10 cursor-pointer">Cancel</button>
+        <button id="wbAiGenerateBtn" onclick="LuminaWhiteboardAi.triggerAiDiagramGeneration()" class="btn-gradient px-5 py-2.5 rounded-xl text-xs font-bold text-black cursor-pointer shadow-lg shadow-cyan-500/20 flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-4 h-4"></i> Generate Diagram
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: TYPE-SAFE JEV SYSTEM-1 COGNITIVE MATRIX INSPECTOR & HUD             -->
+  <!-- ========================================================================= -->
+  <div id="jevInspectorModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-3 sm:p-4">
+    <div class="glass-panel w-full max-w-2xl rounded-2xl border border-purple-500/30 bg-surface-950/95 p-4 sm:p-6 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center font-bold text-xs">JEV</div>
+          <div>
+            <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+              Jev System-1 Cognitive Matrix <span class="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-300 font-mono">v4.0 Ultra</span>
+            </h3>
+            <p class="text-[10px] text-zinc-400 font-mono">Sub-millisecond semantic tensor routing, guardrails &amp; tool DAG inspector</p>
+          </div>
+        </div>
+        <button onclick="closeJevInspectorModal()" class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" title="Close Inspector">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Telemetry Content (Scrollable) -->
+      <div class="flex-1 overflow-y-auto py-3 space-y-3.5 custom-scrollbar text-xs font-mono">
+        <!-- Live Metrics Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="p-2.5 rounded-xl bg-surface-900 border border-white/5">
+            <span class="text-[10px] text-zinc-400 uppercase">Winning Route</span>
+            <div id="jevModalRoute" class="text-sm font-bold text-cyan-400 truncate mt-0.5">CONVERSATION</div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-surface-900 border border-white/5">
+            <span class="text-[10px] text-zinc-400 uppercase">Confidence</span>
+            <div id="jevModalConfidence" class="text-sm font-bold text-purple-300 mt-0.5">98%</div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-surface-900 border border-white/5">
+            <span class="text-[10px] text-zinc-400 uppercase">Latency</span>
+            <div id="jevModalLatency" class="text-sm font-bold text-emerald-400 mt-0.5">&lt;1ms</div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-surface-900 border border-white/5">
+            <span class="text-[10px] text-zinc-400 uppercase">Guardrail</span>
+            <div id="jevModalGuardrail" class="text-xs font-bold text-emerald-400 mt-0.5">🛡️ PASS</div>
+          </div>
+        </div>
+
+        <!-- Semantic Vector Tensor Scoring Distribution -->
+        <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-2">
+          <div class="flex justify-between items-center text-[11px] text-zinc-300 font-bold border-b border-white/5 pb-1">
+            <span>50+ Domain Semantic Vector Tensor</span>
+            <span class="text-[9px] text-cyan-400 font-normal">Ranked Weights</span>
+          </div>
+          <div id="jevTensorBars" class="space-y-2 pt-1"></div>
+        </div>
+
+        <!-- Dynamic Tool Execution DAG -->
+        <div class="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-2">
+          <div class="text-[11px] text-zinc-300 font-bold border-b border-white/5 pb-1 flex items-center justify-between">
+            <span>Execution Directed Acyclic Graph (DAG)</span>
+            <span class="text-[9px] text-purple-300 font-normal">Topological Order</span>
+          </div>
+          <div id="jevDagList" class="space-y-1.5 pt-1"></div>
+        </div>
+
+        <!-- Interactive Jev Ask Sandbox Playground -->
+        <div class="p-3 rounded-xl bg-surface-900/90 border border-purple-500/20 space-y-2">
+          <div class="text-[11px] text-purple-300 font-bold flex items-center gap-1.5">
+            <i data-lucide="terminal" class="w-3.5 h-3.5"></i> Interactive Jev Decision Playground
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="jevInteractiveInput" placeholder="Test any prompt or shell command (e.g. 'rm -rf /' or 'build react app')..." class="godx-input flex-1 px-3 py-1.5 rounded-lg text-xs bg-surface-950 border border-white/10 text-white font-mono" onkeydown="if(event.key==='Enter') LuminaJev.runInteractiveTest()" />
+            <button onclick="LuminaJev.runInteractiveTest()" class="px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold text-xs border border-purple-500/30 cursor-pointer transition-colors">Judge</button>
+          </div>
+          <div id="jevInteractiveResult"></div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 border-t border-white/10 flex justify-end shrink-0">
+        <button onclick="closeJevInspectorModal()" class="px-4 py-1.5 rounded-xl bg-surface-900 hover:bg-surface-850 text-xs font-semibold text-zinc-300 border border-white/10 cursor-pointer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODULAR JAVASCRIPT LOGIC ENGINE                                            -->
+  <!-- ========================================================================= -->
+  <script src="./modules/state.js"></script>
+  <script src="./modules/sidebar.js"></script>
+  <script src="./modules/calendar.js"></script>
+  <script src="./modules/calendar-sync.js"></script>
+  <script src="./modules/ai-simulation.js"></script>
+  <script src="./modules/ai-tasks-sessions.js"></script>
+  <script src="./modules/ai-chat-ui.js"></script>
+  <script src="./modules/jev-client.js"></script>
+  <script src="./modules/ai-studio.js"></script>
+  <script src="./modules/codespace.js"></script>
+  <script src="./modules/graphify.js"></script>
+  <script src="./modules/voice-studio.js"></script>
+  <script src="./modules/compiler.js"></script>
+  <script src="./modules/terminal.js"></script>
+  <script src="./modules/whiteboard-gallery.js"></script>
+  <script src="./modules/whiteboard-vision.js"></script>
+  <script src="./modules/whiteboard-ai.js"></script>
+  <script src="./modules/whiteboard.js"></script>
+  <script src="./modules/notes.js"></script>
+  <script src="./modules/projects.js"></script>
+  <script src="./modules/telemetry-theme.js"></script>
+  <script src="./modules/smart-lock.js"></script>
+  <script src="./modules/system.js"></script>
+  <script src="./modules/admin-access.js"></script>
+  <script src="./modules/dashboard.js"></script>
+  <script src="./modules/cloud-sync.js"></script>
+</body>
+</html>

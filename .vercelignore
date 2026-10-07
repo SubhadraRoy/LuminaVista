@@ -1,0 +1,6 @@
+# Vercel deployment ignore rules
+tests/
+docs/
+*.md
+.github/
+.vscode/

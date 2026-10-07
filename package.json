@@ -1,0 +1,36 @@
+{
+  "name": "luminavista-os",
+  "version": "14.0.0",
+  "type": "module",
+  "private": true,
+  "description": "LuminaVista — Private Sovereign Workspace. Unauthorized access strictly prohibited.",
+  "author": "LuminaVista Sovereign Systems",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "private"
+  },
+  "keywords": [
+    "cloud-os",
+    "firecracker",
+    "microvm",
+    "autonomous-ai",
+    "antigravity",
+    "zero-trust",
+    "developer-tools"
+  ],
+  "scripts": {
+    "start": "node tests/server.cjs",
+    "test": "node tests/features.test.cjs",
+    "test:browser": "node tests/browser-cdp-test.cjs",
+    "lint": "node tests/lint.cjs"
+  },
+  "dependencies": {
+    "@e2b/code-interpreter": "^1.0.2",
+    "@upstash/redis": "^1.28.0",
+    "cookie": "^0.6.0"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

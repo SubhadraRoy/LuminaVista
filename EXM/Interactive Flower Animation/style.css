@@ -1,0 +1,14 @@
+* {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: black;
+}
+
+body{
+  padding-top: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: vh;
+}
