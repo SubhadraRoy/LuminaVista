@@ -167,18 +167,12 @@ export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 3
     if (typeof redis.pipeline === 'function') {
       const p = redis.pipeline();
       p.incr(key);
-      try {
-        p.expire(key, windowSeconds, 'NX');
-      } catch (e) {
-        p.expire(key, windowSeconds);
-      }
+      p.expire(key, windowSeconds);
       const res = await p.exec();
       current = Number(Array.isArray(res) ? res[0] : res);
     } else {
       current = await redis.incr(key);
-      if (current === 1) {
-        await redis.expire(key, windowSeconds);
-      }
+      await redis.expire(key, windowSeconds);
     }
 
     if (current > maxRequests) {
