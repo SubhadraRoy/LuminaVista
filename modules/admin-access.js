@@ -158,8 +158,16 @@
   function generateRandomPassword() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
     let res = 'Lv-';
-    for (let i = 0; i < 10; i++) {
-      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+      const bytes = new Uint8Array(10);
+      window.crypto.getRandomValues(bytes);
+      for (let i = 0; i < 10; i++) {
+        res += chars.charAt(bytes[i] % chars.length);
+      }
+    } else {
+      for (let i = 0; i < 10; i++) {
+        res += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
     }
     const input = document.getElementById('adminNewPasswordInput');
     if (input) {

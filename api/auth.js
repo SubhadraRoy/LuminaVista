@@ -124,8 +124,15 @@ export async function verifyCredentials(password, expectedPassword, storage = nu
       if (rawTemp) {
         const tempKeys = typeof rawTemp === 'string' ? JSON.parse(rawTemp) : rawTemp;
         if (Array.isArray(tempKeys)) {
-          const inputHex = inputHash.toString('hex');
-          const matchedKey = tempKeys.find(k => k && k.hash === inputHex);
+          const matchedKey = tempKeys.find(k => {
+            if (!k || typeof k.hash !== 'string' || k.hash.length !== 64) return false;
+            try {
+              const keyBuf = Buffer.from(k.hash, 'hex');
+              return keyBuf.length === 32 && crypto.timingSafeEqual(inputHash, keyBuf);
+            } catch (_) {
+              return false;
+            }
+          });
           if (matchedKey) {
             matchedKey.lastUsed = Date.now();
             if (typeof storage.set === 'function') {

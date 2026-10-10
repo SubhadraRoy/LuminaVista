@@ -227,7 +227,7 @@ export async function verifyDeviceRequest(req, rawBodyStr, storage) {
   // Atomic Nonce Anti-Replay Check (Single Redis Round-Trip SET NX EX 600)
   const nonceKey = `iot:nonce:${deviceId}:${nonce}`;
   const lockRes = await storage.set(nonceKey, '1', { nx: true, ex: NONCE_TTL_SEC });
-  if (lockRes === null) {
+  if (lockRes !== 'OK') {
     auditLog('IOT_REPLAY_BLOCKED', req, `Duplicate nonce: ${nonce}`);
     return { valid: false, status: 401, error: 'Replay attack detected: nonce already used' };
   }
@@ -869,7 +869,15 @@ export default async function handler(req, res) {
           if (a.type !== b.type) return a.type === 'ONLINE' ? -1 : 1;
           return (Number(b.seq) || 0) - (Number(a.seq) || 0);
         });
-        updatedConnHistory = [...newConnEntries, ...connHistoryList].slice(0, MAX_CONN_HISTORY);
+        const combinedHistory = [...newConnEntries, ...connHistoryList];
+        combinedHistory.sort((a, b) => {
+          const tA = Number(a.receivedAt) || 0;
+          const tB = Number(b.receivedAt) || 0;
+          if (tA !== tB) return tB - tA;
+          if (a.type !== b.type) return a.type === 'ONLINE' ? -1 : 1;
+          return (Number(b.seq) || 0) - (Number(a.seq) || 0);
+        });
+        updatedConnHistory = combinedHistory.slice(0, MAX_CONN_HISTORY);
       }
 
       // 6. Update device heartbeat metadata & flush all Redis writes in one parallel round-trip

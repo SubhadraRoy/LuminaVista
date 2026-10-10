@@ -9,7 +9,7 @@ import { getRedisClient, getSafeStorage } from './redis.js';
  */
 export function getClientIp(req) {
   let rawIp = '';
-  const realIp = req?.headers?.['x-real-ip'] || req?.headers?.['x-vercel-forwarded-for'] || req?.headers?.['x-vercel-ip'] || req?.headers?.['cf-connecting-ip'];
+  const realIp = req?.headers?.['x-vercel-ip'] || req?.headers?.['x-vercel-forwarded-for'] || req?.headers?.['cf-connecting-ip'] || req?.headers?.['x-real-ip'];
   if (realIp) {
     rawIp = String(realIp).split(',')[0].trim().replace(/[^a-fA-F0-9.:]/g, '');
   }
@@ -22,7 +22,8 @@ export function getClientIp(req) {
   }
   if (!rawIp) rawIp = req?.socket?.remoteAddress || 'unknown';
   if (rawIp === 'unknown') return 'anon_unknown';
-  return 'anon_' + crypto.createHash('sha256').update(`lv_ip_salt:${rawIp}`).digest('hex').slice(0, 16);
+  const salt = process.env.ADMIN_PASSWORD || 'lv_ip_salt';
+  return 'anon_' + crypto.createHash('sha256').update(`${salt}:${rawIp}`).digest('hex').slice(0, 16);
 }
 
 /**
@@ -191,6 +192,13 @@ export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 3
     return { allowed: true, remaining: maxRequests - current };
   } catch (err) {
     console.error("[AUTH_GUARD] Rate-limiting error:", err.message);
+    if (routeKey === 'auth') {
+      return {
+        allowed: false,
+        status: 429,
+        error: 'Authentication rate limiter temporarily unavailable. Please retry shortly.'
+      };
+    }
     return { allowed: true };
   }
 }

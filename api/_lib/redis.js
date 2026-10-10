@@ -202,22 +202,27 @@ export class SafeStorageProxy {
     if (this.isAvailable() && typeof this.rawRedis.pipeline === 'function') {
       try {
         const rawP = this.rawRedis.pipeline();
+        const fallbackP = this.fallback.pipeline();
         const self = this;
         return {
-          incr(k) { rawP.incr(k); return this; },
+          incr(k) { rawP.incr(k); fallbackP.incr(k); return this; },
           expire(k, s, mode) {
             try { rawP.expire(k, s, mode); } catch (_) { rawP.expire(k, s); }
+            fallbackP.expire(k, s);
             return this;
           },
-          set(k, v, o) { rawP.set(k, v, o); return this; },
-          get(k) { rawP.get(k); return this; },
-          del(k) { rawP.del(k); return this; },
+          set(k, v, o) { rawP.set(k, v, o); fallbackP.set(k, v, o); return this; },
+          get(k) { rawP.get(k); fallbackP.get(k); return this; },
+          del(k) { rawP.del(k); fallbackP.del(k); return this; },
           async exec() {
             try {
-              return await rawP.exec();
+              const res = await rawP.exec();
+              // Mirror in fallback storage asynchronously
+              await fallbackP.exec().catch(() => {});
+              return res;
             } catch (err) {
               self.handleError(err, 'pipeline.exec');
-              return [1, 1];
+              return await fallbackP.exec();
             }
           }
         };
