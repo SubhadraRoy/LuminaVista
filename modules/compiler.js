@@ -104,6 +104,13 @@
           if (window.showToast) window.showToast("Execution Complete", "Process completed.");
         }
         return;
+      } else if (compRes.status === 403) {
+        const compData = await compRes.json();
+        if (out) {
+          out.textContent = `🛡️ [Jev System-1 Guardrail]: ${compData.error || 'Execution Blocked'}\n${compData.details || ''}\n`;
+        }
+        if (window.showToast) window.showToast("Execution Blocked", compData.error || "Dangerous code blocked.");
+        return;
       }
     } catch (compileErr) {
       // Fallback to /api/terminal

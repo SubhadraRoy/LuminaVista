@@ -50,17 +50,24 @@ export default async function middleware(req) {
 
   const cookieHeader = req.headers.get('cookie') || '';
   const match = cookieHeader.match(/godx_session=([^;]+)/);
+  const authHeader = req.headers.get('x-session-id') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  const rawToken = match ? match[1] : (authHeader || '');
   
-  if (!match) return Response.redirect(new URL('/index.html', req.url));
+  if (!rawToken) return Response.redirect(new URL('/index.html', req.url));
 
-  const sessionToken = match[1].trim();
+  const sessionToken = rawToken.trim();
 
   // 1. Sovereign Cryptographic Verification Check (Fastest path, immune to Upstash limits)
-  const masterSecret = process.env.ADMIN_PASSWORD;
-  if (masterSecret && sessionToken.startsWith('lv_')) {
-    const isValid = await verifySovereignTokenEdge(sessionToken, masterSecret);
-    if (isValid) {
-      return; // Pass through to the protected workspace
+  const rawSecret = process.env.ADMIN_PASSWORD || '';
+  const cleanSecret = rawSecret.trim().replace(/^["']|["']$/g, '').trim();
+  const candidateSecrets = Array.from(new Set([cleanSecret, rawSecret])).filter(Boolean);
+
+  if (candidateSecrets.length > 0 && sessionToken.startsWith('lv_')) {
+    for (const secret of candidateSecrets) {
+      const isValid = await verifySovereignTokenEdge(sessionToken, secret);
+      if (isValid) {
+        return; // Pass through to the protected workspace
+      }
     }
   }
 
@@ -84,9 +91,11 @@ export default async function middleware(req) {
   } catch (error) {
     console.error("MIDDLEWARE ERROR:", error?.message || error);
     // If Redis encounters quota limit or connection error, check sovereign token once more
-    if (masterSecret && sessionToken.startsWith('lv_')) {
-      const isValid = await verifySovereignTokenEdge(sessionToken, masterSecret);
-      if (isValid) return;
+    if (candidateSecrets.length > 0 && sessionToken.startsWith('lv_')) {
+      for (const secret of candidateSecrets) {
+        const isValid = await verifySovereignTokenEdge(sessionToken, secret);
+        if (isValid) return;
+      }
     }
     return Response.redirect(new URL('/index.html', req.url));
   }

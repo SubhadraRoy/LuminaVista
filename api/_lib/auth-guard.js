@@ -31,7 +31,10 @@ export function getClientIp(req) {
  * Enables zero-latency session validation immune to 3rd-party database limits.
  */
 export function generateSovereignSessionToken(role = 'master', keyId = null, secret = null) {
-  const adminSecret = secret || process.env.ADMIN_PASSWORD || 'lumina_root_secret';
+  const adminSecret = secret || process.env.ADMIN_PASSWORD;
+  if (!adminSecret) {
+    throw new Error('ADMIN_PASSWORD secret required to generate sovereign session token');
+  }
   const uuid = crypto.randomUUID();
   const timestamp = Date.now();
   const cleanRole = role === 'temporary' ? 'temp' : 'master';
@@ -61,16 +64,23 @@ export function verifySovereignSessionToken(token, secret = null) {
   }
 
   const payload = `${uuid}:${role}:${timestamp}`;
-  const expectedSig = crypto.createHmac('sha256', adminSecret).update(payload).digest('hex');
+  const cleanSecret = typeof adminSecret === 'string' ? adminSecret.trim().replace(/^["']|["']$/g, '').trim() : adminSecret;
+  const secretsToTest = Array.from(new Set([cleanSecret, adminSecret])).filter(Boolean);
 
-  if (signature.length !== expectedSig.length) return null;
-  try {
-    if (!crypto.timingSafeEqual(Buffer.from(signature, 'utf8'), Buffer.from(expectedSig, 'utf8'))) {
-      return null;
+  let signatureMatch = false;
+  for (const s of secretsToTest) {
+    const expectedSig = crypto.createHmac('sha256', s).update(payload).digest('hex');
+    if (signature.length === expectedSig.length) {
+      try {
+        if (crypto.timingSafeEqual(Buffer.from(signature, 'utf8'), Buffer.from(expectedSig, 'utf8'))) {
+          signatureMatch = true;
+          break;
+        }
+      } catch (_) {}
     }
-  } catch (_) {
-    return null;
   }
+
+  if (!signatureMatch) return null;
 
   return {
     valid: true,
@@ -108,12 +118,63 @@ export async function validateSession(req, redisClient = null) {
   const masterSecret = process.env.ADMIN_PASSWORD;
   if (masterSecret && sessionId.startsWith('lv_')) {
     const verified = verifySovereignSessionToken(sessionId, masterSecret);
-    if (verified && verified.valid) {
-      if (redis && typeof redis.expire === 'function') {
+    if (!verified || !verified.valid) {
+      return { valid: false, status: 401, error: 'Unauthorized Session' };
+    }
+
+    // Sovereign session token has valid cryptographic signature and timestamp.
+    // When Redis/storage is available, verify that session has not been revoked or logged out.
+    if (redis && typeof redis.get === 'function') {
+      let revocationMarker = null;
+      let sessionRecord = null;
+      let storageError = false;
+
+      try {
+        [revocationMarker, sessionRecord] = await Promise.all([
+          redis.get(`session:revoked:${sessionId}`),
+          redis.get(`session:${sessionId}`)
+        ]);
+      } catch (err) {
+        storageError = true;
+        console.warn('[AUTH_GUARD] Redis revocation check unavailable, failing closed:', err?.message || err);
+      }
+
+      // Storage network/read failure: fail closed to prevent revoked session acceptance
+      if (storageError) {
+        return { valid: false, status: 503, error: 'Session verification failed (storage unavailable)' };
+      }
+
+      if (revocationMarker) {
+        return { valid: false, status: 401, error: 'Session Revoked' };
+      }
+
+      // Active sessions are saved in Redis under session:${sessionId}.
+      // When logged out, api/logout.js deletes session:${sessionId}.
+      if (!sessionRecord) {
+        return { valid: false, status: 401, error: 'Session Expired / Revoked' };
+      }
+
+      let role = verified.role;
+      let keyId = null;
+      try {
+        const parsed = typeof sessionRecord === 'string' ? JSON.parse(sessionRecord) : sessionRecord;
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.status === 'revoked') {
+            return { valid: false, status: 401, error: 'Session Revoked' };
+          }
+          if (parsed.role) role = parsed.role;
+          if (parsed.keyId) keyId = parsed.keyId;
+        }
+      } catch (_) {}
+
+      if (typeof redis.expire === 'function') {
         try { redis.expire(`session:${sessionId}`, 1200).catch(() => {}); } catch (_) {}
       }
-      return { valid: true, sessionId, role: verified.role, keyId: null };
+
+      return { valid: true, sessionId, role, keyId };
     }
+
+    return { valid: true, sessionId, role: verified.role, keyId: null };
   }
 
   if (!redis) {
@@ -151,34 +212,48 @@ export async function validateSession(req, redisClient = null) {
   }
 }
 
+const inMemoryRateLimits = new Map();
+
 /**
- * IP-based sliding rate-limiting in Redis.
+ * IP-based sliding rate-limiting in Redis with graceful in-memory fallback.
  * Protects against DDoS, brute force, and compute credit exhaustion.
  */
 export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 30, windowSeconds = 300) {
-  const redis = redisClient || getRedisClient();
-  if (!redis) return { allowed: true }; // Graceful degradation if Redis is unconfigured in test mocks
-
   const clientIp = getClientIp(req);
   const key = `rate_limit:${routeKey}:${clientIp}`;
+  const redis = redisClient || getRedisClient();
+
+  if (!redis) {
+    // In-memory rate limiting when Redis is not available
+    const now = Date.now();
+    let record = inMemoryRateLimits.get(key);
+    if (!record || now > record.resetAt) {
+      record = { count: 1, resetAt: now + (windowSeconds * 1000) };
+    } else {
+      record.count++;
+    }
+    inMemoryRateLimits.set(key, record);
+    if (record.count > maxRequests) {
+      return {
+        allowed: false,
+        status: 429,
+        error: `Rate limit exceeded. Maximum ${maxRequests} requests per ${Math.round(windowSeconds / 60)} minutes.`
+      };
+    }
+    return { allowed: true, remaining: maxRequests - record.count };
+  }
 
   try {
     let current;
     if (typeof redis.pipeline === 'function') {
       const p = redis.pipeline();
       p.incr(key);
-      try {
-        p.expire(key, windowSeconds, 'NX');
-      } catch (e) {
-        p.expire(key, windowSeconds);
-      }
+      p.expire(key, windowSeconds);
       const res = await p.exec();
       current = Number(Array.isArray(res) ? res[0] : res);
     } else {
       current = await redis.incr(key);
-      if (current === 1) {
-        await redis.expire(key, windowSeconds);
-      }
+      await redis.expire(key, windowSeconds);
     }
 
     if (current > maxRequests) {
@@ -191,15 +266,23 @@ export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 3
 
     return { allowed: true, remaining: maxRequests - current };
   } catch (err) {
-    console.error("[AUTH_GUARD] Rate-limiting error:", err.message);
-    if (routeKey === 'auth') {
+    console.warn("[AUTH_GUARD] Rate-limiting storage error (degrading to in-memory window):", err.message);
+    const now = Date.now();
+    let record = inMemoryRateLimits.get(key);
+    if (!record || now > record.resetAt) {
+      record = { count: 1, resetAt: now + (windowSeconds * 1000) };
+    } else {
+      record.count++;
+    }
+    inMemoryRateLimits.set(key, record);
+    if (record.count > maxRequests) {
       return {
         allowed: false,
         status: 429,
-        error: 'Authentication rate limiter temporarily unavailable. Please retry shortly.'
+        error: `Rate limit exceeded. Maximum ${maxRequests} attempts per ${Math.round(windowSeconds / 60)} minutes.`
       };
     }
-    return { allowed: true };
+    return { allowed: true, remaining: maxRequests - record.count };
   }
 }
 
@@ -296,6 +379,7 @@ export function sanitizeDeep(data) {
 
   const result = {};
   for (const [k, v] of Object.entries(data)) {
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
     if (SENSITIVE_KEY_NAMES.test(k) && typeof v === 'string') {
       result[k] = '[REDACTED]';
     } else {
@@ -311,19 +395,24 @@ export function sanitizeDeep(data) {
  */
 export function setSecurityHeaders(res, req = null) {
   if (!res || typeof res.setHeader !== 'function') return;
-  const request = req || res.req;
-  const origin = request?.headers?.origin;
+  if (req && !res._req) res._req = req;
+  const request = req || res.req || res._req;
+  const origin = request?.headers?.origin || request?.headers?.Origin;
   const ALLOWED_ORIGINS = new Set([
     'https://subhadraroy.github.io',
-    'https://lumina-vista-sigma.vercel.app'
+    'https://lumina-vista-sigma.vercel.app',
+    'https://luminavista.example.com'
   ]);
-  const isAllowed = origin && (
+  if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean).forEach(o => ALLOWED_ORIGINS.add(o));
+  }
+  const isAllowed = Boolean(origin && (
     ALLOWED_ORIGINS.has(origin) ||
-    origin.startsWith('http://localhost:') ||
-    origin.startsWith('http://127.0.0.1:')
-  );
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+  ));
 
-  res.setHeader('Access-Control-Allow-Origin', isAllowed ? origin : 'https://lumina-vista-sigma.vercel.app');
+  const finalOrigin = isAllowed ? origin : 'https://lumina-vista-sigma.vercel.app';
+  res.setHeader('Access-Control-Allow-Origin', finalOrigin);
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id, X-Lumina-Device-Id, X-Lumina-Timestamp, X-Lumina-Nonce, X-Lumina-Seq, X-Lumina-Signature');
@@ -342,9 +431,11 @@ export function setSecurityHeaders(res, req = null) {
  * @param {Object} res 
  * @param {number} statusCode 
  * @param {any} data 
+ * @param {Object} [req=null]
  */
-export function sendSecureJson(res, statusCode, data) {
-  setSecurityHeaders(res);
+export function sendSecureJson(res, statusCode, data, req = null) {
+  const request = req || res.req || res._req;
+  setSecurityHeaders(res, request);
   const safeData = sanitizeDeep(data);
   return res.status(statusCode).json(safeData);
 }

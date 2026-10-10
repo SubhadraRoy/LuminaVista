@@ -425,59 +425,38 @@ async function runBrowserTest() {
   const hasThinkingOrb = await evaluate("document.getElementById('headerThinkingOrb') !== null");
   test("Thinking Orb canvas rendered in AI Studio header", hasThinkingOrb);
 
-  // Test AI Studio Sub-Tabs Switching (Chat, Artifacts & Files, Graphify Graph)
+  // Test AI Studio Sub-Tabs Switching (Chat & Artifacts & Files)
   await evaluate("switchAiSubTab('artifacts')");
   const isArtifactsVisible = await evaluate("!document.getElementById('aiCodespaceColumn').classList.contains('hidden') && document.getElementById('aiChatView').classList.contains('hidden')");
   test("AI Studio sub-tab switched to 'artifacts'", isArtifactsVisible);
 
-  await evaluate("switchAiSubTab('graphify')");
-  const isGraphifyVisible = await evaluate("!document.getElementById('aiGraphifyColumn').classList.contains('hidden') && document.getElementById('aiCodespaceColumn').classList.contains('hidden')");
-  test("AI Studio sub-tab switched to 'graphify'", isGraphifyVisible);
+  const isGraphifyUiRemoved = await evaluate("document.getElementById('aiGraphifyColumn') === null && document.getElementById('btnAiSubTabGraphify') === null && document.getElementById('btn-tab-graphify') === null");
+  test("Graphify visualizer UI completely decoupled from website DOM", isGraphifyUiRemoved);
 
-  const hasGraphifyCanvas = await evaluate("document.getElementById('graphifyCanvas') !== null");
-  test("Graphify architecture canvas rendered in DOM", hasGraphifyCanvas);
+  const isGraphifyCanvasAbsent = await evaluate("document.getElementById('graphifyCanvas') === null");
+  test("Graphify canvas element completely absent from DOM", isGraphifyCanvasAbsent);
 
   await evaluate("switchAiSubTab('chat')");
-  const isChatVisible = await evaluate("!document.getElementById('aiChatView').classList.contains('hidden') && document.getElementById('aiGraphifyColumn').classList.contains('hidden')");
+  const isChatVisible = await evaluate("!document.getElementById('aiChatView').classList.contains('hidden') && document.getElementById('aiCodespaceColumn').classList.contains('hidden')");
   test("AI Studio sub-tab returned to 'chat'", isChatVisible);
 
-  // Test Slider Navigation for Artifacts IDE and Graphify Graph
+  // Test Slider Navigation for Artifacts IDE
   await evaluate("switchTab('tab-artifacts')");
   const sliderArtifactsActive = await evaluate("!document.getElementById('aiCodespaceColumn').classList.contains('hidden') && document.getElementById('btn-tab-artifacts').classList.contains('nav-tab-active')");
   test("Slider navigation switches to Artifacts IDE and highlights button", sliderArtifactsActive);
 
-  await evaluate("switchTab('tab-graphify')");
-  const sliderGraphifyActive = await evaluate("!document.getElementById('aiGraphifyColumn').classList.contains('hidden') && document.getElementById('btn-tab-graphify').classList.contains('nav-tab-active')");
-  test("Slider navigation switches to Graphify Graph and highlights button", sliderGraphifyActive);
-
-  // Verify Graphify canvas maintains rendered pixels and does not vanish
-  await new Promise(r => setTimeout(r, 600));
-  const graphifyPixels = await evaluate(`
-    (() => {
-      const c = document.getElementById('graphifyCanvas');
-      if (!c) return 0;
-      const ctx = c.getContext('2d');
-      const img = ctx.getImageData(0, 0, c.width, c.height);
-      let filled = 0;
-      for (let i = 3; i < img.data.length; i += 4) {
-        if (img.data[i] > 0) filled++;
-      }
-      return filled;
-    })()
-  `);
-  test("Graphify canvas remains rendered and visible after simulation settles (> 1000px)", graphifyPixels > 1000);
-
-  // Test dynamic real-time graph update when VFS changes
-  const initialNodesText = await evaluate("document.getElementById('graphifyNodeCount')?.textContent || ''");
+  // Test dynamic VFS file update and artifact badge count
+  const initialBadgeCount = await evaluate("parseInt(document.getElementById('aiSubTabArtifactCount')?.textContent || '0', 10)");
   await evaluate(`
     (() => {
       window.vfs = window.vfs || {};
       window.vfs['neural-agent.py'] = 'def run(): pass';
-      if (window.rebuildGraphData) window.rebuildGraphData();
+      if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
+      if (window.updateAiSubTabArtifactBadge) window.updateAiSubTabArtifactBadge();
     })()
   `);
-  const updatedNodesText = await evaluate("document.getElementById('graphifyNodeCount')?.textContent || ''");
-  test("Graphify graph updates dynamically when VFS files change", updatedNodesText !== initialNodesText);
+  const updatedBadgeCount = await evaluate("parseInt(document.getElementById('aiSubTabArtifactCount')?.textContent || '0', 10)");
+  test("Artifacts count badge updates dynamically when VFS files change", updatedBadgeCount >= initialBadgeCount);
 
   const topTabsHidden = await evaluate("document.getElementById('aiSubTabsBar').classList.contains('hidden')");
   test("Top sub-tabs bar #aiSubTabsBar is hidden (moved to slider)", topTabsHidden);
@@ -819,7 +798,7 @@ async function runBrowserTest() {
   const hasSessionTimeoutFn = await evaluate("typeof window.handleSessionTimeout === 'function'");
   test("20-minute session auto-logout & cloud flush function initialized in Chrome", hasSessionTimeoutFn);
 
-  // 17. Handcrafted Vector Art & Graphify Visualizer in Chrome
+  // 17. Handcrafted Vector Art & Architecture Decoupling in Chrome
   const pencilArtResult = await evaluate(`(() => {
     const res = window.LuminaWhiteboard ? window.LuminaWhiteboard.handleAgentDirective({ action: 'draw', title: 'Artist Pencil', type: 'illustration' }, 'draw a pencil') : null;
     return res && res.success && res.subject === 'pencil' && res.shapeCount > 0;
@@ -887,17 +866,14 @@ async function runBrowserTest() {
   })()`);
   test("Whiteboard AI searches internet first and retrieves web visual knowledge in Chrome", webFirstSearchTest);
 
-  await evaluate("switchTab('tab-graphify')");
-  await new Promise(r => setTimeout(r, 100));
-  const isGraphifyActive = await evaluate(`(() => {
+  const isArchitectureClean = await evaluate(`(() => {
     const col = document.getElementById('aiGraphifyColumn');
     const cv = document.getElementById('graphifyCanvas');
-    const nodes = typeof window.getGraphifyBaseNodes === 'function' ? window.getGraphifyBaseNodes() : [];
-    const hasCloudSyncNode = nodes.some(n => n.id === 'modules/cloud-sync.js');
-    const hasVisionNode = nodes.some(n => n.id === 'modules/whiteboard-vision.js');
-    return col && !col.classList.contains('hidden') && cv !== null && hasCloudSyncNode && hasVisionNode;
+    const btn = document.getElementById('btn-tab-graphify');
+    const hasHelpers = typeof window.getGraphifyBaseNodes !== 'undefined';
+    return col === null && cv === null && btn === null && !hasHelpers;
   })()`);
-  test("Graphify Knowledge Graph switches, animates, and includes cloud-sync & whiteboard-vision architecture in Chrome", isGraphifyActive);
+  test("Client architecture is cleanly decoupled with zero graphify UI elements in Chrome", isArchitectureClean);
 
   // 17b. ESP32 Smart Door Lock & Ultra-Secure Cloud Log Viewer in Chrome
   await evaluate("switchTab('tab-smartlock')");

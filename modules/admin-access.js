@@ -56,6 +56,12 @@
     }
   }
 
+  function getApiOrigin() {
+    return (window.location && window.location.hostname && window.location.hostname.endsWith('github.io'))
+      ? 'https://lumina-vista-sigma.vercel.app'
+      : '';
+  }
+
   /**
    * Fetches the list of active credentials from the backend
    */
@@ -65,16 +71,21 @@
     if (!listEl) return;
 
     try {
-      const res = await fetch('/api/admin?action=passwords', {
+      const res = await fetch(getApiOrigin() + '/api/admin?action=passwords', {
         headers: {
           'Content-Type': 'application/json',
           'x-session-id': localStorage.getItem('lumina_session_id') || ''
-        }
+        },
+        credentials: 'include'
       });
 
       if (res.ok) {
         const data = await res.json();
         adminPasswords = Array.isArray(data.passwords) ? data.passwords : [];
+        try { localStorage.setItem('lumina_admin_passwords_cache', JSON.stringify(adminPasswords)); } catch (_) {}
+        if (Array.isArray(data.vault) && data.vault.length > 0) {
+          try { localStorage.setItem('lumina_temp_vault', JSON.stringify(data.vault)); } catch (_) {}
+        }
       } else {
         // Fallback to local storage cache if offline
         const local = localStorage.getItem('lumina_admin_passwords_cache');
@@ -227,12 +238,13 @@
     }
 
     try {
-      const res = await fetch('/api/admin', {
+      const res = await fetch(getApiOrigin() + '/api/admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-session-id': localStorage.getItem('lumina_session_id') || ''
         },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'create',
           label: label || 'Admin Key',
@@ -242,6 +254,14 @@
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (data.item && data.item.hash) {
+          try {
+            const vault = JSON.parse(localStorage.getItem('lumina_temp_vault') || '[]');
+            const filtered = vault.filter(v => v.id !== data.item.id);
+            filtered.push(data.item);
+            localStorage.setItem('lumina_temp_vault', JSON.stringify(filtered));
+          } catch (_) {}
+        }
         if (passInput) passInput.value = '';
         if (labelInput) labelInput.value = '';
         if (window.showToast) {
@@ -274,13 +294,21 @@
    */
   async function deletePassword(id) {
     if (!id) return;
+    const remaining = Array.isArray(adminPasswords) ? adminPasswords.filter(p => p && p.id !== id) : [];
+    if (remaining.length < 1 || adminPasswords.length <= 1) {
+      if (window.showToast) {
+        window.showToast('Security Policy', 'Cannot delete the last access key: At least one active access password must remain present at all times.');
+      }
+      return;
+    }
     try {
-      const res = await fetch('/api/admin', {
+      const res = await fetch(getApiOrigin() + '/api/admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-session-id': localStorage.getItem('lumina_session_id') || ''
         },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'delete',
           id
@@ -289,6 +317,11 @@
 
       const data = await res.json();
       if (res.ok && data.success) {
+        try {
+          const vault = JSON.parse(localStorage.getItem('lumina_temp_vault') || '[]');
+          const filtered = vault.filter(v => v.id !== id);
+          localStorage.setItem('lumina_temp_vault', JSON.stringify(filtered));
+        } catch (_) {}
         if (window.showToast) {
           window.showToast('Admin Security', 'Access credential revoked.');
         }

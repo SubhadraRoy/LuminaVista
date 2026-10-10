@@ -19,7 +19,7 @@ let cachedCloudSecret = '';
 export const getDeviceSecret = () => (
   process.env.IOT_DEVICE_SECRET ||
   cachedCloudSecret ||
-  (!process.env.VERCEL ? 'a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8' : '')
+  (!process.env.VERCEL && process.env.NODE_ENV !== 'production' ? 'a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8' : '')
 ).trim();
 
 async function ensureDeviceSecretLoaded(storage) {
@@ -67,6 +67,8 @@ const TIER1_PHYSICAL_COMMANDS = new Set(['unlock', 'lock', 'lock_mode', 'alarm_c
 function getDefaultStatus() {
   return {
     lock: 'LOCKED',
+    lockMode: 'AUTO',
+    manualMode: false,
     door: 'CLOSED',
     doorOpenTime: 'Closed',
     doorCloseTime: '-',
@@ -102,6 +104,8 @@ function getDefaultStatus() {
     cpu_load: 8,
     heap_free: 218400,
     heap_total: 327680,
+    heap_largest_block: 110000,
+    heap_min: 190000,
     uptime: 0,
     last_online: '-',
     lastOnline: '-',
@@ -121,6 +125,11 @@ function normalizeStatus(raw = {}, prev = {}) {
   base.lastAccessEvent = base.last_access_event;
   base.last_nfc = raw.last_nfc ?? raw.lastNfcEvent ?? prev.last_nfc ?? base.last_nfc;
   base.lastNfcEvent = base.last_nfc;
+  base.lockMode = raw.lockMode ?? prev.lockMode ?? (base.manualMode ? 'MANUAL' : 'AUTO');
+  base.manualMode = typeof raw.manualMode === 'boolean' ? raw.manualMode : (base.lockMode === 'MANUAL' || prev.manualMode || false);
+  base.doorCloseTime = raw.doorCloseTime ?? prev.doorCloseTime ?? base.doorCloseTime ?? '-';
+  base.heap_largest_block = Number.isFinite(Number(raw.heap_largest_block ?? prev.heap_largest_block)) ? Number(raw.heap_largest_block ?? prev.heap_largest_block) : base.heap_largest_block;
+  base.heap_min = Number.isFinite(Number(raw.heap_min ?? prev.heap_min)) ? Number(raw.heap_min ?? prev.heap_min) : base.heap_min;
   base.rssi = Number.isFinite(Number(raw.rssi ?? raw.wifi_rssi)) ? Number(raw.rssi ?? raw.wifi_rssi) : base.rssi;
   base.wifi_rssi = base.rssi;
   base.last_online = raw.last_online ?? raw.lastOnline ?? prev.last_online ?? base.last_online;
@@ -232,12 +241,32 @@ export async function verifyDeviceRequest(req, rawBodyStr, storage) {
     return { valid: false, status: 401, error: 'Replay attack detected: nonce already used' };
   }
 
+  const seq = parseInt(seqStr, 10) || 0;
+
+  // Layer 6: Sequence Number Monotonicity Check (reject stale/reordered telemetry packets within drift window)
+  if (storage && typeof storage.get === 'function') {
+    try {
+      const rawMeta = await storage.get(KEY_META);
+      const meta = rawMeta ? (typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta) : null;
+      if (meta && typeof meta.lastSeq === 'number' && seq < (meta.lastSeq || 0)) {
+        auditLog('IOT_STALE_SEQUENCE', req, `seq=${seq}, lastSeq=${meta.lastSeq}`);
+        return {
+          valid: false,
+          status: 401,
+          error: 'Stale or out-of-order telemetry packet rejected',
+          lastSeq: meta.lastSeq,
+          serverTime: nowSec
+        };
+      }
+    } catch (_) {}
+  }
+
   return {
     valid: true,
     deviceId,
     timestamp: ts,
     nonce,
-    seq: parseInt(seqStr, 10) || 0,
+    seq,
     serverTime: nowSec
   };
 }
@@ -371,6 +400,12 @@ export default async function handler(req, res) {
   // 1. GET /api/iot?action=time (Signed Time-Sync Bootstrap for ESP32)
   // =========================================================================
   if (req.method === 'GET' && action === 'time') {
+    const rate = await checkRateLimit(req, storage, 'iot_time', 60, 60);
+    if (!rate.allowed) {
+      auditLog('IOT_RATE_LIMIT_EXCEEDED', req, 'Action: time');
+      return sendSecureJson(res, rate.status, { error: rate.error });
+    }
+
     const challenge = String(urlObj.searchParams.get('challenge') || (req.query && req.query.challenge) || '').slice(0, 64);
     const nowSec = Math.floor(Date.now() / 1000);
     const secret = await ensureDeviceSecretLoaded(storage);
@@ -404,7 +439,7 @@ export default async function handler(req, res) {
     }
     if (session.role !== 'master') {
       auditLog('IOT_FORBIDDEN', req, `Temporary session attempted log download (role=${session.role})`);
-      return sendSecureJson(res, 403, { error: 'Forbidden: Master Administrator access required to download audit logs.' });
+      return sendSecureJson(res, 403, { error: 'Forbidden: Administrator authorization required to download audit logs.' });
     }
 
     const logs = Array.isArray(rawLogs) ? rawLogs.map(normalizeLogEntry) : [];
@@ -595,7 +630,7 @@ export default async function handler(req, res) {
           ? req.rawBody.toString('utf8')
           : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
 
-      const rate = await checkRateLimit(req, storage, 'iot_hardware', 120, 60);
+      const rate = await checkRateLimit(req, storage, 'iot_hardware', 300, 60);
       if (!rate.allowed) {
         return sendSecureJson(res, 429, { error: rate.error });
       }
@@ -631,6 +666,16 @@ export default async function handler(req, res) {
         readJsonKey(storage, KEY_CONN_HISTORY, []),
         readJsonKey(storage, KEY_CMDS, [])
       ]);
+
+      // Sequence Number Monotonicity Check: reject stale or reordered telemetry packets within drift window
+      if (prevMeta && typeof prevMeta.lastSeq === 'number' && verification.seq < (prevMeta.lastSeq || 0)) {
+        auditLog('IOT_STALE_SEQUENCE', req, `seq=${verification.seq}, lastSeq=${prevMeta.lastSeq}`);
+        return sendSecureJson(res, 401, {
+          error: 'Stale or out-of-order telemetry packet rejected',
+          lastSeq: prevMeta.lastSeq,
+          serverTime: nowSec
+        });
+      }
 
       if (body.probeOnly === true) {
         return sendSecureJson(res, 200, {
@@ -885,7 +930,7 @@ export default async function handler(req, res) {
       const meta = {
         ...(prevMeta || {}),
         lastSeenMs: nowMs,
-        lastSeq: verification.seq,
+        lastSeq: Math.max(verification.seq, prevMeta?.lastSeq || 0),
         wasOnline: true,
         lastOnlineMs: isTransitionToOnline ? nowMs : (prevMeta.lastOnlineMs || nowMs),
         lastOnlineTs: isTransitionToOnline ? nowTs : (prevMeta.lastOnlineTs || nowTs),
@@ -908,15 +953,16 @@ export default async function handler(req, res) {
         }
       }
 
-      const writes = [writeJsonKey(storage, KEY_META, meta)];
-      if (mergedState) writes.push(writeJsonKey(storage, KEY_STATE, mergedState));
-      if (sanitizedCards) writes.push(writeJsonKey(storage, KEY_CARDS, sanitizedCards));
-      if (updatedLogs) writes.push(writeJsonKey(storage, KEY_LOGS, updatedLogs));
-      if (updatedConnHistory) writes.push(writeJsonKey(storage, KEY_CONN_HISTORY, updatedConnHistory));
+      const p = storage.pipeline();
+      p.set(KEY_META, JSON.stringify(meta));
+      if (mergedState) p.set(KEY_STATE, JSON.stringify(mergedState));
+      if (sanitizedCards) p.set(KEY_CARDS, JSON.stringify(sanitizedCards));
+      if (updatedLogs) p.set(KEY_LOGS, JSON.stringify(updatedLogs));
+      if (updatedConnHistory) p.set(KEY_CONN_HISTORY, JSON.stringify(updatedConnHistory));
       if (!Array.isArray(rawQueue) || remainingQueue.length !== rawQueue.length) {
-        writes.push(writeJsonKey(storage, KEY_CMDS, remainingQueue));
+        p.set(KEY_CMDS, JSON.stringify(remainingQueue));
       }
-      await Promise.all(writes);
+      await p.exec();
 
       return sendSecureJson(res, 200, {
         ok: true,
@@ -960,11 +1006,11 @@ export default async function handler(req, res) {
       return sendSecureJson(res, 503, { error: 'IoT gateway cryptographic key not provisioned' });
     }
 
-    // Restrict destructive actions to Master Administrator
+    // Restrict destructive actions to Administrator
     const DESTRUCTIVE_ACTIONS = ['clear_conn_history', 'clear_logs', 'clear_queue'];
     if (DESTRUCTIVE_ACTIONS.includes(bodyAction) && session.role !== 'master') {
       auditLog('IOT_FORBIDDEN', req, `Temporary session attempted ${bodyAction} (role=${session.role})`);
-      return sendSecureJson(res, 403, { error: 'Forbidden: Master Administrator access required.' });
+      return sendSecureJson(res, 403, { error: 'Forbidden: Administrator authorization required.' });
     }
 
     // Action: Clear Connection Timing History
@@ -1017,14 +1063,14 @@ export default async function handler(req, res) {
         return sendSecureJson(res, 400, { error: `Unsupported IoT command: ${cmd}` });
       }
 
-      // Restrict administrative/destructive commands to Master Administrator (CRIT-04)
+      // Restrict administrative/destructive commands to Administrator (CRIT-04)
       const MASTER_ONLY_COMMANDS = new Set([
         'lock_mode', 'cards_clear', 'restart', 'enroll', 'card_remove', 'card_toggle',
         'card_rename', 'card_color', 'relay3_schedule', 'relay4_schedule', 'logs_clear'
       ]);
       if (MASTER_ONLY_COMMANDS.has(cmd) && session.role !== 'master') {
         auditLog('IOT_FORBIDDEN', req, `Temporary session attempted restricted command ${cmd} (role=${session.role})`);
-        return sendSecureJson(res, 403, { error: 'Forbidden: Master Administrator access required.' });
+        return sendSecureJson(res, 403, { error: 'Forbidden: Administrator authorization required.' });
       }
 
       let param = '';
@@ -1177,11 +1223,13 @@ export default async function handler(req, res) {
       activeQueue.push(cmdObj);
       const cappedQueue = activeQueue.slice(-50);
 
-      await Promise.all([
-        writeJsonKey(storage, KEY_CMDS, cappedQueue),
-        ...(TIER1_PHYSICAL_COMMANDS.has(cmd) ? [] : [writeJsonKey(storage, KEY_STATE, currentState)]),
-        writeJsonKey(storage, KEY_CARDS, currentCards)
-      ]);
+      const p = storage.pipeline();
+      p.set(KEY_CMDS, JSON.stringify(cappedQueue));
+      if (!TIER1_PHYSICAL_COMMANDS.has(cmd)) {
+        p.set(KEY_STATE, JSON.stringify(currentState));
+      }
+      p.set(KEY_CARDS, JSON.stringify(currentCards));
+      await p.exec();
 
       return sendSecureJson(res, 200, {
         ok: true,

@@ -5,11 +5,14 @@
 (function(window) {
   'use strict';
 
+  const localStorage = (window && window.localStorage) ? window.localStorage : (typeof globalThis !== 'undefined' && globalThis.localStorage ? globalThis.localStorage : null);
+
   let syncTimeout = null;
   let isSyncing = false;
   let hasPendingSync = false;
   let syncStatus = 'idle'; // 'idle' | 'syncing' | 'synced' | 'error'
   let lastSyncedAt = null;
+  let hasRestoredInitialTab = false;
 
   function getSessionId() {
     try {
@@ -17,6 +20,12 @@
     } catch (e) {
       return '';
     }
+  }
+
+  function getApiOrigin() {
+    return (window.location && window.location.hostname && window.location.hostname.endsWith('github.io'))
+      ? 'https://lumina-vista-sigma.vercel.app'
+      : '';
   }
 
   function updateSyncUI(status, message) {
@@ -144,21 +153,23 @@
       projects,
       theme,
       activeTabId: localStorage.getItem('lumina_active_tab_id') || window.currentActiveTab || 'tab-ai-studio',
+      admin_passwords: JSON.parse(localStorage.getItem('lumina_temp_vault') || '[]'),
       updatedAt: Date.now()
     };
   }
 
   /**
    * Pulls master workspace state from cloud backend and hydrates all modules.
+   * @param {boolean} [isInitial=false] - True during initial cold boot
    */
-  async function pullFromCloud() {
+  async function pullFromCloud(isInitial = false) {
     if (isSyncing) return true;
     isSyncing = true;
     updateSyncUI('syncing', 'Restoring...');
 
     try {
       const sessionId = getSessionId();
-      const res = await fetch('/api/sync', {
+      const res = await fetch(getApiOrigin() + '/api/sync', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -176,7 +187,11 @@
 
       // If cloud has an existing saved workspace state, hydrate local storage & DOM
       if (state && typeof state === 'object' && !payload.empty && Object.keys(state).length > 0) {
-        hydrateWorkspaceFromState(state);
+        const isColdBoot = Boolean(isInitial && !hasRestoredInitialTab);
+        hydrateWorkspaceFromState(state, { isInitial: isColdBoot });
+        if (isColdBoot) {
+          hasRestoredInitialTab = true;
+        }
         lastSyncedAt = state.updatedAt || Date.now();
         updateSyncUI('synced', 'Cloud Synced');
         return true;
@@ -197,8 +212,10 @@
 
   /**
    * Hydrates all domain modules and localStorage from the downloaded cloud state.
+   * @param {Object} state - Workspace snapshot from cloud
+   * @param {Object} [options={}] - Hydration options ({ isInitial: boolean })
    */
-  function hydrateWorkspaceFromState(state) {
+  function hydrateWorkspaceFromState(state, options = {}) {
     if (!state || typeof state !== 'object') return;
 
     let hasCalendarUpdated = false;
@@ -208,18 +225,108 @@
     let hasNotesUpdated = false;
     let hasProjectsUpdated = false;
 
-    // 1. Calendar Events & Settings
+    // 1. Calendar Events & Settings (Non-destructive merge to protect local & cloud events)
     if (Array.isArray(state.calendar)) {
       try {
-        localStorage.setItem('luminavista_calendar_events_v1', JSON.stringify(state.calendar));
-        localStorage.setItem('lumina_calendar_events', JSON.stringify(state.calendar));
-        if (window.LuminaCalendar?.setEvents) {
-          window.LuminaCalendar.setEvents(state.calendar);
-        } else if (window.calendarEvents) {
-          window.calendarEvents = state.calendar;
+        let localEvents = [];
+        try {
+          if (window.LuminaCalendar?.getEvents) {
+            const evts = window.LuminaCalendar.getEvents();
+            if (Array.isArray(evts) && evts.length > 0) localEvents = evts;
+          }
+          if (localEvents.length === 0 && Array.isArray(window.calendarEvents) && window.calendarEvents.length > 0) {
+            localEvents = window.calendarEvents;
+          }
+          if (localEvents.length === 0) {
+            localEvents = JSON.parse(
+              localStorage.getItem('luminavista_calendar_events_v1') ||
+              localStorage.getItem('lumina_calendar_events') ||
+              '[]'
+            );
+          }
+        } catch (_) {
+          localEvents = [];
         }
-        hasCalendarUpdated = true;
-      } catch (e) {}
+        if (!Array.isArray(localEvents)) localEvents = [];
+
+        const getEventTimestamp = (evt) => {
+          if (!evt || typeof evt !== 'object') return 0;
+          const ts = evt.updatedAt || evt.lastModified || evt.updated || evt.createdAt || 0;
+          if (typeof ts === 'number') return ts;
+          if (typeof ts === 'string') {
+            const parsed = Date.parse(ts);
+            return isNaN(parsed) ? 0 : parsed;
+          }
+          return 0;
+        };
+
+        const localMap = new Map();
+        const unkeyedLocal = [];
+        for (const ev of localEvents) {
+          if (ev && (ev.id !== undefined && ev.id !== null)) {
+            localMap.set(String(ev.id), ev);
+          } else if (ev) {
+            unkeyedLocal.push(ev);
+          }
+        }
+
+        const mergedCalendar = [];
+        let hasNewCalendarFromCloud = false;
+
+        for (const cloudEv of state.calendar) {
+          if (!cloudEv || typeof cloudEv !== 'object') continue;
+          if (cloudEv.id !== undefined && cloudEv.id !== null) {
+            const idKey = String(cloudEv.id);
+            const localEv = localMap.get(idKey);
+            if (!localEv) {
+              // Cloud event not present locally -> include cloud event
+              mergedCalendar.push(cloudEv);
+              hasNewCalendarFromCloud = true;
+            } else {
+              // Exists in both: compare updatedAt / lastModified
+              const cloudTs = getEventTimestamp(cloudEv);
+              const localTs = getEventTimestamp(localEv);
+              if (cloudTs > localTs) {
+                mergedCalendar.push(cloudEv);
+                hasNewCalendarFromCloud = true;
+              } else {
+                // Local is newer or equal -> retain local event
+                mergedCalendar.push(localEv);
+              }
+              localMap.delete(idKey);
+            }
+          } else {
+            mergedCalendar.push(cloudEv);
+            hasNewCalendarFromCloud = true;
+          }
+        }
+
+        // Preserve all local events not present in cloud
+        for (const remainingLocal of localMap.values()) {
+          mergedCalendar.push(remainingLocal);
+        }
+        for (const unkeyed of unkeyedLocal) {
+          mergedCalendar.push(unkeyed);
+        }
+
+        localStorage.setItem('luminavista_calendar_events_v1', JSON.stringify(mergedCalendar));
+        localStorage.setItem('lumina_calendar_events', JSON.stringify(mergedCalendar));
+        if (window.LuminaCalendar?.setEvents) {
+          window.LuminaCalendar.setEvents(mergedCalendar);
+        } else if (window.calendarEvents) {
+          window.calendarEvents = mergedCalendar;
+        }
+        if (hasNewCalendarFromCloud || mergedCalendar.length !== localEvents.length) {
+          hasCalendarUpdated = true;
+        }
+
+        // If local had events not present in stale cloud, queue a push to update cloud
+        if (mergedCalendar.length > state.calendar.length) {
+          queueSync(2000);
+        }
+      } catch (e) {
+        console.warn('[CloudSync] Non-destructive calendar hydration error:', e);
+      }
     }
     if (state.calendarSettings && typeof state.calendarSettings === 'object') {
       try {
@@ -231,22 +338,74 @@
       } catch (e) {}
     }
 
-    // 2. AI Chat Sessions & History
+    // 2. AI Chat Sessions & History (Non-destructive merge to protect active conversations)
     if (Array.isArray(state.chatSessions)) {
       try {
-        localStorage.setItem('lumina_chat_sessions', JSON.stringify(state.chatSessions));
-        window.chatSessions = state.chatSessions;
-        window.aiSessions = state.chatSessions;
-        if (state.activeSessionId) {
-          localStorage.setItem('lumina_active_session_id', state.activeSessionId);
-          window.activeSessionId = state.activeSessionId;
+        let localSessions = [];
+        try {
+          localSessions = window.aiSessions || window.chatSessions || JSON.parse(localStorage.getItem('lumina_chat_sessions') || '[]');
+          if (!Array.isArray(localSessions)) localSessions = [];
+        } catch (_) { localSessions = []; }
+
+        const localMap = new Map(localSessions.map(s => [s.id, s]));
+        const mergedSessions = [];
+        let hasNewMessagesFromCloud = false;
+
+        // Process incoming cloud sessions
+        for (const cloudSess of state.chatSessions) {
+          if (!cloudSess || !cloudSess.id) continue;
+          const localSess = localMap.get(cloudSess.id);
+          if (!localSess) {
+            // New session from cloud
+            mergedSessions.push(cloudSess);
+            hasNewMessagesFromCloud = true;
+          } else {
+            // Session exists in both: preserve whichever has more messages or newer timestamp
+            const localMsgs = Array.isArray(localSess.messages) ? localSess.messages : [];
+            const cloudMsgs = Array.isArray(cloudSess.messages) ? cloudSess.messages : [];
+            if (cloudMsgs.length > localMsgs.length) {
+              mergedSessions.push(cloudSess);
+              hasNewMessagesFromCloud = true;
+            } else {
+              // Local has more messages (or equal) -> keep local conversation intact!
+              mergedSessions.push(localSess);
+            }
+            localMap.delete(cloudSess.id);
+          }
         }
+
+        // Keep any remaining local sessions that were not in incoming cloud state
+        for (const remainingLocal of localMap.values()) {
+          mergedSessions.push(remainingLocal);
+        }
+
+        if (mergedSessions.length > 0) {
+          localStorage.setItem('lumina_chat_sessions', JSON.stringify(mergedSessions));
+          window.chatSessions = mergedSessions;
+          window.aiSessions = mergedSessions;
+        }
+
+        // Active conversation safety: Never overwrite active conversation if local has active messages
+        const currentLocalConv = window.aiConversation || JSON.parse(localStorage.getItem('lumina_ai_history') || '[]');
         if (Array.isArray(state.aiConversation)) {
-          localStorage.setItem('lumina_ai_history', JSON.stringify(state.aiConversation));
-          window.aiConversation = state.aiConversation;
+          if (!Array.isArray(currentLocalConv) || currentLocalConv.length === 0 || state.aiConversation.length > currentLocalConv.length) {
+            localStorage.setItem('lumina_ai_history', JSON.stringify(state.aiConversation));
+            window.aiConversation = state.aiConversation;
+            hasChatUpdated = true;
+          }
         }
-        hasChatUpdated = true;
-      } catch (e) {}
+
+        if (hasNewMessagesFromCloud) {
+          hasChatUpdated = true;
+        }
+
+        // If local had richer conversation than stale cloud, queue a push to update cloud
+        if (mergedSessions.length > state.chatSessions.length || (Array.isArray(currentLocalConv) && currentLocalConv.length > (state.aiConversation?.length || 0))) {
+          queueSync(2000);
+        }
+      } catch (e) {
+        console.warn('[CloudSync] Non-destructive chat hydration error:', e);
+      }
     }
 
     // AI Config
@@ -294,20 +453,188 @@
       } catch (e) {}
     }
 
-    // 4. Virtual File System (VFS)
-    if (state.vfs && typeof state.vfs === 'object') {
+    // 4. Virtual File System (VFS) (Non-destructive merge & prototype pollution prevention)
+    if (state.vfs && typeof state.vfs === 'object' && !Array.isArray(state.vfs)) {
       try {
-        localStorage.setItem('lumina_codespace_vfs', JSON.stringify(state.vfs));
-        window.vfs = state.vfs;
-        hasVfsUpdated = true;
-      } catch (e) {}
+        let localVfs = {};
+        try {
+          localVfs = window.vfs || JSON.parse(localStorage.getItem('lumina_codespace_vfs') || '{}');
+          if (!localVfs || typeof localVfs !== 'object' || Array.isArray(localVfs)) {
+            localVfs = {};
+          }
+        } catch (_) {
+          localVfs = {};
+        }
+
+        const isForbiddenKey = (key) => {
+          return key === '__proto__' || key === 'prototype' || key === 'constructor';
+        };
+
+        const getVfsTimestamp = (val) => {
+          if (val && typeof val === 'object') {
+            const ts = val.updatedAt || val.lastModified || val.updated || val.createdAt || 0;
+            if (typeof ts === 'number') return ts;
+            if (typeof ts === 'string') {
+              const parsed = Date.parse(ts);
+              return isNaN(parsed) ? 0 : parsed;
+            }
+          }
+          return 0;
+        };
+
+        // Create a prototype-safe dictionary for merged VFS
+        const mergedVfs = Object.create(null);
+        let hasNewVfsFromCloud = false;
+
+        // 1. Seed with safe existing local VFS files
+        for (const localKey of Object.keys(localVfs)) {
+          if (isForbiddenKey(localKey)) continue;
+          if (Object.prototype.hasOwnProperty.call(localVfs, localKey)) {
+            mergedVfs[localKey] = localVfs[localKey];
+          }
+        }
+
+        // 2. Non-destructively merge cloud VFS files
+        for (const cloudKey of Object.keys(state.vfs)) {
+          if (isForbiddenKey(cloudKey)) {
+            console.warn('[CloudSync] Blocked prototype pollution attempt in VFS key:', cloudKey);
+            continue;
+          }
+          if (!Object.prototype.hasOwnProperty.call(state.vfs, cloudKey)) continue;
+
+          const cloudVal = state.vfs[cloudKey];
+
+          if (!(cloudKey in mergedVfs)) {
+            // New file from cloud -> include it
+            mergedVfs[cloudKey] = cloudVal;
+            hasNewVfsFromCloud = true;
+          } else {
+            // File exists both locally and in cloud
+            const localVal = mergedVfs[cloudKey];
+            const cloudTs = getVfsTimestamp(cloudVal);
+            const localTs = getVfsTimestamp(localVal);
+
+            if (cloudTs > localTs) {
+              mergedVfs[cloudKey] = cloudVal;
+              hasNewVfsFromCloud = true;
+            } else if (localTs > cloudTs) {
+              // Local is newer -> retain local
+            } else {
+              // Timestamps equal or absent:
+              // If local file is empty and cloud has content, accept cloud
+              const isLocalEmpty = (typeof localVal === 'string' && localVal.trim() === '') || localVal === null || localVal === undefined;
+              const isCloudNonEmpty = typeof cloudVal === 'string' && cloudVal.trim() !== '';
+              if (isLocalEmpty && isCloudNonEmpty) {
+                mergedVfs[cloudKey] = cloudVal;
+                hasNewVfsFromCloud = true;
+              }
+              // Otherwise preserve local file to avoid clobbering in-progress changes
+            }
+          }
+        }
+
+        // Convert safe dictionary to clean standard object for window.vfs & serialization
+        const safeFinalVfs = Object.assign({}, mergedVfs);
+
+        localStorage.setItem('lumina_codespace_vfs', JSON.stringify(safeFinalVfs));
+        window.vfs = safeFinalVfs;
+
+        if (hasNewVfsFromCloud || Object.keys(safeFinalVfs).length !== Object.keys(localVfs).length) {
+          hasVfsUpdated = true;
+        }
+
+        // If local had files not present in stale cloud, queue push to sync cloud
+        if (Object.keys(safeFinalVfs).length > Object.keys(state.vfs).length) {
+          queueSync(2000);
+        }
+      } catch (e) {
+        console.warn('[CloudSync] Non-destructive VFS hydration error:', e);
+      }
     }
 
-    // 5. Notes Vault Markdown
+    // 5. Notes Vault Markdown (Non-destructive merge by id / updatedAt without dropping local notes)
     if (Array.isArray(state.notes)) {
       try {
-        localStorage.setItem('lumina_godx_multi_notes', JSON.stringify(state.notes));
-        window.vaultNotes = state.notes;
+        let localNotes = [];
+        try {
+          localNotes = window.vaultNotes || JSON.parse(localStorage.getItem('lumina_godx_multi_notes') || '[]');
+        } catch (_) {
+          localNotes = [];
+        }
+        if (!Array.isArray(localNotes)) localNotes = [];
+
+        const getNoteTimestamp = (note) => {
+          if (!note || typeof note !== 'object') return 0;
+          const ts = note.updatedAt || note.lastModified || note.updated || note.createdAt || 0;
+          if (typeof ts === 'number') return ts;
+          if (typeof ts === 'string') {
+            const parsed = Date.parse(ts);
+            return isNaN(parsed) ? 0 : parsed;
+          }
+          return 0;
+        };
+
+        const localNotesMap = new Map();
+        const unkeyedNotes = [];
+        for (const n of localNotes) {
+          if (n && (n.id !== undefined && n.id !== null)) {
+            localNotesMap.set(String(n.id), n);
+          } else if (n) {
+            unkeyedNotes.push(n);
+          }
+        }
+
+        const mergedNotes = [];
+        let hasNewNotesFromCloud = false;
+
+        for (const cloudNote of state.notes) {
+          if (!cloudNote || typeof cloudNote !== 'object') continue;
+          if (cloudNote.id !== undefined && cloudNote.id !== null) {
+            const idKey = String(cloudNote.id);
+            const localNote = localNotesMap.get(idKey);
+            if (!localNote) {
+              // New note from cloud -> include it
+              mergedNotes.push(cloudNote);
+              hasNewNotesFromCloud = true;
+            } else {
+              // Exists in both: compare timestamps
+              const cloudTs = getNoteTimestamp(cloudNote);
+              const localTs = getNoteTimestamp(localNote);
+              if (cloudTs > localTs) {
+                mergedNotes.push(cloudNote);
+                hasNewNotesFromCloud = true;
+              } else if (localTs > cloudTs) {
+                mergedNotes.push(localNote);
+              } else {
+                // Timestamps equal or absent: protect local content if edited, or take whichever has content
+                const localLen = (typeof localNote.content === 'string') ? localNote.content.length : 0;
+                const cloudLen = (typeof cloudNote.content === 'string') ? cloudNote.content.length : 0;
+                if (cloudLen > localLen && localLen === 0) {
+                  mergedNotes.push(cloudNote);
+                  hasNewNotesFromCloud = true;
+                } else {
+                  mergedNotes.push(localNote);
+                }
+              }
+              localNotesMap.delete(idKey);
+            }
+          } else {
+            mergedNotes.push(cloudNote);
+            hasNewNotesFromCloud = true;
+          }
+        }
+
+        // Preserve all local notes not present in cloud state
+        for (const remainingLocal of localNotesMap.values()) {
+          mergedNotes.push(remainingLocal);
+        }
+        for (const unkeyed of unkeyedNotes) {
+          mergedNotes.push(unkeyed);
+        }
+
+        localStorage.setItem('lumina_godx_multi_notes', JSON.stringify(mergedNotes));
+        window.vaultNotes = mergedNotes;
+
         if (state.activeNoteId) {
           localStorage.setItem('lumina_active_note_id', state.activeNoteId);
           window.activeNoteId = state.activeNoteId;
@@ -316,8 +643,17 @@
           localStorage.setItem('lumina_note_view_mode', state.noteViewMode);
           window.noteViewMode = state.noteViewMode;
         }
-        hasNotesUpdated = true;
-      } catch (e) {}
+        if (hasNewNotesFromCloud || mergedNotes.length !== localNotes.length) {
+          hasNotesUpdated = true;
+        }
+
+        // If local had notes not present in stale cloud, queue push to update cloud
+        if (mergedNotes.length > state.notes.length) {
+          queueSync(2000);
+        }
+      } catch (e) {
+        console.warn('[CloudSync] Non-destructive notes hydration error:', e);
+      }
     }
 
     // 6. Projects Catalog
@@ -362,7 +698,6 @@
 
     if (hasVfsUpdated) {
       if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
-      if (window.rebuildGraphData) window.rebuildGraphData();
     }
 
     if (hasNotesUpdated) {
@@ -374,14 +709,32 @@
       window.renderProjectsList();
     }
 
-    // 8. Reopen Exact Same Tab Where Last Closed (only if not already on that tab)
+    // 8. Admin Temporary Passwords Vault
+    if (Array.isArray(state.admin_passwords) && state.admin_passwords.length > 0) {
+      try {
+        localStorage.setItem('lumina_temp_vault', JSON.stringify(state.admin_passwords));
+        const safeCache = state.admin_passwords.map(p => ({
+          id: p.id,
+          label: p.label || 'Access Key',
+          preview: p.preview || '••••••••',
+          createdAt: p.createdAt || Date.now(),
+          lastUsed: p.lastUsed || null
+        }));
+        localStorage.setItem('lumina_admin_passwords_cache', JSON.stringify(safeCache));
+      } catch (e) {}
+    }
+
+    // 9. Reopen Exact Same Tab Where Last Closed (ONLY on initial cold boot, NEVER during periodic background sync)
     if (state.activeTabId && typeof state.activeTabId === 'string') {
       try {
         localStorage.setItem('lumina_active_tab_id', state.activeTabId);
-        if (window.currentActiveTab !== state.activeTabId) {
-          window.currentActiveTab = state.activeTabId;
-          if (window.switchTab) {
-            window.switchTab(state.activeTabId);
+        if (options && options.isInitial && !hasRestoredInitialTab) {
+          hasRestoredInitialTab = true;
+          if (window.currentActiveTab !== state.activeTabId) {
+            window.currentActiveTab = state.activeTabId;
+            if (typeof window.switchTab === 'function') {
+              window.switchTab(state.activeTabId);
+            }
           }
         }
       } catch (e) {}
@@ -403,7 +756,7 @@
       const sessionId = getSessionId();
       const payload = getSyncPayload();
 
-      const res = await fetch('/api/sync', {
+      const res = await fetch(getApiOrigin() + '/api/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -456,18 +809,18 @@
   }
 
   function init() {
-    // Initial restore from cloud
-    pullFromCloud();
+    // Initial restore from cloud (cold boot: allowed to restore active tab)
+    pullFromCloud(true);
 
     // Hook unload to persist final state
     window.addEventListener('beforeunload', () => {
       flushSync();
     });
 
-    // Periodic background sync verification every 90 seconds
+    // Periodic background sync verification every 90 seconds (strictly background: NEVER hijack active tab)
     setInterval(() => {
       if (!isSyncing && !hasPendingSync) {
-        pullFromCloud();
+        pullFromCloud(false);
       }
     }, 90000);
   }
@@ -489,7 +842,7 @@
     queueSync,
     flushSync,
     getSyncPayload,
-    applyCloudPayload: (s) => { hydrateWorkspaceFromState(s); return true; },
+    applyCloudPayload: (s, options = {}) => { hydrateWorkspaceFromState(s, options); return true; },
     isSyncScheduled: () => syncTimeout !== null,
     getStatus: () => syncStatus,
     getLastSyncedAt: () => lastSyncedAt

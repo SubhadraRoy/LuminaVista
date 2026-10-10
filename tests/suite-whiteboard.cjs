@@ -3,6 +3,9 @@
  * AI Diagram Directives, Jev Routing, Smart Shapes, Laser Pointer, and Retina/SVG/JSON Export Engine.
  */
 
+const fs = require('fs');
+const path = require('path');
+
 module.exports = async function runWhiteboardSuite({ assert, window, document, rootDir }) {
   console.log("\n--- SUITE 26: Whiteboard Pro Multi-Board Gallery, AI Directives & Premium Features ---");
 
@@ -269,26 +272,24 @@ module.exports = async function runWhiteboardSuite({ assert, window, document, r
   assert(drawCakeRes.subject === 'cake', "Result correctly identifies subject as cake");
   assert(drawCakeRes.shapeCount > 0, "Cake illustration drew vector shapes");
 
-  // 15. Graphify Architecture, Modern Animations & Nodes Integration
-  assert(typeof window.getGraphifyBaseNodes === 'function', "getGraphifyBaseNodes helper exposed");
-  assert(typeof window.getGraphifyBaseLinks === 'function', "getGraphifyBaseLinks helper exposed");
-  const graphNodes = window.getGraphifyBaseNodes();
-  const graphNodeIds = graphNodes.map(n => n.id);
-  assert(graphNodeIds.includes('modules/cloud-sync.js'), "Graphify contains modules/cloud-sync.js");
-  assert(graphNodeIds.includes('modules/ai-chat-ui.js'), "Graphify contains modules/ai-chat-ui.js");
-  assert(graphNodeIds.includes('modules/whiteboard-ai.js'), "Graphify contains modules/whiteboard-ai.js");
-  assert(graphNodeIds.includes('modules/whiteboard-vision.js'), "Graphify contains modules/whiteboard-vision.js");
-  assert(graphNodeIds.includes('modules/whiteboard-gallery.js'), "Graphify contains modules/whiteboard-gallery.js");
-  assert(graphNodeIds.includes('modules/whiteboard-export.js'), "Graphify contains modules/whiteboard-export.js");
+  // 15. Modular Architecture & Client UI Decoupling
+  assert(typeof window.getGraphifyBaseNodes === 'undefined', "Client browser has zero graphify helpers in DOM window");
+  assert(document.getElementById('aiGraphifyColumn') === null, "Graphify visualizer column cleanly decoupled from DOM");
+  assert(document.getElementById('btn-tab-graphify') === null, "Graphify tab button cleanly decoupled from navigation");
 
-  const graphLinks = window.getGraphifyBaseLinks();
-  const cloudSyncLinks = graphLinks.filter(l => l.source === 'modules/cloud-sync.js' || l.target === 'modules/cloud-sync.js');
-  assert(cloudSyncLinks.length > 0, "Graphify connects cloud-sync module to system architecture");
-
-  // Test /graphify slash command navigation
-  window.switchTab('tab-graphify');
-  const graphifyTab = document.getElementById('aiGraphifyColumn');
-  assert(graphifyTab && !graphifyTab.classList.contains('hidden'), "/graphify routes user directly to active Graphify visualizer");
+  // Verify whiteboard submodules exist and conform to modularity constraints
+  const wbModules = [
+    'modules/whiteboard.js',
+    'modules/whiteboard-ai.js',
+    'modules/whiteboard-vision.js',
+    'modules/whiteboard-gallery.js'
+  ];
+  wbModules.forEach(modPath => {
+    const full = path.join(rootDir, modPath);
+    assert(fs.existsSync(full), `Whiteboard submodule ${modPath} exists`);
+    const lines = fs.readFileSync(full, 'utf8').split(/\r?\n/).length;
+    assert(lines < 2000, `Module ${modPath} (${lines} lines) strictly adheres to < 2000 lines budget`);
+  });
 
   // 16. Whiteboard Vision & Generative AI Vector Redraw Engine
   assert(typeof window.LuminaWhiteboardVision === 'object', "window.LuminaWhiteboardVision is exposed");

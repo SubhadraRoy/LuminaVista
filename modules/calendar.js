@@ -295,7 +295,7 @@
       const dayEvents = getEventsForDate(cellDate);
 
       const todayBoxClass = isToday 
-        ? 'group relative p-2.5 flex flex-col min-h-[95px] transition-all cursor-pointer bg-cyan-950/25 border-2 border-cyan-400 shadow-[inset_0_0_15px_rgba(0,242,254,0.15),0_0_20px_rgba(0,242,254,0.15)] ring-1 ring-cyan-400/40 rounded-xl z-10' 
+        ? 'group relative p-2 flex flex-col min-h-[90px] transition-all cursor-pointer bg-cyan-950/30 ring-2 ring-inset ring-cyan-400 shadow-[inset_0_0_15px_rgba(0,242,254,0.18)] rounded-xl z-10' 
         : 'group relative p-2 flex flex-col min-h-[90px] transition-all hover:bg-white/[0.03] cursor-pointer';
 
       html += `
@@ -303,6 +303,7 @@
              onclick="LuminaCalendar.handleDayCellClick('${cellDateStr}', event)">
           <div class="flex items-center justify-between mb-1">
             <div class="flex items-center gap-1.5">
+              ${cellDay === 1 ? `<span class="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 mr-0.5">${cellDate.toLocaleString('default', { month: 'short' })}</span>` : ''}
               <span class="inline-flex items-center justify-center text-xs font-mono font-bold w-6 h-6 rounded-full transition-transform ${
                 isToday 
                   ? 'bg-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/50 ring-2 ring-cyan-300' 
@@ -310,7 +311,7 @@
                     ? 'text-zinc-200 group-hover:bg-white/10' 
                     : 'text-zinc-600'
               }">
-                ${cellDay === 1 ? `${cellDate.toLocaleString('default', { month: 'short' })} ${cellDay}` : cellDay}
+                ${cellDay}
               </span>
               ${isToday ? `<span class="text-[9px] font-mono font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-cyan-400 text-black shadow-sm flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-black animate-ping"></span> TODAY</span>` : ''}
             </div>
@@ -1082,6 +1083,18 @@
     saveCalendarEvents();
     renderCalendar();
 
+    if (calendarSettings.googleCalendarConnected) {
+      (async () => {
+        for (const evt of plannedEvents) {
+          try {
+            await pushEventToGoogle(evt);
+          } catch (err) {
+            console.warn('[AI Scheduler]: Failed pushing routine event to Google Calendar:', err);
+          }
+        }
+      })();
+    }
+
     return {
       success: true,
       count: plannedEvents.length,
@@ -1312,7 +1325,7 @@
       saveCalendarEvents();
       renderCalendar();
 
-      if (target.googleEventId && calendarSettings.googleCalendarConnected) {
+      if (calendarSettings.googleCalendarConnected) {
         pushEventToGoogle(target);
       }
 
@@ -1360,15 +1373,19 @@
   // =========================================================================
   function getEventLocalDateKey(str) {
     if (!str) return '';
-    if (typeof str === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(str)) {
-      return str;
-    }
-    if (typeof str === 'string' && str.includes('T')) {
-      if (str.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(str)) {
-        const d = new Date(str);
-        if (!isNaN(d.getTime())) return formatDateKey(d);
+    if (typeof str === 'string') {
+      const trimmed = str.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed;
       }
-      return str.slice(0, 10);
+      if (trimmed.includes('T') && !trimmed.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+        return trimmed.slice(0, 10);
+      }
+      if (/^\d{4}-\d{2}-\d{2}\s/.test(trimmed) && !trimmed.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+        return trimmed.slice(0, 10);
+      }
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) return formatDateKey(d);
     }
     const d = new Date(str);
     return !isNaN(d.getTime()) ? formatDateKey(d) : '';

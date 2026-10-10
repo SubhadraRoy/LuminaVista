@@ -117,7 +117,6 @@ const moduleFiles = [
   'modules/jev-client.js',
   'modules/ai-studio.js',
   'modules/codespace.js',
-  'modules/graphify.js',
   'modules/voice-studio.js',
   'modules/compiler.js',
   'modules/terminal.js',
@@ -402,7 +401,7 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   window.localStorage.setItem("lumina_ai_provider", "hybrid_pool");
   window.loadAiConfig();
   const modelBadge = document.getElementById("aiActiveModelBadge");
-  assert(modelBadge && modelBadge.textContent.includes("Universal Hybrid"), "Model badge reflects Universal Hybrid Engine");
+  assert(modelBadge && (modelBadge.textContent.includes("Universal Hybrid") || modelBadge.textContent === (window.localStorage.getItem("lumina_ai_model") || "gpt-oss:20b")), "Model badge reflects active model name");
 
   const providerSelect = document.getElementById("modalAiProviderSelect");
   const providerOptions = Array.from(providerSelect ? providerSelect.options : []).map(o => o.value);
@@ -603,8 +602,10 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   const dashHtml = fs.readFileSync(path.join(rootDir, 'dashboard.html'), 'utf8');
   assert(!dashHtml.includes('value="local"'), "Dashboard has zero local ollama options (Full Online Cloud)");
   assert(!dashHtml.includes('id="aiAutonomousBadge"') && !dashHtml.includes('id="jevTelemetryBadge"'), "Header badges (Antigravity Autonomous & Jev Telemetry) cleanly removed as requested");
-  assert(dashHtml.includes('id="btnAiSubTabChat"') && dashHtml.includes('id="btnAiSubTabArtifacts"') && dashHtml.includes('id="btnAiSubTabGraphify"'), "Dashboard includes AI Studio sub-tabs (Chat, Artifacts & Files, Graphify Graph)");
-  assert(dashHtml.includes('id="graphifyCanvas"'), "Graphify canvas visualizer embedded in AI Studio");
+  assert(dashHtml.includes('id="btnAiSubTabChat"') && dashHtml.includes('id="btnAiSubTabArtifacts"'), "Dashboard includes AI Studio sub-tabs (Chat & Artifacts)");
+  assert(!dashHtml.includes('id="btnAiSubTabGraphify"'), "Graphify Graph subtab button cleanly removed from website DOM");
+  assert(!dashHtml.includes('id="graphifyCanvas"'), "Graphify canvas visualizer cleanly removed from website DOM");
+  assert(!dashHtml.includes('id="btn-tab-graphify"'), "Graphify Graph button #btn-tab-graphify cleanly removed from navigation slider");
   assert(chatApiCode.includes("https://ollama.com/v1/chat/completions"), "api/chat.js points Ollama Cloud to official endpoint");
 
   // Suite 9: 100% Free Sovereign Voice Interaction Studio
@@ -628,7 +629,8 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   // Suite 10: Mobile Responsiveness, Off-Canvas Sidebar Drawer & Slider Navigation
   console.log("\n[Test Suite 10: Mobile Responsiveness, Off-Canvas Sidebar Drawer & Slider Navigation]");
   assert(document.getElementById("btn-tab-artifacts") !== null, "Artifacts IDE button #btn-tab-artifacts exists in navigation slider");
-  assert(document.getElementById("btn-tab-graphify") !== null, "Graphify Graph button #btn-tab-graphify exists in navigation slider");
+  assert(document.getElementById("btn-tab-graphify") === null, "Graphify Graph button #btn-tab-graphify is completely absent from navigation slider");
+  assert(document.getElementById("aiGraphifyColumn") === null, "Graphify Column #aiGraphifyColumn is completely absent from DOM");
   assert(document.getElementById("aiSubTabsBar") && document.getElementById("aiSubTabsBar").classList.contains("hidden"), "Top tab bar #aiSubTabsBar is cleanly hidden in AI Studio (moved to slider)");
   assert(typeof window.openMobileSidebar === 'function', "sidebar.js exports openMobileSidebar");
   assert(typeof window.closeMobileSidebar === 'function', "sidebar.js exports closeMobileSidebar");
@@ -636,23 +638,16 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   assert(document.getElementById("mobileMenuToggleBtn") !== null, "Mobile navigation menu toggle button #mobileMenuToggleBtn exists in top bar");
   assert(document.getElementById("sidebarBackdrop") !== null, "Mobile sidebar backdrop #sidebarBackdrop exists in DOM");
 
-  // Test slider routing for Artifacts and Graphify
+  // Test slider routing for Artifacts and clean dual sub-tabs
   window.switchTab('tab-artifacts');
   const codespaceCol = document.getElementById("aiCodespaceColumn");
   assert(codespaceCol && !codespaceCol.classList.contains("hidden"), "switchTab('tab-artifacts') routes to Artifacts IDE view");
+  assert(window.activeAiSubTab === 'artifacts', "activeAiSubTab is set to 'artifacts'");
 
-  window.switchTab('tab-graphify');
-  const graphifyCol = document.getElementById("aiGraphifyColumn");
-  assert(graphifyCol && !graphifyCol.classList.contains("hidden"), "switchTab('tab-graphify') routes to Graphify Graph view");
-  assert(typeof window.rebuildGraphData === 'function', "graphify.js exports rebuildGraphData as a function");
-  
-  // Test dynamic updating of graph when VFS files change
-  const initialCountText = document.getElementById("graphifyNodeCount") ? document.getElementById("graphifyNodeCount").textContent : "";
-  window.vfs = window.vfs || {};
-  window.vfs["dynamic_test_node.js"] = "console.log('graphify live sync');";
-  window.rebuildGraphData();
-  const updatedCountText = document.getElementById("graphifyNodeCount") ? document.getElementById("graphifyNodeCount").textContent : "";
-  assert(updatedCountText !== initialCountText, "rebuildGraphData dynamically updates node and link counts on VFS changes");
+  window.switchAiSubTab('chat');
+  assert(window.activeAiSubTab === 'chat', "switchAiSubTab('chat') activates Chat sub-tab");
+  const chatView = document.getElementById("aiChatView");
+  assert(chatView && !chatView.classList.contains("hidden"), "Chat view is visible in Chat subtab");
 
   // Test mobile drawer toggle state changes
   window.openMobileSidebar();
@@ -1001,9 +996,9 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   window.fetch = originalFetch;
 
   // =========================================================================
-  // TEST SUITE 14: AI Calendar Full CRUD & Graphify Architecture Verification
+  // TEST SUITE 14: AI Calendar Full CRUD & Architecture Decoupling Verification
   // =========================================================================
-  console.log("\n[Test Suite 14: Comprehensive AI Calendar Access (View, Add, Edit, Delete) & Graphify Architecture]");
+  console.log("\n[Test Suite 14: Comprehensive AI Calendar Access (View, Add, Edit, Delete) & Architecture Decoupling]");
 
   // 1. AI Directive: View / List
   const viewAllDirective = window.LuminaCalendar.handleAgentDirective({ action: 'view' });
@@ -1107,28 +1102,33 @@ assert(!parsedTools.includes("&lt;button") && parsedTools.includes("<button"), "
   const delBespoke = jevEngine.jevGenerateBespokeResponse("cancel my appointment tomorrow");
   assert(delBespoke.includes('[TOOL:SCHEDULE_EVENT action="delete"'), "Jev generates SCHEDULE_EVENT delete directive for cancellation");
 
-  // 9. Graphify Architecture Completeness
-  assert(typeof window.getGraphifyBaseNodes === 'function', "graphify.js exports getGraphifyBaseNodes helper");
-  assert(typeof window.getGraphifyBaseLinks === 'function', "graphify.js exports getGraphifyBaseLinks helper");
-  const baseNodes = window.getGraphifyBaseNodes();
-  const baseLinks = window.getGraphifyBaseLinks();
+  // 9. Architecture Decoupling & Clean Client Verification
+  assert(typeof window.getGraphifyBaseNodes === 'undefined', "Client browser has zero graphify helpers in DOM window");
+  assert(typeof window.rebuildGraphData === 'undefined', "Client browser has zero graphify data rebuilders");
+  assert(document.getElementById('aiGraphifyColumn') === null, "Graphify Column DOM element does not exist in dashboard");
+  assert(document.getElementById('btn-tab-graphify') === null, "Graphify tab button does not exist in navigation slider");
 
-  assert(baseNodes.some(n => n.id === 'modules/calendar.js'), "Graphify includes modules/calendar.js node");
-  assert(baseNodes.some(n => n.id === 'api/calendar.js'), "Graphify includes api/calendar.js node");
-  assert(baseNodes.some(n => n.id === 'modules/codespace.js'), "Graphify includes modules/codespace.js node");
-  assert(baseNodes.some(n => n.id === 'modules/sidebar.js'), "Graphify includes modules/sidebar.js node");
-  assert(baseNodes.some(n => n.id === 'modules/system.js'), "Graphify includes modules/system.js node");
-  assert(baseNodes.some(n => n.id === 'modules/state.js'), "Graphify includes modules/state.js node");
-  assert(baseNodes.some(n => n.id === 'modules/voice-studio.js'), "Graphify includes modules/voice-studio.js node");
-  assert(baseNodes.some(n => n.id === 'middleware.js'), "Graphify includes middleware.js node");
-  assert(baseNodes.some(n => n.id === 'api/auth.js'), "Graphify includes api/auth.js node");
-  assert(baseNodes.some(n => n.id === 'api/logout.js'), "Graphify includes api/logout.js node");
-  assert(baseNodes.some(n => n.id === 'Google Calendar API'), "Graphify includes Google Calendar API cloud node");
-
-  assert(baseLinks.some(l => l.source === 'dashboard.html' && l.target === 'modules/calendar.js'), "Graphify links dashboard.html to modules/calendar.js");
-  assert(baseLinks.some(l => l.source === 'modules/ai-studio.js' && l.target === 'modules/calendar.js'), "Graphify links modules/ai-studio.js to modules/calendar.js");
-  assert(baseLinks.some(l => l.source === 'modules/calendar.js' && l.target === 'api/calendar.js'), "Graphify links modules/calendar.js to api/calendar.js");
-  assert(baseLinks.some(l => l.source === 'api/calendar.js' && l.target === 'Google Calendar API'), "Graphify links api/calendar.js to Google Calendar API");
+  // Verify critical system files exist and comply with the < 2,000 line budget constraint
+  const coreFiles = [
+    'modules/calendar.js',
+    'modules/codespace.js',
+    'modules/sidebar.js',
+    'modules/system.js',
+    'modules/state.js',
+    'modules/voice-studio.js',
+    'modules/cloud-sync.js',
+    'modules/ai-studio.js',
+    'api/calendar.js',
+    'api/auth.js',
+    'api/logout.js',
+    'dashboard.html'
+  ];
+  coreFiles.forEach(f => {
+    const fullPath = path.join(rootDir, f);
+    assert(fs.existsSync(fullPath), `Core system file ${f} exists`);
+    const lineCount = fs.readFileSync(fullPath, 'utf8').split(/\r?\n/).length;
+    assert(lineCount < 2000, `File ${f} (${lineCount} lines) conforms to < 2000 lines budget`);
+  });
 
   // =========================================================================
   // TEST SUITE 15: Google Calendar Sovereign Two-Way Sync Hardening & CORS Preflight

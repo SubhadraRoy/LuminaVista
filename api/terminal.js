@@ -1,3 +1,4 @@
+import path from 'path';
 import { Sandbox } from '@e2b/code-interpreter';
 import { getRedisClient } from './_lib/redis.js';
 import {
@@ -7,17 +8,31 @@ import {
   enforcePayloadLimit,
   auditLog,
   sendSecureJson,
+  setSecurityHeaders,
   scrubSecrets
 } from './_lib/auth-guard.js';
 import { inspectJevCommandSafety } from './_lib/jev-engine.js';
 
 export const maxDuration = 60;
 
+function sanitizeFilePath(userPath) {
+  if (!userPath || typeof userPath !== 'string') return '';
+  const clean = userPath
+    .replace(/\0/g, '')
+    .replace(/\\/g, '/')
+    .trim();
+  const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
+  if (normalized === '..' || normalized.startsWith('../') || normalized.includes('/../')) {
+    return '';
+  }
+  return normalized;
+}
+
 export default async function handler(req, res) {
+  res._req = req;
+  setSecurityHeaders(res, req);
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
@@ -36,10 +51,10 @@ export default async function handler(req, res) {
     return sendSecureJson(res.status(auth.status), auth.status, { error: auth.error });
   }
 
-  // Enforce master role requirement for shell/code execution
-  if (auth.role !== 'master') {
-    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/terminal - requires master role');
-    return sendSecureJson(res, 403, { error: 'Forbidden: Terminal execution requires master role' });
+  // Enforce authenticated role requirement for shell/code execution
+  if (auth.role !== 'master' && auth.role !== 'temporary') {
+    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/terminal');
+    return sendSecureJson(res, 403, { error: 'Forbidden: Terminal execution requires authenticated session' });
   }
 
   // 3. Sliding IP Rate Limiting (20 commands / 5 minutes)
@@ -80,7 +95,7 @@ export default async function handler(req, res) {
       for (const file of files) {
         if (file && file.name && typeof file.name === 'string' && file.content !== undefined) {
           // Prevent directory traversal inside container mounts
-          const safeName = file.name.replace(/\.\.+[/\\]/g, '').replace(/^\/+/, '');
+          const safeName = sanitizeFilePath(file.name);
           if (safeName) {
             await sbx.files.write(safeName, String(file.content));
           }

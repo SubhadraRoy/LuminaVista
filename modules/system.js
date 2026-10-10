@@ -13,9 +13,6 @@
     if (id === 'tab-artifacts') {
       actualTabId = 'tab-ai-studio';
       subView = 'artifacts';
-    } else if (id === 'tab-graphify') {
-      actualTabId = 'tab-ai-studio';
-      subView = 'graphify';
     } else if (id === 'tab-ai-studio') {
       subView = 'chat';
     }
@@ -77,13 +74,6 @@
       }, 50);
     }
 
-    if (id === "tab-graphify") {
-      setTimeout(() => {
-        if (window.initGraphifyGraph) window.initGraphifyGraph();
-        if (window.rebuildGraphData) window.rebuildGraphData();
-      }, 50);
-    }
-
     if (id === "tab-calendar") {
       if (window.LuminaCalendar && typeof window.LuminaCalendar.init === 'function') {
         window.LuminaCalendar.init();
@@ -135,7 +125,6 @@
       { label: "Jump to Notes Markdown", act: () => switchTab('tab-scratchpad') },
       { label: "Jump to Calendar", act: () => switchTab('tab-calendar') },
       { label: "Jump to Smart Door Lock & Cloud Log Viewer", act: () => switchTab('tab-smartlock') },
-      { label: "Jump to Graphify Knowledge Graph (/graphify)", act: () => switchTab('tab-graphify') },
       { label: "AI Real-Life Daily Auto-Schedule", act: () => { switchTab('tab-calendar'); if (window.LuminaCalendar) window.LuminaCalendar.aiAutoPlanDay(); } },
       { label: "Sync Google Calendar", act: () => { if (window.LuminaCalendar) window.LuminaCalendar.openSyncModal(); } },
       { label: "Jump to Settings", act: () => switchTab('tab-controls') },
@@ -365,6 +354,90 @@
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
   }
 
+  async function computeSha256Hex(str) {
+    if (!str) return '';
+    try {
+      if (window.crypto && window.crypto.subtle) {
+        const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (_) {}
+    try {
+      function sha256_fallback(ascii) {
+        function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+        let result = '';
+        const words = [];
+        const asciiBitLength = ascii.length * 8;
+        let hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+        const k = [
+          0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+          0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+          0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+          0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+          0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+          0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+          0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+          0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+        ];
+        let i = 0;
+        for (; i < ascii.length; i++) words[i >> 2] |= (ascii.charCodeAt(i) & 0xff) << ((3 - (i % 4)) * 8);
+        words[asciiBitLength >> 5] |= 0x80 << ((3 - ((asciiBitLength >> 3) % 4)) * 8);
+        words[(((asciiBitLength + 64) >> 9) << 4) + 15] = asciiBitLength;
+        for (i = 0; i < words.length; i += 16) {
+          const w = words.slice(i, i + 16);
+          const oldHash = hash.slice(0);
+          for (let j = 0; j < 64; j++) {
+            if (j >= 16) {
+              const s0 = rightRotate(w[j - 15], 7) ^ rightRotate(w[j - 15], 18) ^ (w[j - 15] >>> 3);
+              const s1 = rightRotate(w[j - 2], 17) ^ rightRotate(w[j - 2], 19) ^ (w[j - 2] >>> 10);
+              w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
+            }
+            const ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
+            const maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+            const s0 = rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22);
+            const s1 = rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25);
+            const temp1 = (hash[7] + s1 + ch + k[j] + (w[j] | 0)) | 0;
+            const temp2 = (s0 + maj) | 0;
+            hash = [(temp1 + temp2) | 0, hash[0], hash[1], hash[2], (hash[3] + temp1) | 0, hash[4], hash[5], hash[6]];
+          }
+          for (let j = 0; j < 8; j++) hash[j] = (hash[j] + oldHash[j]) | 0;
+        }
+        for (let j = 0; j < 8; j++) {
+          for (let b = 3; b >= 0; b--) {
+            const byte = (hash[j] >> (b * 8)) & 255;
+            result += (byte < 16 ? '0' : '') + byte.toString(16);
+          }
+        }
+        return result;
+      }
+      return sha256_fallback(str);
+    } catch (_) {}
+    return '';
+  }
+
+  function performWorkspaceUnlock() {
+    const lockModal = document.getElementById("lockModal");
+    const appRoot = document.getElementById("app-root");
+    const passInput = document.getElementById("lockPasswordInput");
+    const errEl = document.getElementById("lockErrorMessage");
+
+    if (lockModal) {
+      lockModal.classList.add("opacity-0");
+      setTimeout(() => {
+        lockModal.classList.add("hidden");
+        lockModal.style.display = "none";
+      }, 300);
+    }
+    if (appRoot) {
+      appRoot.classList.remove("filter", "blur-lg", "pointer-events-none", "select-none");
+    }
+    if (passInput) passInput.value = "";
+    if (errEl) errEl.classList.add("hidden");
+    isSessionLocked = false;
+    resetIdleTimer();
+    if (window.showToast) window.showToast("Perimeter Secure", "Access granted. Session resumed.");
+  }
+
   async function unlockSession(e) {
     if (e && e.preventDefault) e.preventDefault();
     const passInput = document.getElementById("lockPasswordInput");
@@ -372,7 +445,8 @@
     const btn = document.getElementById("lockUnlockBtn");
     if (!passInput) return;
 
-    const password = passInput.value;
+    const rawPass = passInput.value;
+    const password = rawPass ? rawPass.trim() : '';
     if (!password) {
       if (errEl) {
         errEl.textContent = "Please enter administrator credentials.";
@@ -387,11 +461,61 @@
       if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
     }
 
+    // Retrieve client-cached sovereign vault credentials
+    let clientVault = [];
     try {
-      const res = await fetch("/api/auth", {
+      clientVault = JSON.parse(localStorage.getItem('lumina_temp_vault') || '[]');
+    } catch (_) {}
+    if (!Array.isArray(clientVault) || clientVault.length === 0) {
+      try {
+        clientVault = JSON.parse(localStorage.getItem('lumina_admin_passwords_cache') || '[]');
+      } catch (_) {}
+    }
+    if (!Array.isArray(clientVault)) clientVault = [];
+
+    // Fast-path: Check against local sovereign vault if available
+    const inputHex = await computeSha256Hex(password);
+    const localMatch = inputHex && clientVault.find(v => v && typeof v.hash === 'string' && v.hash.toLowerCase() === inputHex.toLowerCase());
+
+    if (localMatch) {
+      performWorkspaceUnlock();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4 inline mr-1"></i> Unlock Workspace`;
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+      }
+      // Re-validate session in background to issue fresh token if needed
+      const apiOrigin = (window.location && window.location.hostname && window.location.hostname.endsWith('github.io'))
+        ? 'https://lumina-vista-sigma.vercel.app'
+        : '';
+      fetch(apiOrigin + "/api/auth", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password })
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-id": localStorage.getItem("lumina_session_id") || ""
+        },
+        credentials: "include",
+        body: JSON.stringify({ password, clientKeys: clientVault })
+      }).then(r => r.ok ? r.json() : null).then(data => {
+        if (data && data.sessionId) {
+          try { localStorage.setItem('lumina_session_id', data.sessionId); } catch (_) {}
+        }
+      }).catch(() => {});
+      return;
+    }
+
+    try {
+      const apiOrigin = (window.location && window.location.hostname && window.location.hostname.endsWith('github.io'))
+        ? 'https://lumina-vista-sigma.vercel.app'
+        : '';
+      const res = await fetch(apiOrigin + "/api/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-session-id": localStorage.getItem("lumina_session_id") || ""
+        },
+        credentials: "include",
+        body: JSON.stringify({ password, clientKeys: clientVault })
       });
       const data = await res.json();
 
@@ -399,24 +523,7 @@
         if (data.sessionId) {
           try { localStorage.setItem('lumina_session_id', data.sessionId); } catch (e) {}
         }
-        const lockModal = document.getElementById("lockModal");
-        const appRoot = document.getElementById("app-root");
-
-        if (lockModal) {
-          lockModal.classList.add("opacity-0");
-          setTimeout(() => {
-            lockModal.classList.add("hidden");
-            lockModal.style.display = "none";
-          }, 300);
-        }
-        if (appRoot) {
-          appRoot.classList.remove("filter", "blur-lg", "pointer-events-none", "select-none");
-        }
-        passInput.value = "";
-        if (errEl) errEl.classList.add("hidden");
-        isSessionLocked = false;
-        resetIdleTimer();
-        if (window.showToast) window.showToast("Perimeter Secure", "Access granted. Session resumed.");
+        performWorkspaceUnlock();
       } else {
         if (errEl) {
           errEl.textContent = data.error || "Authentication failed. Access Denied.";

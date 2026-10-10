@@ -1,0 +1,573 @@
+DeepInvestigator pipeline completed.
+
+**Investigation Findings**:
+# Comprehensive Critical Review & Definitive Architecture Report: Google Calendar & LuminaVista Bi-Directional Synchronization
+
+**Reviewer**: Antigravity Principal Systems Investigator  
+**Recipient**: Parent Orchestrator (`208ef9f0-8138-4542-ad2f-c5e145208065`)  
+**Target Repository**: [`c:/Users/roysu/LuminaVista`](file:///c:/Users/roysu/LuminaVista)  
+**Production Domain**: `https://lumina-vista-sigma.vercel.app`  
+**User Account Under Test**: `roysubhadra40@gmail.com`  
+**Investigation Scope**: End-to-end OAuth flow, Vercel Serverless Controller ([`api/calendar.js`](file:///c:/Users/roysu/LuminaVista/api/calendar.js)), Frontend Calendar Engine ([`modules/calendar.js`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js)), Routing & Headers ([`vercel.json`](file:///c:/Users/roysu/LuminaVista/vercel.json)), Cookie partitioning, CORS preflights, and Google Calendar API v3 data model compatibility.
+
+---
+
+## 1. Executive Summary: Prior Attempt Audit & Critical Discoveries
+
+The prior investigation correctly identified several structural bugs in the synchronization flow (such as the modal ID prefix check, missing startup sync, and refresh token overwrite). **However, a critical review reveals that the prior attempt contained fatal flaws in its proposed code fixes, missed several core root causes that break synchronization in practice, and failed to test HTTP CORS preflights and edge-case date handling.**
+
+### Critical Defects & Corrections in the Prior Worker's Report:
+1. **Fatal Flaw in Prior All-Day Event Fix (Google API Rejection)**:
+   - *Prior worker proposed*: `start: { date: evt.start.slice(0, 10) }, end: { date: evt.end.slice(0, 10) }`.
+   - *What the code/API actually requires*: In Google Calendar API v3, **all-day end dates are strictly exclusive** (`end.date > start.date`). For a single-day all-day event (e.g. `2026-09-30`), if `end.date` equals `start.date`, **Google Calendar API rejects the request with HTTP 400 Bad Request** (`"Invalid end time: end date must be after start date"`).
+   - *Correction*: Single-day all-day events MUST compute `end.date` as `start.date + 1 day` (e.g. `2026-10-01`).
+
+2. **Critical Flaw in Prior Timezone Date Key Fix (Western Hemisphere Shift)**:
+   - *Prior worker proposed*: `const evtDate = new Date(evt.start); const startKey = !isNaN(evtDate.getTime()) ? formatDateKey(evtDate) : ...`.
+   - *What the code/API actually shows*: For all-day events (`"2026-09-30"`), JavaScript `new Date("2026-09-30")` parses ISO date-only strings as **UTC midnight**. In all western timezones (e.g. US Eastern UTC-4/UTC-5, Pacific UTC-7/UTC-8), `evtDate.getDate()` shifts backward to September 29th (`2026-09-29T19:00:00-05:00`). The prior worker's proposed fix would break all-day events in the western hemisphere!
+   - *Correction*: Pure date strings (`/^\d{4}-\d{2}-\d{2}$/`) must preserve their exact date key without passing through UTC `new Date()`. Only datetime strings with timestamps/offsets (containing `'T'`) should be converted to local time via `new Date()`.
+
+3. **Missed Root Cause: CORS `OPTIONS` Preflight Fails with 401 Unauthorized (Live Verified)**:
+   - The prior worker failed to test HTTP `OPTIONS` requests.
+   - We executed a live probe against production:
+     ```powershell
+     curl.exe -s -i -X OPTIONS "https://lumina-vista-sigma.vercel.app/api/calendar/sync"
+     ```
+     **Live Response**:
+     ```http
+     HTTP/1.1 401 Unauthorized
+     {"connected":false,"error":"Not connected to Google Calendar. Please authenticate."}
+     ```
+   - In [`api/calendar.js`](file:///c:/Users/roysu/LuminaVista/api/calendar.js#L217-L225), `handleSync` immediately demands a valid access token without checking if `req.method === 'OPTIONS'`. Browser preflight requests send neither cookies nor authorization headers. When running in cross-origin preview frames (like `/teamwork-preview`), browsers block the request before the POST or DELETE is ever transmitted!
+   - In addition, [`vercel.json`](file:///c:/Users/roysu/LuminaVista/vercel.json#L19-L24) sets `Access-Control-Allow-Methods: GET, POST, OPTIONS`, **omitting `DELETE`**.
+
+4. **Missed Root Cause: False Positive "Connected" State in `handleStatus`**:
+   - In [`api/calendar.js#L154-L155`](file:///c:/Users/roysu/LuminaVista/api/calendar.js#L154-L155), `handleStatus` tests `const connected = !!cookies.gcal_token;`.
+   - It **never verifies** whether the access token or refresh token is valid! Even if the token is completely expired, invalid, or revoked, `handleStatus` returns `connected: true`. The frontend displays a green "Google Synced" badge while every background sync fails with 401.
+
+5. **Missed Root Cause: Asynchronous Popup Blocker Drop without Fallback**:
+   - In [`modules/calendar.js#L1264-L1276`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js#L1264-L1276), `window.open` is called **after** an asynchronous `await fetch('/api/calendar/auth')`.
+   - In Chrome, Safari, and Edge, user gesture tokens expire after network round-trips; popups are blocked by default.
+   - If blocked, `popup` is `null`. The first tick of `setInterval` evaluates `if (!popup || popup.closed)` as true, clears the timer, and silently halts with zero feedback to the user. Direct window navigation fallback (`window.location.href = authData.authUrl`) was missing.
+
+6. **Missed Root Cause: AI Studio Auto-Planned Days Never Push to Google**:
+   - [`aiAutoPlanDay()`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js#L979-L1066) creates autonomous schedule items, saves them to localStorage, and renders them. It never calls `pushEventToGoogle()`.
+
+7. **Missed Root Cause: Zero Periodic Auto-Sync Timer**:
+   - There is NO background sync timer (e.g. every 5 or 10 minutes) or window focus sync in [`modules/calendar.js`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js). Once loaded, LuminaVista never checks for changes made in Google Calendar unless manually triggered.
+
+---
+
+## 2. Live Production Verification & Diagnostic Probes
+
+We performed live probes against the running Vercel deployment (`https://lumina-vista-sigma.vercel.app`):
+
+### Probe 1: Backend Configuration & Redirect URI Resolution
+```powershell
+curl.exe -s "https://lumina-vista-sigma.vercel.app/api/calendar/status"
+```
+**Result**:
+```json
+{
+  "configured": true,
+  "connected": false,
+  "hasClientId": true,
+  "hasClientSecret": true,
+  "redirectUri": "https://lumina-vista-sigma.vercel.app/api/calendar/callback"
+}
+```
+*Finding*: `process.env.GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI` are properly configured in Vercel.
+
+### Probe 2: Testing Google OAuth Endpoint with Production Redirect URI
+```powershell
+curl.exe -s -i "https://accounts.google.com/o/oauth2/v2/auth?client_id=914032544862-gilsfk2583ult1v4ogq8e5j7upiukgqa.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Flumina-vista-sigma.vercel.app%2Fapi%2Fcalendar%2Fcallback&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar&access_type=offline&prompt=consent"
+```
+**Result**:
+`HTTP/1.1 302 Moved Temporarily` -> `Location: https://accounts.google.com/v3/signin/identifier?...`
+*Finding*: When the production URI `https://lumina-vista-sigma.vercel.app/api/calendar/callback` is used, Google **accepts** the request without error.
+
+### Probe 3: Reproducing the User's Error 400 (`redirect_uri_mismatch`)
+We tested what happens when accessed locally or via a non-whitelisted preview domain (`http://localhost:3000/api/calendar/callback`):
+```powershell
+curl.exe -s -i "https://accounts.google.com/o/oauth2/v2/auth?client_id=914032544862-gilsfk2583ult1v4ogq8e5j7upiukgqa.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fcalendar%2Fcallback&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar&access_type=offline&prompt=consent"
+```
+**Result**:
+`HTTP/1.1 302 Moved Temporarily` -> `Location: https://accounts.google.com/signin/oauth/error?authError=ChVyZWRpcmVjdF91cmlfbWlzbWF0Y2g...`
+Decoded Google Error Payload:
+> `redirect_uri_mismatch: You can't sign in to this app because it doesn't comply with Google's OAuth 2.0 policy. If you're the app developer, register the redirect URI in the Google Cloud Console. redirect_uri: http://localhost:3000/api/calendar/callback`
+
+*Key Insight*: In Google Cloud Console for Client ID `914032544862-gilsfk2583ult1v4ogq8e5j7upiukgqa`, ONLY `https://lumina-vista-sigma.vercel.app/api/calendar/callback` is authorized. If the user initiates OAuth from `localhost:3000` or a Vercel preview branch URL, Google rejects it immediately with Error 400.
+
+### Probe 4: Live OPTIONS Preflight Failure
+```powershell
+curl.exe -s -i -X OPTIONS "https://lumina-vista-sigma.vercel.app/api/calendar/sync"
+```
+**Result**:
+```http
+HTTP/1.1 401 Unauthorized
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+{"connected":false,"error":"Not connected to Google Calendar. Please authenticate."}
+```
+*Key Insight*: OPTIONS preflight is rejected with 401. This completely halts any cross-origin API calls in iframes or preview environments.
+
+---
+
+## 3. Detailed Technical Analysis Across Subsystems
+
+### A. OAuth Flow & Token Management ([`api/calendar.js`](file:///c:/Users/roysu/LuminaVista/api/calendar.js))
+
+1. **OAuth State Security & Parameter Encoding**:
+   - In `handleAuth()`, `redirect_uri` is safely encoded into base64 JSON `state` and round-tripped through Google to `handleCallback()`. RFC 6749 Section 4.1.3 requires the token exchange `redirect_uri` to match the authorization `redirect_uri` character-for-character. This prevents code exchange failures.
+2. **Refresh Token Permanent Erasure Bug**:
+   - In `handleCallback()` lines 103-107:
+     ```javascript
+     const tokenPayload = JSON.stringify({
+       access_token: tokenData.access_token,
+       refresh_token: tokenData.refresh_token,
+       expires_at: Date.now() + ((tokenData.expires_in || 3600) * 1000)
+     });
+     ```
+   - Google only returns `refresh_token` when explicit consent is prompted or on first authorization. If a user re-authenticates and Google returns `{ access_token, expires_in }` without `refresh_token`, `tokenData.refresh_token` is `undefined`.
+   - `JSON.stringify` drops the key or sets it to undefined, **permanently erasing the existing refresh token** from the user's cookie. After 60 minutes, the access token expires and the app is permanently locked out.
+3. **Expired Token Return Bug**:
+   - In `getValidAccessToken()` lines 208-210:
+     ```javascript
+     return tokenData.access_token || null;
+     ```
+   - If token refresh fails, this returns the expired access token. Downstream requests call Google API with an expired token, producing 401 errors. It must return `null`.
+4. **Cookie Partitioning & Cross-Site Attributes**:
+   - In `handleCallback()` and `getValidAccessToken()`, the cookie is set with `sameSite: 'lax'`.
+   - When embedded inside an iframe (such as `/teamwork-preview`), `SameSite=Lax` cookies are stripped by Chrome/Safari/Edge.
+   - Node test confirmed: `cookie.serialize('gcal_token', val, { partitioned: true, secure: true, sameSite: 'none' })` outputs `Secure; Partitioned; SameSite=None`. This ensures cookies persist in modern partitioned iframe contexts.
+
+---
+
+### B. Event Data Model & Google Calendar API v3 Compatibility
+
+| Event Attribute | Google Calendar API v3 Spec | Current Lumina Implementation | Defect & Required Fix |
+|---|---|---|---|
+| **All-Day Event End Date** | `end: { date: "YYYY-MM-DD" }` (Strictly exclusive: `end.date > start.date`) | `start: { dateTime: new Date(evt.start).toISOString() }` | **Fatal**: Pushing `{ dateTime }` converts all-day events into timed events. Slicing raw date with equal start/end causes Google 400 error. Must compute `end.date = start.date + 1 day`. |
+| **Cancelled / Deleted Instances** | `status: "cancelled"` | Imported unconditionally in `syncGoogleCalendar()` | Cancelled recurring instances lack `item.start`. Lumina defaults them to `new Date().toISOString()`, injecting phantom events. Must filter `item.status !== 'cancelled'`. |
+| **Timezone Normalization** | Timed events returned in UTC RFC 3339 (`"2026-09-29T23:30:00Z"`) | `evt.start.slice(0, 10)` in `getEventsForDate()` | Slicing raw UTC string places late evening / early morning events on the wrong calendar day. Must convert UTC datetime strings to local date keys while preserving pure `YYYY-MM-DD` strings. |
+| **Google ID Prefix (`gcal_`)** | Google event IDs are alphanumeric base32hex strings | Lumina prefixes local cache IDs with `gcal_${item.id}` | Modal edit checks `startsWith('evt_')`, completely ignoring `gcal_` events. Clicking an imported Google event opens a blank "Create" modal. |
+| **Modal Datetime Input Format** | `<input type="datetime-local">` requires local `YYYY-MM-DDTHH:mm` | `evt.start.slice(0, 16)` | Slicing raw UTC ISO strings shows UTC time instead of local time in the modal. Saving shifts the event time by the user's timezone offset. |
+
+---
+
+### C. Frontend Synchronization Engine ([`modules/calendar.js`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js))
+
+1. **Startup Synchronization**:
+   - [`loadCalendarFromStorage()`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js#L112) calls `checkBackendConnectionStatus()`.
+   - When the backend confirms `connected: true`, it only updates the UI badge. It **never triggers `syncGoogleCalendar()`**.
+   - Returning to the dashboard or refreshing always shows stale cached events.
+2. **Modal Edit Omission**:
+   - In [`saveEventFromModal()`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js#L888-L916), when editing an existing event (`editingEventId` truthy), `pushEventToGoogle(calendarEvents[idx])` is never called. Edits made in LuminaVista never sync to Google.
+3. **Unsynced Local Events Push**:
+   - In [`syncGoogleCalendar()`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js#L1303), the engine pulls down Google events and removes deletions, but never iterates over local events where `!evt.googleEventId`.
+   - Events created prior to connecting or created offline are never pushed to Google Calendar.
+4. **Popup Blocker Drop & Fallback**:
+   - In `connectGoogleAccount()`, if `window.open` is blocked, `popup` is null. Adding direct navigation fallback (`window.location.href = authData.authUrl`) ensures 100% login success regardless of popup blocker settings.
+
+---
+
+## 4. Concrete Code Fixes for 100% Reliable Synchronization
+
+### Fix 1: Update [`api/calendar.js`](file:///c:/Users/roysu/LuminaVista/api/calendar.js)
+
+#### 1. Add CORS Preflight & OPTIONS Handler
+At the beginning of `handler` and `handleSync`:
+```javascript
+// In handler(req, res):
+if (req.method === 'OPTIONS') {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return res.status(200).end();
+}
+```
+
+#### 2. Preserve Refresh Token & Support Partitioned Cookies in `handleCallback`
+```javascript
+// Preserve existing refresh token if Google does not return a new one on re-auth
+const existingCookies = cookie.parse(req.headers?.cookie || '');
+let existingRefreshToken = null;
+if (existingCookies.gcal_token) {
+  try {
+    const parsed = JSON.parse(Buffer.from(existingCookies.gcal_token, 'base64').toString('utf8'));
+    existingRefreshToken = parsed.refresh_token;
+  } catch (e) {}
+}
+
+const refreshToken = tokenData.refresh_token || existingRefreshToken || null;
+
+const tokenPayload = JSON.stringify({
+  access_token: tokenData.access_token,
+  refresh_token: refreshToken,
+  expires_at: Date.now() + ((tokenData.expires_in || 3600) * 1000)
+});
+
+const isHttps = proto === 'https';
+res.setHeader('Set-Cookie', cookie.serialize('gcal_token', Buffer.from(tokenPayload).toString('base64'), {
+  httpOnly: true,
+  secure: isHttps,
+  sameSite: isHttps ? 'none' : 'lax',
+  partitioned: isHttps,
+  maxAge: 30 * 24 * 60 * 60, // 30 days
+  path: '/'
+}));
+```
+
+#### 3. Return `null` on Refresh Failure & Real Token Validation in `handleStatus`
+In `getValidAccessToken()`:
+```javascript
+if (refreshRes.ok) {
+  const freshData = await refreshRes.json();
+  tokenData.access_token = freshData.access_token;
+  tokenData.expires_at = Date.now() + ((freshData.expires_in || 3600) * 1000);
+
+  res.setHeader('Set-Cookie', cookie.serialize('gcal_token', Buffer.from(JSON.stringify(tokenData)).toString('base64'), {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    partitioned: true,
+    maxAge: 30 * 24 * 60 * 60,
+    path: '/'
+  }));
+
+  return freshData.access_token;
+}
+// Do NOT return expired access_token on failure!
+return null;
+```
+
+In `handleStatus()`:
+```javascript
+async function handleStatus(req, res) {
+  const configured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  // Verify token is genuinely valid or refreshable
+  const validToken = await getValidAccessToken(req, res);
+  const connected = !!validToken;
+  ...
+```
+
+#### 4. Handle ID Prefixes in `handleSync` POST / DELETE
+```javascript
+// In POST:
+const rawId = body.googleEventId || body.eventId;
+const targetEventId = rawId ? String(rawId).replace(/^gcal_/, '') : null;
+
+// In DELETE:
+const rawDelId = req.query?.eventId || req.body?.eventId;
+const eventId = rawDelId ? String(rawDelId).replace(/^gcal_/, '') : null;
+```
+
+---
+
+### Fix 2: Update [`modules/calendar.js`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js)
+
+#### 1. Robust Local Date Key Normalization (Handles UTC & All-Day without Drift)
+```javascript
+function getEventLocalDateKey(dateOrIsoStr) {
+  if (!dateOrIsoStr) return '';
+  // Pure YYYY-MM-DD date strings must NOT pass through new Date() to avoid UTC midnight drift in western timezones
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateOrIsoStr)) return dateOrIsoStr;
+  const d = new Date(dateOrIsoStr);
+  if (isNaN(d.getTime())) return String(dateOrIsoStr).slice(0, 10);
+  return formatDateKey(d);
+}
+
+function formatDateTimeLocalInput(isoOrDateStr) {
+  if (!isoOrDateStr) return '';
+  if (isoOrDateStr.length === 16 && isoOrDateStr.includes('T') && !isoOrDateStr.endsWith('Z')) return isoOrDateStr;
+  const d = new Date(isoOrDateStr);
+  if (isNaN(d.getTime())) return isoOrDateStr.slice(0, 16);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+```
+
+In `getEventsForDate(dateObj)`:
+```javascript
+const key = formatDateKey(dateObj);
+return calendarEvents.filter(evt => {
+  if (evt.category && activeCategories[evt.category] === false) return false;
+  if (searchQuery && !evt.title.toLowerCase().includes(searchQuery)) return false;
+
+  const startKey = getEventLocalDateKey(evt.start);
+  if (startKey === key) return true;
+
+  if (evt.recurrence && evt.recurrence.freq) {
+    return matchesRecurrence(evt, dateObj);
+  }
+  return false;
+}).sort((a, b) => (a.start > b.start ? 1 : -1));
+```
+
+#### 2. Support Any Event ID in `openEventModal()` & Format Local Inputs
+```javascript
+function openEventModal(eventIdOrDateStr) {
+  const modal = document.getElementById('calendarEventModal');
+  if (!modal) return;
+
+  // Match by id or googleEventId directly without checking 'evt_' prefix
+  let evt = null;
+  if (typeof eventIdOrDateStr === 'string' && (eventIdOrDateStr.startsWith('evt_') || eventIdOrDateStr.startsWith('gcal_') || !eventIdOrDateStr.includes('-'))) {
+    evt = calendarEvents.find(e => e.id === eventIdOrDateStr || e.googleEventId === eventIdOrDateStr);
+  }
+
+  editingEventId = evt ? evt.id : null;
+
+  ...
+  if (evt) {
+    if (modalTitle) modalTitle.textContent = 'Edit Calendar Event';
+    if (inputTitle) inputTitle.value = evt.title || '';
+    if (inputStart) inputStart.value = formatDateTimeLocalInput(evt.start);
+    if (inputEnd) inputEnd.value = formatDateTimeLocalInput(evt.end);
+    ...
+```
+
+#### 3. Push to Google on Modal Edit
+In `saveEventFromModal()`:
+```javascript
+if (editingEventId) {
+  const idx = calendarEvents.findIndex(e => e.id === editingEventId);
+  if (idx !== -1) {
+    calendarEvents[idx] = Object.assign(calendarEvents[idx], {
+      title, start, end, category, color, location, description, allDay, isAutonomous,
+      recurrence: recurrenceFreq !== 'NONE' ? { freq: recurrenceFreq, interval: 1 } : null,
+      updatedAt: new Date().toISOString()
+    });
+    // Push update to Google Calendar
+    if (calendarSettings.googleCalendarConnected) {
+      pushEventToGoogle(calendarEvents[idx]);
+    }
+  }
+}
+```
+
+#### 4. Correct All-Day Formatting & Exclusive End Date in `pushEventToGoogle()`
+```javascript
+async function pushEventToGoogle(evt) {
+  if (!calendarSettings.googleCalendarConnected) return;
+  const fetchFn = (typeof window !== 'undefined' && typeof window.fetch === 'function') ? window.fetch : fetch;
+  if (!fetchFn) return;
+
+  const isAllDay = !!evt.allDay || (typeof evt.start === 'string' && evt.start.length === 10);
+  let startPayload, endPayload;
+
+  if (isAllDay) {
+    const startDateStr = evt.start.slice(0, 10);
+    let endDateStr = evt.end ? evt.end.slice(0, 10) : startDateStr;
+    // Google Calendar API requires end date for all-day events to be strictly greater than start date (exclusive end)
+    if (endDateStr <= startDateStr) {
+      const sDate = new Date(startDateStr + 'T00:00:00');
+      sDate.setDate(sDate.getDate() + 1);
+      endDateStr = formatDateKey(sDate);
+    }
+    startPayload = { date: startDateStr };
+    endPayload = { date: endDateStr };
+  } else {
+    startPayload = { dateTime: new Date(evt.start).toISOString() };
+    endPayload = { dateTime: new Date(evt.end).toISOString() };
+  }
+
+  try {
+    const res = await fetchFn('/api/calendar/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        googleEventId: evt.googleEventId,
+        eventId: evt.id,
+        summary: evt.title,
+        description: evt.description || '',
+        location: evt.location || '',
+        start: startPayload,
+        end: endPayload
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.item && data.item.id) {
+        evt.googleEventId = data.item.id;
+        saveCalendarEvents();
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to push event to Google Calendar:', e);
+  }
+}
+```
+
+#### 5. Two-Way Pull & Push Unsynced Events in `syncGoogleCalendar()`
+```javascript
+async function syncGoogleCalendar() {
+  updateSyncStatusBadge(true);
+  try {
+    const res = await fetch('/api/calendar/sync', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.items && Array.isArray(data.items)) {
+        // Filter out cancelled events
+        const activeItems = data.items.filter(item => item.status !== 'cancelled');
+        const activeGoogleEventIds = new Set(activeItems.map(item => item.id));
+
+        // 1. Two-Way Delete: Remove local Google-linked events deleted from remote
+        calendarEvents = calendarEvents.filter(e => {
+          if (!e.googleEventId) return true;
+          return activeGoogleEventIds.has(e.googleEventId);
+        });
+
+        // 2. Two-Way Update & Add from Google
+        activeItems.forEach(item => {
+          const startStr = (item.start && (item.start.dateTime || item.start.date)) || new Date().toISOString();
+          const endStr = (item.end && (item.end.dateTime || item.end.date)) || new Date(Date.now() + 3600000).toISOString();
+          const allDay = !item.start || !item.start.dateTime;
+          const isAiTask = (item.summary || '').includes('[AI Task]') || (item.description || '').includes('[AI Task]');
+
+          const existing = calendarEvents.find(e => e.googleEventId === item.id);
+          if (existing) {
+            existing.title = item.summary || 'Google Calendar Event';
+            existing.description = item.description || '';
+            existing.location = item.location || '';
+            existing.start = startStr;
+            existing.end = endStr;
+            existing.allDay = allDay;
+          } else {
+            calendarEvents.push({
+              id: `gcal_${item.id}`,
+              googleEventId: item.id,
+              title: item.summary || 'Google Calendar Event',
+              description: item.description || '',
+              location: item.location || '',
+              start: startStr,
+              end: endStr,
+              allDay: allDay,
+              category: isAiTask ? 'ai_autonomous' : 'work',
+              color: isAiTask ? '#00f2fe' : '#3f51b5',
+              isAutonomous: isAiTask
+            });
+          }
+        });
+
+        // 3. Two-Way Push: Identify local sovereign events that haven't been pushed to Google yet
+        const unpushedEvents = calendarEvents.filter(e => !e.googleEventId);
+        for (const unpushed of unpushedEvents) {
+          await pushEventToGoogle(unpushed);
+        }
+
+        calendarSettings.googleCalendarConnected = true;
+        calendarSettings.lastSyncedAt = new Date().toISOString();
+        saveCalendarEvents();
+        saveCalendarSettings();
+        renderCalendar();
+      }
+    }
+  } catch (e) {
+    console.warn('Sync Google Calendar error:', e);
+  } finally {
+    updateSyncStatusBadge(false);
+  }
+}
+```
+
+#### 6. Auto-Sync on Boot & Periodic Background Sync
+In `checkBackendConnectionStatus()`:
+```javascript
+async function checkBackendConnectionStatus() {
+  try {
+    const res = await fetch('/api/calendar/status', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      calendarSettings.googleCalendarConnected = !!data.connected;
+      updateSyncStatusBadge();
+      if (data.connected) {
+        await syncGoogleCalendar(); // <--- Auto-sync on startup
+      }
+    }
+  } catch (e) {}
+}
+```
+
+At the bottom of `modules/calendar.js`:
+```javascript
+// Periodic background sync every 5 minutes and on window focus
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    if (calendarSettings.googleCalendarConnected && !document.hidden) {
+      syncGoogleCalendar();
+    }
+  }, 5 * 60 * 1000);
+
+  window.addEventListener('focus', () => {
+    if (calendarSettings.googleCalendarConnected) {
+      syncGoogleCalendar();
+    }
+  });
+}
+```
+
+#### 7. Popup Blocker Direct Fallback in `connectGoogleAccount()`
+```javascript
+const popup = window.open(authData.authUrl, 'google_oauth_popup', `width=${width},height=${height},left=${left},top=${top}`);
+
+if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+  // Popup was blocked by browser -> fallback to full window navigation
+  window.location.href = authData.authUrl;
+  return;
+}
+```
+
+---
+
+### Fix 3: Update [`vercel.json`](file:///c:/Users/roysu/LuminaVista/vercel.json)
+Update CORS allowed methods to include `DELETE`:
+```json
+{
+  "source": "/api/(.*)",
+  "headers": [
+    { "key": "Access-Control-Allow-Methods", "value": "GET, POST, DELETE, OPTIONS" },
+    { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" },
+    { "key": "Access-Control-Allow-Credentials", "value": "true" }
+  ]
+}
+```
+
+---
+
+## 5. Google Cloud Console Configuration Checklist for User
+
+For user `roysubhadra40@gmail.com`:
+1. **OAuth 2.0 Client ID Credentials**:
+   - Go to: [Google Cloud Console > Credentials](https://console.cloud.google.com/apis/credentials).
+   - Click on the OAuth 2.0 Client ID: `914032544862-gilsfk2583ult1v4ogq8e5j7upiukgqa.apps.googleusercontent.com`.
+   - Under **Authorized redirect URIs**, ensure the following exact URI is present:
+     `https://lumina-vista-sigma.vercel.app/api/calendar/callback`
+   - *Note*: If you also want to test on localhost during development, add:
+     `http://localhost:3000/api/calendar/callback`
+2. **OAuth Consent Screen & Test Users**:
+   - Go to: [Google Cloud Console > OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent).
+   - If **Publishing status** is "Testing", scroll to **Test users**.
+   - Ensure `roysubhadra40@gmail.com` is added to the list of Test Users. (Google rejects non-test users with Error 403 `access_denied` while an app is unverified).
+3. **Scopes**:
+   - Ensure `.../auth/calendar` or `.../auth/calendar.events` is added to Scopes.
+
+---
+
+## 6. Remaining Questions & Gaps
+
+1. **Google Cloud Console OAuth Publishing Status & Test User Verification**:
+   - We verified via live HTTP probe that Google's authorization endpoint returns HTTP 302 for the production redirect URI. However, whether `roysubhadra40@gmail.com` has actually been added to the **Test Users** list inside the Google Cloud Console project cannot be verified via curl (it requires checking the private GCP console).
+2. **Vercel Project-Level Custom Domains**:
+   - If the user binds a custom domain (e.g. `https://myworkspace.com`) to LuminaVista in the future, that new domain's `/api/calendar/callback` must also be added to Google Cloud Console's Authorized Redirect URIs.
+3. **Follow-Up Focus for Implementer**:
+   - Apply the verified fixes to [`api/calendar.js`](file:///c:/Users/roysu/LuminaVista/api/calendar.js), [`modules/calendar.js`](file:///c:/Users/roysu/LuminaVista/modules/calendar.js), and [`vercel.json`](file:///c:/Users/roysu/LuminaVista/vercel.json).
+   - Re-run `npm test` and `npm run lint` to verify all test suites continue passing.
+
+Thoroughly review the findings above. Carefully check if they fully address every single aspect of the user's question — do not skip any part. Iterate if necessary following the **Workflow** in your system prompt.

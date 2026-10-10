@@ -7,8 +7,10 @@ import {
   enforcePayloadLimit,
   auditLog,
   sendSecureJson,
+  setSecurityHeaders,
   scrubSecrets
 } from './_lib/auth-guard.js';
+import { inspectJevCommandSafety, inspectJevGuardrails } from './_lib/jev/jev-guardrails.js';
 
 export const maxDuration = 60;
 
@@ -22,7 +24,9 @@ const RUNNERS = {
 };
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  res._req = req;
+  setSecurityHeaders(res, req);
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
   // 1. Enforce payload size limit (Max 100KB)
@@ -39,10 +43,10 @@ export default async function handler(req, res) {
     return sendSecureJson(res.status(auth.status), auth.status, { error: auth.error });
   }
 
-  // Enforce master role requirement for compiler execution
-  if (auth.role !== 'master') {
-    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/compile - requires master role');
-    return sendSecureJson(res, 403, { error: 'Forbidden: Code compiler execution requires master role' });
+  // Enforce authenticated role requirement for compiler execution
+  if (auth.role !== 'master' && auth.role !== 'temporary') {
+    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/compile');
+    return sendSecureJson(res, 403, { error: 'Forbidden: Code compiler execution requires authenticated session' });
   }
 
   // 3. Sliding IP Rate Limiting (20 compilations / 5 minutes)
@@ -55,6 +59,29 @@ export default async function handler(req, res) {
   const { language, code } = req.body || {};
   if (!code || typeof code !== 'string') {
     return sendSecureJson(res, 400, { error: 'No valid source code provided.' });
+  }
+
+  // 4. Server-Side Jev Guardrails & Safety Inspection
+  const cmdSafety = inspectJevCommandSafety(code);
+  if (!cmdSafety.safe) {
+    auditLog('JEV_GUARDRAIL_BLOCKED', req, `Threat: ${cmdSafety.threatCategory} | Endpoint: /api/compile`);
+    return sendSecureJson(res, 403, {
+      error: `Jev System-1 Guardrail: Execution blocked (${cmdSafety.threatCategory})`,
+      details: cmdSafety.reason,
+      threatCategory: cmdSafety.threatCategory,
+      safe: false
+    });
+  }
+
+  const guard = inspectJevGuardrails(code);
+  if (!guard.guardrailPassed) {
+    auditLog('JEV_GUARDRAIL_BLOCKED', req, `Threat: ${guard.threatCategory} | Endpoint: /api/compile`);
+    return sendSecureJson(res, 403, {
+      error: `Jev System-1 Guardrail: Execution blocked (${guard.threatCategory})`,
+      details: guard.threatDetail,
+      threatCategory: guard.threatCategory,
+      safe: false
+    });
   }
 
   if (!process.env.E2B_API_KEY) {

@@ -33,6 +33,16 @@
       .replace(/'/g, "&#039;");
   }
 
+  function isValidVfsKey(key) {
+    if (typeof key !== 'string') return false;
+    const k = key.trim();
+    if (!k) return false;
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') return false;
+    if (k.includes('__proto__') || k.includes('constructor') || k.includes('prototype')) return false;
+    if (k.includes('..')) return false;
+    return true;
+  }
+
   // Jev System-1 Sub-50ms Intent Classifier & Safety Guardrail Layer (Cognitive Matrix v3.0 Ultra)
   function classifyJevIntentClient(prompt = '', vfs = {}) {
     const start = performance.now();
@@ -501,35 +511,16 @@
     const personaBadge = document.getElementById("aiActivePersonaBadge");
     const webBadge = document.getElementById("webSearchActiveBadge");
 
-    const pVal = providerSel ? providerSel.value : (localStorage.getItem("lumina_ai_provider") || "hybrid_pool");
     if (modelBadge) {
-      if (pVal === "hybrid_pool") {
-        modelBadge.textContent = "Universal Hybrid (Ollama + NIM)";
-        modelBadge.className = "px-1.5 py-0.5 rounded text-[9px] bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 text-cyan-300 font-mono border border-cyan-500/30";
-      } else if (pVal === "simulation") {
-        modelBadge.textContent = "Universal Hybrid (Auto-Failover)";
-        modelBadge.className = "px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20";
-      } else if (pVal === "nvidia_pool") {
-        modelBadge.textContent = "NVIDIA NIM Pool (Multi-Key)";
-        modelBadge.className = "px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20";
-      } else if (pVal === "custom") {
-        modelBadge.textContent = "Custom Endpoint";
-        modelBadge.className = "px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20";
-      } else {
-        modelBadge.textContent = modelSel ? modelSel.value : "gpt-oss:20b";
-        modelBadge.className = "px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20";
-      }
+      const selectedModel = (modelSel && modelSel.value) || localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
+      modelBadge.textContent = selectedModel;
+      modelBadge.className = "px-2 py-0.5 rounded text-[10px] bg-cyan-500/15 text-cyan-300 font-mono font-bold border border-cyan-500/30 shadow-sm";
     }
 
     if (webBadge) {
-      const isWebOn = webCheck ? webCheck.checked : (localStorage.getItem("lumina_allow_internet") !== "false");
-      if (isWebOn) {
-        webBadge.classList.remove("hidden");
-        webBadge.classList.add("flex");
-      } else {
-        webBadge.classList.add("hidden");
-        webBadge.classList.remove("flex");
-      }
+      // Keep Web Live badge suppressed from AI chat header per user specification
+      webBadge.classList.add("hidden");
+      webBadge.classList.remove("flex");
     }
 
     if (personaBadge) {
@@ -756,11 +747,13 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
   }
 
   function executeWriteFile(filename, content) {
+    if (!isValidVfsKey(filename)) {
+      return `Error: Invalid or restricted filename "${filename}".`;
+    }
     window.vfs = window.vfs || {};
     window.vfs[filename] = content;
     localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
     if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
-    if (window.rebuildGraphData) window.rebuildGraphData();
     if (window.activeCodespaceFile === filename && window.loadCodespaceFileContent) {
       window.loadCodespaceFileContent(filename);
     }
@@ -768,6 +761,9 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
   }
 
   function executeEditFile(filename, target, replacement) {
+    if (!isValidVfsKey(filename)) {
+      return `Error: Invalid or restricted filename "${filename}".`;
+    }
     window.vfs = window.vfs || {};
     if (window.vfs[filename] === undefined) {
       return `Error: File "${filename}" not found in VFS.`;
@@ -781,7 +777,6 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
     if (window.activeCodespaceFile === filename && window.loadCodespaceFileContent) {
       window.loadCodespaceFileContent(filename);
     }
-    if (window.rebuildGraphData) window.rebuildGraphData();
     return `Successfully applied targeted edit to ${filename}`;
   }
 
@@ -792,14 +787,15 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
       window.vfs = {};
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
-      if (window.rebuildGraphData) window.rebuildGraphData();
       return `Successfully wiped all ${count} files from VFS.`;
+    }
+    if (!isValidVfsKey(filename)) {
+      return `Error: Invalid or restricted filename "${filename}".`;
     }
     if (window.vfs[filename] !== undefined) {
       delete window.vfs[filename];
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
-      if (window.rebuildGraphData) window.rebuildGraphData();
       return `Successfully deleted ${filename} from VFS.`;
     }
     return `Error: Cannot delete "${filename}" - file does not exist.`;
@@ -869,7 +865,11 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
         }
 
         if (Array.isArray(d.workspaceFiles)) {
-          d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
+          d.workspaceFiles.forEach(f => {
+            if (f && f.name && isValidVfsKey(f.name)) {
+              vfs[f.name] = f.content;
+            }
+          });
           localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
           if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
         }
@@ -1082,22 +1082,6 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
     const btnAbort = document.getElementById("btnAiAbort");
     if (!prompt) return;
 
-    // Direct Slash Command: /graphify
-    if (prompt.toLowerCase() === '/graphify' || prompt.toLowerCase().startsWith('/graphify ')) {
-      inp.value = "";
-      inp.style.height = "auto";
-      window.aiConversation.push({ role: "user", content: prompt });
-      window.aiConversation.push({
-        role: "assistant",
-        content: `### Graphify Knowledge Graph Activated 🌐\n\nSwitched to **Graphify Architecture & Dependency Visualizer**. Inspecting real-time codebase topology, modular dependencies, and VFS files with physics-based animated telemetry.\n\n[TOOL:TASK_COMPLETE summary="Navigated to Graphify Architecture Visualizer."][/TOOL:TASK_COMPLETE]`
-      });
-      updateActiveSessionMessages();
-      renderAiChat();
-      if (window.switchTab) window.switchTab('tab-graphify');
-      if (window.showToast) window.showToast('Graphify Visualizer', 'Mounted codebase architecture and active dependency graph.');
-      return;
-    }
-
     // Check if there is an active quoted message
     if (window.activeQuotedMessage && window.activeQuotedMessage.text) {
       const qRole = window.activeQuotedMessage.role === 'user' ? 'You' : 'AI-Studio';
@@ -1295,6 +1279,18 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
                 reply = candidate;
                 fetchSuccess = true;
 
+                // Dynamically update active model badge if failover used a different model
+                if (data.actualModel) {
+                  const activeModelBadge = document.getElementById("aiActiveModelBadge");
+                  if (activeModelBadge) {
+                    activeModelBadge.textContent = data.actualModel;
+                  }
+                  const reqModel = localStorage.getItem("lumina_ai_model") || "gpt-oss:20b";
+                  if (data.actualModel !== reqModel && window.showToast) {
+                    window.showToast("Model Failover", `Switched to active model: ${data.actualModel}`);
+                  }
+                }
+
                 // Handle failover indicator badge
                 if (data.activeKeyMeta && failoverBadge) {
                   failoverBadge.textContent = `${data.activeKeyMeta.name}`;
@@ -1423,7 +1419,7 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
   }
 
   // =========================================================================
-  // 9. AI STUDIO SUB-TABS (CHAT | ARTIFACTS & FILES | GRAPHIFY GRAPH)
+  // 9. AI STUDIO SUB-TABS (CHAT | ARTIFACTS & FILES)
   // =========================================================================
   window.activeAiSubTab = 'chat';
 
@@ -1431,14 +1427,12 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
     window.activeAiSubTab = tabName;
     const chatView = document.getElementById("aiChatView");
     const csCol = document.getElementById("aiCodespaceColumn");
-    const graphCol = document.getElementById("aiGraphifyColumn");
 
     const btnChat = document.getElementById("btnAiSubTabChat");
     const btnArtifacts = document.getElementById("btnAiSubTabArtifacts");
-    const btnGraphify = document.getElementById("btnAiSubTabGraphify");
 
     // Reset button states
-    [btnChat, btnArtifacts, btnGraphify].forEach(btn => {
+    [btnChat, btnArtifacts].forEach(btn => {
       if (btn) {
         btn.className = "px-3.5 py-1.5 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all";
       }
@@ -1446,10 +1440,6 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
 
     if (tabName === 'artifacts') {
       if (chatView) chatView.classList.add("hidden");
-      if (graphCol) {
-        graphCol.classList.add("hidden");
-        graphCol.classList.remove("flex");
-      }
       if (csCol) {
         csCol.classList.remove("hidden");
         csCol.classList.add("flex");
@@ -1458,36 +1448,12 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
         btnArtifacts.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm";
       }
       if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
-    } else if (tabName === 'graphify') {
-      if (chatView) chatView.classList.add("hidden");
-      if (csCol) {
-        csCol.classList.add("hidden");
-        csCol.classList.remove("flex");
-      }
-      if (graphCol) {
-        graphCol.classList.remove("hidden");
-        graphCol.classList.add("flex");
-      }
-      if (btnGraphify) {
-        btnGraphify.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm";
-      }
-      if (window.initGraphifyGraph) {
-        window.initGraphifyGraph();
-        setTimeout(() => {
-          window.initGraphifyGraph();
-          if (window.rebuildGraphData) window.rebuildGraphData();
-        }, 50);
-      }
     } else {
       // Default: 'chat'
       if (chatView) chatView.classList.remove("hidden");
       if (csCol) {
         csCol.classList.add("hidden");
         csCol.classList.remove("flex");
-      }
-      if (graphCol) {
-        graphCol.classList.add("hidden");
-        graphCol.classList.remove("flex");
       }
       if (btnChat) {
         btnChat.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all shadow-sm";
@@ -1499,8 +1465,7 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
     // Sync sidebar slider button states
     const sbChat = document.getElementById("btn-tab-ai-studio");
     const sbArt = document.getElementById("btn-tab-artifacts");
-    const sbGraph = document.getElementById("btn-tab-graphify");
-    [sbChat, sbArt, sbGraph].forEach(b => {
+    [sbChat, sbArt].forEach(b => {
       if (b) {
         b.classList.remove("nav-tab-active");
         b.classList.add("text-zinc-400");
@@ -1509,9 +1474,6 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
     if (tabName === 'artifacts' && sbArt) {
       sbArt.classList.add("nav-tab-active");
       sbArt.classList.remove("text-zinc-400");
-    } else if (tabName === 'graphify' && sbGraph) {
-      sbGraph.classList.add("nav-tab-active");
-      sbGraph.classList.remove("text-zinc-400");
     } else if (sbChat) {
       sbChat.classList.add("nav-tab-active");
       sbChat.classList.remove("text-zinc-400");
@@ -1567,10 +1529,13 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
               // 1. Merge completed VFS artifacts
               if (finishedJob.vfs && typeof finishedJob.vfs === 'object') {
                 window.vfs = window.vfs || {};
-                Object.assign(window.vfs, finishedJob.vfs);
+                for (const [k, v] of Object.entries(finishedJob.vfs)) {
+                  if (isValidVfsKey(k)) {
+                    window.vfs[k] = v;
+                  }
+                }
                 localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
                 if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
-                if (window.rebuildGraphData) window.rebuildGraphData();
               }
 
               // 2. Insert AI reply into chat conversation / target session

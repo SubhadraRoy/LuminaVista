@@ -1148,10 +1148,18 @@
           ? 'https://lumina-vista-sigma.vercel.app'
           : '';
 
+        let clientVault = [];
+        try { clientVault = JSON.parse(localStorage.getItem('lumina_temp_vault') || '[]'); } catch (_) {}
+        if (!Array.isArray(clientVault) || clientVault.length === 0) {
+          try { clientVault = JSON.parse(localStorage.getItem('lumina_admin_passwords_cache') || '[]'); } catch (_) {}
+        }
+        if (!Array.isArray(clientVault)) clientVault = [];
+
         const res = await fetch(apiOrigin + "/api/auth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password: p.value })
+          credentials: "include",
+          body: JSON.stringify({ password: p.value ? p.value.trim() : '', clientKeys: clientVault })
         });
         const d = await res.json();
 
@@ -1174,6 +1182,12 @@
           }).then(r => r.ok ? r.json() : null).then(syncRes => {
             const s = syncRes?.state || syncRes;
             if (s) {
+              if (Array.isArray(s.admin_passwords) && s.admin_passwords.length > 0) {
+                try {
+                  localStorage.setItem('lumina_temp_vault', JSON.stringify(s.admin_passwords));
+                  localStorage.setItem('lumina_admin_passwords_cache', JSON.stringify(s.admin_passwords));
+                } catch (_) {}
+              }
               if (s.calendar) localStorage.setItem('luminavista_calendar_events_v1', JSON.stringify(s.calendar));
               if (s.calendarSettings) localStorage.setItem('luminavista_calendar_settings_v1', JSON.stringify(s.calendarSettings));
               if (s.chatSessions) localStorage.setItem('lumina_chat_sessions', JSON.stringify(s.chatSessions));

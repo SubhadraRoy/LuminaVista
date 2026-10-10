@@ -234,6 +234,97 @@ export function isRateLimitOrQuotaError(status, bodyText = '') {
 }
 
 /**
+ * Detects whether a URL/host targets loopback, cloud metadata, or private RFC 1918 subnets.
+ * Strictly blocks SSRF attempts.
+ * @param {string} targetUrl 
+ * @returns {boolean}
+ */
+export function isBlockedSsrfTarget(targetUrl) {
+  if (!targetUrl || typeof targetUrl !== 'string') return false;
+  let parsed;
+  try {
+    const raw = targetUrl.trim().replace(/^["']|["']$/g, '').trim();
+    parsed = new URL(raw.startsWith('http://') || raw.startsWith('https://') ? raw : `http://${raw}`);
+  } catch (_) {
+    return true; // Malformed URLs should be blocked
+  }
+
+  let hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+
+  // Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:127.0.0.1, ::ffff:7f00:1) to standard IPv4
+  if (hostname.startsWith('::ffff:') || hostname.startsWith('0:0:0:0:0:ffff:')) {
+    const suffix = hostname.replace(/^(::ffff:|0:0:0:0:0:ffff:)/, '');
+    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(suffix)) {
+      hostname = suffix;
+    } else if (suffix.includes(':')) {
+      const parts = suffix.split(':').map(h => parseInt(h, 16));
+      if (parts.length === 2 && !parts.some(isNaN)) {
+        hostname = [
+          (parts[0] >> 8) & 0xff,
+          parts[0] & 0xff,
+          (parts[1] >> 8) & 0xff,
+          parts[1] & 0xff
+        ].join('.');
+      }
+    }
+  }
+
+  // 1. Cloud metadata & internal named endpoints
+  if (
+    hostname === 'metadata.google.internal' ||
+    hostname === 'metadata' ||
+    hostname === 'instance-data' ||
+    hostname === '169.254.169.254'
+  ) {
+    return true;
+  }
+
+  // 2. Loopback named hosts
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    return true;
+  }
+
+  // 3. IPv4 Checks (Private RFC 1918, Loopback, Link-Local)
+  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const b0 = parseInt(ipv4Match[1], 10);
+    const b1 = parseInt(ipv4Match[2], 10);
+    const b2 = parseInt(ipv4Match[3], 10);
+    const b3 = parseInt(ipv4Match[4], 10);
+    if (b0 > 255 || b1 > 255 || b2 > 255 || b3 > 255) return true;
+
+    // 0.0.0.0/8 (Current network)
+    if (b0 === 0) return true;
+    // 127.0.0.0/8 (Loopback)
+    if (b0 === 127) return true;
+    // 10.0.0.0/8 (Private RFC 1918)
+    if (b0 === 10) return true;
+    // 172.16.0.0/12 (Private RFC 1918: 172.16.0.0 – 172.31.255.255)
+    if (b0 === 172 && b1 >= 16 && b1 <= 31) return true;
+    // 192.168.0.0/16 (Private RFC 1918)
+    if (b0 === 192 && b1 === 168) return true;
+    // 169.254.0.0/16 (Link-local & AWS/GCP/Azure Cloud Metadata)
+    if (b0 === 169 && b1 === 254) return true;
+    // 100.64.0.0/10 (Carrier-grade NAT)
+    if (b0 === 100 && b1 >= 64 && b1 <= 127) return true;
+  }
+
+  // 4. IPv6 Checks (Loopback, Link-local, Unique local)
+  if (
+    hostname === '::1' ||
+    hostname === '0:0:0:0:0:0:0:1' ||
+    hostname === '::' ||
+    hostname.startsWith('fe80:') ||
+    hostname.startsWith('fc') ||
+    hostname.startsWith('fd')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Normalize an Ollama endpoint URL, ensuring proper protocol, path, and cloud fallback
  * @param {string} endpoint 
  * @returns {string}
@@ -242,8 +333,12 @@ export function normalizeOllamaEndpoint(endpoint) {
   let ep = (endpoint || '').trim().replace(/^["']|["']$/g, '').trim();
   if (!ep) return 'https://ollama.com/v1/chat/completions';
 
-  // If running in Vercel or cloud and pointing to localhost, fallback to Ollama Cloud
-  if (process.env.VERCEL && /localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(ep)) {
+  // If running in Vercel or cloud and pointing to SSRF-restricted IP/host, fallback to Ollama Cloud
+  if (process.env.VERCEL && isBlockedSsrfTarget(ep)) {
+    return 'https://ollama.com/v1/chat/completions';
+  }
+  // Cloud metadata is strictly forbidden in all environments
+  if (/169\.254\.169\.254|metadata\.google\.internal|metadata|instance-data/i.test(ep)) {
     return 'https://ollama.com/v1/chat/completions';
   }
 

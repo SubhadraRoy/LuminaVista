@@ -32,8 +32,12 @@ module.exports = async function runJevMatrixSuite({ assert, window, rootDir }) {
   assert(safetyJudgments.isSafe.type === 'noul', "jevAsk produces typed 'noul' output");
   assert(safetyJudgments.isSafe.decision === false, "jevAsk noul flags destructive command as unsafe");
   assert(safetyJudgments.isSafe.probability <= 0.1, "jevAsk noul assigns very low safety probability (< 0.1)");
+  assert(safetyJudgments.isSafe.engine === 'openJev-verdict-2.0', "jevAsk tags openJev-verdict-2.0 engine");
+  assert(typeof safetyJudgments.isSafe.brierScore === 'number', "jevAsk noul outputs calibrated Brier score");
   assert(safetyJudgments.threatLevel.type === 'choice', "jevAsk produces typed 'choice' output");
   assert(safetyJudgments.threatLevel.selection === 'critical', "jevAsk choice categorizes destructive command as critical");
+  assert(safetyJudgments.threatLevel.winningHypothesis.startsWith('It is '), "jevAsk formats NLI hypothesis with 'It is ' prefix");
+  assert(typeof safetyJudgments.threatLevel.calibratedConfidence === 'number', "jevAsk choice evaluates 7-feature Correctness Head");
   assert(safetyJudgments.safetyScore.type === 'score', "jevAsk produces typed 'score' output");
   assert(safetyJudgments.safetyScore.score < 50, "jevAsk score heavily penalizes dangerous command");
 
@@ -69,6 +73,10 @@ module.exports = async function runJevMatrixSuite({ assert, window, rootDir }) {
   assert(clearFileCreation.route === 'WRITE_FILE', "Server creation routed to WRITE_FILE");
   assert(clearFileCreation.confidence >= 0.98, `Calibrated confidence for clear intent is high (Got: ${clearFileCreation.confidence})`);
   assert(clearFileCreation.targetFile === 'server.js', "Target file correctly extracted as server.js");
+  assert(clearFileCreation.engineVersion === 'openJev-verdict-2.0', "Intent classified by openJev-verdict-2.0 engine");
+  assert(clearFileCreation.ece === 0.0144, "Telemetry reports openJev 1.44% ECE calibration target");
+  assert(clearFileCreation.brierScore === 0.0636, "Telemetry reports openJev 0.0636 Brier score target");
+  assert(clearFileCreation.top1Accuracy === 0.7710, "Telemetry reports 77.10% benchmark accuracy");
 
   // 4. Compound Intent Resolution & Autonomous Synthesis
   const compoundQuery = "search the web for the latest react 19 release notes, write an overview in react19.md, and run linting";

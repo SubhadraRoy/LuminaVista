@@ -4,8 +4,24 @@
   'use strict';
 
   function escapeHtml(str) {
-    return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return (str || '')
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
+
+  function isValidVfsKey(key) {
+    if (typeof key !== 'string') return false;
+    const k = key.trim();
+    if (!k) return false;
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') return false;
+    if (k.includes('__proto__') || k.includes('constructor') || k.includes('prototype')) return false;
+    if (k.includes('..')) return false;
+    return true;
+  }
+
 
   function toggleCodespacePane(forceOpen = null) {
     if (window.switchAiSubTab) {
@@ -40,17 +56,16 @@
     const countBadge = document.getElementById("vfsFileCount");
     if (countBadge) countBadge.textContent = `${filenames.length} files`;
     if (window.updateAiSubTabArtifactBadge) window.updateAiSubTabArtifactBadge();
-    if (window.rebuildGraphData) window.rebuildGraphData();
     updateStorageQuotaMeter();
 
-    const tree = {};
+    const tree = Object.create(null);
     filenames.forEach(file => {
       const parts = file.split('/');
       if (parts.length === 1) {
         tree[parts[0]] = '__FILE__';
       } else {
         const folder = parts[0];
-        if (!tree[folder]) tree[folder] = [];
+        if (!Array.isArray(tree[folder])) tree[folder] = [];
         tree[folder].push(parts.slice(1).join('/'));
       }
     });
@@ -76,7 +91,7 @@
         else if (key.endsWith(".css")) iconName = "file-spreadsheet";
         else if (key.endsWith(".js") || key.endsWith(".ts") || key.endsWith(".py")) iconName = "terminal";
         
-        item.innerHTML = `<i data-lucide="${iconName}" class="w-3.5 h-3.5 shrink-0 ${isActive ? 'text-cyan-400' : 'text-zinc-500'}"></i><span class="truncate">${key}</span>`;
+        item.innerHTML = `<i data-lucide="${iconName}" class="w-3.5 h-3.5 shrink-0 ${isActive ? 'text-cyan-400' : 'text-zinc-500'}"></i><span class="truncate">${escapeHtml(key)}</span>`;
         item.onclick = () => switchCodespaceFile(key);
         container.appendChild(item);
       } else {
@@ -101,7 +116,7 @@
         folderHeader.innerHTML = `
           <div class="flex items-center gap-1.5 truncate">
             <i data-lucide="${isCollapsed ? 'folder' : 'folder-open'}" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
-            <span class="truncate">${folder}/</span>
+            <span class="truncate">${escapeHtml(folder)}/</span>
             <span class="text-[9px] text-zinc-500 font-mono">(${subFiles.length})</span>
           </div>
           <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3 h-3 text-zinc-500 group-hover:text-cyan-400 shrink-0 transition-transform"></i>
@@ -123,7 +138,7 @@
           else if (subFile.endsWith(".css")) iconName = "file-spreadsheet";
           else if (subFile.endsWith(".js") || subFile.endsWith(".ts") || subFile.endsWith(".py") || subFile.endsWith(".sh")) iconName = "terminal";
           
-          item.innerHTML = `<i data-lucide="${iconName}" class="w-3.5 h-3.5 shrink-0 ${isActive ? 'text-cyan-400' : 'text-zinc-500'}"></i><span class="truncate">${subFile}</span>`;
+          item.innerHTML = `<i data-lucide="${iconName}" class="w-3.5 h-3.5 shrink-0 ${isActive ? 'text-cyan-400' : 'text-zinc-500'}"></i><span class="truncate">${escapeHtml(subFile)}</span>`;
           item.onclick = () => switchCodespaceFile(fullPath);
           subContainer.appendChild(item);
         });
@@ -158,7 +173,14 @@
       const isActive = file === window.csActiveFile;
       const tab = document.createElement("div");
       tab.className = `px-3 py-1.5 rounded-t-lg border-t border-x text-xs font-mono flex items-center gap-2 cursor-pointer transition-colors whitespace-nowrap ${isActive ? 'codespace-tab-active bg-surface-950 border-white/20 font-bold' : 'bg-surface-900/60 border-transparent text-zinc-500 hover:text-zinc-300'}`;
-      tab.innerHTML = `<span>${file.split('/').pop()}</span><button onclick="event.stopPropagation(); removeSpecificTab('${file}')" class="hover:text-rose-400 text-[10px]">×</button>`;
+      tab.innerHTML = `<span>${escapeHtml(file.split('/').pop())}</span><button type="button" class="hover:text-rose-400 text-[10px]">×</button>`;
+      const closeBtn = tab.querySelector("button");
+      if (closeBtn) {
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          removeSpecificTab(file);
+        };
+      }
       tab.onclick = () => switchCodespaceFile(file);
       container.appendChild(tab);
     });
@@ -255,14 +277,13 @@
   }
 
   function onEditorContentChange() {
-    if (window.csActiveFile && window.vfs) {
+    if (window.csActiveFile && window.vfs && isValidVfsKey(window.csActiveFile)) {
       const ed = document.getElementById("csCodeEditor");
       if (ed) {
         window.vfs[window.csActiveFile] = ed.value;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
         if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
         updateStorageQuotaMeter();
-        if (window.rebuildGraphData) window.rebuildGraphData();
       }
     }
   }
@@ -345,11 +366,21 @@
     setCodespaceView('terminal');
     const termOut = document.getElementById("csTermOutput");
     
-    let cmd = `python3 "${window.csActiveFile}"`;
-    if (window.csActiveFile.endsWith('.js')) cmd = `node "${window.csActiveFile}"`;
-    if (window.csActiveFile.endsWith('.sh')) cmd = `bash "${window.csActiveFile}"`;
-    if (window.csActiveFile.endsWith('.cpp')) cmd = `g++ -O2 "${window.csActiveFile}" -o out && ./out`;
-    if (window.csActiveFile.endsWith('.java')) cmd = `javac "${window.csActiveFile}" && java Main`;
+    const activeFile = String(window.csActiveFile || '').trim();
+    if (!/^[a-zA-Z0-9_\-\./]+$/.test(activeFile) || activeFile.includes('..') || activeFile.startsWith('-')) {
+      if (termOut) {
+        termOut.innerHTML += `<div class="mt-2 text-rose-400 font-bold">✖ Security Error: Invalid filename pattern or path traversal detected</div>`;
+        termOut.scrollTop = termOut.scrollHeight;
+      }
+      if (window.showToast) window.showToast("Security Alert", "Disallowed characters in filename for execution.");
+      return;
+    }
+
+    let cmd = `python3 -- "${activeFile}"`;
+    if (activeFile.endsWith('.js')) cmd = `node -- "${activeFile}"`;
+    if (activeFile.endsWith('.sh')) cmd = `bash -- "${activeFile}"`;
+    if (activeFile.endsWith('.cpp')) cmd = `g++ -O2 -- "${activeFile}" -o out && ./out`;
+    if (activeFile.endsWith('.java')) cmd = `javac "${activeFile}" && java Main`;
 
     if (termOut) {
       termOut.innerHTML += `<div class="mt-2 text-cyan-400 font-bold">➜ Executing: ${escapeHtml(cmd)}</div>`;
@@ -386,12 +417,15 @@
     const name = prompt("Enter new filename (e.g. app.py, server.js, styles.css):");
     if (name && name.trim()) {
       const clean = name.trim();
+      if (!isValidVfsKey(clean)) {
+        if (window.showToast) window.showToast("Invalid File", "Reserved or invalid filename.");
+        return;
+      }
       if (!window.vfs[clean]) {
         window.vfs[clean] = `// File: ${clean}\n`;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
         if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
         switchCodespaceFile(clean);
-        if (window.rebuildGraphData) window.rebuildGraphData();
         if (window.showToast) window.showToast("File Created", clean);
       }
     }
@@ -401,12 +435,15 @@
     const folder = prompt("Folder name (e.g. models):");
     if (folder && folder.trim()) {
       const clean = `${folder.trim().replace(/\/$/, '')}/README.md`;
+      if (!isValidVfsKey(clean)) {
+        if (window.showToast) window.showToast("Invalid Folder", "Reserved or invalid folder name.");
+        return;
+      }
       if (!window.vfs[clean]) {
         window.vfs[clean] = `# ${folder.trim()}`;
         localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
         if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
         switchCodespaceFile(clean);
-        if (window.rebuildGraphData) window.rebuildGraphData();
       }
     }
   }
@@ -415,14 +452,18 @@
     if (window.csActiveFile === "index.html") return alert("Root entry index.html cannot be renamed.");
     const nextName = prompt("Rename " + window.csActiveFile + " to:", window.csActiveFile);
     if (nextName && nextName.trim() && nextName !== window.csActiveFile) {
-      window.vfs[nextName.trim()] = window.vfs[window.csActiveFile];
+      const cleanNext = nextName.trim();
+      if (!isValidVfsKey(cleanNext)) {
+        if (window.showToast) window.showToast("Invalid File", "Reserved or invalid filename.");
+        return;
+      }
+      window.vfs[cleanNext] = window.vfs[window.csActiveFile];
       delete window.vfs[window.csActiveFile];
       
       window.codespaceOpenTabs = window.codespaceOpenTabs.filter(f => f !== window.csActiveFile);
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
-      switchCodespaceFile(nextName.trim());
-      if (window.rebuildGraphData) window.rebuildGraphData();
+      switchCodespaceFile(cleanNext);
     }
   }
 
@@ -437,14 +478,18 @@
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
       if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
       removeSpecificTab(file);
-      if (window.rebuildGraphData) window.rebuildGraphData();
       if (window.showToast) window.showToast("Deleted", file);
     }
   }
 
   function openCodespacePopout() {
-    const blob = new Blob([bundleCodespaceHTML()], { type: "text/html" });
-    window.open(URL.createObjectURL(blob), "_blank");
+    const rawHtml = bundleCodespaceHTML();
+    const isolatedContainer = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Codespace Preview</title><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;}iframe{width:100%;height:100%;border:none;display:block;}</style></head><body><iframe sandbox="allow-scripts allow-modals allow-popups allow-forms" id="popoutFrame" style="width:100%;height:100%;"></iframe><script>try{window.opener=null;}catch(e){}document.getElementById('popoutFrame').srcdoc=${JSON.stringify(rawHtml).replace(/</g, '\\u003c')};<\/script></body></html>`;
+    const blob = new Blob([isolatedContainer], { type: "text/html" });
+    const popout = window.open(URL.createObjectURL(blob), "_blank");
+    if (popout) {
+      try { popout.opener = null; } catch (_) {}
+    }
   }
 
   function exportCodespaceZip() {
@@ -484,7 +529,11 @@
           if (d.stderr) out.innerHTML += `<div class="text-rose-400">${escapeHtml(d.stderr)}</div>`;
           if (!d.stdout && !d.stderr) out.innerHTML += `<div class="text-zinc-500">[Exit 0]</div>`;
           if (Array.isArray(d.workspaceFiles)) {
-            d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
+            d.workspaceFiles.forEach(f => {
+              if (f && f.name && isValidVfsKey(f.name)) {
+                vfs[f.name] = f.content;
+              }
+            });
             localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
             if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
             renderCodespaceFileTree();
@@ -509,8 +558,9 @@
     let uploadedCount = 0;
     for (const file of fileList) {
       try {
-        const text = await readFileAsText(file);
         const fileName = file.name;
+        if (!isValidVfsKey(fileName)) continue;
+        const text = await readFileAsText(file);
         window.vfs[fileName] = text;
         if (!window.codespaceOpenTabs) window.codespaceOpenTabs = [];
         if (!window.codespaceOpenTabs.includes(fileName)) {
@@ -533,7 +583,6 @@
     renderCodespaceFileTabs();
     loadCodespaceEditor();
     updateStorageQuotaMeter();
-    if (window.rebuildGraphData) window.rebuildGraphData();
 
     if (window.csActiveFile) {
       if (window.csActiveFile.endsWith('.html') || window.csActiveFile.endsWith('.htm')) {
@@ -591,5 +640,6 @@
   window.exportCodespaceZip = exportCodespaceZip;
   window.handleIdeTerminalCommand = handleIdeTerminalCommand;
   window.updateStorageQuotaMeter = updateStorageQuotaMeter;
+  window.isValidVfsKey = isValidVfsKey;
 
 })(window);

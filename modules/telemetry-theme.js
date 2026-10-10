@@ -96,7 +96,7 @@
     const allow = allowEl ? allowEl.checked : true;
     const frame = document.getElementById("previewIframe");
     if (frame) {
-      frame.setAttribute("sandbox", allow ? "allow-scripts allow-same-origin allow-popups allow-modals allow-forms" : "");
+      frame.setAttribute("sandbox", allow ? "allow-scripts allow-modals allow-popups allow-forms" : "");
     }
     if (window.showToast) window.showToast("Policy Applied", "Iframe sandboxing updated.");
   }

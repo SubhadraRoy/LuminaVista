@@ -149,5 +149,47 @@ module.exports = async function runAdminAccessSuite({ assert, window, document, 
   assert(!rawStored.includes(tempPass1), "Stored data never contains raw plaintext password");
   assert(!rawStored.includes(MASTER_PASSWORD), "Stored data never contains sovereign master password");
 
+  // 18. Sovereign Signed ClientKeys Verification (Empty Storage Fallback)
+  const tempPass3 = 'SovereignDelegateKey#2026';
+  const hash3 = crypto.createHash('sha256').update(tempPass3).digest('hex');
+  const nowTs = Date.now();
+  const validSig = crypto.createHmac('sha256', MASTER_PASSWORD).update(`key_sovereign_03:${hash3}:${nowTs}`).digest('hex');
+  const clientKeysVault = [
+    {
+      id: 'key_sovereign_03',
+      label: 'Sovereign Delegate',
+      hash: hash3,
+      sig: validSig,
+      createdAt: nowTs
+    }
+  ];
+
+  // Storage is completely empty: verify clientKeys passes
+  await mockStorage.set('admin:temp_passwords', JSON.stringify([]));
+  const signedAuth = await authMod.verifyCredentials(tempPass3, MASTER_PASSWORD, mockStorage, clientKeysVault);
+  assert(signedAuth.authenticated === true, "Sovereign signed clientKey authenticates even when server storage is empty");
+  assert(signedAuth.type === 'temporary', "Sovereign signed key authenticates as 'temporary'");
+  assert(signedAuth.keyId === 'key_sovereign_03', "Sovereign signed key identified correctly");
+
+  // Forged signature must be rejected
+  await mockStorage.set('admin:temp_passwords', JSON.stringify([]));
+  const forgedPass = 'AttackerKey#999';
+  const forgedHash = crypto.createHash('sha256').update(forgedPass).digest('hex');
+  const forgedVault = [
+    {
+      id: 'key_forged_04',
+      label: 'Forged Key',
+      hash: forgedHash,
+      sig: 'deadbeef00112233445566778899aabbccddeeff',
+      createdAt: nowTs
+    }
+  ];
+  const forgedAuth = await authMod.verifyCredentials(forgedPass, MASTER_PASSWORD, mockStorage, forgedVault);
+  assert(forgedAuth.authenticated === false, "Forged client key signature is strictly rejected");
+
+  // 19. System Lock & Unlock Verification
+  assert(typeof window.unlockSession === 'function', "window.unlockSession is defined and callable");
+  assert(typeof window.lockSession === 'function', "window.lockSession is defined and callable");
+
   console.log("✓ Sovereign Admin Access & Temporary Credentials sub-suite completed successfully!");
 };

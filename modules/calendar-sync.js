@@ -235,10 +235,36 @@
   // ZERO-FRONTEND-SECRETS BACKEND GOOGLE CALENDAR SYNC
   // =========================================================================
   function getApiOrigin() {
-    if (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname.endsWith('github.io')) {
-      return 'https://lumina-vista-sigma.vercel.app';
+    if (typeof window !== 'undefined' && window.location) {
+      const hn = window.location.hostname || '';
+      const proto = window.location.protocol || '';
+      if (hn === 'localhost' || hn === '127.0.0.1') {
+        return '';
+      }
+      if (proto === 'file:' ||
+          hn.endsWith('github.io') ||
+          hn.endsWith('pages.dev') ||
+          hn.endsWith('gitlab.io') ||
+          hn.endsWith('surge.sh') ||
+          hn.endsWith('netlify.app')) {
+        return 'https://lumina-vista-sigma.vercel.app';
+      }
     }
     return '';
+  }
+
+  // Concurrency mutex and auto-sync debounce helper
+  let isSyncInProgress = false;
+  let lastAutoSyncTimestamp = 0;
+
+  function triggerAutoSync() {
+    const now = Date.now();
+    if (now - lastAutoSyncTimestamp < 15000) return;
+    lastAutoSyncTimestamp = now;
+    const settings = getSettings();
+    if (settings.googleCalendarConnected) {
+      syncGoogleCalendar();
+    }
   }
 
   function getSessionId() {
@@ -305,6 +331,9 @@
       let popup = null;
       try {
         popup = window.open('about:blank', 'google_oauth_popup', `width=${width},height=${height},left=${left},top=${top}`);
+        if (popup && popup.document) {
+          popup.document.write('<!DOCTYPE html><html><head><title>Connecting Google Calendar...</title><style>body{background:#09090b;color:#00f2fe;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column} .spinner{width:36px;height:36px;border:3px solid rgba(0,242,254,0.2);border-top-color:#00f2fe;border-radius:50%;animation:spin 0.8s linear infinite;} @keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class="spinner"></div><p style="margin-top:16px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa">Contacting Google OAuth...</p></body></html>');
+        }
       } catch (e) {}
 
       // Fetch OAuth initiation authUrl from backend with client redirect URI
@@ -321,15 +350,26 @@
       }
 
       if (popup && !popup.closed) {
-        popup.location.href = authData.authUrl;
+        try {
+          popup.location.href = authData.authUrl;
+        } catch (navErr) {
+          window.location.href = authData.authUrl;
+          return;
+        }
       } else {
         // Fallback to top-level navigation if popup was blocked
         window.location.href = authData.authUrl;
         return;
       }
 
+      const popupStartTime = Date.now();
       const checkInterval = setInterval(async () => {
         try {
+          // 5-minute timeout guard to prevent memory leaks if popup is abandoned
+          if (Date.now() - popupStartTime > 5 * 60 * 1000) {
+            clearInterval(checkInterval);
+            return;
+          }
           if (!popup || popup.closed) {
             clearInterval(checkInterval);
             const checkRes = await calendarApiFetch(statusUrl);
@@ -356,13 +396,16 @@
   }
 
   async function syncGoogleCalendar(isManual = false) {
+    if (isSyncInProgress) return;
+    isSyncInProgress = true;
     updateSyncStatusBadge(true);
     try {
       const res = await calendarApiFetch('/api/calendar/sync');
       if (res.ok) {
         const data = await res.json();
         if (data.items && Array.isArray(data.items)) {
-          const activeGoogleEventIds = new Set(data.items.map(item => item.id));
+          const activeItems = data.items.filter(item => item && item.status !== 'cancelled');
+          const activeGoogleEventIds = new Set(activeItems.map(item => item.id));
           let calendarEvents = getEvents();
 
           // 1. Two-Way Delete: If an event was deleted from Google Calendar, remove it here
@@ -381,7 +424,7 @@
           });
 
           // 2. Two-Way Update & Add from Google Calendar
-          data.items.forEach(item => {
+          activeItems.forEach(item => {
             const startStr = (item.start && (item.start.dateTime || item.start.date)) || new Date().toISOString();
             const endStr = (item.end && (item.end.dateTime || item.end.date)) || new Date(Date.now() + 3600000).toISOString();
             const allDay = !item.start?.dateTime;
@@ -417,6 +460,12 @@
             }
           });
 
+          // Ensure settings record connected state first so pushEventToGoogle does not exit early
+          setSettings({
+            googleCalendarConnected: true,
+            lastSyncedAt: new Date().toISOString()
+          });
+
           // 3. Two-Way Push: Push unpushed sovereign local events to Google Calendar
           const unpushedEvents = calendarEvents.filter(e => !e.googleEventId);
           for (const localEvt of unpushedEvents) {
@@ -424,14 +473,10 @@
           }
 
           setEvents(calendarEvents);
-          setSettings({
-            googleCalendarConnected: true,
-            lastSyncedAt: new Date().toISOString()
-          });
           renderCalendar();
           // Only show toast if triggered manually by user; keep background auto-updates completely silent
           if (isManual && window.showToast) {
-            window.showToast("Google Calendar Synced", `${data.items.length} active events in two-way sync.`);
+            window.showToast("Google Calendar Synced", `${activeItems.length} active events in two-way sync.`);
           }
         }
       } else {
@@ -447,6 +492,7 @@
     } catch (e) {
       console.warn('Sync Google Calendar error:', e);
     } finally {
+      isSyncInProgress = false;
       updateSyncStatusBadge(false);
     }
   }
@@ -460,10 +506,14 @@
       let startPayload, endPayload;
       if (evt.allDay) {
         const startDateStr = getEventLocalDateKey(evt.start);
-        const sDate = new Date(startDateStr + 'T00:00:00Z');
-        const eDate = new Date(sDate.getTime() + 86400000);
+        let endDateStr = evt.end ? getEventLocalDateKey(evt.end) : startDateStr;
+        if (!endDateStr || endDateStr <= startDateStr) {
+          const sDate = new Date(startDateStr + 'T00:00:00Z');
+          const eDate = new Date(sDate.getTime() + 86400000);
+          endDateStr = eDate.toISOString().slice(0, 10);
+        }
         startPayload = { date: startDateStr };
-        endPayload = { date: eDate.toISOString().slice(0, 10) };
+        endPayload = { date: endDateStr };
       } else {
         const sDate = new Date(evt.start);
         const eDate = new Date(evt.end || (sDate.getTime() + 3600000));
@@ -656,10 +706,26 @@
   // Cross-window and OAuth postMessage listener
   if (typeof window !== 'undefined') {
     window.addEventListener('message', async (e) => {
+      const isAllowedOrigin = (
+        (window.location && e.origin === window.location.origin) ||
+        e.origin === 'https://lumina-vista-sigma.vercel.app' ||
+        e.origin === 'https://subhadraroy.github.io'
+      );
+      if (!isAllowedOrigin) return;
+
       if (e.data && e.data.type === 'GCAL_AUTH_SUCCESS') {
-        setSettings({ googleCalendarConnected: true });
+        const email = e.data.email || '';
+        setSettings({
+          googleCalendarConnected: true,
+          ...(email ? { googleAccountEmail: email } : {})
+        });
         updateSyncStatusBadge();
         await syncGoogleCalendar();
+      } else if (e.data && e.data.type === 'GCAL_AUTH_ERROR') {
+        console.warn('[Google OAuth]: Authorization failed via postMessage:', e.data.error || e.data.message);
+        if (window.showToast) {
+          window.showToast("Google Calendar Error", e.data.message || "Failed to authenticate with Google Calendar.");
+        }
       }
     });
 
@@ -686,9 +752,18 @@
     window.addEventListener('focus', () => {
       const settings = getSettings();
       if (settings.googleCalendarConnected) {
-        syncGoogleCalendar();
+        triggerAutoSync();
       }
     });
+
+    // Auto-sync when tab visibility restores
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          triggerAutoSync();
+        }
+      });
+    }
   }
 
   // =========================================================================
@@ -706,8 +781,13 @@
     openSyncModal,
     closeSyncModal,
     copyRedirectUri,
-    saveSyncSettingsFromModal
+    saveSyncSettingsFromModal,
+    triggerAutoSync,
+    getApiOrigin
   };
+
+  // Expose namespace alias for cross-compatibility
+  window.calendarSync = window.LuminaCalendarSync;
 
   // Augment LuminaCalendar if already loaded
   if (window.LuminaCalendar) {

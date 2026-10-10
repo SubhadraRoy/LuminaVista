@@ -8,9 +8,10 @@ import {
   auditLog,
   maskSecret,
   sendSecureJson,
+  setSecurityHeaders,
   scrubSecrets
 } from './_lib/auth-guard.js';
-import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
+import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent, isBlockedSsrfTarget } from './_lib/key-pool.js';
 import {
   jevClassifyIntent,
   buildLuminaSystemPrompt,
@@ -130,17 +131,17 @@ async function searchDuckDuckGo(query) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  res._req = req;
+  setSecurityHeaders(res, req);
+  if (req.method === 'OPTIONS') return res.status(204).end();
 
   // Live telemetry endpoint (GET /api/chat?action=telemetry or POST with action: 'telemetry')
   const isTelemetry = (req.method === 'GET' && (req.query?.action === 'telemetry' || req.url?.includes('action=telemetry'))) ||
                       (req.method === 'POST' && req.body?.action === 'telemetry');
   if (isTelemetry) {
-    if (process.env.VERCEL) {
-      const auth = await validateSession(req, getRedisClient());
-      if (!auth.valid) {
-        return sendSecureJson(res, auth.status || 401, { error: auth.error });
-      }
+    const auth = await validateSession(req, getRedisClient());
+    if (!auth.valid) {
+      return sendSecureJson(res, auth.status || 401, { error: auth.error });
     }
     const oPool = getKeyPool('ollama');
     const nPool = getKeyPool('nvidia');
@@ -202,7 +203,15 @@ export default async function handler(req, res) {
       personaDirective = ''
     } = req.body || {};
 
-    currentVfs = currentVfs || {};
+    const safeVfs = Object.create(null);
+    if (currentVfs && typeof currentVfs === 'object') {
+      for (const [k, v] of Object.entries(currentVfs)) {
+        if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+          safeVfs[k] = v;
+        }
+      }
+    }
+    currentVfs = safeVfs;
     messages = messages || [];
     prompt = prompt || (messages.length > 0 ? messages[messages.length - 1].content : '');
 
@@ -244,6 +253,7 @@ export default async function handler(req, res) {
     let loopCount = 0;
     const MAX_LOOPS = 2; // Prevents timeout in single serverless execution
     let aiReply = "";
+    let actualModelUsed = requestedModel || 'gpt-oss:20b';
 
     // Normalize capability permissions
     const allowInternet = enableInternet !== false && webSearch !== false;
@@ -350,8 +360,15 @@ export default async function handler(req, res) {
       const preferNvidia = isNvidiaExplicit || (!isOllamaExplicit && isNvidiaModelSelected) || (oPool.length === 0 && nPool.length > 0);
 
       const makeOllamaFetch = async (apiKey) => {
+        if (customEndpoint && isBlockedSsrfTarget(customEndpoint)) {
+          auditLog('SSRF_ATTEMPT_BLOCKED', req, `Blocked customEndpoint: ${customEndpoint}`);
+          throw new Error('Access blocked: custom endpoint targets restricted private network, loopback, or cloud metadata address.');
+        }
         const ollamaModel = resolveModelForProvider(requestedModel, 'ollama');
         const configuredEndpoint = normalizeOllamaEndpoint(customEndpoint || process.env.OLLAMA_ENDPOINT || 'https://ollama.com/v1/chat/completions');
+        if (isBlockedSsrfTarget(configuredEndpoint) && configuredEndpoint !== 'https://ollama.com/v1/chat/completions') {
+          throw new Error('Access blocked: target endpoint is restricted.');
+        }
         const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
         const payloadMessages = sanitizeProviderMessages(messages, prompt);
         
@@ -409,12 +426,24 @@ export default async function handler(req, res) {
         });
       };
 
+      actualModelUsed = requestedModel || 'gpt-oss:20b';
+
       if (provider === 'custom') {
+        if (customEndpoint && isBlockedSsrfTarget(customEndpoint)) {
+          auditLog('SSRF_ATTEMPT_BLOCKED', req, `Blocked customEndpoint: ${customEndpoint}`);
+          return sendSecureJson(res, 400, {
+            error: 'Access blocked: custom endpoint targets restricted private network, loopback, or cloud metadata address.'
+          });
+        }
+        actualModelUsed = requestedModel || 'gpt-oss:20b';
         failoverResult = await executeWithFailover({
           provider: 'custom',
           customApiKey,
           makeRequest: async (apiKey) => {
             const endpoint = normalizeOllamaEndpoint(customEndpoint);
+            if (isBlockedSsrfTarget(endpoint)) {
+              throw new Error('Access blocked: endpoint targets restricted private network, loopback, or cloud metadata address.');
+            }
             const cleanKey = (apiKey || '').trim().replace(/^["']|["']$/g, '').trim();
             const headers = { 'Content-Type': 'application/json' };
             if (cleanKey) headers['Authorization'] = `Bearer ${cleanKey}`;
@@ -432,6 +461,7 @@ export default async function handler(req, res) {
         });
       } else if (preferNvidia) {
         // Primary: NVIDIA NIM Cloud Pool
+        actualModelUsed = resolveModelForProvider(requestedModel, 'nvidia');
         failoverResult = await executeWithFailover({
           provider: 'nvidia',
           customApiKey,
@@ -444,6 +474,7 @@ export default async function handler(req, res) {
 
         // Cross-pool cascade to Ollama if NVIDIA exhausted/rate-limited
         if (!failoverResult.success && oPool.length > 0) {
+          actualModelUsed = resolveModelForProvider(requestedModel, 'ollama');
           allFailoverLogs.push('[Cross-Pool Auto-Failover]: Cascading from NVIDIA NIM to Ollama Cloud pool...');
           terminalLogs.push('[Cross-Pool Auto-Failover]: Cascading to Ollama Cloud pool...');
           failoverResult = await executeWithFailover({
@@ -458,6 +489,7 @@ export default async function handler(req, res) {
         }
       } else {
         // Primary: Ollama Cloud Pool (including all discovered ollamaapi keys)
+        actualModelUsed = resolveModelForProvider(requestedModel, 'ollama');
         failoverResult = await executeWithFailover({
           provider: 'ollama',
           customApiKey,
@@ -470,6 +502,7 @@ export default async function handler(req, res) {
 
         // Cross-pool cascade to NVIDIA NIM if Ollama pool exhausted/rate-limited
         if (!failoverResult.success && nPool.length > 0) {
+          actualModelUsed = resolveModelForProvider(requestedModel, 'nvidia');
           allFailoverLogs.push('[Universal Hybrid Failover]: Ollama Cloud keys reached quota/rate-limit. Cascading to NVIDIA NIM pool...');
           terminalLogs.push('[Universal Hybrid Failover]: Cascading to NVIDIA NIM pool...');
           failoverResult = await executeWithFailover({
@@ -487,6 +520,7 @@ export default async function handler(req, res) {
       // Final cross-pool cascade to Groq if configured and previous pools were exhausted
       const gPool = getKeyPool('groq');
       if (!failoverResult.success && gPool.length > 0) {
+        actualModelUsed = 'llama-3.3-70b-versatile';
         allFailoverLogs.push('[Cross-Pool Auto-Failover]: Cascading to Groq Cloud pool (Llama 3.3 70B)...');
         terminalLogs.push('[Cross-Pool Auto-Failover]: Cascading to Groq Cloud pool...');
         failoverResult = await executeWithFailover({
@@ -522,6 +556,7 @@ export default async function handler(req, res) {
       }
 
       if (!failoverResult.success) {
+        actualModelUsed = 'openJev-verdict-2.0';
         // Graceful failover to dynamic Jev bespoke autonomous response if external cloud is completely exhausted
         terminalLogs.push(`[Failover Engine]: ${failoverResult.reason}. Activating Jev Sovereign Autonomous Sandbox.`);
         aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
@@ -565,7 +600,9 @@ export default async function handler(req, res) {
       let vMatch;
       while ((vMatch = viewRegex.exec(aiReply)) !== null) {
         const fn = vMatch[1];
-        if (!allowVfs) {
+        if (fn === '__proto__' || fn === 'constructor' || fn === 'prototype') {
+          toolFeedback.push(`[TOOL_RESULT:VIEW_FILE filename="${fn}"] Permission Denied: Reserved prototype key cannot be accessed. [/TOOL_RESULT:VIEW_FILE]`);
+        } else if (!allowVfs) {
           toolFeedback.push(`[TOOL_RESULT:VIEW_FILE filename="${fn}"] Permission Denied: VFS File System access is disabled in Studio Settings. [/TOOL_RESULT:VIEW_FILE]`);
         } else if (currentVfs[fn] !== undefined) {
           const lines = currentVfs[fn].split('\n').map((l, i) => `${i + 1}: ${l}`).join('\n');
@@ -594,7 +631,9 @@ export default async function handler(req, res) {
       while ((wMatch = writeRegex.exec(aiReply)) !== null) {
         const fn = wMatch[1];
         const content = wMatch[2].trim();
-        if (!allowVfs) {
+        if (fn === '__proto__' || fn === 'constructor' || fn === 'prototype') {
+          toolFeedback.push(`[TOOL_RESULT:WRITE_FILE filename="${fn}"] Permission Denied: Reserved prototype key cannot be modified. [/TOOL_RESULT:WRITE_FILE]`);
+        } else if (!allowVfs) {
           toolFeedback.push(`[TOOL_RESULT:WRITE_FILE filename="${fn}"] Permission Denied: VFS File System access is disabled. [/TOOL_RESULT:WRITE_FILE]`);
         } else {
           currentVfs[fn] = content;
@@ -610,7 +649,9 @@ export default async function handler(req, res) {
         const fn = eMatch[1];
         const target = eMatch[2];
         const replacement = eMatch[3];
-        if (!allowVfs) {
+        if (fn === '__proto__' || fn === 'constructor' || fn === 'prototype') {
+          toolFeedback.push(`[TOOL_RESULT:EDIT_FILE filename="${fn}"] Permission Denied: Reserved prototype key cannot be modified. [/TOOL_RESULT:EDIT_FILE]`);
+        } else if (!allowVfs) {
           toolFeedback.push(`[TOOL_RESULT:EDIT_FILE filename="${fn}"] Permission Denied: VFS File System access is disabled. [/TOOL_RESULT:EDIT_FILE]`);
         } else if (currentVfs[fn] && currentVfs[fn].includes(target)) {
           currentVfs[fn] = currentVfs[fn].replace(target, replacement);
@@ -626,7 +667,9 @@ export default async function handler(req, res) {
       let dMatch;
       while ((dMatch = delRegex.exec(aiReply)) !== null) {
         const fn = dMatch[1];
-        if (!allowVfs) {
+        if (fn === '__proto__' || fn === 'constructor' || fn === 'prototype') {
+          toolFeedback.push(`[TOOL_RESULT:DELETE_FILE filename="${fn}"] Permission Denied: Reserved prototype key cannot be modified. [/TOOL_RESULT:DELETE_FILE]`);
+        } else if (!allowVfs) {
           toolFeedback.push(`[TOOL_RESULT:DELETE_FILE filename="${fn}"] Permission Denied: VFS File System access is disabled. [/TOOL_RESULT:DELETE_FILE]`);
         } else if (currentVfs[fn] !== undefined) {
           delete currentVfs[fn];
@@ -681,7 +724,9 @@ export default async function handler(req, res) {
             try {
               const list = await sbx.files.list('.');
               for (const item of list) {
-                if (item.type === 'file') currentVfs[item.name] = await sbx.files.read(item.name);
+                if (item.type === 'file' && item.name !== '__proto__' && item.name !== 'constructor' && item.name !== 'prototype') {
+                  currentVfs[item.name] = await sbx.files.read(item.name);
+                }
               }
             } catch (ignore) {}
 
@@ -736,6 +781,7 @@ export default async function handler(req, res) {
       messages,
       failoverLogs: allFailoverLogs,
       activeKeyMeta: safeActiveKeyMeta,
+      actualModel: actualModelUsed,
       rateLimited: !failoverResult?.success && !!(failoverResult?.reason?.includes('ALL_KEYS_EXHAUSTED')),
       jevTelemetry
     });

@@ -291,9 +291,6 @@
       <button onclick="switchTab('tab-artifacts')" id="btn-tab-artifacts" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Artifacts IDE" aria-label="Artifacts IDE">
         <i data-lucide="folder-code" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Artifacts IDE</span>
       </button>
-      <button onclick="switchTab('tab-graphify')" id="btn-tab-graphify" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Graphify Graph" aria-label="Graphify Graph">
-        <i data-lucide="network" class="w-4 h-4 shrink-0 text-purple-400"></i><span class="sidebar-label">Graphify Graph</span>
-      </button>
       <button onclick="switchTab('tab-projects')" id="btn-tab-projects" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Projects Explorer" aria-label="Projects Explorer">
         <i data-lucide="folder-tree" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Projects</span>
       </button>
@@ -370,10 +367,6 @@
         </span>
         <span class="text-zinc-700 hidden md:inline">•</span>
         <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i><span class="hidden xs:inline">00:00:00</span></span>
-        <span class="text-zinc-700 hidden sm:inline">•</span>
-        <span class="text-white hidden sm:inline">Admin: <span id="headerAdminName" class="text-cyan-300 font-bold">Sovereign</span></span>
-        <span class="text-zinc-700">•</span>
-        <button onclick="openSourceInspector()" class="p-1.5 hover:text-white transition-colors cursor-pointer" title="View Source"><i data-lucide="code" class="w-4 h-4"></i></button>
         <span class="text-zinc-700">•</span>
         <button onclick="lockSession()" class="p-1.5 hover:text-cyan-400 transition-colors cursor-pointer" title="Lock Session (15m Inactivity Lock)" aria-label="Lock Session"><i data-lucide="lock" class="w-4 h-4"></i></button>
       </div>
@@ -384,7 +377,7 @@
       
       <!-- ===================================================================== -->
       <!-- ===================================================================== -->
-      <!-- TAB 1: ai-llm STUDIO (Chat, Artifacts & Files, Graphify Graph)        -->
+      <!-- TAB 1: ai-llm STUDIO (Chat, Artifacts & Files)                        -->
       <!-- ===================================================================== -->
       <section id="tab-ai-studio" class="tab-pane h-full flex flex-col gap-3 min-h-0">
         
@@ -399,11 +392,6 @@
               <i data-lucide="folder-code" class="w-3.5 h-3.5 text-emerald-400"></i>
               <span>Artifacts &amp; Files</span>
               <span id="aiSubTabArtifactCount" class="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-300 font-mono">0</span>
-            </button>
-            <button id="btnAiSubTabGraphify" onclick="switchAiSubTab('graphify')" class="px-3.5 py-1.5 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all">
-              <i data-lucide="network" class="w-3.5 h-3.5 text-purple-400"></i>
-              <span>Graphify Graph</span>
-              <span class="px-1.5 py-0.2 rounded text-[9px] bg-purple-500/20 text-purple-300 font-mono">Live</span>
             </button>
           </div>
           
@@ -452,20 +440,17 @@
                   <div>
                     <div class="flex items-center gap-1.5 sm:gap-2">
                       <h3 class="font-heading font-bold text-sm text-white leading-tight">AI-Studio</h3>
-                      <span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20" id="aiActiveModelBadge">gpt-oss:20b</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/15 text-cyan-300 font-mono font-bold border border-cyan-500/30 shadow-sm" id="aiActiveModelBadge">gpt-oss:20b</span>
                       <span id="failoverIndicatorBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-amber-500/10 text-amber-300 font-mono border border-amber-500/30 items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Key #1
                       </span>
-                      <span id="webSearchActiveBadge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20 items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Web Live
-                      </span>
-                      <!-- TypeSafe Jev System-1 Telemetry HUD -->
-                      <button type="button" id="jevStudioHud" onclick="toggleJevInspectorModal()" class="px-2 py-0.5 rounded-md text-[9px] bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 font-mono border border-purple-500/30 flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Jev System-1 Cognitive Matrix Telemetry & HUD • Click to inspect">
-                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" id="jevStatusDot"></span>
-                        <span class="font-bold tracking-wide">JEV-S1</span>
-                        <span id="jevRouteLabel" class="text-zinc-200 font-semibold">IDLE</span>
-                        <span id="jevConfidenceLabel" class="text-cyan-400 font-bold hidden xs:inline">99%</span>
-                        <span id="jevLatencyLabel" class="text-emerald-400 hidden sm:inline">&lt;1ms</span>
+                      <!-- Web Live and Jev HUD hidden visually from header per user specification while preserving DOM references -->
+                      <span id="webSearchActiveBadge" class="hidden"></span>
+                      <button type="button" id="jevStudioHud" onclick="toggleJevInspectorModal()" class="hidden" title="openJev-verdict-2.0 Decision Engine">
+                        <span id="jevStatusDot"></span>
+                        <span id="jevRouteLabel"></span>
+                        <span id="jevConfidenceLabel"></span>
+                        <span id="jevLatencyLabel"></span>
                       </button>
                     </div>
                     <p class="text-[10px] text-zinc-400 font-mono mt-0.5 truncate max-w-[170px] xs:max-w-xs sm:max-w-md" id="aiActivePersonaBadge">Category: General • Specialist: Omni-Disciplinary Executive Assistant</p>
@@ -651,68 +636,6 @@
                 <button onclick="exportCodespaceZip()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="download" class="w-3 h-3"></i> Export Bundle</button>
                 <button onclick="openCodespacePopout()" class="hover:text-cyan-300 flex items-center gap-1 cursor-pointer"><i data-lucide="external-link" class="w-3 h-3"></i> Popout</button>
               </div>
-            </div>
-          </div>
-
-          <!-- SUB-VIEW 3: GRAPHIFY ARCHITECTURE GRAPH (Full Width) -->
-          <div id="aiGraphifyColumn" class="hidden w-full h-full glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-purple-500/30 shadow-2xl transition-all duration-300">
-            <!-- Graphify Header -->
-            <div class="px-4 py-2.5 border-b border-white/10 bg-surface-900/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
-                  <i data-lucide="network" class="w-4 h-4"></i>
-                </div>
-                <div>
-                  <h3 class="font-heading font-bold text-xs text-white leading-tight">LuminaVista Graphify Architecture</h3>
-                  <p class="text-[10px] text-zinc-400 font-mono" id="graphifyNodeCount">Loading architecture graph...</p>
-                </div>
-              </div>
-
-              <!-- Filter Pills & Search -->
-              <div class="flex flex-wrap items-center gap-2">
-                <div class="flex items-center bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[11px] font-mono">
-                  <button onclick="setGraphifyFilter('all')" data-cat="all" class="graphify-filter-btn px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">All</button>
-                  <button onclick="setGraphifyFilter('frontend')" data-cat="frontend" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Frontend</button>
-                  <button onclick="setGraphifyFilter('ai')" data-cat="ai" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">AI</button>
-                  <button onclick="setGraphifyFilter('api')" data-cat="api" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">APIs</button>
-                  <button onclick="setGraphifyFilter('security')" data-cat="security" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Security</button>
-                  <button onclick="setGraphifyFilter('runtime')" data-cat="runtime" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">Sandboxes</button>
-                  <button onclick="setGraphifyFilter('vfs')" data-cat="vfs" class="graphify-filter-btn px-2 py-1 rounded bg-surface-900 text-zinc-400 hover:text-white cursor-pointer">VFS Files</button>
-                </div>
-
-                <div class="relative">
-                  <input type="text" oninput="setGraphifySearch(this.value)" placeholder="Search node..." class="godx-input px-2.5 py-1 pl-7 text-[11px] font-mono w-28 sm:w-32 focus:w-44 transition-all" />
-                  <i data-lucide="search" class="w-3 h-3 text-zinc-500 absolute left-2 top-2"></i>
-                </div>
-
-                <!-- Zoom & Export Controls -->
-                <div class="flex items-center gap-1">
-                  <button onclick="zoomGraphify(0.15)" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Zoom In"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
-                  <button onclick="zoomGraphify(-0.15)" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Zoom Out"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
-                  <button onclick="resetGraphifyView()" class="p-1 rounded bg-surface-950 hover:bg-surface-850 text-zinc-300 border border-white/10 cursor-pointer" title="Reset View"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
-                  <button onclick="exportGraphifyImage()" class="px-2 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer" title="Export PNG Diagram"><i data-lucide="image" class="w-3 h-3"></i> PNG</button>
-                  <button onclick="exportGraphifyJson()" class="px-2 py-1 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono flex items-center gap-1 cursor-pointer" title="Export Architecture Manifest JSON"><i data-lucide="code" class="w-3 h-3"></i> JSON</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Canvas Container -->
-            <div class="flex-1 relative min-h-0 bg-[#06080d] overflow-hidden select-none">
-              <canvas id="graphifyCanvas" class="w-full h-full cursor-grab active:cursor-grabbing block"></canvas>
-
-              <!-- Node Inspector Drawer (Slide-out panel) -->
-              <div id="graphifyInspectorDrawer" class="hidden absolute top-3 right-3 w-[calc(100vw-1.5rem)] sm:w-80 md:w-96 max-w-sm glass-panel rounded-2xl border border-white/15 shadow-2xl z-20 overflow-hidden bg-surface-900/95 backdrop-blur-2xl"></div>
-
-              <!-- Canvas Bottom Legend Bar -->
-              <div class="absolute bottom-3 left-3 bg-surface-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-[10px] font-mono text-zinc-400 hidden sm:flex items-center gap-3">
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#00f2fe]"></span> Frontend</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#818cf8]"></span> AI</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#10b981]"></span> APIs</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#f43f5e]"></span> Security</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#c084fc]"></span> Sandboxes</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#2dd4bf]"></span> VFS Files</span>
-              </div>
-            </div>
           </div>
 
         </div>
@@ -757,7 +680,7 @@
               </div>
             </div>
             <div id="iframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/5 bg-surface-950 flex items-center justify-center transition-all duration-300 w-full mx-auto relative">
-              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-popups allow-modals" class="w-full h-full border-0 bg-white"></iframe>
+              <iframe id="previewIframe" src="about:blank" sandbox="allow-scripts allow-modals allow-popups allow-forms" class="w-full h-full border-0 bg-white"></iframe>
               <div id="iframeOverlay" class="absolute inset-0 bg-surface-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-3">
                 <i data-lucide="folder-search" class="w-8 h-8 text-cyan-400 mb-1"></i>
                 <h4 class="font-heading font-bold text-sm text-white">No Project Mounted</h4>
@@ -805,7 +728,7 @@
               <button onclick="clearCompilerOutput()" class="text-zinc-500 hover:text-white text-[11px]">Clear</button>
             </div>
             <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white relative">
-              <iframe id="sandboxPreviewFrame" class="w-full h-full border-0 absolute inset-0"></iframe>
+              <iframe id="sandboxPreviewFrame" sandbox="allow-scripts allow-modals allow-forms" class="w-full h-full border-0 absolute inset-0"></iframe>
             </div>
             <div id="sandboxStdoutWrapper" class="hidden flex-1 rounded-xl p-5 bg-surface-950 font-mono text-xs text-zinc-200 border border-white/10 overflow-y-auto whitespace-pre-wrap leading-relaxed shadow-inner custom-scrollbar"></div>
           </div>
@@ -971,8 +894,8 @@
           </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
-          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
-          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitRightFrame" sandbox="allow-scripts allow-same-origin" class="w-full flex-1 border-0"></iframe></div>
+          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitLeftFrame" sandbox="allow-scripts allow-modals allow-popups allow-forms" class="w-full flex-1 border-0"></iframe></div>
+          <div class="rounded-xl overflow-hidden border border-white/10 bg-white flex flex-col min-h-[300px] md:min-h-0"><iframe id="splitRightFrame" sandbox="allow-scripts allow-modals allow-popups allow-forms" class="w-full flex-1 border-0"></iframe></div>
         </div>
       </section>
 
@@ -1119,7 +1042,7 @@
 
             <!-- Google Sync Badge -->
             <button onclick="LuminaCalendar.openSyncModal()" id="calSyncStatusBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-surface-850 text-zinc-400 border border-white/10 hover:text-white cursor-pointer transition-colors" title="Google Calendar Sync Settings">
-              <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span> <span class="text-[10px]">Local Sovereign</span>
+              <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span> <span class="text-[10px]">Local Sovereign</span>
             </button>
 
             <!-- Google Segmented View Pill Buttons (Desktop) -->
@@ -1881,7 +1804,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- MODAL: TYPE-SAFE JEV SYSTEM-1 COGNITIVE MATRIX INSPECTOR & HUD             -->
+  <!-- MODAL: openJev-verdict-2.0 NON-AUTOREGRESSIVE DECISION ENGINE & HUD       -->
   <!-- ========================================================================= -->
   <div id="jevInspectorModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-3 sm:p-4">
     <div class="glass-panel w-full max-w-2xl rounded-2xl border border-purple-500/30 bg-surface-950/95 p-4 sm:p-6 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
@@ -1891,9 +1814,9 @@
           <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center font-bold text-xs">JEV</div>
           <div>
             <h3 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-              Jev System-1 Cognitive Matrix <span class="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-300 font-mono">v4.0 Ultra</span>
+              openJev-verdict-2.0 <span class="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">151M Non-Autoregressive</span>
             </h3>
-            <p class="text-[10px] text-zinc-400 font-mono">Sub-millisecond semantic tensor routing, guardrails &amp; tool DAG inspector</p>
+            <p class="text-[10px] text-zinc-400 font-mono">Calibrated dual-channel decision engine (77.10% acc, 0.0636 Brier, 1.44% ECE)</p>
           </div>
         </div>
         <button onclick="closeJevInspectorModal()" class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer" title="Close Inspector">
@@ -1974,7 +1897,6 @@
   <script src="./modules/jev-client.js"></script>
   <script src="./modules/ai-studio.js"></script>
   <script src="./modules/codespace.js"></script>
-  <script src="./modules/graphify.js"></script>
   <script src="./modules/voice-studio.js"></script>
   <script src="./modules/compiler.js"></script>
   <script src="./modules/terminal.js"></script>

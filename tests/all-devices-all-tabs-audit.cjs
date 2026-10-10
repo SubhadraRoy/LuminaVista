@@ -135,22 +135,22 @@ const ALL_DEVICES = [
   { name: '21:9 Ultrawide Desktop (3440x1440)', width: 3440, height: 1440, scale: 1.0, type: 'Ultrawide' }
 ];
 
-const ALL_14_TABS = [
+const ALL_13_TABS = [
   { id: 'tab-ai-studio', name: '1. AI-Studio' },
   { id: 'tab-artifacts', name: '2. Artifacts IDE' },
-  { id: 'tab-graphify', name: '3. Graphify Graph' },
-  { id: 'tab-projects', name: '4. Projects Explorer' },
-  { id: 'tab-sandbox', name: '5. Compilers & SQL' },
-  { id: 'tab-whiteboard', name: '6. Whiteboard Pro' },
-  { id: 'tab-design', name: '7. UI Generator' },
-  { id: 'tab-split', name: '8. Split Compare' },
-  { id: 'tab-terminal', name: '9. Terminal MicroVM' },
-  { id: 'tab-analytics', name: '10. Telemetry' },
-  { id: 'tab-scratchpad', name: '11. Notes Markdown' },
-  { id: 'tab-calendar', name: '12. Calendar & Agenda' },
-  { id: 'tab-controls', name: '13. Settings & Theme' },
-  { id: 'tab-smartlock', name: '14. Smart Door Lock' }
+  { id: 'tab-projects', name: '3. Projects Explorer' },
+  { id: 'tab-sandbox', name: '4. Compilers & SQL' },
+  { id: 'tab-whiteboard', name: '5. Whiteboard Pro' },
+  { id: 'tab-design', name: '6. UI Generator' },
+  { id: 'tab-split', name: '7. Split Compare' },
+  { id: 'tab-terminal', name: '8. Terminal MicroVM' },
+  { id: 'tab-analytics', name: '9. Telemetry' },
+  { id: 'tab-scratchpad', name: '10. Notes Markdown' },
+  { id: 'tab-calendar', name: '11. Calendar & Agenda' },
+  { id: 'tab-controls', name: '12. Settings & Theme' },
+  { id: 'tab-smartlock', name: '13. Smart Door Lock' }
 ];
+const ALL_14_TABS = ALL_13_TABS;
 
 async function runMegaAudit() {
   console.log("================================================================================");
@@ -307,7 +307,7 @@ async function runMegaAudit() {
 
       const tabResult = await evaluate(`(() => {
         let targetId = '${tab.id}';
-        if (targetId === 'tab-artifacts' || targetId === 'tab-graphify') {
+        if (targetId === 'tab-artifacts') {
           targetId = 'tab-ai-studio';
         }
         const tabEl = document.getElementById(targetId);
@@ -337,11 +337,6 @@ async function runMegaAudit() {
           const csCol = document.getElementById('aiCodespaceColumn');
           const isVisible = csCol && !csCol.classList.contains('hidden');
           if (!meter || !isVisible) { componentCheck = false; compError = 'Missing #vfsStorageBar or #aiCodespaceColumn hidden'; }
-        } else if ('${tab.id}' === 'tab-graphify') {
-          const cv = document.getElementById('graphifyCanvas');
-          const grCol = document.getElementById('aiGraphifyColumn');
-          const isVisible = grCol && !grCol.classList.contains('hidden');
-          if (!cv || !isVisible) { componentCheck = false; compError = 'Missing #graphifyCanvas or #aiGraphifyColumn hidden'; }
         } else if ('${tab.id}' === 'tab-projects') {
           const frame = document.getElementById('previewIframe');
           if (!frame) { componentCheck = false; compError = 'Missing #previewIframe'; }

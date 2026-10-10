@@ -14,6 +14,15 @@ export default async function handler(req, res) {
       try {
         await redis.del(`session:${sid}`);
       } catch (_) {}
+      try {
+        if (typeof redis.set === 'function') {
+          await redis.set(`session:revoked:${sid}`, '1', { ex: 86400 });
+        }
+      } catch (_) {
+        try {
+          await redis.set(`session:revoked:${sid}`, '1', 'EX', 86400);
+        } catch (_) {}
+      }
     }
 
     res.setHeader('Set-Cookie', serialize('godx_session', '', {

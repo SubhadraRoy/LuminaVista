@@ -1280,7 +1280,6 @@ Here is what I can do for you:
 - **Run MicroVM Commands**: Execute bash, Node.js, and Python code inside isolated POSIX microVM sandboxes.
 - **Search the Web**: Discover live documentation, libraries, and real-time knowledge.
 - **Manage Files**: Inspect, refactor, and structure files in the Artifacts IDE.
-- **Graphify Architecture**: Visualize your project's module and dependency graph.
 
 Tell me what you'd like to create or explore, and I will execute it directly!`;
     }

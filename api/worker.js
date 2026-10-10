@@ -5,7 +5,7 @@
 
 import { Sandbox } from '@e2b/code-interpreter';
 import { getRedisClient, getSafeStorage } from './_lib/redis.js';
-import { sanitizeError, auditLog, validateSession, sendSecureJson, scrubSecrets, sanitizeDeep } from './_lib/auth-guard.js';
+import { sanitizeError, auditLog, validateSession, sendSecureJson, scrubSecrets, sanitizeDeep, setSecurityHeaders, checkRateLimit, enforcePayloadLimit } from './_lib/auth-guard.js';
 import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
 import { jevGenerateBespokeResponse } from './_lib/jev-engine.js';
 import { sanitizeProviderMessages } from './chat.js';
@@ -13,8 +13,20 @@ import { sanitizeProviderMessages } from './chat.js';
 export const maxDuration = 60;
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  res._req = req;
+  setSecurityHeaders(res, req);
+  if (req.method === 'OPTIONS') return res.status(204).end();
   const storage = getSafeStorage();
+
+  // 1. Rate limiting & payload limit
+  const rateLimit = await checkRateLimit(req, storage, 'worker', 60, 60);
+  if (rateLimit && !rateLimit.allowed) {
+    return sendSecureJson(res, 429, { error: rateLimit.error || 'Rate limit exceeded' }, req);
+  }
+
+  if (!enforcePayloadLimit(req, 250000)) {
+    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded' }, req);
+  }
 
   const auth = await validateSession(req, storage);
   if (!auth.valid) {
@@ -22,10 +34,10 @@ export default async function handler(req, res) {
     return sendSecureJson(res, auth.status || 401, { error: auth.error });
   }
 
-  // Enforce master role requirement for background worker execution
-  if (auth.role !== 'master') {
-    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/worker - requires master role');
-    return sendSecureJson(res, 403, { error: 'Forbidden: Background worker execution requires master role' });
+  // Enforce authenticated role requirement for background worker execution
+  if (auth.role !== 'master' && auth.role !== 'temporary') {
+    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/worker');
+    return sendSecureJson(res, 403, { error: 'Forbidden: Background worker execution requires authenticated session' });
   }
 
   // 1. GET Requests: Query job status, check completed jobs, or trigger due schedules
@@ -192,7 +204,14 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
     vfs: currentVfs
   }), { ex: 86400 });
 
-  let updatedVfs = { ...currentVfs };
+  let updatedVfs = Object.create(null);
+  if (currentVfs && typeof currentVfs === 'object') {
+    for (const [k, v] of Object.entries(currentVfs)) {
+      if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+        updatedVfs[k] = v;
+      }
+    }
+  }
   let terminalLogs = [`[Worker] Autonomous processing initiated for Job ${jobId}`];
   let aiReply = '';
 
@@ -284,15 +303,19 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
   const writeRegex = /\[TOOL:WRITE_FILE filename="([^"]+)"\]([\s\S]*?)\[\/TOOL:WRITE_FILE\]/g;
   let match;
   while ((match = writeRegex.exec(aiReply)) !== null) {
-    updatedVfs[match[1]] = match[2].trim();
-    terminalLogs.push(`[Worker] Wrote artifact: ${match[1]}`);
+    const fn = match[1];
+    if (fn === '__proto__' || fn === 'constructor' || fn === 'prototype') continue;
+    updatedVfs[fn] = match[2].trim();
+    terminalLogs.push(`[Worker] Wrote artifact: ${fn}`);
   }
 
   // Delete file tool
   const delRegex = /\[TOOL:DELETE_FILE filename="([^"]+)"\]\[\/TOOL:DELETE_FILE\]/g;
   while ((match = delRegex.exec(aiReply)) !== null) {
-    delete updatedVfs[match[1]];
-    terminalLogs.push(`[Worker] Destroyed artifact: ${match[1]}`);
+    const fn = match[1];
+    if (fn === '__proto__' || fn === 'constructor' || fn === 'prototype') continue;
+    delete updatedVfs[fn];
+    terminalLogs.push(`[Worker] Destroyed artifact: ${fn}`);
   }
 
   // Shell command execution in Firecracker MicroVM if available
@@ -322,7 +345,7 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
       try {
         const list = await sbx.files.list('.');
         for (const item of list) {
-          if (item.type === 'file') {
+          if (item.type === 'file' && item.name !== '__proto__' && item.name !== 'constructor' && item.name !== 'prototype') {
             updatedVfs[item.name] = await sbx.files.read(item.name);
           }
         }

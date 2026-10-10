@@ -11,9 +11,23 @@ module.exports = async function runJevUltraSuite({ assert, window, rootDir }) {
   const {
     jevClassifyIntent,
     jevAsk,
+    jevVerdict2,
     jevClearCache,
-    jevGetCacheStats
+    jevGetCacheStats,
+    JEV_2_CALIBRATOR,
+    getCalibratedTemperature
   } = jevModule;
+
+  // openJev-verdict-2.0 Calibrator & Model Architecture Verification
+  assert(JEV_2_CALIBRATOR !== undefined, "Exports JEV_2_CALIBRATOR configuration");
+  assert(JEV_2_CALIBRATOR.engine === "openJev-verdict-2.0", "Calibrator specifies openJev-verdict-2.0 engine");
+  assert(JEV_2_CALIBRATOR.ece_target === 0.0144, "Calibrator specifies 1.44% ECE calibration error target");
+  assert(JEV_2_CALIBRATOR.brier_target === 0.0636, "Calibrator specifies 0.0636 Brier score target");
+  assert(JEV_2_CALIBRATOR.top1_accuracy === 0.7710, "Calibrator specifies 77.10% benchmark accuracy");
+  assert(typeof getCalibratedTemperature === 'function', "Exports getCalibratedTemperature helper");
+  assert(getCalibratedTemperature(2) === 5.0069, "Per-K temperature for K=2 matches calibrator.json (5.0069)");
+  assert(getCalibratedTemperature(5) === 3.0560, "Per-K temperature for K=5 matches calibrator.json (3.0560)");
+  assert(typeof jevVerdict2 === 'function', "Exports jevVerdict2 alias for non-autoregressive decision engine");
 
   // Clear cache for clean benchmark testing
   jevClearCache();
@@ -238,6 +252,12 @@ module.exports = async function runJevUltraSuite({ assert, window, rootDir }) {
 
   const confLabel = window.document.getElementById('jevConfidenceLabel');
   assert(confLabel && confLabel.textContent === '99%', "HUD badge updates confidence percentage");
+
+  // Verify client openJev-verdict-2.0 APIs
+  assert(window.LuminaJev.calibrator.engine === 'openJev-verdict-2.0', "Client LuminaJev exports openJev-verdict-2.0 calibrator");
+  assert(typeof window.LuminaJev.verdict2 === 'function', "Client LuminaJev exports verdict2 decision method");
+  assert(typeof window.LuminaJev.computeBrierScore === 'function', "Client LuminaJev exports computeBrierScore function");
+  assert(typeof window.LuminaJev.initWebGpuEngine === 'function', "Client LuminaJev exports initWebGpuEngine hook");
 
   // Test Inspector Modal toggle
   window.LuminaJev.openInspector();

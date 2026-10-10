@@ -3,7 +3,18 @@
 (function(window) {
   'use strict';
 
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function resolveProjectUrl(raw) {
+    if (typeof raw !== 'string' || raw.includes('..')) return 'about:blank';
     let c = raw.replace(/^\.\//, "").replace(/^\//, "");
     if (!c.startsWith("EXM/")) c = "EXM/" + c;
     if (c.endsWith("/")) c += "index.html";
@@ -56,7 +67,7 @@
       const isS = window.currentSelectedProject && p.name === window.currentSelectedProject.name;
       const b = document.createElement("button");
       b.className = `w-full px-3 py-2 rounded-xl text-xs font-mono border flex items-center gap-2 cursor-pointer text-left transition-colors ${isS ? "bg-cyan-500/20 border-cyan-500 text-cyan-300" : "bg-surface-900 border-white/5 text-zinc-400 hover:text-zinc-200"}`;
-      b.innerHTML = `<i data-lucide="${p.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5"></i><span class="truncate">${p.name}</span>`;
+      b.innerHTML = `<i data-lucide="${p.type === 'dir' ? 'folder' : 'file-code'}" class="w-3.5 h-3.5"></i><span class="truncate">${escapeHtml(p.name)}</span>`;
       b.onclick = () => selectProject(p);
       c.appendChild(b);
     });
