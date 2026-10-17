@@ -28,6 +28,7 @@ const server = http.createServer((req, res) => {
   const urlObj = new URL(req.url, `http://127.0.0.1:${PORT}`);
   let pathname = decodeURIComponent(urlObj.pathname);
   if (pathname === '/') pathname = '/index.html';
+  if (pathname === '/privacy' || pathname === '/privacy/') pathname = '/privacy.html';
   if (pathname === '/favicon.ico') {
     res.writeHead(204);
     res.end();

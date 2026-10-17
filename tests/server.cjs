@@ -21,6 +21,7 @@ const server = http.createServer((req, res) => {
   let pathname = decodeURIComponent(urlObj.pathname);
 
   if (pathname === '/') pathname = '/index.html';
+  if (pathname === '/privacy' || pathname === '/privacy/') pathname = '/privacy.html';
   if (pathname === '/favicon.ico') {
     res.writeHead(204);
     res.end();

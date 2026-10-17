@@ -1,0 +1,250 @@
+<!-- privacy/index.html - Duplicate static entrypoint for /privacy/ routing -->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <title>Privacy Policy | Lumina Vista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.15"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            display: ['Space Grotesk', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #030712;
+      color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+    }
+    .bg-grid {
+      background-image: 
+        radial-gradient(circle at center, rgba(0, 242, 254, 0.05) 0%, transparent 70%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-grid flex flex-col justify-between selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+          <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="font-display font-bold text-white text-lg tracking-tight block">Lumina Vista</span>
+          <span class="font-mono text-[10px] text-cyan-400 tracking-widest uppercase block -mt-1">Sovereign Node</span>
+        </div>
+      </a>
+
+      <div class="flex items-center gap-4 text-xs font-mono">
+        <a href="/" class="text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Return to Workspace
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-6 py-12 flex-grow">
+    
+    <!-- Private System Warning Banner -->
+    <div class="mb-10 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-300 text-xs font-mono">
+      <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <div>
+        <span class="font-bold uppercase tracking-wider block mb-0.5">Notice: Private, Single-Tenant Application</span>
+        Lumina Vista is a private personal productivity application and security node. It is not open for public registration or general consumer use. Unauthorized access, probing, or attempted entry without explicit authorization is strictly prohibited.
+      </div>
+    </div>
+
+    <!-- Title and Metadata -->
+    <div class="border-b border-white/10 pb-8 mb-8">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[11px] font-mono text-cyan-400 mb-4">
+        <span>●</span> Official Compliance Documentation
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-display font-bold text-white tracking-tight mb-3">
+        Privacy Policy for Lumina Vista
+      </h1>
+      <p class="text-sm font-mono text-zinc-400">
+        Last updated: October 17, 2026
+      </p>
+    </div>
+
+    <!-- Policy Sections -->
+    <div class="space-y-8 text-zinc-300 text-sm leading-relaxed font-sans">
+      
+      <!-- Overview -->
+      <section class="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-3">
+        <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          Application Overview
+        </h2>
+        <p>
+          <strong class="text-white">Lumina Vista</strong> ("we", "our", or "us") operates as a private productivity and workspace application. This application provides a personal unified operations hub—including autonomous AI assistant studio, cloud developer sandbox, IoT hardware telemetry, interactive whiteboard, and Google Calendar scheduling.
+        </p>
+        <p class="text-xs font-mono text-zinc-400">
+          This policy describes our strict protocols regarding the collection, processing, and protection of user data, specifically through integrations with third-party APIs such as the Google Calendar API.
+        </p>
+      </section>
+
+      <!-- Data Collection -->
+      <section class="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-4">
+        <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          Data Collection & Google Calendar API Integration
+        </h2>
+        <p>
+          We connect with Google Calendar API solely to display, synchronize, and manage your personal calendar events within your private dashboard interface.
+        </p>
+        <ul class="list-disc list-inside space-y-2 text-zinc-300 pl-2">
+          <li>
+            <strong class="text-white">Authorized Scopes:</strong> We request access strictly to <code class="bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded text-xs font-mono">https://www.googleapis.com/auth/calendar</code> (to read and synchronize personal calendar events) and identity verification scopes (<code class="bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded text-xs font-mono">userinfo.email</code>, <code class="bg-zinc-800 text-cyan-300 px-1.5 py-0.5 rounded text-xs font-mono">openid</code>).
+          </li>
+          <li>
+            <strong class="text-white">Scope Limitation:</strong> We only access calendar metadata (event titles, start/end timestamps, descriptions, locations) necessary to render your calendar within Lumina Vista. We do not inspect personal contacts, emails, or unrelated Google account data.
+          </li>
+        </ul>
+      </section>
+
+      <!-- Data Usage -->
+      <section class="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-4">
+        <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          Data Usage & Third-Party Sharing Restrictions
+        </h2>
+        <p>
+          Your calendar data is processed in-memory or securely cached to provide scheduling features. We do not sell, share, or transfer your Google user data to any third parties.
+        </p>
+        <ul class="list-disc list-inside space-y-2 text-zinc-300 pl-2">
+          <li>
+            <strong class="text-white">Zero Third-Party Advertising:</strong> No data obtained through Google APIs is ever shared with, sold to, or used by advertisers, data brokers, or marketing networks.
+          </li>
+          <li>
+            <strong class="text-white">Zero AI Model Training:</strong> Google Calendar data is never used to train generalized artificial intelligence or machine learning models.
+          </li>
+          <li>
+            <strong class="text-white">Single-Tenant Boundary:</strong> Event data is accessible solely within the private authenticated session of the account owner.
+          </li>
+        </ul>
+      </section>
+
+      <!-- Google API Limited Use Requirements -->
+      <section class="bg-cyan-950/20 p-6 rounded-2xl border border-cyan-500/20 space-y-3">
+        <h2 class="text-lg font-display font-bold text-cyan-300 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          Google API Limited Use Disclosure
+        </h2>
+        <p class="text-zinc-200">
+          Lumina Vista's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" class="text-cyan-400 underline hover:text-cyan-300">Google API Services User Data Policy</a>, including the Limited Use requirements.
+        </p>
+      </section>
+
+      <!-- Data Storage and Security -->
+      <section class="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-4">
+        <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          Data Storage, Encryption & Security
+        </h2>
+        <p>
+          Authentication tokens are stored securely in encrypted server-side state (such as Upstash Redis) and are used strictly for authorized calendar synchronization.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 font-mono text-xs">
+          <div class="p-3.5 rounded-xl bg-zinc-950 border border-white/5 space-y-1">
+            <span class="text-cyan-400 font-bold block">TLS 1.3 In-Transit</span>
+            <span class="text-zinc-400">All network communications between the browser, serverless endpoints, and Google API servers are encrypted using modern TLS 1.3.</span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-zinc-950 border border-white/5 space-y-1">
+            <span class="text-emerald-400 font-bold block">Encrypted Server State</span>
+            <span class="text-zinc-400">OAuth refresh tokens are encrypted at rest with partitioned isolation in protected Redis cloud infrastructure.</span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-zinc-950 border border-white/5 space-y-1">
+            <span class="text-purple-400 font-bold block">Partitioned Cookies</span>
+            <span class="text-zinc-400">Session identifiers utilize HttpOnly, Secure, and SameSite=None attributes with CHIPS partitioning.</span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-zinc-950 border border-white/5 space-y-1">
+            <span class="text-amber-400 font-bold block">Zero-Trust Boundaries</span>
+            <span class="text-zinc-400">Strict constant-time cryptographic token verification safeguards all administrative entry points.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- User Control & Revocation -->
+      <section class="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-3">
+        <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          Data Retention, Revocation & Deletion
+        </h2>
+        <p>
+          You have complete sovereignty over your data and Google integration:
+        </p>
+        <ul class="list-disc list-inside space-y-2 text-zinc-300 pl-2">
+          <li>
+            <strong class="text-white">Revoking Access via Lumina Vista:</strong> Click the Calendar sync badge in the dashboard header, open the Sync Modal, and click <span class="text-rose-400 font-mono text-xs font-semibold">Disconnect Google Account</span>. All cached access tokens, refresh tokens, and synchronization keys are instantly purged from the server state.
+          </li>
+          <li>
+            <strong class="text-white">Revoking Access via Google:</strong> You can immediately revoke Lumina Vista's access at any time via your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" class="text-cyan-400 underline hover:text-cyan-300">Google Account Permissions page</a>.
+          </li>
+        </ul>
+      </section>
+
+      <!-- Contact -->
+      <section class="bg-zinc-900/40 p-6 rounded-2xl border border-white/5 space-y-3">
+        <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          Contact Information
+        </h2>
+        <p>
+          For any privacy inquiries, compliance verification, or questions regarding data protection practices, reach out to:
+        </p>
+        <div class="p-4 rounded-xl bg-zinc-950 border border-white/5 font-mono text-xs flex items-center justify-between">
+          <div>
+            <span class="text-zinc-400 block text-[11px]">Primary Privacy Contact & Developer:</span>
+            <a href="mailto:roysubhadra40@gmail.com" class="text-cyan-400 font-bold hover:underline">roysubhadra40@gmail.com</a>
+          </div>
+          <span class="text-zinc-600">Lumina Vista Security Node</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/10 bg-zinc-950 py-8 text-center text-xs font-mono text-zinc-500">
+    <div class="max-w-4xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        © 2026 Lumina Vista. Private System — Authorized Access Only.
+      </div>
+      <div class="flex items-center gap-6 text-zinc-400">
+        <a href="/" class="hover:text-cyan-400 transition-colors">Home & Landing</a>
+        <a href="/privacy" class="text-cyan-400 font-semibold">Privacy Policy</a>
+        <a href="mailto:roysubhadra40@gmail.com" class="hover:text-cyan-400 transition-colors">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
