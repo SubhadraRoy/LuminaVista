@@ -349,26 +349,20 @@
   <!-- MAIN VIEWPORT CONTAINER -->
   <div class="flex-1 flex flex-col h-full relative z-10 min-w-0 overflow-hidden">
     
-    <!-- Top System Bar -->
-    <header class="w-full border-b border-white/5 bg-surface-950/60 backdrop-blur-xl px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between z-30 shrink-0">
-      <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Mobile Navigation Menu Button -->
-        <button id="mobileMenuToggleBtn" onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-xl bg-surface-900 hover:bg-surface-850 border border-white/10 text-cyan-400 hover:text-white cursor-pointer transition-colors shadow-sm" aria-label="Open Navigation Menu">
-          <i data-lucide="menu" class="w-4 h-4"></i>
-        </button>
-      </div>
+    <!-- Mobile Navigation Menu Toggle Button (Floating on Mobile, Hidden on Desktop) -->
+    <button id="mobileMenuToggleBtn" onclick="toggleMobileSidebar()" class="md:hidden fixed top-3 left-3 z-50 p-2 rounded-xl bg-surface-900/90 backdrop-blur-md hover:bg-surface-850 border border-white/10 text-cyan-400 hover:text-white cursor-pointer transition-colors shadow-lg" aria-label="Open Navigation Menu">
+      <i data-lucide="menu" class="w-4 h-4"></i>
+    </button>
 
-      <div class="flex items-center gap-2.5 sm:gap-4 text-xs text-zinc-400 font-mono">
-        <span id="cloudSyncIndicator" class="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-white/5 bg-surface-900/50 cursor-pointer text-[11px] text-zinc-400 hover:text-white transition-colors" title="Sovereign Multi-Device Cloud Sync" onclick="window.LuminaCloudSync?.flushSync?.()">
-          <span id="cloudSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="cloudSyncText" class="hidden md:inline">Cloud Synced</span>
-        </span>
-        <span class="text-zinc-700 hidden md:inline">•</span>
-        <span id="systemClock" class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i><span class="hidden xs:inline">00:00:00</span></span>
-        <span class="text-zinc-700">•</span>
-        <button onclick="lockSession()" class="p-1.5 hover:text-cyan-400 transition-colors cursor-pointer" title="Lock Session (15m Inactivity Lock)" aria-label="Lock Session"><i data-lucide="lock" class="w-4 h-4"></i></button>
-      </div>
-    </header>
+    <!-- Background State Indicators (Header Permanently Removed) -->
+    <div class="hidden" aria-hidden="true">
+      <span id="cloudSyncIndicator" onclick="window.LuminaCloudSync?.flushSync?.()">
+        <span id="cloudSyncDot"></span>
+        <span id="cloudSyncText">Cloud Synced</span>
+      </span>
+      <span id="systemClock"><i data-lucide="clock"></i><span>00:00:00</span></span>
+      <button id="sessionLockBtn" onclick="lockSession()"><i data-lucide="lock"></i></button>
+    </div>
 
     <!-- CONTENT WRAPPER -->
     <main class="flex-1 overflow-hidden p-2.5 sm:p-4 lg:p-5 w-full max-w-[2100px] mx-auto flex flex-col min-h-0 select-text">
