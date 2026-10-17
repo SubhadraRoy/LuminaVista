@@ -192,19 +192,31 @@
   function removeSpecificTab(file) {
     window.codespaceOpenTabs = (window.codespaceOpenTabs || []).filter(f => f !== file);
     if (window.csActiveFile === file) {
-      window.csActiveFile = window.codespaceOpenTabs.length > 0 ? window.codespaceOpenTabs[0] : "";
+      if (window.codespaceOpenTabs.length > 0) {
+        window.csActiveFile = window.codespaceOpenTabs[0];
+      } else {
+        const remaining = Object.keys(window.vfs || {});
+        if (remaining.length > 0) {
+          window.csActiveFile = remaining[0];
+          window.codespaceOpenTabs = [remaining[0]];
+        } else {
+          window.csActiveFile = "";
+        }
+      }
     }
     localStorage.setItem("lumina_open_tabs", JSON.stringify(window.codespaceOpenTabs));
     renderCodespaceFileTabs();
     renderCodespaceFileTree();
     loadCodespaceEditor();
     if (window.csActiveFile) {
-      if (window.csActiveFile.endsWith('.html')) {
+      if (window.csActiveFile.endsWith('.html') || window.csActiveFile.endsWith('.htm')) {
         updatePreview();
         setCodespaceView('preview');
       } else {
         setCodespaceView('code');
       }
+    } else {
+      updatePreview();
     }
   }
 
@@ -321,7 +333,15 @@
 
   function bundleCodespaceHTML() {
     const vfs = window.vfs || {};
-    let main = vfs["index.html"] || "<!DOCTYPE html><html><body><h1>Empty Workspace</h1></body></html>";
+    let main = vfs["index.html"];
+    if (!main) {
+      if (window.csActiveFile && (window.csActiveFile.endsWith(".html") || window.csActiveFile.endsWith(".htm")) && vfs[window.csActiveFile]) {
+        main = vfs[window.csActiveFile];
+      } else {
+        const anyHtml = Object.keys(vfs).find(k => k.endsWith(".html") || k.endsWith(".htm"));
+        main = anyHtml ? vfs[anyHtml] : "<!DOCTYPE html><html><body style='background:#09090b;color:#a1a1aa;font-family:sans-serif;padding:2rem;'><h2>Empty Workspace</h2><p>No HTML entrypoint found. Create an index.html or select an HTML file to preview.</p></body></html>";
+      }
+    }
     
     if (vfs["style.css"]) {
       if (main.includes('href="style.css"')) {
@@ -450,7 +470,7 @@
   }
 
   function renameActiveFile() {
-    if (window.csActiveFile === "index.html") return alert("Root entry index.html cannot be renamed.");
+    if (!window.csActiveFile) return;
     const nextName = prompt("Rename " + window.csActiveFile + " to:", window.csActiveFile);
     if (nextName && nextName.trim() && nextName !== window.csActiveFile) {
       const cleanNext = nextName.trim();
@@ -473,7 +493,7 @@
   }
 
   function deleteSpecificFile(file) {
-    if (file === "index.html") return alert("Root index.html cannot be removed.");
+    if (!file) return;
     if (confirm(`Delete ${file}?`)) {
       delete window.vfs[file];
       localStorage.setItem("lumina_codespace_vfs", JSON.stringify(window.vfs));
