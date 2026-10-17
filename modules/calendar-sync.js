@@ -272,6 +272,16 @@
     }
   }
 
+  const OUTBOX_KEY = 'lumina_pending_calendar_outbox_v1';
+
+  function getWorkspaceAttestation() {
+    try {
+      return sessionStorage.getItem('lumina_workspace_attestation') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   function getSessionId() {
     try {
       return localStorage.getItem('lumina_session_id') || '';
@@ -280,12 +290,80 @@
     }
   }
 
+  function getOutbox() {
+    try {
+      const raw = localStorage.getItem(OUTBOX_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveOutbox(outbox) {
+    try {
+      localStorage.setItem(OUTBOX_KEY, JSON.stringify(outbox));
+    } catch (e) {}
+  }
+
+  function queueOutboxOperation(op) {
+    const outbox = getOutbox();
+    const filtered = outbox.filter(item => !(item.action === op.action && item.id === op.id));
+    filtered.push({ ...op, queuedAt: Date.now() });
+    saveOutbox(filtered);
+    if (window.showToast) {
+      window.showToast("Saved Locally", "Calendar change queued. Unlock session to synchronize with Google Calendar.");
+    }
+  }
+
+  async function flushPendingCalendarOutbox() {
+    const sid = getSessionId();
+    if (!sid) return;
+    const outbox = getOutbox();
+    if (!Array.isArray(outbox) || outbox.length === 0) return;
+
+    const remaining = [];
+    for (const op of outbox) {
+      try {
+        if (op.action === 'push') {
+          const res = await calendarApiFetch('/api/calendar/sync', {
+            method: 'POST',
+            body: JSON.stringify(op.payload)
+          });
+          if (!res.ok && res.status === 401) {
+            remaining.push(op);
+            break;
+          }
+        } else if (op.action === 'delete') {
+          const res = await calendarApiFetch(`/api/calendar/sync?eventId=${encodeURIComponent(op.id)}`, {
+            method: 'DELETE'
+          });
+          if (!res.ok && res.status === 401) {
+            remaining.push(op);
+            break;
+          }
+        }
+      } catch (e) {
+        remaining.push(op);
+      }
+    }
+    saveOutbox(remaining);
+  }
+
   async function calendarApiFetch(endpoint, options = {}) {
     const origin = getApiOrigin();
     const url = endpoint.startsWith('http') ? endpoint : (origin + endpoint);
     const headers = Object.assign({
       'Content-Type': 'application/json'
     }, options.headers || {});
+
+    const sid = getSessionId();
+    const attestation = getWorkspaceAttestation();
+    if (sid) {
+      headers['x-session-id'] = sid;
+    }
+    if (attestation) {
+      headers['x-workspace-attestation'] = attestation;
+    }
 
     if (options.cacheBypass) {
       headers['Cache-Control'] = 'no-cache';
@@ -441,8 +519,13 @@
             lastSyncError: null
           });
 
-          // 3. Two-Way Push: Push unpushed sovereign local events to Google Calendar
-          const unpushedEvents = calendarEvents.filter(e => !e.googleEventId);
+          // Flush any offline / locked outbox operations if user is authenticated
+          await flushPendingCalendarOutbox();
+
+          // 3. Two-Way Push: Push unpushed sovereign local events to Google Calendar (Pillar 2: Resurrected Zombie Prevention)
+          // ONLY push local events that have never had a Google Event ID.
+          // Never re-push events that were deleted on Google Calendar!
+          const unpushedEvents = calendarEvents.filter(e => !e.googleEventId && (!e.syncStatus || e.syncStatus === 'LOCAL_DRAFT' || e.syncStatus === 'PENDING_UPDATE'));
           for (const localEvt of unpushedEvents) {
             await pushEventToGoogle(localEvt);
           }
@@ -527,8 +610,25 @@
         const data = await res.json();
         if (data.item && data.item.id) {
           evt.googleEventId = data.item.id;
+          evt.syncStatus = 'SYNCED';
           saveEvents();
         }
+      } else if (res.status === 401) {
+        evt.syncStatus = 'PENDING_AUTH';
+        saveEvents();
+        queueOutboxOperation({
+          action: 'push',
+          id: evt.id,
+          payload: {
+            googleEventId: rawGoogleId,
+            summary: evt.title,
+            description: evt.description || '',
+            location: evt.location || '',
+            allDay: !!evt.allDay,
+            start: startPayload,
+            end: endPayload
+          }
+        });
       }
     } catch (e) {
       console.warn('Failed to push event to Google Calendar:', e);
@@ -539,11 +639,21 @@
     if (!googleEventId) return;
     const cleanId = String(googleEventId).replace(/^gcal_/, '');
     try {
-      await calendarApiFetch(`/api/calendar/sync?eventId=${encodeURIComponent(cleanId)}`, {
+      const res = await calendarApiFetch(`/api/calendar/sync?eventId=${encodeURIComponent(cleanId)}`, {
         method: 'DELETE'
       });
+      if (!res.ok && res.status === 401) {
+        queueOutboxOperation({
+          action: 'delete',
+          id: cleanId
+        });
+      }
     } catch (e) {
       console.warn('Failed to delete event from Google Calendar:', e);
+      queueOutboxOperation({
+        action: 'delete',
+        id: cleanId
+      });
     }
   }
 
@@ -769,13 +879,13 @@
       } catch (e) {}
     }
 
-    // Periodic 5-minute background auto-sync
+    // Periodic 3-minute background auto-sync (Pillar 3 Cadence)
     setInterval(() => {
       const settings = getSettings();
-      if (settings.googleCalendarConnected) {
+      if (settings.googleCalendarConnected && typeof document !== 'undefined' && document.visibilityState === 'visible') {
         syncGoogleCalendar();
       }
-    }, 5 * 60 * 1000);
+    }, 3 * 60 * 1000);
 
     // Auto-sync when user returns focus to the LuminaVista window/tab
     window.addEventListener('focus', () => {

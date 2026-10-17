@@ -509,7 +509,10 @@
         body: JSON.stringify({ password, clientKeys: clientVault })
       }).then(r => r.ok ? r.json() : null).then(data => {
         if (data && data.sessionId) {
-          try { localStorage.setItem('lumina_session_id', data.sessionId); } catch (_) {}
+          try {
+            localStorage.setItem('lumina_session_id', data.sessionId);
+            sessionStorage.setItem('lumina_workspace_attestation', data.sessionId);
+          } catch (_) {}
         }
       }).catch(() => {});
       return;
@@ -532,7 +535,10 @@
 
       if (res.ok && data.success) {
         if (data.sessionId) {
-          try { localStorage.setItem('lumina_session_id', data.sessionId); } catch (e) {}
+          try {
+            localStorage.setItem('lumina_session_id', data.sessionId);
+            sessionStorage.setItem('lumina_workspace_attestation', data.sessionId);
+          } catch (e) {}
         }
         performWorkspaceUnlock();
       } else {

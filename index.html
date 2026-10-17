@@ -1174,7 +1174,10 @@
           beam.classList.add('success-beam');
 
           if (d.sessionId) {
-            try { localStorage.setItem('lumina_session_id', d.sessionId); } catch (e) {}
+            try {
+              localStorage.setItem('lumina_session_id', d.sessionId);
+              sessionStorage.setItem('lumina_workspace_attestation', d.sessionId);
+            } catch (e) {}
           }
 
           // Pre-fetch and cache master cloud workspace state during warp transition
