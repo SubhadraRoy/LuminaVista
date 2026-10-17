@@ -27,13 +27,17 @@
   let resizeObserver = null;
 
   function getAuthHeaders(extra = {}) {
-    let sid = 'sovereign_session';
+    let sid = '';
     try {
       sid = window.localStorage?.getItem('lumina_session_id') ||
             window.sessionStorage?.getItem('lumina_workspace_attestation') ||
-            'sovereign_session';
+            '';
     } catch (e) {}
-    return { 'x-session-id': sid, ...extra };
+    const headers = { ...extra };
+    if (sid && sid !== 'sovereign_session') {
+      headers['x-session-id'] = sid;
+    }
+    return headers;
   }
 
   async function adblockFetch(endpoint, options = {}) {
@@ -293,7 +297,20 @@
         headers: getAuthHeaders()
       });
 
-      if (!res || !res.ok) return false;
+      if (!res || !res.ok) {
+        try {
+          const wdRes = await adblockFetch('/api/adblock?action=watchdog', { method: 'GET' });
+          if (wdRes && wdRes.ok) {
+            const wd = await wdRes.json();
+            if (wd && wd.ok) {
+              state.online = Boolean(wd.online);
+              state.lastSeenMs = wd.lastSeenMs || 0;
+              renderHeader();
+            }
+          }
+        } catch (_) {}
+        return false;
+      }
       const data = await res.json();
       state.lastRttMs = Math.max(1, Date.now() - t0);
 
@@ -662,7 +679,7 @@
     const overlay = document.getElementById('adblockThroughputOverlay');
 
     const now = Date.now();
-    const isOnline = state.online && (now - state.lastSeenMs < 15000);
+    const isOnline = state.online && (now - state.lastSeenMs < 45000);
 
     if (connBadge) {
       if (isOnline) {

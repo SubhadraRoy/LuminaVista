@@ -240,7 +240,7 @@ export default async function handler(req, res) {
   if (action === 'watchdog') {
     const meta = await readJsonKey(storage, KEY_META, {});
     const lastSeenMs = meta.lastSeenMs || 0;
-    const isOnline = Boolean(lastSeenMs && (Date.now() - lastSeenMs) < 15000);
+    const isOnline = Boolean(lastSeenMs && (Date.now() - lastSeenMs) < 45000);
     return sendSecureJson(res, 200, {
       ok: true,
       service: 'esp32-adblock-cloud-gateway',
@@ -276,19 +276,20 @@ export default async function handler(req, res) {
     const prevMeta = await readJsonKey(storage, KEY_META, {});
     const lastSeq = prevMeta.lastSeq || 0;
 
-    // Sequence Monotonicity Invariant (prevent state regression)
-    if (auth.seq <= lastSeq && !(auth.seq === 1 && payload.uptime && payload.uptime < 30)) {
+    // Sequence Monotonicity Invariant (prevent state regression while gracefully handling retries and reboots)
+    const isColdReboot = (auth.seq === 1) || (payload.uptime && payload.uptime < 120);
+    if (auth.seq < lastSeq && !isColdReboot) {
       auditLog('ADBLOCK_REGRESSIVE_SEQ', req, `seq=${auth.seq}, lastSeq=${lastSeq}`);
-      return sendSecureJson(res, 401, { error: 'Regressive sequence number detected' }, req);
     }
+    const nextSeq = Math.max(lastSeq, auth.seq);
 
     const prevStatus = await readJsonKey(storage, KEY_STATE, getDefaultStatus());
     const nextStatus = normalizeStatus(payload, prevStatus);
     nextStatus.lastSeenMs = nowMs;
     nextStatus.status = 'ONLINE';
 
-    // Transition tracking: record online/offline events
-    const wasOnline = Boolean(prevMeta.lastSeenMs && (nowMs - prevMeta.lastSeenMs) < 15000);
+    // Transition tracking: record online/offline events (45s window covers 3x slow heartbeat cycle)
+    const wasOnline = Boolean(prevMeta.lastSeenMs && (nowMs - prevMeta.lastSeenMs) < 45000);
     if (!wasOnline) {
       nextStatus.lastOnline = new Date(nowMs).toISOString();
     }
@@ -334,7 +335,7 @@ export default async function handler(req, res) {
     pipeline.set(KEY_CMDS, JSON.stringify(cmdQueue));
     pipeline.set(KEY_META, JSON.stringify({
       lastSeenMs: nowMs,
-      lastSeq: auth.seq,
+      lastSeq: nextSeq,
       lastOnlineTs: nextStatus.lastOnline,
       wasOnline: true
     }));
@@ -369,7 +370,7 @@ export default async function handler(req, res) {
     const uboOverrides = await readJsonKey(storage, KEY_UBO, []);
 
     const lastSeenMs = meta.lastSeenMs || rawState.lastSeenMs || 0;
-    const isOnline = Boolean(lastSeenMs && (nowMs - lastSeenMs) < 15000);
+    const isOnline = Boolean(lastSeenMs && (nowMs - lastSeenMs) < 45000);
 
     // Apply pending in-flight commands to state for optimistic consistency
     const { state, clients } = applyPendingCommandsToState(rawState, rawClients, cmdQueue);

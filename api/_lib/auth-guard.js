@@ -122,8 +122,8 @@ export async function validateSession(req, redisClient = null) {
   const cookieHeader = req?.headers?.cookie || '';
   const match = cookieHeader.match(/godx_session=([a-zA-Z0-9_-]+)/);
   const rawHeaderSessionId = req?.headers?.['x-session-id'] || req?.headers?.authorization?.replace(/^Bearer\s+/i, '') || req?.body?.userSession || '';
-  const cleanHeaderSessionId = (typeof rawHeaderSessionId === 'string' && /^[a-zA-Z0-9_\-]{1,128}$/.test(rawHeaderSessionId)) ? rawHeaderSessionId : '';
-  const sessionId = cleanHeaderSessionId || (match ? match[1] : '');
+  const cleanHeaderSessionId = (typeof rawHeaderSessionId === 'string' && /^[a-zA-Z0-9_\-]{1,128}$/.test(rawHeaderSessionId) && rawHeaderSessionId !== 'sovereign_session') ? rawHeaderSessionId : '';
+  const sessionId = cleanHeaderSessionId || (match ? match[1] : (rawHeaderSessionId === 'sovereign_session' ? 'sovereign_session' : ''));
 
   const isProduction = Boolean(process.env.VERCEL) || process.env.NODE_ENV === 'production';
   const allowMock = !isProduction && process.env.ALLOW_MOCK_AUTH !== 'false';
