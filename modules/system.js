@@ -2,6 +2,17 @@
 (function(window) {
   'use strict';
 
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[m]);
+  }
+
   function switchTab(id) {
     if (window.closeMobileSidebar) {
       window.closeMobileSidebar();
@@ -139,7 +150,7 @@
     list.filter(item => item.label.toLowerCase().includes(q)).forEach(item => {
       const row = document.createElement("button");
       row.className = "w-full px-3 py-2 text-left text-xs font-mono text-zinc-300 hover:text-white hover:bg-white/10 rounded-lg flex items-center justify-between";
-      row.innerHTML = `<span>${item.label}</span><i data-lucide="arrow-right" class="w-3.5 h-3.5 text-cyan-400"></i>`;
+      row.innerHTML = `<span>${escapeHtml(item.label)}</span><i data-lucide="arrow-right" class="w-3.5 h-3.5 text-cyan-400"></i>`;
       row.onclick = () => {
         const cmdModal = document.getElementById("cmdModal");
         if (cmdModal) cmdModal.style.display = "none";

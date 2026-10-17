@@ -1154,10 +1154,11 @@
              (card && card.name && msg.includes(String(card.name).toUpperCase()));
     });
 
+    const safeDisplayUid = String(displayUid || '').replace(/[^0-9A-Za-z_\-]/g, '');
     let html = `
       <div class="mb-3 flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-surface-900/80 border border-white/5">
         <span class="text-zinc-400 text-[11px] font-mono">Found <strong class="text-white">${tapHistory.length}</strong> recorded taps &bull; <strong class="text-cyan-300">${matchingLogs.length}</strong> cloud log events</span>
-        <button onclick="window.LuminaSmartLock.filterLogsByCard('${escapeHtml(displayUid)}')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono font-bold cursor-pointer transition-colors" title="Filter the main cloud security stream to this card">
+        <button onclick="window.LuminaSmartLock.filterLogsByCard('${safeDisplayUid}')" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono font-bold cursor-pointer transition-colors" title="Filter the main cloud security stream to this card">
           🔍 Filter in Main Log Stream
         </button>
       </div>

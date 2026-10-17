@@ -126,6 +126,7 @@
     }
 
     listEl.innerHTML = adminPasswords.map(key => {
+      const safeKeyId = String(key.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
       const dateStr = key.createdAt ? new Date(key.createdAt).toLocaleString(undefined, {
         month: 'short',
         day: 'numeric',
@@ -153,7 +154,7 @@
               </div>
             </div>
           </div>
-          <button onclick="window.LuminaAdminAccess.deletePassword('${escapeHtml(key.id)}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0" title="Revoke access credential">
+          <button onclick="window.LuminaAdminAccess.deletePassword('${safeKeyId}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0" title="Revoke access credential">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Revoke
           </button>
         </div>

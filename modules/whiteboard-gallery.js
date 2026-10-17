@@ -702,21 +702,23 @@
       : WHITEBOARD_TEMPLATES.filter(t => t.category === category);
 
     container.innerHTML = list.map(t => {
+      const safeTemplateId = String(t.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
+      const safeBadgeColor = String(t.badgeColor || 'cyan').replace(/[^a-z0-9\-]/g, '');
       return `
         <div class="glass-card p-4 rounded-xl border border-white/10 hover:border-cyan-500/40 transition-all flex flex-col justify-between group">
           <div>
             <div class="flex items-center justify-between gap-2 mb-2">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-${t.badgeColor}-500/10 text-${t.badgeColor}-400 border border-${t.badgeColor}-500/20">${t.badge}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-${safeBadgeColor}-500/10 text-${safeBadgeColor}-400 border border-${safeBadgeColor}-500/20">${escapeHtml(t.badge)}</span>
               <span class="text-[11px] font-mono text-zinc-500">${(t.nodes || []).length} nodes</span>
             </div>
-            <h4 class="font-heading font-bold text-sm text-white group-hover:text-cyan-400 transition-colors">${t.name}</h4>
-            <p class="text-xs text-zinc-400 mt-1 leading-relaxed">${t.description}</p>
+            <h4 class="font-heading font-bold text-sm text-white group-hover:text-cyan-400 transition-colors">${escapeHtml(t.name)}</h4>
+            <p class="text-xs text-zinc-400 mt-1 leading-relaxed">${escapeHtml(t.description)}</p>
           </div>
           <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
-            <button onclick="LuminaWhiteboardGallery.loadTemplate('${t.id}', true)" class="px-2.5 py-1.5 rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 text-xs font-mono border border-white/10 cursor-pointer transition-colors" title="Open as a brand new whiteboard">
+            <button onclick="LuminaWhiteboardGallery.loadTemplate('${safeTemplateId}', true)" class="px-2.5 py-1.5 rounded-lg bg-surface-900 hover:bg-surface-850 text-zinc-300 text-xs font-mono border border-white/10 cursor-pointer transition-colors" title="Open as a brand new whiteboard">
               + New Board
             </button>
-            <button onclick="LuminaWhiteboardGallery.loadTemplate('${t.id}', false)" class="btn-gradient px-3.5 py-1.5 rounded-lg text-xs font-bold text-black cursor-pointer shadow-md flex items-center gap-1.5">
+            <button onclick="LuminaWhiteboardGallery.loadTemplate('${safeTemplateId}', false)" class="btn-gradient px-3.5 py-1.5 rounded-lg text-xs font-bold text-black cursor-pointer shadow-md flex items-center gap-1.5">
               <i data-lucide="layout" class="w-3.5 h-3.5"></i> Insert Template
             </button>
           </div>
@@ -791,7 +793,8 @@
     const activeId = getActiveBoardId();
 
     selector.innerHTML = boards.map(b => {
-      return `<option value="${b.id}" ${b.id === activeId ? 'selected' : ''}>${escapeHtml(b.name)}</option>`;
+      const safeId = String(b.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
+      return `<option value="${safeId}" ${b.id === activeId ? 'selected' : ''}>${escapeHtml(b.name)}</option>`;
     }).join('');
 
     const titleEl = document.getElementById('wbActiveBoardTitle');
