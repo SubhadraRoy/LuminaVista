@@ -77,29 +77,18 @@ async function runPrivacyLandingSuite() {
     assert(privacyHtml.includes('Unauthorized access, probing, or attempted entry without explicit authorization is strictly prohibited'), 'Missing unauthorized access prohibition');
   });
 
-  it('index.html contains public landing hero, feature descriptions, and bypasses login wall', () => {
-    assert(indexHtml.includes('Private Operations Workspace'), 'Missing landing headline');
-    assert(indexHtml.includes('Restricted System Notice &mdash; Authorized Access Only'), 'Missing prominent restricted system notice in hero');
-    assert(indexHtml.includes('not a public service'), 'Explicitly notes system is not open to general public');
-    assert(indexHtml.includes('Two-Way Calendar Sync'), 'Missing calendar sync feature showcase');
-    assert(indexHtml.includes('Google Calendar API v3'), 'Missing Google Calendar API mention');
-    assert(indexHtml.includes('AI Studio &amp; Artifacts IDE'), 'Missing AI studio showcase');
-    assert(indexHtml.includes('Compilers &amp; Codespace'), 'Missing compilers showcase');
-    assert(indexHtml.includes('IoT Smart Lock Gateway'), 'Missing IoT gateway showcase');
-  });
-
-  it('index.html preserves authorized gateway login form and prefetch directives', () => {
+  it('index.html is the authentic cyberpunk single-tenant security gateway', () => {
     assert(indexHtml.includes('id="pass"'), 'Missing password input #pass');
     assert(indexHtml.includes('id="btn"'), 'Missing submit button #btn');
     assert(indexHtml.includes('id="card-container"'), 'Missing #card-container');
+    assert(indexHtml.includes('id="particle-canvas"'), 'Missing constellation particle canvas');
     assert(indexHtml.includes('submitForm(event)'), 'Missing submitForm handler');
     assert(indexHtml.includes('/api/sync'), 'Missing /api/sync prefetch during login warp');
     assert(indexHtml.includes('lumina_session_id'), 'Missing lumina_session_id storage');
   });
 
-  it('index.html includes clear public links to /privacy in navigation and footer', () => {
+  it('index.html includes clear public link to /privacy', () => {
     assert(indexHtml.includes('href="/privacy"'), 'Missing link to /privacy');
-    assert(indexHtml.includes('roysubhadra40@gmail.com'), 'Missing contact email in footer');
   });
 
   // 3. Live Server Routing Verification
