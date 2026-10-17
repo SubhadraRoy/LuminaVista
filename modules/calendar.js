@@ -109,7 +109,7 @@
       end: "2026-09-28",
       allDay: true,
       category: "exam",
-      color: "#039be5"
+      color: "#d50000"
     },
     {
       id: "gcal_class_xi_math",
@@ -145,7 +145,7 @@
       end: "2026-10-05",
       allDay: true,
       category: "exam",
-      color: "#039be5"
+      color: "#d50000"
     },
     {
       id: "gcal_class_xi_pe",
@@ -169,7 +169,7 @@
       end: "2026-10-12",
       allDay: true,
       category: "exam",
-      color: "#039be5"
+      color: "#d50000"
     },
     {
       id: "gcal_class_xi_phy_chem",
@@ -193,7 +193,7 @@
       end: "2026-10-26",
       allDay: true,
       category: "exam",
-      color: "#039be5"
+      color: "#d50000"
     }
   ];
 
@@ -380,7 +380,7 @@
         </div>
         
         <!-- Month Grid -->
-        <div class="grid grid-cols-7 flex-1 min-h-0 auto-rows-fr divide-x divide-y divide-white/5 overflow-y-auto custom-scrollbar">
+        <div class="grid grid-cols-7 flex-1 min-h-0 divide-x divide-y divide-white/5 overflow-y-auto custom-scrollbar" style="grid-auto-rows: minmax(95px, 1fr);">
     `;
 
     const totalCells = (firstDayIndex + daysInMonth <= 35) ? 35 : 42;
@@ -414,8 +414,8 @@
       const dayEvents = getEventsForDate(cellDate);
 
       const todayBoxClass = isToday 
-        ? 'group relative p-2 flex flex-col min-h-[90px] transition-all cursor-pointer bg-cyan-950/30 ring-2 ring-inset ring-cyan-400 shadow-[inset_0_0_15px_rgba(0,242,254,0.18)] rounded-xl z-10' 
-        : 'group relative p-2 flex flex-col min-h-[90px] transition-all hover:bg-white/[0.03] cursor-pointer';
+        ? 'group relative p-2 flex flex-col min-h-[95px] transition-all cursor-pointer bg-cyan-950/25 ring-1 ring-inset ring-cyan-400/80 shadow-[inset_0_0_12px_rgba(0,242,254,0.12)]' 
+        : 'group relative p-2 flex flex-col min-h-[95px] transition-all hover:bg-white/[0.03] cursor-pointer';
 
       html += `
         <div class="${todayBoxClass}"
@@ -425,7 +425,7 @@
               ${cellDay === 1 ? `<span class="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 mr-0.5">${cellDate.toLocaleString('default', { month: 'short' })}</span>` : ''}
               <span class="inline-flex items-center justify-center text-xs font-mono font-bold w-6 h-6 rounded-full transition-transform ${
                 isToday 
-                  ? 'bg-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/50 ring-2 ring-cyan-300' 
+                  ? 'bg-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/40 ring-1 ring-cyan-300' 
                   : isCurrentMonth 
                     ? 'text-zinc-200 group-hover:bg-white/10' 
                     : 'text-zinc-600'
@@ -438,13 +438,14 @@
           </div>
 
           <!-- Event Chips -->
-          <div class="flex-1 space-y-1 overflow-hidden pointer-events-none">
+          <div class="flex-1 space-y-1 overflow-hidden pointer-events-none mt-0.5">
             ${dayEvents.slice(0, 3).map(evt => {
               const timeStr = evt.allDay ? '' : formatShortTime(evt.start);
               const safeEvtId = String(evt.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
+              const chipColor = (evt.color && evt.color !== '#039be5') ? evt.color : (CATEGORY_META[evt.category]?.color || evt.color || '#039be5');
               return `
-                <div class="truncate text-[11px] px-2 py-0.5 rounded-md font-sans font-medium flex items-center gap-1.5 shadow-sm transition-all pointer-events-auto hover:brightness-125 border border-black/20"
-                     style="background-color: ${evt.color || '#039be5'}; color: #ffffff;"
+                <div class="truncate text-[10px] leading-tight px-1.5 py-0.5 rounded font-sans font-medium flex items-center gap-1 shadow-sm transition-all pointer-events-auto hover:brightness-125 border border-black/20"
+                     style="background-color: ${chipColor}; color: #ffffff;"
                      onclick="event.stopPropagation(); LuminaCalendar.openEventModal('${safeEvtId}')"
                      title="${escapeHtml(evt.title)}${timeStr ? ` (${timeStr})` : ''}">
                   ${timeStr ? `<span class="text-[9px] font-mono opacity-85 shrink-0 font-semibold">${timeStr}</span>` : ''}
