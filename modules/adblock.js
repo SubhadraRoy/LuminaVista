@@ -64,7 +64,7 @@
       minHeap: 85000,
       uptime: 0,
       qps: 0,
-      ip: '192.168.0.96',
+      ip: '192.168.0.115',
       rssi: -52,
       lastOnline: '-',
       lastOffline: '-'
@@ -388,7 +388,7 @@
             🔴 HARDWARE OFFLINE
           </span>
           <span id="adblockIpChip" class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono bg-white/5 text-cyan-300 border border-white/10 whitespace-nowrap">
-            IP: 192.168.0.96
+            IP: 192.168.0.115
           </span>
           <span id="adblockRttBadge" class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 whitespace-nowrap">
             ⚡ RTT: 14ms (Direct Cloud)
@@ -617,11 +617,11 @@
           <!-- 5. Live Device Frame Sub-Pane -->
           <div id="adblockPane-webview" class="space-y-3 hidden h-full flex flex-col">
             <div class="flex items-center justify-between text-xs text-zinc-400 bg-surface-900/60 p-2.5 rounded-xl border border-white/5">
-              <span>Direct LAN View: <b class="text-cyan-300">http://esp32adblock.local</b> (or IP: 192.168.0.96)</span>
+              <span>Direct LAN View: <b class="text-cyan-300">http://esp32adblock.local</b> (or IP: 192.168.0.115)</span>
               <button onclick="window.LuminaAdBlock.reloadIframe()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white">Reload Frame</button>
             </div>
             <div class="flex-1 min-h-[450px] rounded-xl border border-white/5 overflow-hidden bg-black">
-              <iframe id="adblockDeviceIframe" src="http://192.168.0.96/" class="w-full h-full border-0" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
+              <iframe id="adblockDeviceIframe" src="http://esp32adblock.local/" class="w-full h-full border-0" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
             </div>
           </div>
         </div>
@@ -690,6 +690,11 @@
       queueBadge.className = qLen > 0
         ? 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-mono bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 whitespace-nowrap'
         : 'px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-mono bg-surface-850 text-zinc-300 border border-white/10 whitespace-nowrap';
+    }
+
+    const ipChip = document.getElementById('adblockIpChip');
+    if (ipChip && state.status?.ip) {
+      ipChip.textContent = `IP: ${state.status.ip}`;
     }
   }
 
