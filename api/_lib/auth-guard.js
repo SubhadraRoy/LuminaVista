@@ -563,7 +563,7 @@ export function sanitizeFilePath(userPath) {
   const clean = decoded
     .replace(/\\/g, '/')
     .trim();
-  if (clean.includes('..') || clean.includes('?') || clean.includes('#')) return '';
+  if (clean.includes('..') || clean.includes('?') || clean.includes('#') || /[<>"';|&`$(){}\r\n\t]/.test(clean)) return '';
   const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
   if (
     !normalized ||

@@ -30,12 +30,13 @@ function sanitizeFilePath(userPath) {
       break;
     }
   }
-  // Normalize, remove control bytes, and strictly block directory traversal escapes and query/fragment separators
+  // Strictly reject control characters, null bytes, and newlines (CWE-20 / CWE-93)
+  if (/[\x00-\x1f\x7f]/.test(decoded)) return '';
+
   const clean = decoded
-    .replace(/[\x00-\x1f\x7f]/g, '')
     .replace(/\\/g, '/')
     .trim();
-  if (clean.includes('..') || clean.includes('?') || clean.includes('#')) return '';
+  if (clean.includes('..') || clean.includes('?') || clean.includes('#') || /[<>"';|&`$(){}]/.test(clean)) return '';
   const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
   if (
     normalized === '..' ||
@@ -97,13 +98,7 @@ export default async function handler(req, res) {
     return sendSecureJson(res, rate.status, { error: rate.error });
   }
 
-  const ghToken = process.env.GITHUB_STORAGE_TOKEN;
-  const repo = process.env.GITHUB_STORAGE_REPO;
-  if (!ghToken || !repo) {
-    auditLog('STORAGE_CONFIG_FAULT', req, 'GitHub credentials missing');
-    return sendSecureJson(res, 500, { error: 'Storage repository credentials unconfigured.' });
-  }
-
+  // 4. Input Validation & Path Traversal Sanitization (CWE-22 / Strix DAST)
   const cleanPath = sanitizeFilePath(rawPath);
 
   if (action !== 'list' && !cleanPath) {
@@ -131,6 +126,13 @@ export default async function handler(req, res) {
   if (isProtectedAsset) {
     auditLog('SUSPICIOUS_PATH_TRAVERSAL', req, `Path: ${rawPath}`);
     return sendSecureJson(res, 400, { error: 'Invalid or illegal file path: access to protected repository assets is prohibited.' });
+  }
+
+  const ghToken = process.env.GITHUB_STORAGE_TOKEN;
+  const repo = process.env.GITHUB_STORAGE_REPO;
+  if (!ghToken || !repo) {
+    auditLog('STORAGE_CONFIG_FAULT', req, 'GitHub credentials missing');
+    return sendSecureJson(res, 500, { error: 'Storage repository credentials unconfigured.' });
   }
 
   const STORAGE_NAMESPACE = 'user_vault';
