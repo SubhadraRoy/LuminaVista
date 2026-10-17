@@ -5,9 +5,9 @@
 
 import { Sandbox } from '@e2b/code-interpreter';
 import { getRedisClient, getSafeStorage } from './_lib/redis.js';
-import { sanitizeError, auditLog, validateSession, sendSecureJson, scrubSecrets, sanitizeDeep, setSecurityHeaders, checkRateLimit, enforcePayloadLimit } from './_lib/auth-guard.js';
+import { sanitizeError, auditLog, validateSession, sendSecureJson, scrubSecrets, sanitizeDeep, setSecurityHeaders, checkRateLimit, enforcePayloadLimit, sanitizeFilePath } from './_lib/auth-guard.js';
 import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
-import { jevGenerateBespokeResponse } from './_lib/jev-engine.js';
+import { jevGenerateBespokeResponse, inspectJevCommandSafety } from './_lib/jev-engine.js';
 import { sanitizeProviderMessages } from './chat.js';
 
 export const maxDuration = 60;
@@ -50,6 +50,14 @@ export default async function handler(req, res) {
         const raw = await storage.get(`job_state:${jobId}`);
         if (!raw) return sendSecureJson(res, 404, { error: 'Job not found' });
         const job = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+        // Enforce session ownership (BOLA prevention)
+        const isOwner = !job.ownerSessionId || job.ownerSessionId === auth.sessionId || (auth.role === 'master' && job.ownerRole === 'master');
+        if (!isOwner) {
+          auditLog('WORKER_BOLA_BLOCKED', req, `Session ${auth.sessionId} attempted access to Job ${jobId}`);
+          return sendSecureJson(res, 403, { error: 'Forbidden: Access to this job is restricted to the job creator.' });
+        }
+
         return sendSecureJson(res, 200, { success: true, job });
       } catch (err) {
         return sendSecureJson(res, 500, { error: 'Failed to retrieve job state' });
@@ -59,7 +67,7 @@ export default async function handler(req, res) {
     // Check completed jobs for this user session
     if (action === 'check_completed' || action === 'pending') {
       try {
-        const sess = userSession || 'sovereign_session';
+        const sess = auth.sessionId || userSession || 'sovereign_session';
         const rawIds = await storage.get(`user_jobs:${sess}`);
         const jobIds = rawIds ? (typeof rawIds === 'string' ? JSON.parse(rawIds) : rawIds) : [];
         const completedJobs = [];
@@ -143,7 +151,7 @@ export default async function handler(req, res) {
     return sendSecureJson(res, 400, { error: 'Missing required worker parameters' });
   }
 
-  const effectiveSession = userSession || 'sovereign_session';
+  const effectiveSession = auth.sessionId || userSession || 'sovereign_session';
 
   // Verify user session in Redis / SafeStorage
   const redis = getRedisClient();
@@ -177,7 +185,9 @@ export default async function handler(req, res) {
       requestedModel: requestedModel || 'gpt-oss:20b',
       provider: provider || 'hybrid_pool',
       storage,
-      req
+      req,
+      ownerSessionId: auth.sessionId,
+      ownerRole: auth.role
     });
 
     return sendSecureJson(res, 200, { success: true, jobId, ...result });
@@ -185,7 +195,12 @@ export default async function handler(req, res) {
   } catch (error) {
     auditLog('WORKER_FAULT', req, error.message);
     const safeError = sanitizeError(error, 'Background execution failure');
-    await storage.set(`job_state:${jobId}`, JSON.stringify({ status: 'failed', error: safeError }), { ex: 3600 });
+    await storage.set(`job_state:${jobId}`, JSON.stringify({
+      status: 'failed',
+      ownerSessionId: auth.sessionId,
+      ownerRole: auth.role,
+      error: safeError
+    }), { ex: 3600 });
     return sendSecureJson(res, 500, { error: safeError });
   }
 }
@@ -194,12 +209,14 @@ export default async function handler(req, res) {
  * Core Autonomous Cloud Task Execution Logic
  * Continues running on the cloud server even if client shuts down.
  */
-async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs, requestedModel, provider = 'hybrid_pool', storage, req = null }) {
+async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs, requestedModel, provider = 'hybrid_pool', storage, req = null, ownerSessionId = '', ownerRole = '' }) {
   // Mark job as processing
   await storage.set(`job_state:${jobId}`, JSON.stringify({
     status: 'processing',
     startTime: Date.now(),
     prompt,
+    ownerSessionId,
+    ownerRole,
     logs: ['[Worker] Task dispatched to autonomous cloud engine...'],
     vfs: currentVfs
   }), { ex: 86400 });
@@ -332,10 +349,18 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
       sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
       
       for (const [name, content] of Object.entries(updatedVfs)) {
-        await sbx.files.write(name, content);
+        const safeName = sanitizeFilePath(name);
+        if (safeName) {
+          await sbx.files.write(safeName, content);
+        }
       }
 
       for (const cmd of execCommands) {
+        const safety = inspectJevCommandSafety(cmd);
+        if (!safety.safe) {
+          terminalLogs.push(`🛡️ [Jev Guardrail]: Blocked destructive command: ${cmd} (${safety.threatCategory})`);
+          continue;
+        }
         terminalLogs.push(`➜ ${cmd}`);
         const execution = await sbx.commands.run(cmd, { timeoutMs: 15000 });
         if (execution.stdout) terminalLogs.push(execution.stdout);
@@ -362,6 +387,8 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
     status: 'completed',
     jobId,
     prompt,
+    ownerSessionId,
+    ownerRole,
     reply: aiReply,
     vfs: updatedVfs,
     logs: terminalLogs,

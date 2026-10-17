@@ -153,7 +153,9 @@
       projects,
       theme,
       activeTabId: localStorage.getItem('lumina_active_tab_id') || window.currentActiveTab || 'tab-ai-studio',
-      admin_passwords: JSON.parse(localStorage.getItem('lumina_temp_vault') || '[]'),
+      admin_passwords: (() => {
+        try { return JSON.parse(localStorage.getItem('lumina_temp_vault') || '[]'); } catch { return []; }
+      })(),
       updatedAt: Date.now()
     };
   }

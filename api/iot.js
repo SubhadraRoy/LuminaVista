@@ -630,7 +630,7 @@ export default async function handler(req, res) {
           ? req.rawBody.toString('utf8')
           : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
 
-      const rate = await checkRateLimit(req, storage, 'iot_hardware', 300, 60);
+      const rate = await checkRateLimit(req, storage, 'iot_hardware', 60, 60);
       if (!rate.allowed) {
         return sendSecureJson(res, 429, { error: rate.error });
       }

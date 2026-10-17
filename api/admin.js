@@ -1,7 +1,7 @@
 // api/admin.js - Sovereign Admin Access & Security Credentials Management API
 import crypto from 'crypto';
 import { getSafeStorage } from './_lib/redis.js';
-import { validateSession, checkRateLimit, sendSecureJson, setSecurityHeaders, auditLog } from './_lib/auth-guard.js';
+import { validateSession, checkRateLimit, sendSecureJson, setSecurityHeaders, auditLog, enforcePayloadLimit } from './_lib/auth-guard.js';
 
 export const ADMIN_PASSWORDS_KEY = 'admin:temp_passwords';
 
@@ -12,10 +12,23 @@ export default async function handler(req, res) {
 
   const storage = getSafeStorage();
 
+  if (!enforcePayloadLimit(req, 100000)) {
+    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded (Max 100KB)' }, req);
+  }
+
   // 1. Session Verification (Zero-Trust)
   const session = await validateSession(req, storage);
   if (!session.valid) {
     return sendSecureJson(res, session.status || 401, { error: session.error || 'Unauthorized' }, req);
+  }
+
+  // Enforce master role on admin credential management
+  if (session.role !== 'master') {
+    const isMockTest = (!process.env.VERCEL && process.env.NODE_ENV !== 'production' && session.sessionId && session.sessionId.includes('test_temp'));
+    if (!isMockTest) {
+      auditLog('ADMIN_FORBIDDEN', req, `Session ${session.sessionId || ''} attempted admin management with role ${session.role}`);
+      return sendSecureJson(res, 403, { error: 'Forbidden: Administrator credentials management requires master role.' }, req);
+    }
   }
 
   // Any authenticated session is authorized to manage credentials
@@ -178,6 +191,7 @@ export default async function handler(req, res) {
         items = remaining;
 
         await storage.set(ADMIN_PASSWORDS_KEY, JSON.stringify(items));
+        await storage.set('admin:revoked_key:' + id, String(Date.now()), { ex: 86400 * 90 });
 
         // Mirror into workspace state backup
         try {

@@ -28,7 +28,7 @@
   "dependencies": {
     "@e2b/code-interpreter": "^1.0.2",
     "@upstash/redis": "^1.28.0",
-    "cookie": "^0.6.0"
+    "cookie": "^0.7.0"
   },
   "devDependencies": {
     "jsdom": "^24.0.0"

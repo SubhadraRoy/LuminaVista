@@ -53,7 +53,13 @@
 
     if (!Array.isArray(window.aiSessions) || window.aiSessions.length === 0) {
       const defaultId = "sess_" + Date.now();
-      const legacyHistory = sanitizeSessionMessages(JSON.parse(localStorage.getItem("lumina_ai_history") || "[]"));
+      let rawHistory = [];
+      try {
+        rawHistory = JSON.parse(localStorage.getItem("lumina_ai_history") || "[]");
+      } catch (e) {
+        rawHistory = [];
+      }
+      const legacyHistory = sanitizeSessionMessages(rawHistory);
       const initialSession = {
         id: defaultId,
         title: legacyHistory.length > 0 ? (legacyHistory[0].content.substring(0, 30) + "...") : "Welcome Session",

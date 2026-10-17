@@ -9,13 +9,15 @@ import {
   maskSecret,
   sendSecureJson,
   setSecurityHeaders,
-  scrubSecrets
+  scrubSecrets,
+  sanitizeFilePath
 } from './_lib/auth-guard.js';
 import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent, isBlockedSsrfTarget } from './_lib/key-pool.js';
 import {
   jevClassifyIntent,
   buildLuminaSystemPrompt,
-  jevGenerateBespokeResponse
+  jevGenerateBespokeResponse,
+  inspectJevCommandSafety
 } from './_lib/jev-engine.js';
 
 /**
@@ -131,9 +133,10 @@ async function searchDuckDuckGo(query) {
 }
 
 export default async function handler(req, res) {
-  res._req = req;
-  setSecurityHeaders(res, req);
-  if (req.method === 'OPTIONS') return res.status(204).end();
+  try {
+    res._req = req;
+    setSecurityHeaders(res, req);
+    if (req.method === 'OPTIONS') return res.status(204).end();
 
   // Live telemetry endpoint (GET /api/chat?action=telemetry or POST with action: 'telemetry')
   const isTelemetry = (req.method === 'GET' && (req.query?.action === 'telemetry' || req.url?.includes('action=telemetry'))) ||
@@ -185,8 +188,7 @@ export default async function handler(req, res) {
     return sendSecureJson(res, rate.status, { error: rate.error });
   }
 
-  try {
-    let {
+  let {
       requestedModel,
       messages,
       currentVfs,
@@ -697,13 +699,22 @@ export default async function handler(req, res) {
             sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
 
             for (const [name, content] of Object.entries(currentVfs)) {
-              await sbx.files.write(name, content);
+              const safeName = sanitizeFilePath(name);
+              if (safeName) {
+                await sbx.files.write(safeName, content);
+              }
             }
 
             let loopFailed = false;
             let commandOutputCombined = "";
 
             for (const cmd of cmdsToRun) {
+              const safety = inspectJevCommandSafety(cmd);
+              if (!safety.safe) {
+                terminalLogs.push(`🛡️ [Jev Guardrail]: Blocked destructive command: ${cmd} (${safety.threatCategory})`);
+                commandOutputCombined += `[JEV SAFETY BLOCKED]: ${safety.reason}\n`;
+                continue;
+              }
               terminalLogs.push(`➜ ${cmd}`);
               const execution = await sbx.commands.run(cmd, { timeoutMs: 15000 });
 

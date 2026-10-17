@@ -6,7 +6,8 @@ import {
   sendSecureJson,
   setSecurityHeaders,
   checkRateLimit,
-  generateSovereignSessionToken
+  generateSovereignSessionToken,
+  sanitizeError
 } from './_lib/auth-guard.js';
 import { getSafeStorage } from './_lib/redis.js';
 
@@ -106,6 +107,7 @@ export default async function handler(req, res) {
         httpOnly: true,
         secure: isCrossSite ? true : isHttps,
         sameSite: isCrossSite ? 'none' : 'lax',
+        partitioned: isCrossSite || isHttps,
         maxAge: sessionTtl,
         path: '/'
       }));
@@ -124,7 +126,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     auditLog('AUTH_CRASH', req, error.message);
-    return sendSecureJson(res, 502, { success: false, error: 'Authentication engine failure: ' + (error.message || String(error)) }, req);
+    return sendSecureJson(res, 502, { success: false, error: sanitizeError(error, 'Authentication engine failure.') }, req);
   }
 }
 
@@ -259,6 +261,17 @@ export async function verifyCredentials(password, expectedPassword, storage = nu
     });
 
     if (matchedClientKey) {
+      // Check if key has been explicitly revoked
+      if (storage && typeof storage.get === 'function') {
+        try {
+          const isRevoked = await storage.get(`admin:revoked_key:${matchedClientKey.id}`);
+          if (isRevoked) {
+            auditLog('REVOKED_KEY_REJECTED', null, `Rejected revoked clientKey ${matchedClientKey.id}`);
+            return { authenticated: false };
+          }
+        } catch (_) {}
+      }
+
       // Re-hydrate this authenticated key back into storage for fast-path retrieval
       if (storage && typeof storage.get === 'function') {
         try {

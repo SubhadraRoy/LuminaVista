@@ -90,6 +90,8 @@
 
   const CATEGORY_META = {
     work: { label: 'Deep Work & Coding', color: '#3b82f6' },
+    study: { label: 'Study & Classes', color: '#039be5' },
+    exam: { label: 'Exams & Milestones', color: '#d50000' },
     meeting: { label: 'Client / Team Sync', color: '#8b5cf6' },
     personal: { label: 'Personal & Life', color: '#10b981' },
     health: { label: 'Health & Workout', color: '#f59e0b' },
@@ -430,6 +432,20 @@
             const allDay = !item.start?.dateTime;
             const isAiTask = (item.summary || '').includes('[AI Task]') || (item.description || '').includes('[AI Task]');
 
+            const titleUpper = (item.summary || '').toUpperCase();
+            let cat = 'work';
+            let clr = '#039be5';
+            if (isAiTask) {
+              cat = 'ai_autonomous';
+              clr = '#00f2fe';
+            } else if (titleUpper.includes('JEE') || titleUpper.includes('AITS') || titleUpper.includes('MILESTONE') || titleUpper.includes('EXAM')) {
+              cat = 'exam';
+              clr = '#039be5';
+            } else if (titleUpper.includes('CLASS') || titleUpper.includes('PW') || titleUpper.includes('MATH') || titleUpper.includes('PHYSIC') || titleUpper.includes('CHEM')) {
+              cat = 'study';
+              clr = '#039be5';
+            }
+
             const existing = calendarEvents.find(e => e.googleEventId === item.id);
             if (existing) {
               existing.title = item.summary || 'Google Calendar Event';
@@ -438,11 +454,9 @@
               existing.start = startStr;
               existing.end = endStr;
               existing.allDay = allDay;
-              if (isAiTask) {
-                existing.category = 'ai_autonomous';
-                existing.color = '#00f2fe';
-                existing.isAutonomous = true;
-              }
+              existing.category = cat;
+              existing.color = clr;
+              existing.isAutonomous = isAiTask;
             } else {
               calendarEvents.push({
                 id: `gcal_${item.id}`,
@@ -453,8 +467,8 @@
                 start: startStr,
                 end: endStr,
                 allDay: allDay,
-                category: isAiTask ? 'ai_autonomous' : 'work',
-                color: isAiTask ? '#00f2fe' : '#3f51b5',
+                category: cat,
+                color: clr,
                 isAutonomous: isAiTask
               });
             }
@@ -463,6 +477,7 @@
           // Ensure settings record connected state first so pushEventToGoogle does not exit early
           setSettings({
             googleCalendarConnected: true,
+            googleAccountEmail: data.email || getSettings().googleAccountEmail || 'roysubhadra40@gmail.com',
             lastSyncedAt: new Date().toISOString()
           });
 
@@ -575,11 +590,15 @@
     }
 
     const settings = getSettings();
-    if (settings.googleCalendarConnected) {
-      const email = settings.googleAccountEmail ? ` (${settings.googleAccountEmail})` : '';
-      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span> <span class="inline sm:hidden text-[10px]">Google Synced</span><span class="hidden sm:inline text-[10px]">Google Synced${email}</span>`;
+    const calendarEvents = getEvents();
+    const hasGoogleEvents = Array.isArray(calendarEvents) && calendarEvents.some(e => e && e.googleEventId);
+
+    if (settings.googleCalendarConnected || hasGoogleEvents) {
+      const email = settings.googleAccountEmail || 'roysubhadra40@gmail.com';
+      const emailSuffix = email ? ` (${email})` : '';
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span> <span class="inline sm:hidden text-[10px]">Google Synced</span><span class="hidden sm:inline text-[10px]">Google Synced${emailSuffix}</span>`;
       badge.className = 'flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/20 cursor-pointer';
-      badge.title = `Google Calendar Connected${email} - Click to configure`;
+      badge.title = `Google Calendar Connected${emailSuffix} - Click to configure`;
     } else {
       const label = settings.googleAccountEmail ? 'Sign in with Google' : 'Local Sovereign';
       badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span> <span class="text-[10px]">${label}</span>`;

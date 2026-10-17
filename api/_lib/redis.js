@@ -1,5 +1,6 @@
 // api/_lib/redis.js - Shared Redis client utility with resilient fallback for LuminaVista Serverless Functions
 import { Redis } from '@upstash/redis';
+import { scrubSecrets } from './auth-guard.js';
 
 export function createRawRedisClient() {
   const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
@@ -115,8 +116,9 @@ export class SafeStorageProxy {
   }
 
   handleError(err, op = 'op') {
-    const msg = String(err?.message || err);
-    if (/limit exceeded|quota|rate limit|429/i.test(msg)) {
+    const rawMsg = String(err?.message || err);
+    const msg = scrubSecrets(rawMsg);
+    if (/limit exceeded|quota|rate limit|429/i.test(rawMsg)) {
       this.disabledUntil = Date.now() + 60000;
       console.warn(`[SAFE_STORAGE] Redis quota exceeded during ${op} (${msg}). Degrading to fallback memory storage for 60s.`);
     } else {

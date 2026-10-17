@@ -29,11 +29,12 @@ function sanitizeFilePath(userPath) {
 }
 
 export default async function handler(req, res) {
-  res._req = req;
-  setSecurityHeaders(res, req);
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
+  try {
+    res._req = req;
+    setSecurityHeaders(res, req);
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
 
   if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
@@ -130,5 +131,9 @@ export default async function handler(req, res) {
     return sendSecureJson(res, 502, { error: sanitizeError(error, "MicroVM execution error.") });
   } finally {
     if (sbx) await sbx.kill().catch(() => {});
+  }
+  } catch (outerError) {
+    auditLog('TERMINAL_HANDLER_FAULT', req, outerError.message);
+    return sendSecureJson(res, 500, { error: sanitizeError(outerError, "Terminal handler exception.") });
   }
 }

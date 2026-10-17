@@ -251,9 +251,11 @@ export function isBlockedSsrfTarget(targetUrl) {
 
   let hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
 
-  // Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:127.0.0.1, ::ffff:7f00:1) to standard IPv4
-  if (hostname.startsWith('::ffff:') || hostname.startsWith('0:0:0:0:0:ffff:')) {
-    const suffix = hostname.replace(/^(::ffff:|0:0:0:0:0:ffff:)/, '');
+  // Normalize IPv6-mapped & IPv4-compatible IPv6 addresses (e.g. ::ffff:127.0.0.1, ::7f00:1, ::a9fe:a9fe) to standard IPv4
+  const isIpv4Mapped = hostname.startsWith('::ffff:') || hostname.startsWith('0:0:0:0:0:ffff:');
+  const isIpv4Compat = hostname.startsWith('::') && hostname !== '::1' && hostname !== '::' && hostname.includes(':');
+  if (isIpv4Mapped || isIpv4Compat) {
+    const suffix = hostname.replace(/^(::ffff:|0:0:0:0:0:ffff:|::)/, '');
     if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(suffix)) {
       hostname = suffix;
     } else if (suffix.includes(':')) {
@@ -267,6 +269,24 @@ export function isBlockedSsrfTarget(targetUrl) {
         ].join('.');
       }
     }
+  }
+
+  // Also block hex representations of private/metadata IPs in IPv6 hextets
+  if (
+    hostname.includes('7f00:') ||
+    hostname.includes('a9fe:') ||
+    hostname.includes('0a00:') ||
+    hostname.includes('c0a8:') ||
+    hostname === '::7f00:1' ||
+    hostname === '::a9fe:a9fe' ||
+    hostname === '::127.0.0.1' ||
+    hostname === '::169.254.169.254' ||
+    hostname.startsWith('::7f') ||
+    hostname.startsWith('::a9fe') ||
+    hostname.startsWith('::a00') ||
+    hostname.startsWith('::c0a8')
+  ) {
+    return true;
   }
 
   // 1. Cloud metadata & internal named endpoints

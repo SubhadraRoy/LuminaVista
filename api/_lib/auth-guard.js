@@ -1,4 +1,5 @@
 // api/_lib/auth-guard.js - Centralized Zero-Trust Auth, Rate Limiting & Secret Masking
+import path from 'path';
 import crypto from 'crypto';
 import { Redis } from '@upstash/redis';
 import { getRedisClient, getSafeStorage } from './redis.js';
@@ -424,6 +425,7 @@ export function setSecurityHeaders(res, req = null) {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
 }
 
 /**
@@ -450,8 +452,13 @@ export function sanitizeError(error, defaultMessage = 'An internal processing er
 
   let safe = scrubSecrets(raw);
 
+  // Mask absolute filesystem paths (Windows C:\... and POSIX /var/task/...)
+  safe = safe
+    .replace(/[a-zA-Z]:\\[^"'\n\r\t<>]+/g, '[REDACTED_PATH]')
+    .replace(/(?:\/(?:var|home|usr|etc|opt|tmp|task|Users))\/[^"'\n\r\t<>]+/g, '[REDACTED_PATH]');
+
   // If the raw error still contains sensitive stack or provider details, mask with default
-  if (/at\s+.+\(.+:\d+:\d+\)/.test(safe) || safe.length > 250) {
+  if (/at\s+.+\(.+:\d+:\d+\)/.test(safe) || /upstash\.io|redis\.com|amazonaws\.com/i.test(safe) || safe.length > 250) {
     return defaultMessage;
   }
 
@@ -468,6 +475,22 @@ export function enforcePayloadLimit(req, maxBytes = 250000) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Sanitizes and normalizes file paths to prevent directory traversal in sandboxes.
+ */
+export function sanitizeFilePath(userPath) {
+  if (!userPath || typeof userPath !== 'string') return '';
+  const clean = userPath
+    .replace(/\0/g, '')
+    .replace(/\\/g, '/')
+    .trim();
+  const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
+  if (normalized === '..' || normalized.startsWith('../') || normalized.includes('/../')) {
+    return '';
+  }
+  return normalized;
 }
 
 /**

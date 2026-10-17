@@ -258,3 +258,73 @@ Deploy specialized senior exploratory subagents to inspect all system boundaries
 - [ ] 40 / 40 JavaScript modules pass syntax linting in `tests/lint.cjs`
 - [ ] All repository files remain strictly < 2,000 lines
 - [ ] Git repository is clean and force-pushed to `origin/main`
+
+
+## Follow-up — 2026-10-17T04:28:57Z
+
+Execute a comprehensive, multi-agent defensive security audit and automated remediation loop across LuminaVista OS under /goal mode. Specialized sub-agents will audit SAST (static analysis), DAST/API logic, dependencies/supply chain, and secrets/configuration, implementing production-ready defensive fixes with regression tests until a consensus panel of Principal Security Architect sub-agents verifies zero Critical, High, or Medium vulnerabilities remain and all test suites pass with zero regressions.
+
+Working directory: c:/Users/roysu/LuminaVista
+Integrity mode: development
+
+## Verification Resources
+The codebase provides fully automated test suites that must be executed to validate system integrity before and after any remediation iteration:
+- Unit Test Suite: `node tests/features.test.cjs` (1,102 assertions)
+- Browser CDP Test Suite: `node tests/browser-cdp-test.cjs` (122 Google Chrome CDP tests)
+- Comprehensive 5-Point Recheck Audit: `node tests/recheck-all-tasks.cjs` (42 assertions)
+- Syntax Linter: `node tests/lint.cjs` (40 JS modules)
+- Challenger Calendar Empirical Harness: `node tests/challenger-calendar-empirical.cjs` (63 assertions)
+- Adversarial Penetration Challenge (R4): `node tests/challenger-r4-empirical.cjs` (141 assertions)
+- Adversarial Calendar Controller Harness: `node tests/adversarial-calendar.test.cjs` (109 probes)
+- Adversarial Calendar Probe: `node tests/suite-calendar-adversarial.cjs` (25 tests)
+
+## Requirements
+
+### R1. Multi-Surface Defensive Security Auditing
+Deploy specialized sub-agents to systematically audit all application surfaces:
+1. **SAST (Static Application Security Testing)**: AST inspection across `api/**/*.js`, `modules/**/*.js`, and `dashboard.html` for injection vectors (SQL/NoSQL/CLI/Command), Prototype Pollution (`__proto__`, `constructor.prototype`), SSRF (loopback, metadata services, IPv6 mapped bypasses), ReDoS, unhandled Promise rejections, and insecure deserialization.
+2. **DAST & API Business Logic**: Inspect edge routes (`api/admin.js`, `api/auth.js`, `api/chat.js`, `api/calendar.js`, `api/iot.js`, `api/sync.js`, `api/token.js`) for Broken Object Level Authorization (BOLA/IDOR), session token leakage, timing attacks in cryptographic comparisons, OAuth redirect and state tampering, and rate-limiting bypasses.
+3. **Dependency & Supply Chain**: Audit `package.json` and bundled third-party libraries for known CVEs, unpinned dynamic scripts, untrusted CDN injection, and SRI hash integrity.
+4. **Secrets & Configuration Review**: Verify zero hardcoded production API keys, zero exposed master passwords, secure cookie flags (`SameSite=None`, `Secure`, `Partitioned`, `HttpOnly`), strict Content Security Policy (CSP), and zero PII logging.
+
+### R2. Production-Ready Auto-Remediation
+For every discovered security defect or defense-in-depth gap:
+- Implement direct, robust defensive mitigations in the target codebase files.
+- Enforce strict type guards, monotonic counter validations, and constant-time cryptographic checks (`crypto.timingSafeEqual`).
+- Enforce fail-closed authorization semantics across all edge routes.
+- Do NOT generate offensive exploit scripts, weaponized payloads, or malicious proof-of-concept exploits in the repository.
+
+### R3. Principal Security Architect Consensus Panel
+- Convene an independent consensus panel comprising:
+  1. Principal Application Security Architect: Reviews API authorization, input sanitization, and session boundaries.
+  2. Cryptographic & IoT Security Engineer: Reviews HMAC-SHA256, monotonic sequence replay protection, and command TTLs.
+  3. Cloud & Edge Infrastructure Specialist: Reviews CORS origin reflection boundaries, SSRF filters, and Redis isolation.
+  4. Lead Quality & Regression Auditor: Verifies 100% test suite pass rate and backward compatibility.
+- The panel must reach unanimous consensus certifying that zero Critical, High, or Medium severity vulnerabilities remain.
+
+### R4. Preservation of Invariants & Budget Constraints
+- File Length Constraint: Every modified and existing repository file must strictly contain fewer than 2,000 lines.
+- Hardware Gateway Boundary: The physical ESP32 firmware files (`firmware/**`) must remain 100% untouched.
+- Verification Integrity: Existing test suites (`tests/**`) must remain untampered with zero regressions.
+- Clean Repository: Final working tree must be committed and pushed to `origin/main`.
+
+## Acceptance Criteria
+
+### Security Fortification & Coverage
+- [ ] Zero Critical, High, or Medium security vulnerabilities remain across all API handlers, client sandboxes, and authentication flows.
+- [ ] Strict constant-time comparisons (`crypto.timingSafeEqual`) enforced across all token, password, and signature evaluations.
+- [ ] Zero SSRF vulnerabilities to private, loopback, or cloud metadata endpoints (`169.254.169.254`, `[::ffff:127.0.0.1]`).
+- [ ] All CORS origins strictly validated with zero reflection of hostile origins (`evil`, `attacker`, `phishing`).
+- [ ] Monotonic sequence validation and replay nonce deduplication active on IoT gateway without firmware changes.
+
+### Automated Test Suite & Quality Bar
+- [ ] 1,102 / 1,102 unit assertions pass in `tests/features.test.cjs` with 0 failures
+- [ ] 122 / 122 Chrome CDP tests pass in `tests/browser-cdp-test.cjs` with 0 failures
+- [ ] 42 / 42 audit assertions pass in `tests/recheck-all-tasks.cjs` with 0 failures
+- [ ] 40 / 40 JavaScript modules pass syntax linting in `tests/lint.cjs`
+- [ ] 63 / 63 empirical assertions pass in `tests/challenger-calendar-empirical.cjs`
+- [ ] 141 / 141 empirical assertions pass in `tests/challenger-r4-empirical.cjs`
+- [ ] 109 / 109 adversarial probes pass in `tests/adversarial-calendar.test.cjs`
+- [ ] 25 / 25 adversarial tests pass in `tests/suite-calendar-adversarial.cjs`
+- [ ] 100% of files across the repository strictly contain < 2,000 lines
+- [ ] Git repository is clean and synchronized with `origin/main`

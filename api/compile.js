@@ -24,91 +24,97 @@ const RUNNERS = {
 };
 
 export default async function handler(req, res) {
-  res._req = req;
-  setSecurityHeaders(res, req);
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
-
-  // 1. Enforce payload size limit (Max 100KB)
-  if (!enforcePayloadLimit(req, 100000)) {
-    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded (Max 100KB)' });
-  }
-
-  const redis = getRedisClient();
-
-  // 2. Zero-Trust Session Verification
-  const auth = await validateSession(req, redis);
-  if (!auth.valid) {
-    auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/compile');
-    return sendSecureJson(res.status(auth.status), auth.status, { error: auth.error });
-  }
-
-  // Enforce authenticated role requirement for compiler execution
-  if (auth.role !== 'master' && auth.role !== 'temporary') {
-    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/compile');
-    return sendSecureJson(res, 403, { error: 'Forbidden: Code compiler execution requires authenticated session' });
-  }
-
-  // 3. Sliding IP Rate Limiting (20 compilations / 5 minutes)
-  const rate = await checkRateLimit(req, redis, 'compile', 20, 300);
-  if (!rate.allowed) {
-    auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/compile');
-    return sendSecureJson(res, rate.status, { error: rate.error });
-  }
-
-  const { language, code } = req.body || {};
-  if (!code || typeof code !== 'string') {
-    return sendSecureJson(res, 400, { error: 'No valid source code provided.' });
-  }
-
-  // 4. Server-Side Jev Guardrails & Safety Inspection
-  const cmdSafety = inspectJevCommandSafety(code);
-  if (!cmdSafety.safe) {
-    auditLog('JEV_GUARDRAIL_BLOCKED', req, `Threat: ${cmdSafety.threatCategory} | Endpoint: /api/compile`);
-    return sendSecureJson(res, 403, {
-      error: `Jev System-1 Guardrail: Execution blocked (${cmdSafety.threatCategory})`,
-      details: cmdSafety.reason,
-      threatCategory: cmdSafety.threatCategory,
-      safe: false
-    });
-  }
-
-  const guard = inspectJevGuardrails(code);
-  if (!guard.guardrailPassed) {
-    auditLog('JEV_GUARDRAIL_BLOCKED', req, `Threat: ${guard.threatCategory} | Endpoint: /api/compile`);
-    return sendSecureJson(res, 403, {
-      error: `Jev System-1 Guardrail: Execution blocked (${guard.threatCategory})`,
-      details: guard.threatDetail,
-      threatCategory: guard.threatCategory,
-      safe: false
-    });
-  }
-
-  if (!process.env.E2B_API_KEY) {
-    auditLog('COMPILE_CONFIG_FAULT', req, 'E2B_API_KEY missing in environment');
-    return sendSecureJson(res, 500, { error: 'Cloud compiler infrastructure unconfigured.' });
-  }
-
-  const runner = RUNNERS[language ? language.toLowerCase() : 'python'] || RUNNERS.python;
-
-  let sbx = null;
   try {
-    sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
-    await sbx.files.write(runner.file, code);
+    res._req = req;
+    setSecurityHeaders(res, req);
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
-    const execution = await sbx.commands.run(runner.cmd, { timeoutMs: 15000 });
+    // 1. Enforce payload size limit (Max 100KB)
+    if (!enforcePayloadLimit(req, 100000)) {
+      return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded (Max 100KB)' });
+    }
 
-    const rawOutput = (execution.stdout || '') + (execution.stderr ? (execution.stdout ? '\n' : '') + execution.stderr : '');
-    const cleanOutput = scrubSecrets(rawOutput);
+    const redis = getRedisClient();
 
-    return sendSecureJson(res, 200, {
-      output: cleanOutput || '[Process exited cleanly with no output]',
-      exitCode: execution.error ? 1 : 0
-    });
-  } catch (err) {
-    auditLog('COMPILE_EXECUTION_FAULT', req, err.message);
-    return sendSecureJson(res, 500, { error: sanitizeError(err, 'Cloud compiler execution failed.') });
-  } finally {
-    if (sbx) await sbx.kill().catch(() => {});
+    // 2. Zero-Trust Session Verification
+    const auth = await validateSession(req, redis);
+    if (!auth.valid) {
+      auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/compile');
+      return sendSecureJson(res.status(auth.status), auth.status, { error: auth.error });
+    }
+
+    // Enforce authenticated role requirement for compiler execution
+    if (auth.role !== 'master' && auth.role !== 'temporary') {
+      auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/compile');
+      return sendSecureJson(res, 403, { error: 'Forbidden: Code compiler execution requires authenticated session' });
+    }
+
+    // 3. Sliding IP Rate Limiting (20 compilations / 5 minutes)
+    const rate = await checkRateLimit(req, redis, 'compile', 20, 300);
+    if (!rate.allowed) {
+      auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/compile');
+      return sendSecureJson(res, rate.status, { error: rate.error });
+    }
+
+    const { language, code } = req.body || {};
+    if (!code || typeof code !== 'string') {
+      return sendSecureJson(res, 400, { error: 'No valid source code provided.' });
+    }
+
+    // 4. Server-Side Jev Guardrails & Safety Inspection
+    const cmdSafety = inspectJevCommandSafety(code);
+    if (!cmdSafety.safe) {
+      auditLog('JEV_GUARDRAIL_BLOCKED', req, `Threat: ${cmdSafety.threatCategory} | Endpoint: /api/compile`);
+      return sendSecureJson(res, 403, {
+        error: `Jev System-1 Guardrail: Execution blocked (${cmdSafety.threatCategory})`,
+        details: cmdSafety.reason,
+        threatCategory: cmdSafety.threatCategory,
+        safe: false
+      });
+    }
+
+    const guard = inspectJevGuardrails(code);
+    if (!guard.guardrailPassed) {
+      auditLog('JEV_GUARDRAIL_BLOCKED', req, `Threat: ${guard.threatCategory} | Endpoint: /api/compile`);
+      return sendSecureJson(res, 403, {
+        error: `Jev System-1 Guardrail: Execution blocked (${guard.threatCategory})`,
+        details: guard.threatDetail,
+        threatCategory: guard.threatCategory,
+        safe: false
+      });
+    }
+
+    if (!process.env.E2B_API_KEY) {
+      auditLog('COMPILE_CONFIG_FAULT', req, 'E2B_API_KEY missing in environment');
+      return sendSecureJson(res, 500, { error: 'Cloud compiler infrastructure unconfigured.' });
+    }
+
+    const langKey = language && typeof language === 'string' ? language.toLowerCase().trim() : 'python';
+    const runner = Object.prototype.hasOwnProperty.call(RUNNERS, langKey) ? RUNNERS[langKey] : RUNNERS.python;
+
+    let sbx = null;
+    try {
+      sbx = await Sandbox.create({ apiKey: process.env.E2B_API_KEY });
+      await sbx.files.write(runner.file, code);
+
+      const execution = await sbx.commands.run(runner.cmd, { timeoutMs: 15000 });
+
+      const rawOutput = (execution.stdout || '') + (execution.stderr ? (execution.stdout ? '\n' : '') + execution.stderr : '');
+      const cleanOutput = scrubSecrets(rawOutput);
+
+      return sendSecureJson(res, 200, {
+        output: cleanOutput || '[Process exited cleanly with no output]',
+        exitCode: execution.error ? 1 : 0
+      });
+    } catch (err) {
+      auditLog('COMPILE_EXECUTION_FAULT', req, err.message);
+      return sendSecureJson(res, 500, { error: sanitizeError(err, 'Cloud compiler execution failed.') });
+    } finally {
+      if (sbx) await sbx.kill().catch(() => {});
+    }
+  } catch (outerError) {
+    auditLog('COMPILE_HANDLER_FAULT', req, outerError.message);
+    return sendSecureJson(res, 500, { error: sanitizeError(outerError, 'Compiler handler exception') });
   }
 }
