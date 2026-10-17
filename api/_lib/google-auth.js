@@ -44,13 +44,13 @@ export function getServiceAccountCredentials() {
   const email = (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '').trim();
   const rawKey = process.env.GOOGLE_PRIVATE_KEY || '';
   const privateKey = sanitizePrivateKey(rawKey);
-  const calendarId = (process.env.GOOGLE_CALENDAR_ID || '').trim();
+  const calendarId = (process.env.GOOGLE_CALENDAR_ID || '').trim() || 'roysubhadra40@gmail.com';
 
   return {
     email,
     privateKey,
     calendarId,
-    isConfigured: !!(email && privateKey && calendarId)
+    isConfigured: !!(email && privateKey)
   };
 }
 
@@ -112,8 +112,7 @@ export async function getServiceAccountAccessToken(forceRefresh = false) {
       error: 'Google Service Account credentials unconfigured in process.env',
       missing: [
         !email && 'GOOGLE_SERVICE_ACCOUNT_EMAIL',
-        !privateKey && 'GOOGLE_PRIVATE_KEY',
-        !calendarId && 'GOOGLE_CALENDAR_ID'
+        !privateKey && 'GOOGLE_PRIVATE_KEY'
       ].filter(Boolean)
     };
   }

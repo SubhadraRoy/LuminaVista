@@ -415,7 +415,7 @@ async function runAdversarialCalendarSuite() {
     let googleFetchCalled = false;
     let authHeaderSeen = '';
     global.fetch = async (url, opts = {}) => {
-      if (url.includes('googleapis.com/calendar/v3/calendars/primary/events')) {
+      if (url.includes('googleapis.com/calendar/v3/calendars/') && url.includes('/events')) {
         googleFetchCalled = true;
         authHeaderSeen = opts.headers?.Authorization;
         return {
@@ -490,7 +490,7 @@ async function runAdversarialCalendarSuite() {
           })
         };
       }
-      if (url.includes('googleapis.com/calendar/v3/calendars/primary/events')) {
+      if (url.includes('googleapis.com/calendar/v3/calendars/') && url.includes('/events')) {
         if (opts.headers?.Authorization === 'Bearer brand_new_access_token_888') {
           calendarCalledWithNewToken = true;
         }
@@ -588,7 +588,7 @@ async function runAdversarialCalendarSuite() {
     let pushedPayload = null;
 
     global.fetch = async (url, opts = {}) => {
-      if (url.includes('googleapis.com/calendar/v3/calendars/primary/events')) {
+      if (url.includes('googleapis.com/calendar/v3/calendars/') && url.includes('/events')) {
         pushedPayload = JSON.parse(opts.body);
         return {
           ok: true,
@@ -632,7 +632,7 @@ async function runAdversarialCalendarSuite() {
     let targetUrlCalled = '';
 
     global.fetch = async (url, opts = {}) => {
-      if (url.includes('googleapis.com/calendar/v3/calendars/primary/events')) {
+      if (url.includes('googleapis.com/calendar/v3/calendars/') && url.includes('/events')) {
         targetUrlCalled = url;
         return {
           ok: true,

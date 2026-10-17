@@ -408,8 +408,8 @@ async function runForensicSuite() {
         status: 401,
         json: async () => ({
           connected: false,
-          needsReauth: true,
-          error: 'Google session expired. Re-auth required.'
+          needsReauth: false,
+          error: 'Google Calendar sync failed. Service Account credentials required.'
         })
       };
     };
@@ -442,7 +442,7 @@ async function runForensicSuite() {
 
     const settings = JSON.parse(fakeWindow.localStorage.getItem('luminavista_calendar_settings_v1') || '{}');
     assert.strictEqual(settings.googleCalendarConnected, false, 'googleCalendarConnected must be false on 401');
-    assert(settings.lastSyncError && settings.lastSyncError.includes('Google session expired'), 'lastSyncError must be recorded in settings');
+    assert(settings.lastSyncError && settings.lastSyncError.includes('Google Calendar sync failed'), 'lastSyncError must be recorded in settings');
   });
 
   console.log('\n=================================================================');

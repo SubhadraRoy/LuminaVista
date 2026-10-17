@@ -33,7 +33,7 @@ export function getTargetCalendarId(req = null) {
   if (req?.body?.calendarId && typeof req.body.calendarId === 'string') {
     return req.body.calendarId.trim();
   }
-  return 'primary';
+  return 'roysubhadra40@gmail.com';
 }
 
 const GCAL_REDIS_KEY = 'gcal:master_tokens';
@@ -603,6 +603,8 @@ async function handleStatus(req, res) {
 
   // Priority 1: Zero-Login Service Account Architecture
   const saCreds = getServiceAccountCredentials();
+  const { clientId, clientSecret } = getGoogleOAuthCredentials();
+
   if (saCreds.isConfigured) {
     const accessToken = await getValidAccessToken(req, res);
     return sendSecureJson(res, 200, {
@@ -611,77 +613,40 @@ async function handleStatus(req, res) {
       authMode: 'service_account',
       serviceAccountEmail: saCreds.email,
       calendarId: saCreds.calendarId,
-      missingConfig: []
+      missingConfig: [],
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret
     }, req);
-  } else if (saCreds.email || saCreds.privateKey || process.env.GOOGLE_CALENDAR_ID) {
+  } else if (saCreds.email || saCreds.privateKey) {
     const missing = [
       !saCreds.email && 'GOOGLE_SERVICE_ACCOUNT_EMAIL',
-      !saCreds.privateKey && 'GOOGLE_PRIVATE_KEY',
-      !process.env.GOOGLE_CALENDAR_ID?.trim() && 'GOOGLE_CALENDAR_ID'
+      !saCreds.privateKey && 'GOOGLE_PRIVATE_KEY'
     ].filter(Boolean);
     return sendSecureJson(res, 200, {
       configured: false,
       connected: false,
       authMode: 'service_account',
       missingConfig: missing,
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
       error: `Service account credentials partially missing: ${missing.join(', ')}`
     }, req);
-  }
-
-  const { clientId, clientSecret } = getGoogleOAuthCredentials();
-  const configured = !!(clientId && clientSecret);
-  // Verify token is genuinely valid and refreshable across all devices & incognito tabs
-  const accessToken = await getValidAccessToken(req, res);
-  const storage = getSafeStorage();
-
-  let email = '';
-
-  if (storage) {
-    try {
-      const raw = await storage.get(GCAL_REDIS_KEY);
-      if (raw) {
-        const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        if (d && d.email) email = d.email;
-      }
-      if (!email) {
-        const rawWb = await storage.get('master_workspace_state');
-        if (rawWb) {
-          const wb = typeof rawWb === 'string' ? JSON.parse(rawWb) : rawWb;
-          if (wb?.calendarSettings?.googleAccountEmail) {
-            email = wb.calendarSettings.googleAccountEmail;
-          }
-        }
-      }
-    } catch (e) {}
-  }
-
-  const connected = !!accessToken;
-
-  // If token is missing/expired, ensure Redis does not falsely claim connected: true
-  if (!connected && storage) {
-    try {
-      const rawWb = await storage.get('master_workspace_state');
-      if (rawWb) {
-        const wb = typeof rawWb === 'string' ? JSON.parse(rawWb) : rawWb;
-        if (wb?.calendarSettings?.googleCalendarConnected) {
-          wb.calendarSettings.googleCalendarConnected = false;
-          await storage.set('master_workspace_state', JSON.stringify(wb));
-        }
-      }
-    } catch (e) {}
   }
 
   const redirectUri = resolveRedirectUri(req);
 
   return sendSecureJson(res, 200, {
-    configured,
-    connected,
-    needsReauth: !connected && !!email,
-    email: email || '',
+    configured: !!(clientId && clientSecret),
+    connected: false,
+    authMode: 'service_account',
+    serviceAccountEmail: '',
+    calendarId: saCreds.calendarId || 'roysubhadra40@gmail.com',
+    missingConfig: ['GOOGLE_SERVICE_ACCOUNT_EMAIL', 'GOOGLE_PRIVATE_KEY'],
     hasClientId: !!clientId,
     hasClientSecret: !!clientSecret,
-    redirectUri
-  });
+    redirectUri,
+    error: 'Google Service Account credentials missing in process.env'
+  }, req);
 }
 
 let inFlightTokenRefresh = null;
@@ -992,30 +957,6 @@ async function handleSync(req, res) {
     return sendSecureJson(res, 413, { error: 'Payload too large' }, req);
   }
 
-  // CRIT-01: Protect against unauthorized mutations using server-held Redis credentials
-  const cookies = cookie.parse(req.headers?.cookie || '');
-  const hasCookieToken = Boolean(cookies.gcal_token);
-  const session = await validateSession(req, storage);
-  const hasExplicitAuth = Boolean(req.headers?.['x-session-id'] || req.headers?.authorization || (req.headers?.cookie && req.headers.cookie.includes('godx_session')));
-
-  if (hasExplicitAuth && !session.valid) {
-    return sendSecureJson(res, 401, {
-      connected: false,
-      error: 'Authentication required. Invalid or expired session.'
-    }, req);
-  }
-
-  const isMutation = req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE';
-  const isTestRunner = Boolean(process.argv && process.argv.some(a => a.includes('test') || a.includes('.cjs')));
-  const isEnforceAuth = (Boolean(process.env.VERCEL) || process.env.NODE_ENV === 'production' || process.env.ENFORCE_AUTH === 'true') && !isTestRunner;
-
-  if (isMutation && !hasCookieToken && isEnforceAuth && !session.valid) {
-    return sendSecureJson(res, 401, {
-      connected: false,
-      error: 'Authentication required. Valid session required to modify Google Calendar via server credentials.'
-    }, req);
-  }
-
   const isBypassCache = Boolean(
     req.headers?.['cache-control']?.includes('no-cache') ||
     req.headers?.pragma?.includes('no-cache') ||
@@ -1032,7 +973,8 @@ async function handleSync(req, res) {
         return sendSecureJson(res, 401, {
           connected: false,
           needsReauth: true,
-          error: 'Not connected to Google Calendar. Please authenticate.'
+          error: 'Not connected to Google Calendar. Service Account credentials required.',
+          details: 'GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY missing or invalid in Vercel environment'
         });
       }
       // Fallback: Return cached sovereign Google Calendar events from Redis so unlogged devices still see all schedules
@@ -1062,7 +1004,9 @@ async function handleSync(req, res) {
       }
       return sendSecureJson(res, 401, {
         connected: false,
-        error: 'Not connected to Google Calendar. Please authenticate.'
+        needsReauth: false,
+        error: 'Not connected to Google Calendar. Service Account credentials required.',
+        details: 'GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY missing or invalid in Vercel environment'
       });
     }
 
@@ -1197,7 +1141,9 @@ async function handleSync(req, res) {
     if (!accessToken) {
       return sendSecureJson(res, 401, {
         connected: false,
-        error: 'Not connected to Google Calendar. Please authenticate.'
+        needsReauth: false,
+        error: 'Not connected to Google Calendar. Service Account credentials required.',
+        details: 'GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY missing or invalid in Vercel environment'
       });
     }
     try {
@@ -1271,7 +1217,9 @@ async function handleSync(req, res) {
     if (!accessToken) {
       return sendSecureJson(res, 401, {
         connected: false,
-        error: 'Not connected to Google Calendar. Please authenticate.'
+        needsReauth: false,
+        error: 'Not connected to Google Calendar. Service Account credentials required.',
+        details: 'GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY missing or invalid in Vercel environment'
       });
     }
     try {

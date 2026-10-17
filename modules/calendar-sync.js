@@ -336,116 +336,15 @@
 
   async function connectGoogleAccount() {
     try {
-      const settings = getSettings();
-      // If service account mode is active or backend is already connected, sync directly without popup
-      if (settings.calendarAuthMode === 'service_account' || settings.googleCalendarConnected) {
-        if (window.showToast) window.showToast("Google Calendar", "Service Account active: syncing events directly...");
-        await syncGoogleCalendar(true);
-        return;
+      if (window.showToast) {
+        window.showToast("Google Calendar", "Synchronizing calendar events via Service Account...");
       }
-
-      // Check status first to see if service account is active
-      const statusRes = await calendarApiFetch('/api/calendar/status');
-      if (statusRes.ok) {
-        const sData = await statusRes.json();
-        if (sData.authMode === 'service_account') {
-          if (sData.connected) {
-            setSettings({
-              googleCalendarConnected: true,
-              calendarAuthMode: 'service_account',
-              googleAccountEmail: sData.calendarId || sData.serviceAccountEmail || '',
-              calendarId: sData.calendarId || '',
-              serviceAccountEmail: sData.serviceAccountEmail || '',
-              lastSyncError: null
-            });
-            updateSyncStatusBadge();
-            if (window.showToast) window.showToast("Google Calendar Synced", "Connected via Server-to-Server Service Account.");
-            await syncGoogleCalendar(true);
-            return;
-          } else {
-            const missing = (sData.missingConfig || []).join(', ') || 'credentials';
-            alert("Google Service Account is configured on Vercel, but incomplete or unauthorized: " + missing + ".\n\nPlease verify your environment variables and share your calendar with the bot email.");
-            return;
-          }
-        }
-      }
-
-      const clientRedirect = (typeof window !== 'undefined' && window.location && window.location.origin)
-        ? `${window.location.origin}/api/calendar/callback`
-        : '';
-      
-      const statusUrl = clientRedirect 
-        ? `/api/calendar/status?redirect_uri=${encodeURIComponent(clientRedirect)}`
-        : '/api/calendar/status';
-
-      // Pre-open popup synchronously during user gesture to avoid browser popup blockers
-      const width = 560, height = 680;
-      const left = (typeof window !== 'undefined' && window.screen) ? (window.screen.width - width) / 2 : 100;
-      const top = (typeof window !== 'undefined' && window.screen) ? (window.screen.height - height) / 2 : 100;
-      let popup = null;
-      try {
-        popup = window.open('about:blank', 'google_oauth_popup', `width=${width},height=${height},left=${left},top=${top}`);
-        if (popup && popup.document) {
-          popup.document.write('<!DOCTYPE html><html><head><title>Connecting Google Calendar...</title><style>body{background:#09090b;color:#00f2fe;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column} .spinner{width:36px;height:36px;border:3px solid rgba(0,242,254,0.2);border-top-color:#00f2fe;border-radius:50%;animation:spin 0.8s linear infinite;} @keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class="spinner"></div><p style="margin-top:16px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#a1a1aa">Contacting Google OAuth...</p></body></html>');
-        }
-      } catch (e) {}
-
-      // Fetch OAuth initiation authUrl from backend with client redirect URI
-      const authUrl = clientRedirect 
-        ? `/api/calendar/auth?redirect_uri=${encodeURIComponent(clientRedirect)}` 
-        : '/api/calendar/auth';
-      const authRes = await calendarApiFetch(authUrl);
-      const authData = await authRes.json();
-
-      if (!authData.configured || !authData.authUrl) {
-        if (popup && !popup.closed) popup.close();
-        alert("Google Calendar backend is not configured yet on Vercel.\n\nPlease add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your Vercel Project Settings > Environment Variables, then redeploy!");
-        return;
-      }
-
-      if (popup && !popup.closed) {
-        try {
-          popup.location.href = authData.authUrl;
-        } catch (navErr) {
-          window.location.href = authData.authUrl;
-          return;
-        }
-      } else {
-        // Fallback to top-level navigation if popup was blocked
-        window.location.href = authData.authUrl;
-        return;
-      }
-
-      const popupStartTime = Date.now();
-      const checkInterval = setInterval(async () => {
-        try {
-          // 5-minute timeout guard to prevent memory leaks if popup is abandoned
-          if (Date.now() - popupStartTime > 5 * 60 * 1000) {
-            clearInterval(checkInterval);
-            return;
-          }
-          if (!popup || popup.closed) {
-            clearInterval(checkInterval);
-            const checkRes = await calendarApiFetch(statusUrl);
-            if (checkRes.ok) {
-              const checkData = await checkRes.json();
-              if (checkData.connected) {
-                setSettings({
-                  googleCalendarConnected: true,
-                  googleAccountEmail: checkData.email || '',
-                  lastSyncedAt: new Date().toISOString()
-                });
-                updateSyncStatusBadge();
-                await syncGoogleCalendar(true);
-              }
-            }
-          }
-        } catch (e) {
-          clearInterval(checkInterval);
-        }
-      }, 1000);
+      await syncGoogleCalendar(true);
     } catch (e) {
-      console.warn('Google Account Connect error:', e);
+      console.warn('Google Calendar sync error:', e);
+      if (window.showToast) {
+        window.showToast("Sync Error", e.message || String(e));
+      }
     }
   }
 
@@ -568,11 +467,10 @@
         });
         updateSyncStatusBadge();
         if (isManual && window.showToast) {
-          if (res.status === 401 || errData.needsReauth) {
-            window.showToast("Google Calendar Login Needed", "Google session expired. Please click 'Sign in with Google' to reconnect.");
-          } else {
-            window.showToast("Google Calendar Sync Error", statusMsg);
-          }
+          const detailMsg = errData.details
+            ? `${statusMsg} (${typeof errData.details === 'string' ? errData.details : JSON.stringify(errData.details)})`
+            : statusMsg;
+          window.showToast("Google Calendar Sync Error", detailMsg);
         }
       }
     } catch (e) {
@@ -680,10 +578,10 @@
       badge.className = 'flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 cursor-pointer';
       badge.title = `Sync Error: ${settings.lastSyncError} - Click to reconnect`;
     } else {
-      const label = settings.googleAccountEmail ? 'Sign in with Google' : 'Local Sovereign';
+      const label = settings.googleAccountEmail ? 'Service Account' : 'Local Sovereign';
       badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span> <span class="text-[10px]">${label}</span>`;
       badge.className = 'flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-surface-900 text-amber-300 border border-amber-500/30 hover:border-amber-400 cursor-pointer transition-colors';
-      badge.title = 'Google Calendar Disconnected - Click to sign in and sync';
+      badge.title = 'Google Calendar Disconnected - Click to sync';
     }
   }
 
@@ -766,13 +664,13 @@
           updateSyncStatusBadge();
           if (statusBadge) {
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono';
-            statusBadge.textContent = data.needsReauth ? 'Re-auth Required' : 'Login Required';
+            statusBadge.textContent = 'Configuration Needed';
           }
           if (statusText) {
-            const targetEmail = data.email || getSettings().googleAccountEmail || '';
+            const targetEmail = data.calendarId || data.email || getSettings().googleAccountEmail || 'roysubhadra40@gmail.com';
             const emailHint = targetEmail ? ` for <b class="text-white">${escapeHtml(targetEmail)}</b>` : '';
             const errBanner = getSettings().lastSyncError ? `<div class="mt-2 text-[11px] text-rose-400 font-mono bg-rose-500/10 p-2 rounded border border-rose-500/20">Error: ${escapeHtml(getSettings().lastSyncError)}</div>` : '';
-            statusText.innerHTML = `<span class="text-amber-300 font-sans">Google authentication required${emailHint}. Click <b>Sign in with Google</b> below to connect your real Google schedule.</span>${errBanner}`;
+            statusText.innerHTML = `<span class="text-amber-300 font-sans">Service Account configuration required${emailHint}. Please verify GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY on Vercel.</span>${errBanner}`;
           }
         } else {
           setSettings({ googleCalendarConnected: false });
@@ -782,7 +680,7 @@
             statusBadge.textContent = 'Awaiting Vercel Env';
           }
           if (statusText) {
-            statusText.innerHTML = `<span class="text-amber-400/90 font-sans">Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET on Vercel environment variables.</span>`;
+            statusText.innerHTML = `<span class="text-amber-400/90 font-sans">Missing GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_PRIVATE_KEY on Vercel environment variables.</span>`;
           }
         }
       }

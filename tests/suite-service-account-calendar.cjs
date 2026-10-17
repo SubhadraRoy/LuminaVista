@@ -91,8 +91,8 @@ async function runTests() {
   console.log('\n[SECTION 2: Dynamic Target Calendar ID Routing]');
   // Case A: Default when no env or request
   const defaultCalId = getTargetCalendarId();
-  assert.strictEqual(defaultCalId, 'primary', 'Default should fallback to primary');
-  console.log('  ✓ PASS: getTargetCalendarId defaults to primary when unconfigured');
+  assert.strictEqual(defaultCalId, 'roysubhadra40@gmail.com', 'Default should fallback to roysubhadra40@gmail.com');
+  console.log('  ✓ PASS: getTargetCalendarId defaults to roysubhadra40@gmail.com when unconfigured');
 
   // Case B: Request query parameter
   const queryCalId = getTargetCalendarId({ query: { calendarId: 'user_shared@gmail.com' } });
