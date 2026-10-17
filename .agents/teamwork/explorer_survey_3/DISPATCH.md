@@ -1,28 +1,31 @@
-## 2026-10-16T16:16:13Z
-You are Explorer 3 (Client Sandboxes, VFS & Test Baselines Survey).
-Working directory: c:\Users\roysu\LuminaVista\.agents\teamwork\explorer_survey_3
-Original request path: c:\Users\roysu\LuminaVista\.agents\teamwork\ORIGINAL_REQUEST.md
-Project root: c:\Users\roysu\LuminaVista
+# Survey Explorer 3 Dispatch
 
-YOUR TASK:
-Read c:\Users\roysu\LuminaVista\.agents\teamwork\ORIGINAL_REQUEST.md first.
-Conduct a comprehensive exploration of client execution sandboxes, VFS boundaries, line count budgets, and establish the baseline for test suites:
-- Inspect `modules/codespace.js`, `modules/compiler.js`, and related client-side execution boundaries / virtual filesystem (VFS).
-- Look for:
-  * Sandbox escapes, DOM injection, prototype pollution, unsafe eval/Function, postMessage flaws
-  * VFS path traversal, boundary violations, unrestricted storage access
-- Check line counts of all files across the repository to verify line budget status (< 2,000 lines). Highlight any files approaching or exceeding 2,000 lines.
-- Run baseline verification suites to record initial test statuses:
-  * `node tests/features.test.cjs` (1,102 assertions target)
-  * `node tests/recheck-all-tasks.cjs` (42 assertions target)
-  * `node tests/lint.cjs` (40 JS modules target)
-  * Check browser test setup `tests/browser-cdp-test.cjs`
-- Note any pre-existing failures or warnings.
+## Mission
+Investigate test suites, build configuration, zero-.env file status, and invariants across Lumina Vista to map out testing requirements and regression baselines for the Service Account migration.
 
-CONSTRAINTS:
-- Do NOT modify source code files. (Running read-only test verification commands is permitted and required).
-- DO NOT create weaponized exploit scripts or offensive payloads.
-- Update `c:\Users\roysu\LuminaVista\.agents\teamwork\explorer_survey_3\progress.md` with timestamps.
-- Write your comprehensive survey report to `c:\Users\roysu\LuminaVista\.agents\teamwork\explorer_survey_3\handoff.md`.
-- Include test results, line counts, vulnerability descriptions, root causes, and recommended defensive remediations.
-- When finished, send a message to the caller via `send_message` with your summary and handoff path.
+## Authoritative Inputs
+- `c:/Users/roysu/LuminaVista/.agents/teamwork/ORIGINAL_REQUEST.md`
+- `c:/Users/roysu/LuminaVista/.agents/teamwork/orchestrator_r8/DISPATCH.md`
+- `c:/Users/roysu/LuminaVista/.agents/teamwork/orchestrator_r8/plan.md`
+
+## Focus Area
+- Check for any `.env*` files across the repo (e.g., `.env`, `.env.local`, `.env.example`, etc.) — ZERO `.env` files policy!
+- Inspect `tests/` directory: existing test suites (`node tests/features.test.cjs`, `node tests/browser-cdp-test.cjs`, `node tests/recheck-all-tasks.cjs`, `node tests/lint.cjs`, `node tests/challenger-calendar-empirical.cjs`, `node tests/suite-calendar-sync-forensic.cjs`, `node tests/adversarial-calendar.test.cjs`, etc.)
+- Understand which test suites test Google Calendar endpoints, mock servers, or auth tokens.
+- Inspect `package.json` build scripts (`npm run build`, etc.) and ensure zero-env build safety requirements.
+- Verify line counts across all candidate files.
+
+## Output
+Produce a comprehensive report at `c:/Users/roysu/LuminaVista/.agents/teamwork/explorer_survey_3/handoff.md`.
+
+
+## 2026-10-17T11:08:13Z
+You are Survey Explorer 3 (Verification & Invariants Explorer).
+Your working directory is: c:/Users/roysu/LuminaVista/.agents/teamwork/explorer_survey_3
+Investigate:
+1. Check for any `.env*` files across the repo (e.g., `.env`, `.env.local`, `.env.example`, etc.) — ZERO `.env` files policy!
+2. Inspect `tests/` directory: existing test suites (`node tests/features.test.cjs`, `node tests/browser-cdp-test.cjs`, `node tests/recheck-all-tasks.cjs`, `node tests/lint.cjs`, `node tests/challenger-calendar-empirical.cjs`, `node tests/suite-calendar-sync-forensic.cjs`, `node tests/adversarial-calendar.test.cjs`, etc.)
+3. Understand which test suites test Google Calendar endpoints, mock servers, or auth tokens.
+4. Inspect `package.json` build scripts (`npm run build`, etc.) and ensure zero-env build safety requirements.
+5. Verify line counts across all candidate files.
+6. Produce a comprehensive report at: `c:/Users/roysu/LuminaVista/.agents/teamwork/explorer_survey_3/handoff.md`

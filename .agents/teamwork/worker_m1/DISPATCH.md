@@ -1,41 +1,77 @@
-## 2026-10-16T16:28:47Z
-You are Worker M1 (Zero-Trust Auth & Sovereign Session Keys Remediation).
-Working directory: c:\Users\roysu\LuminaVista\.agents\teamwork\worker_m1
-Original request path: c:\Users\roysu\LuminaVista\.agents\teamwork\ORIGINAL_REQUEST.md
-Project plan path: c:\Users\roysu\LuminaVista\.agents\teamwork\PROJECT.md
-Survey findings:
-- c:\Users\roysu\LuminaVista\.agents\teamwork\explorer_survey_2\handoff.md
-- c:\Users\roysu\LuminaVista\.agents\teamwork\explorer_survey_1\handoff.md
+# Worker M1 Dispatch Specification
 
-FILE WRITE OWNERSHIP:
-You EXCLUSIVELY own:
-- `api/auth.js`
-- `api/admin.js`
-- `api/_lib/auth-guard.js`
-- `modules/admin-access.js`
-Do NOT modify any files outside this exclusive list.
+## Milestone
+Milestone 1 (Phase 1): Native Zero-Dependency Service Account JWT Auth Engine
+
+## Working Directory
+`c:/Users/roysu/LuminaVista/.agents/teamwork/worker_m1`
+
+## Authoritative Inputs
+- `c:/Users/roysu/LuminaVista/.agents/teamwork/ORIGINAL_REQUEST.md`
+- `c:/Users/roysu/LuminaVista/.agents/teamwork/orchestrator_r8/DISPATCH.md`
+- `c:/Users/roysu/LuminaVista/.agents/teamwork/orchestrator_r8/plan.md`
+- `c:/Users/roysu/LuminaVista/.agents/teamwork/explorer_survey_1/handoff.md`
+
+## File Ownership
+- Exclusively owns: `api/_lib/google-auth.js` and `api/_lib/google-service-auth.js`.
+- You MUST NOT modify firmware files (`firmware/**`).
+- You MUST NOT create or modify any `.env*` files.
+
+## Detailed Requirements
+1. Implement `api/_lib/google-auth.js`:
+   - Must export `getGoogleServiceAccountToken(forceRefresh = false)`: Returns `Promise<string | null>` (resolves to the Bearer token string if configured and valid, or null if unconfigured/missing).
+   - Also export `getServiceAccountAccessToken()`, `getServiceAccountCredentials()`, `createServiceAccountJwt()`, `sanitizePrivateKey()`, `base64UrlEncode()`, `invalidateServiceAccountToken()`.
+   - Maintain compatibility with `api/_lib/google-service-auth.js` (re-export or share canonical implementation).
+2. Native RS256 JWT signing:
+   - Use Node's built-in `crypto` module (`crypto.createSign('RSA-SHA256')`). Zero third-party npm packages.
+3. Private key sanitization:
+   - `rawKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n')`.
+4. JWT Construction & Token Exchange:
+   - Header: `{"alg":"RS256","typ":"JWT"}`
+   - Claims: `iss` (service account email), `scope` ("https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events"), `aud` ("https://oauth2.googleapis.com/token"), `iat` (now in seconds), `exp` (now + 3600 seconds).
+   - POST assertion to `https://oauth2.googleapis.com/token` with `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer`.
+5. In-Memory Token Caching:
+   - Cache token until 5 minutes before expiration (`tokenExpiresAt - now > 300000`).
+6. Build-Time Safety:
+   - Never evaluate or throw errors on undefined environment variables at module top-level. Only evaluate lazily inside function calls.
+7. File Limits:
+   - Strict ceiling: strictly under 2,000 lines.
+8. Verification:
+   - Run `node tests/lint.cjs` to confirm syntax passes.
+   - Run a node smoke test verifying JWT generation with a dummy RSA key without throwing errors.
+
+## Mandatory Integrity Warning
+DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
+
+## Completion
+Write report to `c:/Users/roysu/LuminaVista/.agents/teamwork/worker_m1/handoff.md` and send a message back to the orchestrator.
+
+
+## 2026-10-17T11:18:37Z
+You are Worker M1 (Google Auth Engine Worker).
+Your working directory is: c:/Users/roysu/LuminaVista/.agents/teamwork/worker_m1
+Your dispatch instructions are at: c:/Users/roysu/LuminaVista/.agents/teamwork/worker_m1/DISPATCH.md
+You MUST read the authoritative requirements in: c:/Users/roysu/LuminaVista/.agents/teamwork/ORIGINAL_REQUEST.md
+Also read:
+- c:/Users/roysu/LuminaVista/.agents/teamwork/orchestrator_r8/plan.md
+- c:/Users/roysu/LuminaVista/.agents/teamwork/explorer_survey_1/handoff.md
+
+FILE OWNERSHIP: You exclusively own `api/_lib/google-auth.js` and `api/_lib/google-service-auth.js`.
+DO NOT modify firmware (`firmware/**`).
+DO NOT create or modify any `.env*` files.
 
 MANDATORY INTEGRITY WARNING:
 DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
 
-TASK OBJECTIVE:
-Implement defensive mitigations for Milestone 1:
-1. Remove Hardcoded Root Secret (VULN-AUTH-1):
-   In `api/auth.js:218`, ensure `'lumina_root_secret'` is NOT included in candidate signing secrets when an authentic master secret (`expectedPassword` / `process.env.ADMIN_PASSWORD`) is configured.
-2. Fix Sovereign Session Revocation Gap (VULN-AUTH-2):
-   In `api/_lib/auth-guard.js`, update `validateSession` so that sovereign session tokens (`sessionId.startsWith('lv_')`) verify revocation status in Redis when Redis is available (e.g. check if `session:${sessionId}` exists or if revoked marker exists) while maintaining resilience/cold-start fallback without breaking valid sessions.
-3. Eliminate Timing Side-Channels (VULN-AUTH-3):
-   In `api/auth.js`, replace variable-time string comparisons (`===`) at lines 50-54, 187, and 229 with constant-time cryptographic comparisons (`crypto.timingSafeEqual`) on fixed-length buffers.
-4. Enforce Minimum-1 Access Key Invariant (VULN-AUTH-4):
-   In `api/admin.js:161`, ensure the invariant check validates that remaining access keys count `remaining.length < 1` post-filtering, guaranteeing that duplicate key IDs or concurrent operations cannot delete the last active access key. Preserve support for accepted temporary admin key privileges as required by `tests/recheck-all-tasks.cjs`.
-5. Invariants & Verification:
-   - All modified files MUST remain strictly under 2,000 lines.
-   - NEVER modify `firmware/**`.
-   - Run the full verification suites:
-     * `node tests/lint.cjs` (All 40 modules must pass)
-     * `node tests/features.test.cjs` (All 1,102 assertions must pass)
-     * `node tests/recheck-all-tasks.cjs` (All 42 assertions must pass)
-     * `node tests/browser-cdp-test.cjs` (All 122 tests must pass)
-   - Keep `c:\Users\roysu\LuminaVista\.agents\teamwork\worker_m1\progress.md` updated.
-   - Write your complete handoff report to `c:\Users\roysu\LuminaVista\.agents\teamwork\worker_m1\handoff.md`.
-   - Notify parent via `send_message` with your results.
+Tasks:
+1. Implement `api/_lib/google-auth.js`:
+   - Export `getGoogleServiceAccountToken(forceRefresh = false)`: Returns `Promise<string | null>` (resolves to the Bearer token string if configured, or null if unconfigured/missing).
+   - Export `getServiceAccountAccessToken()`, `getServiceAccountCredentials()`, `createServiceAccountJwt()`, `sanitizePrivateKey()`, `base64UrlEncode()`, `invalidateServiceAccountToken()`.
+   - Maintain compatibility with `api/_lib/google-service-auth.js`.
+2. Native RS256 JWT signing using Node's built-in `crypto` module (`crypto.createSign('RSA-SHA256')`). Zero external npm dependencies.
+3. Private key sanitization: `rawKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n')`.
+4. Construct JWT Header (`{"alg":"RS256","typ":"JWT"}`) and Claims (`iss`, `scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events"`, `aud: "https://oauth2.googleapis.com/token"`, `iat`, `exp: now + 3600`).
+5. In-memory token caching until 5 minutes before expiration (`tokenExpiresAt - now > 300000`).
+6. Build-time safety: lazy evaluation inside runtime functions. Never throw at top-level module evaluation on undefined env vars.
+7. Verification: Run `node tests/lint.cjs` and verify token generation with test script.
+8. Write your completion report to `c:/Users/roysu/LuminaVista/.agents/teamwork/worker_m1/handoff.md` and send a message back to the orchestrator.

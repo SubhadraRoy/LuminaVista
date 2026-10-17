@@ -310,10 +310,15 @@
       if (res.ok) {
         const data = await res.json();
         const isConnected = !!data.connected;
-        const email = data.email || getSettings().googleAccountEmail || '';
+        const authMode = data.authMode || 'oauth';
+        const email = data.calendarId || data.serviceAccountEmail || data.email || getSettings().googleAccountEmail || '';
         setSettings({
           googleCalendarConnected: isConnected,
           googleAccountEmail: email,
+          calendarAuthMode: authMode,
+          calendarId: data.calendarId || '',
+          serviceAccountEmail: data.serviceAccountEmail || '',
+          missingConfig: data.missingConfig || [],
           ...(isConnected ? { lastSyncError: null } : {})
         });
         updateSyncStatusBadge();
@@ -331,6 +336,40 @@
 
   async function connectGoogleAccount() {
     try {
+      const settings = getSettings();
+      // If service account mode is active or backend is already connected, sync directly without popup
+      if (settings.calendarAuthMode === 'service_account' || settings.googleCalendarConnected) {
+        if (window.showToast) window.showToast("Google Calendar", "Service Account active: syncing events directly...");
+        await syncGoogleCalendar(true);
+        return;
+      }
+
+      // Check status first to see if service account is active
+      const statusRes = await calendarApiFetch('/api/calendar/status');
+      if (statusRes.ok) {
+        const sData = await statusRes.json();
+        if (sData.authMode === 'service_account') {
+          if (sData.connected) {
+            setSettings({
+              googleCalendarConnected: true,
+              calendarAuthMode: 'service_account',
+              googleAccountEmail: sData.calendarId || sData.serviceAccountEmail || '',
+              calendarId: sData.calendarId || '',
+              serviceAccountEmail: sData.serviceAccountEmail || '',
+              lastSyncError: null
+            });
+            updateSyncStatusBadge();
+            if (window.showToast) window.showToast("Google Calendar Synced", "Connected via Server-to-Server Service Account.");
+            await syncGoogleCalendar(true);
+            return;
+          } else {
+            const missing = (sData.missingConfig || []).join(', ') || 'credentials';
+            alert("Google Service Account is configured on Vercel, but incomplete or unauthorized: " + missing + ".\n\nPlease verify your environment variables and share your calendar with the bot email.");
+            return;
+          }
+        }
+      }
+
       const clientRedirect = (typeof window !== 'undefined' && window.location && window.location.origin)
         ? `${window.location.origin}/api/calendar/callback`
         : '';
@@ -674,7 +713,40 @@
         if (data.redirectUri && redirectInput) {
           redirectInput.value = data.redirectUri;
         }
-        if (data.connected) {
+        if (data.authMode === 'service_account') {
+          const btnLabel = document.getElementById('btnConnectGoogleText');
+          if (btnLabel) btnLabel.textContent = 'Sync Google Calendar (Service Account)';
+          if (data.connected) {
+            const calDisplay = data.calendarId || data.serviceAccountEmail || '';
+            setSettings({
+              googleCalendarConnected: true,
+              calendarAuthMode: 'service_account',
+              googleAccountEmail: calDisplay,
+              calendarId: data.calendarId || '',
+              serviceAccountEmail: data.serviceAccountEmail || '',
+              lastSyncError: null
+            });
+            updateSyncStatusBadge();
+            if (statusBadge) {
+              statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-mono';
+              statusBadge.textContent = 'Service Account Synced';
+            }
+            if (statusText) {
+              statusText.innerHTML = `<span class="text-emerald-400 font-bold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Zero-Login Service Account Active &amp; Synced (<b class="text-white">${escapeHtml(calDisplay)}</b>)</span>`;
+            }
+          } else {
+            setSettings({ googleCalendarConnected: false, calendarAuthMode: 'service_account' });
+            updateSyncStatusBadge();
+            if (statusBadge) {
+              statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono';
+              statusBadge.textContent = 'Service Account Config';
+            }
+            if (statusText) {
+              const missing = (data.missingConfig || []).join(', ') || 'credentials';
+              statusText.innerHTML = `<span class="text-amber-300 font-sans">Service Account configuration incomplete: <b class="text-white">${escapeHtml(missing)}</b>.<br/><span class="text-xs text-zinc-400">Ensure GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, and GOOGLE_CALENDAR_ID are configured in Vercel.</span></span>`;
+            }
+          }
+        } else if (data.connected) {
           const emailDisplay = data.email || getSettings().googleAccountEmail || '';
           setSettings({
             googleCalendarConnected: true,

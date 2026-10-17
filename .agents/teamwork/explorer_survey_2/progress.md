@@ -1,20 +1,17 @@
-# Progress Log - Explorer 2 (Auth, Zero-Trust, Access Control & IoT Gateway)
+# Progress Log - Explorer Survey 2
 
-- **Status**: COMPLETED
-- **Last visited**: 2026-10-16T16:24:45Z
+**Role**: Frontend Calendar & Sync Explorer
+**Last visited**: 2026-10-17T11:20:00Z
+**Status**: COMPLETED
 
-## Current Tasks
-- [x] Initialized workspace and briefing
-- [x] Inspect `api/admin.js`, `api/auth.js`, and `modules/admin-access.js`
-- [x] Inspect `api/iot.js` and IoT hardware gateway interfaces
-- [x] Inspect `api/_lib/auth-guard.js`, `api/_lib/redis.js`, `api/_lib/key-pool.js`
-- [x] Check line counts across target files (< 2,000-line budget limit)
-- [x] Analyze Zero-Trust session validation, revocation, and expiration
-- [x] Analyze Sovereign session keys and Minimum-1 Access Key rule enforcement
-- [x] Analyze Hardware HMAC-SHA256 telemetry verification, timing attacks, and secret handling
-- [x] Analyze Replay attack protections, nonce deduplication, and timestamp drift
-- [x] Analyze Command queue manipulation, TTL validation, and unauthorized dispatch
-- [x] Synthesize all observations, logic chains, caveats, and conclusions
-- [x] Write comprehensive 5-component `handoff.md`
-- [x] Update `BRIEFING.md`
-- [x] Send completion message to parent orchestrator
+## Steps
+- [x] Read DISPATCH.md and authoritative requirements in ORIGINAL_REQUEST.md and orchestrator_r8/plan.md
+- [x] Initialized BRIEFING.md and progress.md
+- [x] Measure line counts of target files (`modules/calendar.js`: 1796, `modules/calendar-sync.js`: 871, `dashboard.html`: 1917)
+- [x] Investigate `modules/calendar-sync.js` (OAuth popup triggers, token caching, localStorage, auto-sync, two-way sync, diagnostics)
+- [x] Investigate `modules/calendar.js` (UI rendering, badges, warnings, mutation flows, all-day event handling, modal edits, AI schedule auto-sync)
+- [x] Investigate `dashboard.html` (Calendar DOM elements, buttons, modals, scripts, badges)
+- [x] Analyze integration test implications (`tests/features.test.cjs`, `tests/browser-cdp-test.cjs`, `tests/challenger-calendar-empirical.cjs`, `tests/recheck-all-tasks.cjs`, `tests/lint.cjs`)
+- [x] Formulate concrete migration recommendations for M3
+- [x] Compile and write 5-component `handoff.md`
+- [x] Notify orchestrator

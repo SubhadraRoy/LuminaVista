@@ -1,30 +1,35 @@
-# Progress: Explorer Survey 3
+# Progress: Explorer Survey 3 (Round 8: Verification & Invariants)
 
-Last visited: 2026-10-16T16:23:45Z
+Last visited: 2026-10-17T11:17:00Z
 Status: Completed
 
 ## Tasks
-- [x] Workspace initialized & dispatch logged (2026-10-16T16:17:15Z)
-- [x] Run baseline verification suites (2026-10-16T16:17:30Z)
-  * `features.test.cjs`: 1,102/1,102 passed
-  * `recheck-all-tasks.cjs`: 42/42 passed
-  * `lint.cjs`: 40/40 modules passed
-  * `browser-cdp-test.cjs`: 122/122 passed in Chrome
-- [x] Repository-wide line count analysis (< 2,000 lines budget check) (2026-10-16T16:18:00Z)
-  * 0 text/code files exceed 2,000 lines.
-  * Identified 6 files approaching limit (>= 1,800 lines), most notably `tests/features.test.cjs` at 1,984 lines (only 16 lines under budget!).
-- [x] Detailed inspection of client execution sandboxes (`modules/codespace.js`, `modules/compiler.js`, `dashboard.html`) (2026-10-16T16:20:00Z)
-  * Missing `sandbox` on `#sandboxPreviewFrame` in `dashboard.html:731`
-  * Insecure `allow-same-origin` on `#previewIframe`, `#splitLeftFrame`, `#splitRightFrame`
-  * Blob URL same-origin bypass in `openCodespacePopout()`
-- [x] Detailed inspection of VFS boundaries, DOM injection, prototype pollution, postMessage (2026-10-16T16:22:00Z)
-  * Unescaped HTML in `renderCodespaceFileTree` and tabs (DOM XSS)
-  * MicroVM-to-Browser XSS via synced workspace file names
-  * Shell command injection via filename in `runActiveFile()`
-  * Prototype pollution / DoS crash in `tree[folder].push` on reserved words (`toString`, etc.)
-  * Flawed path traversal regex in `api/terminal.js:83`
-  * Missing server-side Jev guardrail in `api/compile.js`
-  * Missing `e.origin` check on `postMessage` in `modules/calendar-sync.js:665`
-  * LocalStorage 5MB vs 1GB quota mismatch
-- [x] Compile comprehensive 5-component handoff report (2026-10-16T16:24:00Z)
-- [x] Send final message to caller via `send_message`
+- [x] Initialized workspace and updated DISPATCH.md and BRIEFING.md (2026-10-17T11:10:00Z)
+- [x] Item 1: Search repo for any `.env*` files (ZERO `.env` policy check) (2026-10-17T11:11:00Z)
+  * Confirmed 0 `.env` files on disk, in git index, and in history.
+  * Verified `node tests/suite-env-clean.cjs` passes cleanly.
+- [x] Item 2 & 3: Deep inspection of `tests/` directory: (2026-10-17T11:14:00Z)
+  * Cataloged all 28 test files in `tests/`.
+  * Executed all major test suites establishing baselines:
+    - `features.test.cjs`: 1,102/1,102 PASSED
+    - `recheck-all-tasks.cjs`: 42/42 PASSED
+    - `lint.cjs`: 41/41 JS modules PASSED
+    - `browser-cdp-test.cjs`: 122/122 PASSED in Chrome
+    - `challenger-calendar-empirical.cjs`: 63/63 PASSED
+    - `adversarial-calendar.test.cjs`: 109/109 PASSED
+    - `challenger-r4-empirical.cjs`: 141/141 PASSED
+    - `suite-r6-security-regression.cjs`: 40/40 PASSED
+    - `suite-r8-security-verification.cjs`: 27/27 PASSED
+    - `adversarial-challenger-r7.cjs`: 266/266 PASSED
+    - Identified existing bug in `api/calendar.js:725` (`ReferenceError: inFlightTokenRefresh is not defined`) causing `suite-calendar-sync-forensic.cjs` and `suite-calendar-adversarial.cjs` to fail.
+  * Identified all mock servers (`suite-calendar-sync-forensic.cjs` ephemeral mock server, `server.cjs` port 3000 server, `features.test.cjs` window mock).
+  * Identified critical string invariants in `recheck-all-tasks.cjs` and `challenger-calendar-empirical.cjs` that must be preserved.
+- [x] Item 4: Inspect `package.json` build scripts & zero-env build safety requirements (2026-10-17T11:15:00Z)
+  * Documented missing `"build"` script in `package.json` and suggested adding `"build": "node tests/lint.cjs"`.
+  * Documented lazy `process.env` evaluation requirement to prevent build-time crashes.
+- [x] Item 5: Verify line counts across all candidate files (<2,000 line invariant) (2026-10-17T11:16:00Z)
+  * Verified 0 files exceed 2,000 lines.
+  * Identified critical budget warning: `tests/features.test.cjs` is at 1,983 lines (17 lines of headroom). New tests must be placed in `tests/service-account-jwt.test.cjs`.
+  * Verified `firmware/**` remains 100% untampered.
+- [x] Item 6: Synthesize findings and write comprehensive 5-component handoff report (`handoff.md`) (2026-10-17T11:17:00Z)
+- [ ] Send completion message to orchestrator

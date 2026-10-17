@@ -1,11 +1,38 @@
 // api/calendar.js - Consolidated Sovereign Google Calendar Serverless Controller
-// Unifies auth, callback, status, and sync into ONE single Serverless Function
+// Supports Permanent Zero-Login Google Service Account (RS256 JWT) Architecture
 // Keeps total deployment functions well below Vercel Hobby's 12-function limit.
 
 import crypto from 'crypto';
 import cookie from 'cookie';
 import { sanitizeDeep, sanitizeError, setSecurityHeaders, checkRateLimit, enforcePayloadLimit, validateSession, scrubSecrets } from './_lib/auth-guard.js';
 import { getSafeStorage } from './_lib/redis.js';
+import {
+  getServiceAccountCredentials,
+  getServiceAccountAccessToken,
+  invalidateServiceAccountToken,
+  sanitizePrivateKey,
+  createServiceAccountJwt
+} from './_lib/google-service-auth.js';
+
+export {
+  getServiceAccountCredentials,
+  getServiceAccountAccessToken,
+  invalidateServiceAccountToken,
+  sanitizePrivateKey,
+  createServiceAccountJwt
+};
+
+export function getTargetCalendarId(req = null) {
+  const envCalId = (process.env.GOOGLE_CALENDAR_ID || '').trim();
+  if (envCalId) return envCalId;
+  if (req?.query?.calendarId && typeof req.query.calendarId === 'string') {
+    return req.query.calendarId.trim();
+  }
+  if (req?.body?.calendarId && typeof req.body.calendarId === 'string') {
+    return req.body.calendarId.trim();
+  }
+  return 'primary';
+}
 
 const GCAL_REDIS_KEY = 'gcal:master_tokens';
 export const PRODUCTION_REDIRECT_URI = 'https://lumina-vista-sigma.vercel.app/api/calendar/callback';
@@ -568,6 +595,36 @@ async function handleCallback(req, res) {
 async function handleStatus(req, res) {
   setCorsHeaders(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
+  if (res && typeof res.setHeader === 'function') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  }
+
+  // Priority 1: Zero-Login Service Account Architecture
+  const saCreds = getServiceAccountCredentials();
+  if (saCreds.isConfigured) {
+    const accessToken = await getValidAccessToken(req, res);
+    return sendSecureJson(res, 200, {
+      configured: true,
+      connected: !!accessToken,
+      authMode: 'service_account',
+      serviceAccountEmail: saCreds.email,
+      calendarId: saCreds.calendarId,
+      missingConfig: []
+    }, req);
+  } else if (saCreds.email || saCreds.privateKey || process.env.GOOGLE_CALENDAR_ID) {
+    const missing = [
+      !saCreds.email && 'GOOGLE_SERVICE_ACCOUNT_EMAIL',
+      !saCreds.privateKey && 'GOOGLE_PRIVATE_KEY',
+      !process.env.GOOGLE_CALENDAR_ID?.trim() && 'GOOGLE_CALENDAR_ID'
+    ].filter(Boolean);
+    return sendSecureJson(res, 200, {
+      configured: false,
+      connected: false,
+      authMode: 'service_account',
+      missingConfig: missing,
+      error: `Service account credentials partially missing: ${missing.join(', ')}`
+    }, req);
+  }
 
   const { clientId, clientSecret } = getGoogleOAuthCredentials();
   const configured = !!(clientId && clientSecret);
@@ -627,8 +684,17 @@ async function handleStatus(req, res) {
 
 let inFlightTokenRefresh = null;
 
-// 4. Token Refresh Helper with Sovereign Multi-Device Cloud Persistence
-async function getValidAccessToken(req, res, forceRefresh = false) {
+// 4. Token Refresh Helper supporting Service Account and Multi-Device Cloud Persistence
+export async function getValidAccessToken(req, res, forceRefresh = false) {
+  // Priority 1: Service Account RS256 JWT Token (Zero-Login Architecture)
+  const saCreds = getServiceAccountCredentials();
+  if (saCreds.isConfigured) {
+    const saTokenRes = await getServiceAccountAccessToken(forceRefresh);
+    if (saTokenRes.ok && saTokenRes.accessToken) {
+      return saTokenRes.accessToken;
+    }
+  }
+
   const storage = getSafeStorage();
   let tokenData = null;
 
@@ -847,6 +913,7 @@ export async function executeGoogleCalendarApi(endpointOrUrl, options = {}, req 
   // 1. Automatic 401 Unauthorized -> Refresh Token -> Retry Request
   if (response.status === 401 && retryCount < 1) {
     console.warn('[Google Calendar API]: 401 Unauthorized received. Triggering automatic token refresh...');
+    invalidateServiceAccountToken();
     const refreshedToken = await getValidAccessToken(req, res, true);
     if (refreshedToken) {
       console.info('[Google Calendar API]: Token refresh succeeded. Retrying Google Calendar request...');
@@ -907,6 +974,11 @@ export async function executeGoogleCalendarApi(endpointOrUrl, options = {}, req 
 async function handleSync(req, res) {
   setCorsHeaders(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
+  if (res && typeof res.setHeader === 'function') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  }
+
+  const targetCalId = getTargetCalendarId(req);
 
   const storage = getSafeStorage();
   const rateLimit = await checkRateLimit(req, storage, 'calendar_sync', 120, 60);
@@ -998,7 +1070,7 @@ async function handleSync(req, res) {
       const timeMax = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString();
 
       const syncTokenParam = req.query?.syncToken || null;
-      let primaryUrl = `/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250`;
+      let primaryUrl = `/calendars/${encodeURIComponent(targetCalId)}/events?singleEvents=true&orderBy=startTime&maxResults=250`;
       if (!syncTokenParam) {
         primaryUrl += `&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
       }
@@ -1156,7 +1228,7 @@ async function handleSync(req, res) {
 
       let pushResult;
       if (targetEventId) {
-        pushResult = await executeGoogleCalendarApi(`/calendars/primary/events/${encodeURIComponent(targetEventId)}`, {
+        pushResult = await executeGoogleCalendarApi(`/calendars/${encodeURIComponent(targetCalId)}/events/${encodeURIComponent(targetEventId)}`, {
           method: 'PATCH',
           body: payload
         }, req, res);
@@ -1164,7 +1236,7 @@ async function handleSync(req, res) {
         if ((body.id || body.localId) && !payload.id) {
           payload.id = crypto.createHash('sha256').update(String(body.id || body.localId)).digest('hex').slice(0, 32).toLowerCase().replace(/[^a-v0-9]/g, 'a');
         }
-        pushResult = await executeGoogleCalendarApi('/calendars/primary/events', {
+        pushResult = await executeGoogleCalendarApi(`/calendars/${encodeURIComponent(targetCalId)}/events`, {
           method: 'POST',
           body: payload
         }, req, res);
@@ -1207,7 +1279,7 @@ async function handleSync(req, res) {
       }
       const eventId = String(rawEventId).replace(/^gcal_/, '');
 
-      const deleteResult = await executeGoogleCalendarApi(`/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+      const deleteResult = await executeGoogleCalendarApi(`/calendars/${encodeURIComponent(targetCalId)}/events/${encodeURIComponent(eventId)}`, {
         method: 'DELETE'
       }, req, res);
 

@@ -473,3 +473,51 @@ For every confirmed vulnerability or defense-in-depth weakness:
 - [ ] All modified repository files remain strictly < 2,000 lines.
 - [ ] Firmware files in firmware/** remain 100% untouched.
 - [ ] Final executive summary produced detailing every vulnerability found, root cause, and exact file/line remediation.
+
+
+## 2026-10-17T11:04:38Z
+
+Execute a complete, end-to-end migration of the "Lumina Vista" Google Calendar integration to a permanent, zero-login Google Service Account (Server-to-Server RS256 JWT) architecture.
+
+Working directory: c:/Users/roysu/LuminaVista
+Integrity mode: development
+
+## Strict Operating Rules
+1. ZERO `.env` FILES POLICY: Do NOT create, read, require, or leave any `.env`, `.env.local`, `.env.production`, or `.env.example` files anywhere in the project. Delete any existing `.env*` files if found.
+2. CLOUD-ONLY RUNTIME SECRETS: All credentials (`GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_CALENDAR_ID`) are injected exclusively at runtime by Vercel's Cloud Backend via `process.env`.
+3. BUILD-TIME SAFETY: Never throw top-level errors during `npm run build` / static page generation if `process.env.GOOGLE_PRIVATE_KEY` is undefined in the local build environment. Only evaluate `process.env` lazily inside runtime API request handlers.
+
+## Requirements
+
+### R1. Phase 1: Native Zero-Dependency Service Account JWT Auth Engine
+- Implement native RS256 JWT signing using Node's built-in `crypto` module (`crypto.createSign('RSA-SHA256')`).
+- Sanitize private key: `rawKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n')`.
+- Construct JWT Header (`{"alg":"RS256","typ":"JWT"}`) and Claim Set (`iss`, `scope`, `aud`, `iat`, `exp`).
+- Sign with `privateKey` using base64url encoding and exchange assertion via `POST https://oauth2.googleapis.com/token`.
+- Cache short-lived access token in memory until 5 minutes before expiration to ensure instant consecutive requests.
+
+### R2. Phase 2: Full Two-Way Google Calendar API Routes (`api/calendar.js`)
+- Refactor all calendar API endpoints to use the Service Account token generator.
+- Neutralize legacy OAuth redirect routes (`/api/calendar/callback`, OAuth URL generation) so no OAuth popups or callbacks remain.
+- Target Calendar ID: `process.env.GOOGLE_CALENDAR_ID?.trim()` (never hardcode `'primary'`).
+- Implement full CRUD against `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events` (GET, POST, PATCH/PUT, DELETE).
+- Enforce `Cache-Control: no-store, no-cache, must-revalidate` on all API responses.
+- Surface structured diagnostic JSON if credentials or calendar sharing are missing.
+
+### R3. Phase 3: Frontend Calendar UI & Auto-Sync Integration
+- Remove all legacy "Connect Google Calendar" / "Sign in with Google" OAuth popup triggers and `localStorage` token dependencies.
+- Auto-sync on mount, window focus, and manual "Sync / Refresh" button clicks.
+- Immediate two-way mutation: creating, editing, or deleting an event calls the backend API and updates local state.
+- Surface clear configuration warnings in the UI if `GOOGLE_CALENDAR_ID` or Service Account sharing is unconfigured.
+
+### R4. Phase 4: Zero-Env Verification & Adversarial Build Gate
+- Verify zero `.env*` files exist in git status or the file tree.
+- Validate build-time safety: `npm run build` and test suites pass cleanly with no local `.env` files present.
+- Create automated integration test verifying RS256 JWT creation, mock Google Calendar token exchange, CRUD dispatch, and error handling.
+
+## Acceptance Criteria
+- [ ] Native RS256 Service Account JWT engine implemented using Node `crypto` without third-party SDK dependencies.
+- [ ] Zero `.env*` files present across the repository.
+- [ ] `/api/calendar` supports full CRUD (GET, POST, PATCH, DELETE) targeting `GOOGLE_CALENDAR_ID`.
+- [ ] Legacy OAuth redirect flows neutralized; UI auto-syncs with zero login popups.
+- [ ] All automated test suites and linters pass cleanly with zero local environment variables.
