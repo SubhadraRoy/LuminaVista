@@ -45,7 +45,7 @@ export function isLoopbackIp(ip) {
 export function getClientIp(req) {
   const rawIp = getRawClientIp(req);
   if (rawIp === 'unknown' || rawIp === '') return 'anon_unknown';
-  const salt = process.env.ADMIN_PASSWORD || 'lv_ip_salt';
+  const salt = process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD || 'lv_ip_salt';
   return 'anon_' + crypto.createHash('sha256').update(`${salt}:${rawIp}`).digest('hex').slice(0, 16);
 }
 
@@ -54,7 +54,7 @@ export function getClientIp(req) {
  * Enables zero-latency session validation immune to 3rd-party database limits.
  */
 export function generateSovereignSessionToken(role = 'master', keyId = null, secret = null) {
-  const adminSecret = secret || process.env.ADMIN_PASSWORD;
+  const adminSecret = secret || process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD;
   if (!adminSecret) {
     throw new Error('ADMIN_PASSWORD secret required to generate sovereign session token');
   }
@@ -71,7 +71,7 @@ export function generateSovereignSessionToken(role = 'master', keyId = null, sec
  */
 export function verifySovereignSessionToken(token, secret = null) {
   if (!token || typeof token !== 'string' || !token.startsWith('lv_')) return null;
-  const adminSecret = secret || process.env.ADMIN_PASSWORD;
+  const adminSecret = secret || process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD;
   if (!adminSecret) return null;
 
   const parts = token.split('_');
@@ -123,7 +123,7 @@ export async function validateSession(req, redisClient = null) {
   const match = cookieHeader.match(/godx_session=([a-zA-Z0-9_-]+)/);
   const rawHeaderSessionId = req?.headers?.['x-session-id'] || req?.headers?.authorization?.replace(/^Bearer\s+/i, '') || req?.body?.userSession || '';
   const cleanHeaderSessionId = (typeof rawHeaderSessionId === 'string' && /^[a-zA-Z0-9_\-]{1,128}$/.test(rawHeaderSessionId)) ? rawHeaderSessionId : '';
-  const sessionId = match ? match[1] : cleanHeaderSessionId;
+  const sessionId = cleanHeaderSessionId || (match ? match[1] : '');
 
   const isProduction = Boolean(process.env.VERCEL) || process.env.NODE_ENV === 'production';
   const allowMock = !isProduction && process.env.ALLOW_MOCK_AUTH !== 'false';
@@ -149,7 +149,7 @@ export async function validateSession(req, redisClient = null) {
   }
 
   // 1. Sovereign Cryptographic Verification Check (Zero-Latency, Immune to Redis Limits)
-  const masterSecret = process.env.ADMIN_PASSWORD;
+  const masterSecret = process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD;
   if (masterSecret && sessionId.startsWith('lv_')) {
     const verified = verifySovereignSessionToken(sessionId, masterSecret);
     if (!verified || !verified.valid) {

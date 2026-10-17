@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const items = await getAdminPasswordsList(storage);
 
-      const rawSecret = process.env.ADMIN_PASSWORD;
+      const rawSecret = process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD;
       if (!rawSecret) {
         auditLog('ADMIN_MISCONFIG', req, 'Admin password missing');
         return sendSecureJson(res, 500, { error: 'Server misconfigured. Access blocked.' }, req);
@@ -126,7 +126,7 @@ export default async function handler(req, res) {
           return sendSecureJson(res, 400, { error: 'Maximum limit of 20 access passwords reached. Please delete old keys.' }, req);
         }
 
-        const rawSecret = process.env.ADMIN_PASSWORD;
+        const rawSecret = process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD;
         if (!rawSecret) {
           auditLog('ADMIN_MISCONFIG', req, 'Admin password missing');
           return sendSecureJson(res, 500, { error: 'Server misconfigured. Access blocked.' }, req);

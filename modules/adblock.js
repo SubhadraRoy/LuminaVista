@@ -29,7 +29,9 @@
   function getAuthHeaders(extra = {}) {
     let sid = 'sovereign_session';
     try {
-      sid = window.localStorage?.getItem('lumina_session_id') || 'sovereign_session';
+      sid = window.localStorage?.getItem('lumina_session_id') ||
+            window.sessionStorage?.getItem('lumina_workspace_attestation') ||
+            'sovereign_session';
     } catch (e) {}
     return { 'x-session-id': sid, ...extra };
   }
