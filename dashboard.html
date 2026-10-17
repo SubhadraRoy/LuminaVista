@@ -700,15 +700,16 @@
             <button onclick="setSandboxLanguage('cpp')" id="sbLangCpp" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">C++</button>
             <button onclick="setSandboxLanguage('java')" id="sbLangJava" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Java</button>
             <button onclick="setSandboxLanguage('bash')" id="sbLangBash" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">Bash</button>
+            <button onclick="setSandboxLanguage('sql')" id="sbLangSql" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white cursor-pointer">SQL</button>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
           <div class="flex flex-col space-y-2 h-full">
             <div class="flex justify-between items-center text-xs font-mono text-zinc-400 px-1">
-              <span>Source Buffer:</span>
-              <button onclick="runSandboxCode()" class="text-black bg-emerald-400 hover:bg-emerald-300 px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-colors">
-                <i data-lucide="play" class="w-3.5 h-3.5"></i> Compile & Run
+              <span id="sandboxSourceHeader">HTML Source Buffer:</span>
+              <button onclick="runSandboxCode()" id="btnRunSandbox" class="text-black bg-emerald-400 hover:bg-emerald-300 px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-colors" title="Render HTML DOM Preview">
+                <i data-lucide="eye" class="w-3.5 h-3.5" id="btnRunSandboxIcon"></i> <span id="btnRunSandboxText">Render Preview</span>
               </button>
             </div>
             <textarea id="sandboxCodeInput" oninput="onSandboxCodeChange()" class="godx-input w-full flex-1 p-4 font-mono text-xs outline-none resize-none leading-relaxed custom-scrollbar"></textarea>
@@ -716,7 +717,7 @@
 
           <div class="flex flex-col space-y-2 h-full">
             <div class="flex justify-between items-center text-xs font-mono text-zinc-400 px-1">
-              <span id="sandboxOutputHeader">Runtime Output Stream:</span>
+              <span id="sandboxOutputHeader">Live DOM Preview:</span>
               <button onclick="clearCompilerOutput()" class="text-zinc-500 hover:text-white text-[11px]">Clear</button>
             </div>
             <div id="sandboxIframeWrapper" class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-white relative">

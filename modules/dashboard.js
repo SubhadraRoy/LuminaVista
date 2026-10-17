@@ -57,7 +57,11 @@
       if (window.setCodespaceView) window.setCodespaceView('code');
     }
 
-    if (window.initCompilerSample) window.initCompilerSample('html');
+    if (window.setSandboxLanguage) {
+      window.setSandboxLanguage('html');
+    } else if (window.initCompilerSample) {
+      window.initCompilerSample('html');
+    }
     if (window.startAutonomousSyncPoller) window.startAutonomousSyncPoller();
     if (window.initAmbientParticles) window.initAmbientParticles();
     if (window.initIdleTimer) window.initIdleTimer();

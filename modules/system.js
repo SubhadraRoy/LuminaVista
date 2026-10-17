@@ -99,6 +99,10 @@
       window.LuminaSmartLock.onTabActivated();
     }
 
+    if (id === "tab-sandbox" && window.onSandboxTabActivated) {
+      window.onSandboxTabActivated();
+    }
+
     if (window.lucide && window.lucide.createIcons) {
       window.lucide.createIcons();
     }

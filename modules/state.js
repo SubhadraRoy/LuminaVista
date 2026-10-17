@@ -118,7 +118,7 @@
   window.wbShowGrid = true;
 
   // Compiler State
-  window.currentSbLang = "python";
+  window.currentSbLang = "html";
 
   // Sidebar State
   window.isSidebarMinimized = false;
