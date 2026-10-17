@@ -335,8 +335,157 @@ async function run() {
   assert(hugeRes.statusCode === 413, `Oversized payload rejected with HTTP 413 (Actual: ${hugeRes.statusCode})`);
   console.log('  ✓ Oversized payload (>250KB) immediately blocked with HTTP 413 Payload Too Large');
 
+  // --------------------------------------------------------------------------
+  // CONDITION 11: Fake ESP Telemetry Bounds & Script Injection Simulation
+  // --------------------------------------------------------------------------
+  console.log('\n--- CONDITION 11: Fake ESP Telemetry Bounds & Script Injection Simulation ---');
+  const spoofedPush = await sendEspPush({
+    status: {
+      cpu_load: 99999, // Should clamp to 100
+      heap_free: -12345, // Should clamp to 0
+      heap_total: 99999999, // Should clamp to 2,000,000
+      rssi: 120, // Should clamp to 0
+      last_event: "<script>alert('pwned_door')</script> Door Forced",
+      doorCloseTime: "<script>evil</script>18:00"
+    },
+    cards: [
+      { uid: 'DEADBEEF', name: '<script>evilCard()</script> Admin RFID', active: true }
+    ],
+    logs: [
+      { seq: 7777, ts: '2026-10-18 01:00:00', msg: '<iframe src="evil.com"></iframe> Malicious Log Entry', source: 'live' }
+    ],
+    conn_events: [
+      { seq: 7778, ts: '2026-10-18 01:00:05', type: 'DISCONNECT', reason: '<script>drop</script> 192.168.1.100 disconnected' }
+    ]
+  });
+  assert(spoofedPush.statusCode === 200, `Authenticated push with spoofed values accepted (Actual: ${spoofedPush.statusCode})`);
+
+  const dashAfterSpoof = await getDashboardData();
+  const st = dashAfterSpoof.body.status;
+  console.log(`  ✓ CPU Load clamped: ${st.cpu_load}% (Expected: <= 100)`);
+  assert(st.cpu_load >= 0 && st.cpu_load <= 100, `CPU load clamped between 0 and 100 (Actual: ${st.cpu_load})`);
+
+  console.log(`  ✓ Heap Free clamped: ${st.heap_free} bytes (Expected: >= 0)`);
+  assert(st.heap_free >= 0, `Heap free clamped >= 0 (Actual: ${st.heap_free})`);
+
+  console.log(`  ✓ Heap Total clamped: ${st.heap_total} bytes (Expected: <= 2000000)`);
+  assert(st.heap_total <= 2000000, `Heap total clamped <= 2,000,000 (Actual: ${st.heap_total})`);
+
+  console.log(`  ✓ RSSI clamped: ${st.rssi} dBm (Expected: <= 0 and >= -120)`);
+  assert(st.rssi <= 0 && st.rssi >= -120, `RSSI clamped between -120 and 0 (Actual: ${st.rssi})`);
+
+  console.log(`  ✓ Status last_event sanitized: "${st.last_event}"`);
+  assert(!st.last_event.includes('<') && !st.last_event.includes('>'), 'Telemetry last_event must not contain HTML tags');
+
+  const injectedCard = dashAfterSpoof.body.cards.find(c => c.uid === 'DEADBEEF');
+  assert(injectedCard, 'Injected card found in cards list');
+  console.log(`  ✓ Card name sanitized: "${injectedCard.name}"`);
+  assert(!injectedCard.name.includes('<') && !injectedCard.name.includes('>'), 'Card name must not contain HTML tags');
+
+  const injectedLog = dashAfterSpoof.body.logs.find(l => l.seq === 7777 || (l.msg && l.msg.includes('Malicious Log Entry')));
+  assert(injectedLog, 'Injected log found in logs');
+  console.log(`  ✓ Log message sanitized: "${injectedLog.msg}"`);
+  assert(!injectedLog.msg.includes('<') && !injectedLog.msg.includes('>'), 'Log message must not contain HTML tags');
+
+  const injectedConn = dashAfterSpoof.body.connHistory.find(c => c.seq === 7778 || (c.reason && c.reason.includes('disconnected')));
+  assert(injectedConn, 'Injected connection event found');
+  console.log(`  ✓ Conn reason sanitized & IP scrubbed: "${injectedConn.reason}"`);
+  assert(!injectedConn.reason.includes('<') && !injectedConn.reason.includes('>'), 'Conn reason must not contain HTML tags');
+  assert(!injectedConn.reason.includes('192.168.1.100'), 'Conn reason must have IP scrubbed to [LAN-PROTECTED]');
+
+  // --------------------------------------------------------------------------
+  // CONDITION 12: Fake ESP Forged Signature Attack Simulation
+  // --------------------------------------------------------------------------
+  console.log('\n--- CONDITION 12: Fake ESP Forged Signature Attack Simulation ---');
+  currentSeq++;
+  const fakeNowSec = Math.floor(Date.now() / 1000);
+  const fakeNonce = crypto.randomBytes(16).toString('hex');
+  const fakeBody = JSON.stringify({ status: { lock: 'UNLOCKED', last_event: 'Attacker Unlock' } });
+  const forgedSig = crypto.randomBytes(32).toString('hex'); // Attacker does not have shared secret
+
+  const forgedRes = createMockRes();
+  await iotHandler({
+    method: 'POST',
+    url: '/api/iot',
+    headers: {
+      'x-lumina-device-id': DEFAULT_DEVICE_ID,
+      'x-lumina-timestamp': String(fakeNowSec),
+      'x-lumina-nonce': fakeNonce,
+      'x-lumina-seq': String(currentSeq),
+      'x-lumina-signature': forgedSig
+    },
+    rawBody: fakeBody,
+    body: JSON.parse(fakeBody)
+  }, forgedRes);
+
+  console.log(`  ✓ Forged signature rejection code: ${forgedRes.statusCode}`);
+  assert(forgedRes.statusCode === 401, `Forged signature must be rejected with HTTP 401 (Actual: ${forgedRes.statusCode})`);
+  assert(forgedRes.body && forgedRes.body.error, 'Rejection response must contain error reason');
+  console.log(`  ✓ Rejection error detail: "${forgedRes.body.error}"`);
+
+  // --------------------------------------------------------------------------
+  // CONDITION 13: Fake ESP Sequence Rollback / Replay Attack Simulation
+  // --------------------------------------------------------------------------
+  console.log('\n--- CONDITION 13: Fake ESP Sequence Rollback / Replay Attack Simulation ---');
+  // First send a legitimate push to establish high sequence
+  currentSeq += 100;
+  const legitSeq = currentSeq;
+  const legitPush = await sendEspPush({ status: { last_event: 'Legitimate Sequence Anchor' } });
+  assert(legitPush.statusCode === 200, 'Legitimate push succeeded');
+
+  // Attacker attempts to replay or roll back to an older sequence (legitSeq - 50)
+  const staleSeq = legitSeq - 50;
+  const staleNowSec = Math.floor(Date.now() / 1000);
+  const staleNonce = crypto.randomBytes(16).toString('hex');
+  const staleBody = JSON.stringify({ status: { last_event: 'Replayed Stale Packet' } });
+  const staleSig = computeDeviceSignature(secret, DEFAULT_DEVICE_ID, String(staleNowSec), staleNonce, String(staleSeq), staleBody);
+
+  const staleRes = createMockRes();
+  await iotHandler({
+    method: 'POST',
+    url: '/api/iot',
+    headers: {
+      'x-lumina-device-id': DEFAULT_DEVICE_ID,
+      'x-lumina-timestamp': String(staleNowSec),
+      'x-lumina-nonce': staleNonce,
+      'x-lumina-seq': String(staleSeq),
+      'x-lumina-signature': staleSig
+    },
+    rawBody: staleBody,
+    body: JSON.parse(staleBody)
+  }, staleRes);
+
+  console.log(`  ✓ Sequence rollback rejection code: ${staleRes.statusCode}`);
+  assert(staleRes.statusCode === 401, `Sequence rollback must be rejected with HTTP 401 (Actual: ${staleRes.statusCode})`);
+  console.log(`  ✓ Rejection error detail: "${staleRes.body.error}"`);
+  assert(staleRes.body.error.toLowerCase().includes('stale') || staleRes.body.error.toLowerCase().includes('order'),
+    `Error must explain sequence stale/order rejection (Actual: ${staleRes.body.error})`);
+
+  // Also test identical sequence replay (seq === legitSeq)
+  const identicalNonce = crypto.randomBytes(16).toString('hex');
+  const identicalBody = JSON.stringify({ status: { last_event: 'Duplicate Sequence Packet' } });
+  const identicalSig = computeDeviceSignature(secret, DEFAULT_DEVICE_ID, String(staleNowSec), identicalNonce, String(legitSeq), identicalBody);
+
+  const identicalRes = createMockRes();
+  await iotHandler({
+    method: 'POST',
+    url: '/api/iot',
+    headers: {
+      'x-lumina-device-id': DEFAULT_DEVICE_ID,
+      'x-lumina-timestamp': String(staleNowSec),
+      'x-lumina-nonce': identicalNonce,
+      'x-lumina-seq': String(legitSeq),
+      'x-lumina-signature': identicalSig
+    },
+    rawBody: identicalBody,
+    body: JSON.parse(identicalBody)
+  }, identicalRes);
+
+  console.log(`  ✓ Duplicate sequence rejection code: ${identicalRes.statusCode}`);
+  assert(identicalRes.statusCode === 401, `Duplicate sequence must be rejected with HTTP 401 (Actual: ${identicalRes.statusCode})`);
+
   console.log('\n================================================================');
-  console.log('🎉 AUDIT COMPLETE: ALL 10 CONDITIONS & LIMITS RIGOROUSLY VERIFIED!');
+  console.log('🎉 AUDIT COMPLETE: ALL 13 CONDITIONS & ATTACK VECTORS RIGOROUSLY VERIFIED!');
   console.log('================================================================');
 }
 

@@ -153,35 +153,85 @@ function getDefaultStatus() {
   };
 }
 
+function sanitizeStatusString(str, maxLen = 64) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[\x00-\x1F\x7F<>]/g, '').slice(0, maxLen).trim();
+}
+
+function clampNumber(val, min, max, defaultVal) {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return defaultVal;
+  return Math.min(Math.max(n, min), max);
+}
+
 function normalizeStatus(raw = {}, prev = {}) {
-  const base = { ...getDefaultStatus(), ...prev, ...raw };
-  base.ip = 'LAN-PROTECTED';
-  base.last_event = raw.last_event ?? raw.lastEvent ?? prev.last_event ?? base.last_event;
+  const defaults = getDefaultStatus();
+  const base = { ...defaults, ...prev };
+
+  // Sanitize telemetry strings (CWE-20 / Fake ESP injection defense)
+  const rawLastEv = raw.last_event ?? raw.lastEvent ?? prev.last_event;
+  if (rawLastEv) base.last_event = sanitizeStatusString(String(rawLastEv), 128) || defaults.last_event;
   base.lastEvent = base.last_event;
-  base.last_door_event = raw.last_door_event ?? raw.lastDoorEvent ?? prev.last_door_event ?? base.last_door_event;
+
+  const rawDoorEv = raw.last_door_event ?? raw.lastDoorEvent ?? prev.last_door_event;
+  if (rawDoorEv) base.last_door_event = sanitizeStatusString(String(rawDoorEv), 64) || defaults.last_door_event;
   base.lastDoorEvent = base.last_door_event;
-  base.last_access_event = raw.last_access_event ?? raw.lastAccessEvent ?? prev.last_access_event ?? base.last_access_event;
+
+  const rawAccessEv = raw.last_access_event ?? raw.lastAccessEvent ?? prev.last_access_event;
+  if (rawAccessEv) base.last_access_event = sanitizeStatusString(String(rawAccessEv), 64) || defaults.last_access_event;
   base.lastAccessEvent = base.last_access_event;
-  base.last_nfc = raw.last_nfc ?? raw.lastNfcEvent ?? prev.last_nfc ?? base.last_nfc;
+
+  const rawNfc = raw.last_nfc ?? raw.lastNfcEvent ?? prev.last_nfc;
+  if (rawNfc) base.last_nfc = sanitizeStatusString(String(rawNfc), 64) || defaults.last_nfc;
   base.lastNfcEvent = base.last_nfc;
+
+  // Discrete state validation
+  if (raw.lock !== undefined) {
+    const lk = String(raw.lock).toUpperCase().trim();
+    base.lock = (lk === 'UNLOCKED' || lk === 'OPEN') ? 'UNLOCKED' : 'LOCKED';
+  }
+  if (raw.door !== undefined) {
+    const dr = String(raw.door).toUpperCase().trim();
+    base.door = (dr === 'OPEN') ? 'OPEN' : 'CLOSED';
+  }
+  if (raw.alarm !== undefined) {
+    base.alarm = Boolean(raw.alarm && raw.alarm !== '0' && raw.alarm !== 'false');
+  }
+
   base.lockMode = raw.lockMode ?? prev.lockMode ?? (base.manualMode ? 'MANUAL' : 'AUTO');
   base.manualMode = typeof raw.manualMode === 'boolean' ? raw.manualMode : (base.lockMode === 'MANUAL' || prev.manualMode || false);
-  base.doorCloseTime = raw.doorCloseTime ?? prev.doorCloseTime ?? base.doorCloseTime ?? '-';
-  base.heap_largest_block = Number.isFinite(Number(raw.heap_largest_block ?? prev.heap_largest_block)) ? Number(raw.heap_largest_block ?? prev.heap_largest_block) : base.heap_largest_block;
-  base.heap_min = Number.isFinite(Number(raw.heap_min ?? prev.heap_min)) ? Number(raw.heap_min ?? prev.heap_min) : base.heap_min;
-  base.rssi = Number.isFinite(Number(raw.rssi ?? raw.wifi_rssi)) ? Number(raw.rssi ?? raw.wifi_rssi) : base.rssi;
+  base.doorCloseTime = sanitizeStatusString(String(raw.doorCloseTime ?? prev.doorCloseTime ?? base.doorCloseTime ?? '-'), 32) || '-';
+
+  // Numeric bounds checking & telemetry sanity
+  base.cpu_load = clampNumber(raw.cpu_load ?? prev.cpu_load, 0, 100, defaults.cpu_load);
+  base.uptime = Math.max(0, parseInt(raw.uptime ?? prev.uptime ?? 0, 10) || 0);
+  base.heap_free = clampNumber(raw.heap_free ?? prev.heap_free, 0, 1000000, defaults.heap_free);
+  base.heap_total = clampNumber(raw.heap_total ?? prev.heap_total, 1000, 2000000, defaults.heap_total);
+  base.heap_largest_block = clampNumber(raw.heap_largest_block ?? prev.heap_largest_block, 0, 1000000, defaults.heap_largest_block);
+  base.heap_min = clampNumber(raw.heap_min ?? prev.heap_min, 0, 1000000, defaults.heap_min);
+  base.rssi = clampNumber(raw.rssi ?? raw.wifi_rssi ?? prev.rssi, -120, 0, defaults.rssi);
   base.wifi_rssi = base.rssi;
-  base.last_online = raw.last_online ?? raw.lastOnline ?? prev.last_online ?? base.last_online;
+  base.failedAttempts = clampNumber(raw.failedAttempts ?? prev.failedAttempts, 0, 100, 0);
+
+  base.last_online = sanitizeStatusString(String(raw.last_online ?? raw.lastOnline ?? prev.last_online ?? base.last_online), 32) || '-';
   base.lastOnline = base.last_online;
-  base.last_offline = raw.last_offline ?? raw.lastOffline ?? prev.last_offline ?? base.last_offline;
+  base.last_offline = sanitizeStatusString(String(raw.last_offline ?? raw.lastOffline ?? prev.last_offline ?? base.last_offline), 32) || '-';
   base.lastOffline = base.last_offline;
 
+  base.ip = 'LAN-PROTECTED';
+  base.wifi = 'STA';
+
+  if (typeof raw.relay3 === 'boolean') base.relay3 = raw.relay3;
+  if (typeof raw.relay4 === 'boolean') base.relay4 = raw.relay4;
   if (typeof raw.relay3Schedule === 'boolean') base.relay3Schedule = raw.relay3Schedule;
   if (typeof raw.relay4Schedule === 'boolean') base.relay4Schedule = raw.relay4Schedule;
-  base.relay3_schedule = raw.relay3_schedule || (base.relay3Schedule ? `ON ${base.relay3On || '18:00'} / OFF ${base.relay3Off || '06:00'}` : 'Disabled');
-  base.relay4_schedule = raw.relay4_schedule || (base.relay4Schedule ? `ON ${base.relay4On || '18:00'} / OFF ${base.relay4Off || '06:00'}` : 'Disabled');
+  base.relay3_schedule = sanitizeStatusString(String(raw.relay3_schedule || (base.relay3Schedule ? `ON ${base.relay3On || '18:00'} / OFF ${base.relay3Off || '06:00'}` : 'Disabled')), 48);
+  base.relay4_schedule = sanitizeStatusString(String(raw.relay4_schedule || (base.relay4Schedule ? `ON ${base.relay4On || '18:00'} / OFF ${base.relay4Off || '06:00'}` : 'Disabled')), 48);
+
   if (!base.doorOpenTime) {
     base.doorOpenTime = base.door === 'OPEN' ? (base.last_door_event || 'Open') : 'Closed';
+  } else {
+    base.doorOpenTime = sanitizeStatusString(String(base.doorOpenTime), 32);
   }
   return base;
 }
@@ -713,7 +763,10 @@ export default async function handler(req, res) {
       const hasStatus = Boolean(body.status && typeof body.status === 'object');
       const hasCards = Array.isArray(body.cards);
       const hasLogs = Array.isArray(body.logs) && body.logs.length > 0;
-      const hasConnEvents = Array.isArray(body.connEvents) && body.connEvents.length > 0;
+      const incomingConnEvents = Array.isArray(body.connEvents)
+        ? body.connEvents
+        : (Array.isArray(body.conn_events) ? body.conn_events : null);
+      const hasConnEvents = Boolean(incomingConnEvents && incomingConnEvents.length > 0);
 
       // Parallelize all Redis reads into a single network round-trip
       const [prevMeta, prevState, prevCards, existingLogs, existingConnHistory, rawQueue] = await Promise.all([
@@ -801,7 +854,7 @@ export default async function handler(req, res) {
 
           return {
             uid,
-            name: String(c.name || (prev && prev.name) || `Card ${idx + 1}`).replace(/[\x00-\x1F\x7F]/g, '').slice(0, 31),
+            name: String(c.name || (prev && prev.name) || `Card ${idx + 1}`).replace(/[\x00-\x1F\x7F<>]/g, '').slice(0, 31).trim(),
             active: c.active !== false,
             color: /^#[0-9A-Fa-f]{6}$/.test(String(c.color || '')) ? c.color : ((prev && prev.color) || '#3b82f6'),
             last: mergedLast,
@@ -841,14 +894,14 @@ export default async function handler(req, res) {
             const parts = rawItem.split(' | ');
             if (parts.length >= 2) {
               ts = parts[0].trim();
-              msg = parts.slice(1).join(' | ').trim();
+              msg = parts.slice(1).join(' | ').replace(/[\x00-\x1F\x7F<>]/g, '').trim().slice(0, 200);
             } else {
-              msg = rawItem.trim();
+              msg = rawItem.replace(/[\x00-\x1F\x7F<>]/g, '').trim().slice(0, 200);
             }
           } else if (rawItem && typeof rawItem === 'object') {
             seq = parseInt(rawItem.seq, 10) || 0;
             ts = String(rawItem.ts || ts).slice(0, 32);
-            msg = String(rawItem.msg || '').slice(0, 200);
+            msg = String(rawItem.msg || '').replace(/[\x00-\x1F\x7F<>]/g, '').slice(0, 200).trim();
             source = rawItem.source === 'offline_buffer' || rawItem.from_offline_buffer ? 'offline_buffer' : 'live';
           }
 
@@ -917,16 +970,19 @@ export default async function handler(req, res) {
       }
 
       if (hasConnEvents) {
-        for (const rawEv of body.connEvents) {
+        for (const rawEv of incomingConnEvents) {
           if (!rawEv || typeof rawEv !== 'object') continue;
           const seq = parseInt(rawEv.seq, 10) || 0;
           if (seq > ackedConnSeq) ackedConnSeq = seq;
-          const type = String(rawEv.type || 'ONLINE').toUpperCase() === 'OFFLINE' ? 'OFFLINE' : 'ONLINE';
+          const rawType = String(rawEv.type || 'ONLINE').toUpperCase();
+          const type = (rawType === 'OFFLINE' || rawType === 'DISCONNECT') ? 'OFFLINE' : 'ONLINE';
           let ts = String(rawEv.ts || nowTs).slice(0, 32);
           if (/^boot\+\d+/i.test(ts)) ts = nowTs;
           const reason = String(rawEv.reason || (type === 'ONLINE' ? 'ESP32 Connected' : 'ESP32 Disconnected'))
+            .replace(/[\x00-\x1F\x7F<>]/g, '')
             .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '[LAN-PROTECTED]')
-            .slice(0, 96);
+            .slice(0, 96)
+            .trim();
 
           const key = `${seq}|${ts}|${type}`;
           if (!seenConnKeys.has(key)) {
