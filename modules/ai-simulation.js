@@ -817,6 +817,166 @@ if __name__ == "__main__":
   return out;
 }
 
+  function parseCalendarDirectiveFromPrompt(prompt = '', baseDate = new Date()) {
+    const pTrim = String(prompt || '').trim();
+    const pLower = pTrim.toLowerCase();
+
+    let action = 'view';
+    if (/\b(auto_?plan|plan\s*(?:my\s*)?day|schedule\s*(?:my\s*)?day|realistic\s*schedule|optimize\s*(?:my\s*)?day)\b/i.test(pTrim)) {
+      action = 'auto_plan';
+    } else if (/\b(delete|cancel|remove|drop|clear|discard)\b/i.test(pTrim)) {
+      action = 'delete';
+    } else if (/\b(reschedule|move|shift|change|update|rename|postpone|delay)\b/i.test(pTrim)) {
+      action = 'edit';
+    } else if (/\b(schedule|add|create|book|set\s*up|remind\s*me\s*to|insert|new\s*event|put\s*on\s*(?:my\s*)?calendar)\b/i.test(pTrim)) {
+      action = 'create';
+    } else {
+      action = 'view';
+    }
+
+    let targetDate = new Date(baseDate);
+    let range = '';
+
+    if (/\bnext\s*weeks?\b/i.test(pLower)) {
+      range = 'next_week';
+    } else if (/\b(?:this\s*week|upcoming\s*(?:7|seven)?\s*days?)\b/i.test(pLower)) {
+      range = 'week';
+    } else if (/\btomorrow\b/i.test(pLower)) {
+      targetDate.setDate(targetDate.getDate() + 1);
+    } else if (/\bday\s*after\s*tomorrow\b/i.test(pLower)) {
+      targetDate.setDate(targetDate.getDate() + 2);
+    } else {
+      const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayMatch = pLower.match(/\b(?:on\s+|this\s+|next\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i);
+      if (dayMatch) {
+        const targetDay = weekdays.indexOf(dayMatch[1].toLowerCase());
+        const currentDay = baseDate.getDay();
+        let diff = targetDay - currentDay;
+        if (diff <= 0) diff += 7;
+        if (dayMatch[0].includes('next')) diff += 7;
+        targetDate.setDate(targetDate.getDate() + diff);
+      } else {
+        const isoMatch = pTrim.match(/\b(202\d-\d{2}-\d{2})\b/);
+        if (isoMatch) {
+          targetDate = new Date(isoMatch[1] + 'T00:00:00');
+        } else {
+          const months = {
+            jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3,
+            may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7, sep: 8, september: 8,
+            oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11
+          };
+          const monthMatch = pLower.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?\b/i) ||
+                             pLower.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i);
+          if (monthMatch) {
+            const mStr = isNaN(monthMatch[1]) ? monthMatch[1] : monthMatch[2];
+            const dStr = isNaN(monthMatch[1]) ? monthMatch[2] : monthMatch[1];
+            const mIdx = months[mStr.toLowerCase()];
+            const dayNum = parseInt(dStr, 10);
+            if (mIdx !== undefined && !isNaN(dayNum)) {
+              targetDate.setMonth(mIdx, dayNum);
+            }
+          }
+        }
+      }
+    }
+
+    const dateStr = targetDate.toISOString().slice(0, 10);
+
+    let startHour = 10;
+    let startMin = 0;
+    let durationHours = 1;
+
+    const rangeTimeMatch = pLower.match(/\b(?:from\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:to|-|until)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
+    const singleTimeMatch = pLower.match(/\b(?:at\s+|@\s*)(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i) ||
+                            pLower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+
+    if (rangeTimeMatch) {
+      let h1 = parseInt(rangeTimeMatch[1], 10);
+      const m1 = parseInt(rangeTimeMatch[2] || '0', 10);
+      const mer1 = rangeTimeMatch[3]?.toLowerCase();
+      let h2 = parseInt(rangeTimeMatch[4], 10);
+      const m2 = parseInt(rangeTimeMatch[5] || '0', 10);
+      const mer2 = (rangeTimeMatch[6] || mer1)?.toLowerCase();
+
+      if (mer1 === 'pm' && h1 < 12) h1 += 12;
+      if (mer1 === 'am' && h1 === 12) h1 = 0;
+      if (mer2 === 'pm' && h2 < 12) h2 += 12;
+      if (mer2 === 'am' && h2 === 12) h2 = 0;
+
+      startHour = h1;
+      startMin = m1;
+      const endMinutes = h2 * 60 + m2;
+      const startMinutes = h1 * 60 + m1;
+      if (endMinutes > startMinutes) {
+        durationHours = (endMinutes - startMinutes) / 60;
+      }
+    } else if (singleTimeMatch) {
+      let h = parseInt(singleTimeMatch[1], 10);
+      const m = parseInt(singleTimeMatch[2] || '0', 10);
+      const mer = singleTimeMatch[3]?.toLowerCase();
+      if (mer === 'pm' && h < 12) h += 12;
+      if (mer === 'am' && h === 12) h = 0;
+      else if (!mer && h >= 1 && h <= 6) h += 12;
+      startHour = h;
+      startMin = m;
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+    const startStr = `${dateStr}T${pad(startHour)}:${pad(startMin)}:00`;
+    const endTotalMin = startHour * 60 + startMin + Math.round(durationHours * 60);
+    const endHour = Math.floor(endTotalMin / 60) % 24;
+    const endMin = endTotalMin % 60;
+    const endStr = `${dateStr}T${pad(endHour)}:${pad(endMin)}:00`;
+
+    let cleanTitle = pTrim;
+    cleanTitle = cleanTitle.replace(/^(can\s+you\s+|please\s+|could\s+you\s+|i\s+want\s+to\s+|i\s+need\s+to\s+|remind\s+me\s+to\s+|help\s+me\s+)?(schedule|book|add|create|set\s+up|delete|cancel|remove|reschedule|move|change|update)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?(?:event|meeting|appointment|session|task|slot|reminder)?\s*/gi, '');
+    cleanTitle = cleanTitle.replace(/\b(?:on\s+)?(today|tomorrow|day\s+after\s+tomorrow|next\s+week|this\s+week)\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b(?:on\s+)?(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b(?:on\s+)?(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b202\d-\d{2}-\d{2}\b/g, '');
+    cleanTitle = cleanTitle.replace(/\b(?:from\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*(?:to|-|until)\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b(?:at\s+|@\s*)\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b(for\s+\d+\s*(?:hours?|hrs?|mins?|minutes?))\b/gi, '');
+    cleanTitle = cleanTitle.replace(/\b(in\s+my\s+calendar|on\s+my\s+calendar|in\s+calendar|on\s+calendar)\b/gi, '');
+    cleanTitle = cleanTitle.trim().replace(/^[:,\-\s]+|[:,\-\s]+$/g, '');
+    cleanTitle = cleanTitle.replace(/^(?:with|for|about)\s+/i, '');
+    cleanTitle = cleanTitle.trim().replace(/^[:,\-\s]+|[:,\-\s]+$/g, '');
+
+    if (cleanTitle) {
+      cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+    } else {
+      cleanTitle = action === 'delete' ? 'Scheduled Event' : 'Focus Session';
+    }
+
+    let category = 'work';
+    if (/\b(doctor|gym|workout|dentist|walk|run|health|meditation|therapy|pill|medicine|cardio|hospital)\b/i.test(pLower)) {
+      category = 'health';
+    } else if (/\b(focus|deep\s*work|code|coding|architecture|study|reading|writing|algorithm|refactor)\b/i.test(pLower)) {
+      category = 'focus';
+    } else if (/\b(dinner|lunch|breakfast|coffee|mom|dad|family|friend|friends|birthday|party|movie|date|vacation|flight)\b/i.test(pLower)) {
+      category = 'personal';
+    } else if (/\b(ai|agent|automation|bot|pipeline|crawler|train|eval|model)\b/i.test(pLower)) {
+      category = 'ai_autonomous';
+    }
+
+    return {
+      action,
+      title: cleanTitle,
+      start: startStr,
+      end: endStr,
+      date: dateStr,
+      range,
+      category
+    };
+  }
+
+  // Expose parser globally on window
+  if (typeof window !== 'undefined') {
+    window.parseCalendarDirectiveFromPrompt = parseCalendarDirectiveFromPrompt;
+  }
+
   async function generateSimulatedAutonomousReply(prompt, loop, vfs) {
     const pTrim = (prompt || '').trim();
     const pLower = pTrim.toLowerCase();
@@ -832,16 +992,14 @@ if __name__ == "__main__":
 
     // 1. Calendar scheduling & real-life routine intent
     if (jev.route === 'SCHEDULE_CALENDAR') {
-      const today = new Date();
-      const dateStr = today.toISOString().slice(0, 10);
-      const isAutoPlan = /\b(auto_?plan|plan\s*my\s*day|schedule\s*my\s*day|realistic\s*schedule|set\s*schedule)\b/i.test(pTrim);
+      const d = parseCalendarDirectiveFromPrompt(pTrim);
 
-      if (isAutoPlan) {
+      if (d.action === 'auto_plan') {
         return thoughts +
-          `### Autonomous AI Real-Life Scheduler Active\n\n` +
+          `### Autonomous Real-Life Scheduler Active\n\n` +
           `I have analyzed your daily rhythm, blackout windows (Sleep: 23:00 – 07:00, Lunch: 12:30 – 13:30), ` +
           `and applied realistic human jitter (±5m) to prevent artificial consecutive bookings.\n\n` +
-          `[TOOL:SCHEDULE_EVENT action="auto_plan" date="${dateStr}"]\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="auto_plan" date="${d.date}"][/TOOL:SCHEDULE_EVENT]\n\n` +
           `**Optimal Day Schedule Synthesized**:\n` +
           `• **08:05 – 08:50**: Morning Awakening & Cognitive Priming (Health)\n` +
           `• **09:05 – 09:45**: Daily Standup & Systems Sync (Work)\n` +
@@ -849,78 +1007,49 @@ if __name__ == "__main__":
           `• **12:30 – 13:30**: Protected Lunch & Mental Reset (Health)\n` +
           `• **14:05 – 15:20**: Autonomous MicroVM Pipeline Execution (AI Autonomous)\n` +
           `• **18:10 – 19:10**: Evening Physical Exercise & Wind-down (Personal)\n\n` +
-          `Your schedule is now active in your Sovereign Calendar tab and ready to sync with Google Calendar.\n\n` +
-          `[TOOL:TASK_COMPLETE summary="Synthesized realistic human schedule with blackouts and jitter"]`;
+          `Your schedule is now active in your Sovereign Calendar tab and synced with Google Calendar.\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Synthesized realistic human schedule with blackouts and jitter"][/TOOL:TASK_COMPLETE]`;
       }
 
-      // Check view intent
-      const isView = /\b(view|show|check|list|what\s*(is|are|do|have)|upcoming|get|find|inspect)\b/i.test(pTrim) && !/\b(create|add|edit|update|reschedule|move|delete|cancel|clear|remove)\b/i.test(pTrim);
-      if (isView) {
-        const isNextWeek = /\b(next\s*weeks?|upcoming\s*week)\b/i.test(pTrim);
-        const isThisWeek = /\b(this\s*week|upcoming\s*(7|seven)\s*days|current\s*week|week)\b/i.test(pTrim);
-        if (isNextWeek) {
-          return thoughts +
-            `### Inspecting Sovereign Calendar Schedule (Next Week)\n\n` +
-            `Querying scheduled events and meetings for next week...\n\n` +
-            `[TOOL:SCHEDULE_EVENT action="view" range="next_week" daysAhead="7"][/TOOL:SCHEDULE_EVENT]\n\n` +
-            `[TOOL:TASK_COMPLETE summary="Retrieved calendar schedule for next week."][/TOOL:TASK_COMPLETE]`;
-        }
-        if (isThisWeek) {
-          return thoughts +
-            `### Inspecting Sovereign Calendar Schedule (This Week)\n\n` +
-            `Querying scheduled events and meetings for the upcoming week...\n\n` +
-            `[TOOL:SCHEDULE_EVENT action="view" range="week" daysAhead="7"][/TOOL:SCHEDULE_EVENT]\n\n` +
-            `[TOOL:TASK_COMPLETE summary="Retrieved calendar schedule for this week."][/TOOL:TASK_COMPLETE]`;
-        }
-        let targetDate = dateStr;
-        if (pLower.includes('tomorrow')) {
-          const tom = new Date();
-          tom.setDate(tom.getDate() + 1);
-          targetDate = tom.toISOString().slice(0, 10);
-        }
+      if (d.action === 'view') {
+        const rangeLabel = d.range === 'next_week' ? 'Next Week' : (d.range === 'week' ? 'This Week' : d.date);
         return thoughts +
           `### Inspecting Sovereign Calendar Schedule\n\n` +
-          `Querying scheduled events for ${targetDate}...\n\n` +
-          `[TOOL:SCHEDULE_EVENT action="view" date="${targetDate}"][/TOOL:SCHEDULE_EVENT]\n\n` +
-          `[TOOL:TASK_COMPLETE summary="Calendar events retrieved for ${targetDate}."][/TOOL:TASK_COMPLETE]`;
+          `Querying scheduled events and meetings for ${rangeLabel}...\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="view"${d.range ? ` range="${d.range}" daysAhead="7"` : ` date="${d.date}"`}][/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Retrieved calendar schedule for ${rangeLabel}."][/TOOL:TASK_COMPLETE]`;
       }
 
-      // Check edit/reschedule intent
-      const isEdit = /\b(edit|update|reschedule|move|shift|change|rename)\b/i.test(pTrim);
-      if (isEdit) {
-        let targetQuery = '';
-        const editMatch = pTrim.match(/(?:reschedule|edit|update|move|change|shift)\s+(?:the\s+|my\s+)?(?:event|meeting|task|session|appointment)?\s*["']?([^"'\n]+?)["']?\s+(?:to|at|from|for|into)\s+/i);
-        if (editMatch && editMatch[1]) {
-          targetQuery = editMatch[1].replace(/\b(event|meeting|task|session|appointment)\b/gi, '').trim();
-        }
-        if (!targetQuery) {
-          targetQuery = pTrim.replace(/\b(edit|update|reschedule|move|shift|change|rename|event|meeting|task|my|the|calendar)\b/gi, '').trim().split(/\s+(?:to|at)\s+/i)[0] || 'Meeting';
-        }
-        return thoughts +
-          `### Rescheduling Sovereign Calendar Event\n\n` +
-          `Modifying calendar event matching "${escapeHtml(targetQuery)}":\n\n` +
-          `[TOOL:SCHEDULE_EVENT action="edit" query="${escapeHtml(targetQuery)}" start="${dateStr}T14:00:00" end="${dateStr}T15:00:00"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
-          `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(targetQuery)}' rescheduled and synchronized."][/TOOL:TASK_COMPLETE]`;
-      }
-
-      // Check delete/cancel intent
-      const isDelete = /\b(delete|cancel|remove|drop|clear)\b/i.test(pTrim);
-      if (isDelete) {
-        const delTarget = pTrim.replace(/\b(delete|cancel|remove|drop|clear|my|the|calendar|event|meeting|task|appointment|from)\b/gi, '').trim() || 'Scheduled Event';
+      if (d.action === 'delete') {
         return thoughts +
           `### Sovereign Calendar Event Cancellation\n\n` +
-          `Removing scheduled event matching "${escapeHtml(delTarget)}":\n\n` +
-          `[TOOL:SCHEDULE_EVENT action="delete" query="${escapeHtml(delTarget)}"]\n[/TOOL:SCHEDULE_EVENT]\n\n` +
-          `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(delTarget)}' removed."][/TOOL:TASK_COMPLETE]`;
+          `Removing scheduled event matching **${escapeHtml(d.title)}** from your calendar:\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="delete" query="${escapeHtml(d.title)}"][/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(d.title)}' removed."][/TOOL:TASK_COMPLETE]`;
       }
 
-      // Single event creation or custom rule
-      const cleanTitle = pTrim.replace(/\b(schedule|calendar|add event|create event|book a slot|remind me to|set up a meeting|add|create|book)\b/gi, '').trim() || 'Focus Session';
+      if (d.action === 'edit') {
+        return thoughts +
+          `### Rescheduling Sovereign Calendar Event\n\n` +
+          `Rescheduling event matching **${escapeHtml(d.title)}** to **${d.date}** at **${d.start.slice(11, 16)}**:\n\n` +
+          `[TOOL:SCHEDULE_EVENT action="edit" query="${escapeHtml(d.title)}" start="${d.start}" end="${d.end}"][/TOOL:SCHEDULE_EVENT]\n\n` +
+          `[TOOL:TASK_COMPLETE summary="Calendar event '${escapeHtml(d.title)}' rescheduled."][/TOOL:TASK_COMPLETE]`;
+      }
+
+      // action === 'create'
+      const startTimeFormatted = d.start.slice(11, 16);
+      const endTimeFormatted = d.end.slice(11, 16);
+      const catLabel = d.category.charAt(0).toUpperCase() + d.category.slice(1).replace('_', ' ');
+
       return thoughts +
         `### Sovereign Calendar Event Scheduled\n\n` +
-        `[TOOL:SCHEDULE_EVENT action="create" title="${escapeHtml(cleanTitle)}" start="${dateStr}T10:00:00" end="${dateStr}T11:30:00" category="focus"]\n\n` +
-        `Event created successfully with conflict-checking and 15-minute buffer enforcement.\n\n` +
-        `[TOOL:TASK_COMPLETE summary="Calendar Event Scheduled"]`;
+        `I have scheduled **${escapeHtml(d.title)}** on your calendar for **${d.date}** from **${startTimeFormatted} to ${endTimeFormatted}**.\n\n` +
+        `[TOOL:SCHEDULE_EVENT action="create" title="${escapeHtml(d.title)}" start="${d.start}" end="${d.end}" category="${d.category}"][/TOOL:SCHEDULE_EVENT]\n\n` +
+        `• **Event**: ${escapeHtml(d.title)}\n` +
+        `• **Date & Time**: ${d.date} (${startTimeFormatted} – ${endTimeFormatted})\n` +
+        `• **Category**: ${catLabel}\n` +
+        `• **Sync Status**: Synced to Sovereign Calendar & Google Calendar\n\n` +
+        `[TOOL:TASK_COMPLETE summary="Scheduled ${escapeHtml(d.title)} for ${d.date} (${startTimeFormatted}–${endTimeFormatted})"][/TOOL:TASK_COMPLETE]`;
     }
 
     // Whiteboard Pro Diagramming Intent
@@ -1321,18 +1450,63 @@ ${listTable}
 Would you like me to inspect, run, or edit any of these files?`;
     }
 
-    // Default Natural Conversation Route
-    return thoughts + `I understand your question regarding "${pTrim}".
+    // Default Natural Conversation Route - Intelligent Knowledge & Assistant Engine
+    return generateBespokeConversationalReply(pTrim, vfs, thoughts);
+  }
 
-Operating within the LuminaVista Sovereign Workspace with ${vfsFiles.length} file(s) mounted.
+  function generateBespokeConversationalReply(pTrim, vfs, thoughts) {
+    const pLower = pTrim.toLowerCase();
+    const vfsFiles = Object.keys(vfs || {});
 
-I am equipped to:
-• Write or modify files in your Artifacts IDE
-• Run bash/python commands in the Firecracker MicroVM
-• Search online documentation via live web discovery
-• Provide architectural guidance and code analysis
+    // 1. Questions about LuminaVista, its features, or tabs
+    if (/\b(luminavista|lumina|features?|capabilities|what can you do|how to use|tabs?|overview)\b/i.test(pLower)) {
+      return thoughts + `**LuminaVista OS** is a unified sovereign cloud workstation and multi-agent AI operating system.
 
-What specific feature, application, or script would you like to build?`;
+### Core Workstation Capabilities:
+• **AI Studio**: Multi-provider conversational intelligence with autonomous tool execution, live model failover, and prompt containment.
+• **Artifacts & Codespace**: Multi-file Virtual File System (VFS) with syntax highlighting, live sandbox preview, and unrestricted file authoring.
+• **Cloud Compilers & SQL Sandbox**: Multi-language runtime executing native Python, C++, Java, Bash, SQL, and live HTML DOM preview.
+• **Calendar Engine**: Two-way Google Calendar synchronization backed by zero-login RS256 JWT service account authentication.
+• **Physical IoT Gateways**: Hardware workstations for ESP32 DNS Ad-Blocker (telemetry shadow & rule management) and Smart Door Lock (5-layer HMAC).
+• **Whiteboard Pro**: High-DPI infinite canvas supporting freehand drawing, vector shapes, flowcharts, architecture blueprints, and templates.
+
+What would you like to explore or build today?`;
+    }
+
+    // 2. Questions about Calendar specifically
+    if (/\b(calendar|calander|calender|schedule|sync|google calendar)\b/i.test(pLower)) {
+      return thoughts + `### Sovereign Calendar Engine
+
+The LuminaVista Calendar provides comprehensive, bidirectional schedule management:
+• **Natural Language Directives**: Ask me to schedule events (e.g., *"Schedule team sync tomorrow at 3pm"*), reschedule, or delete items.
+• **Google Calendar Two-Way Sync**: Synchronizes events via a zero-login Google Service Account (RS256 JWT) with Upstash Redis SWR caching.
+• **Conflict Detection**: Automated conflict-checking and 15-minute buffer enforcement prevent overlapping meetings.
+• **Month, Week & Day Views**: Interactive grid with categories for Work, Personal, Health, Focus, and AI Autonomous tasks.
+
+Would you like me to inspect your schedule for today or this week?`;
+    }
+
+    // 3. Questions about Coding, Algorithms, or Software Architecture
+    if (/\b(javascript|python|typescript|react|html|css|sql|api|docker|git|node|database|backend|frontend)\b/i.test(pLower)) {
+      return thoughts + `I can assist you directly with your software engineering and architecture needs:
+
+1. **Write or Edit Code in Artifacts IDE**: I can build complete, self-contained single-page apps, UI components, or scripts directly into your workspace files.
+2. **Execute in Cloud Compilers**: Test and verify snippets in Python, C++, Java, Bash, or SQL.
+3. **Debug & Architecture Review**: Review code structure, identify vulnerabilities, optimize performance, or design clean APIs.
+
+Provide the exact requirement, code snippet, or feature you would like to implement!`;
+    }
+
+    // 4. Default direct, helpful conversational response without echoing prompt
+    return thoughts + `I am here to assist you with your project and workspace tasks.
+
+Whether you need to:
+• **Write or Refactor Code** in your Artifacts IDE
+• **Schedule & Organize Events** in your Calendar
+• **Run Scripts & Queries** in the Cloud Compiler & SQL Sandbox
+• **Explore Ideas & Architectures** on the Whiteboard
+
+How can I help you move forward right now?`;
   }
 
   // =========================================================================

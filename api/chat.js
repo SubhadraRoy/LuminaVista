@@ -17,7 +17,8 @@ import {
   jevClassifyIntent,
   buildLuminaSystemPrompt,
   jevGenerateBespokeResponse,
-  inspectJevCommandSafety
+  inspectJevCommandSafety,
+  parseCalendarDirectiveFromPrompt
 } from './_lib/jev-engine.js';
 
 /**
@@ -569,11 +570,24 @@ export default async function handler(req, res) {
         const isAutonomousIntent = jevTelemetry?.route === 'AUTONOMOUS_TASK';
         const isCalendarIntent = jevTelemetry?.route === 'SCHEDULE_CALENDAR';
         const isStallingText = /\b(what specific operation would you like|what would you like me to work on|let me know the specific task|what specific operation|what task should i do|what should i do first|could you let me know the specific task|ready to get underway|let me know what task|what specific feature, application, or script would you like to build)\b/i.test(aiReply);
-        const lacksToolCalls = (isAutonomousIntent && !aiReply.includes('[TOOL:')) || (isCalendarIntent && !aiReply.includes('[TOOL:SCHEDULE_EVENT'));
 
-        if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.' || aiReply.trim() === 'null' || isStallingText || lacksToolCalls) {
-          terminalLogs.push('[Response Guard]: Model returned conversational deflection or missing tool execution on autonomous/calendar task. Falling back to sovereign generator.');
+        if (!aiReply || aiReply.trim() === '' || aiReply.trim() === 'Task processed.' || aiReply.trim() === 'null' || isStallingText || (isAutonomousIntent && !aiReply.includes('[TOOL:'))) {
+          terminalLogs.push('[Response Guard]: Model returned conversational deflection or missing tool execution on autonomous task. Falling back to sovereign generator.');
           aiReply = jevGenerateBespokeResponse(prompt, loopCount, currentVfs, liveSearchResultsText);
+        } else if (isCalendarIntent && !aiReply.includes('[TOOL:SCHEDULE_EVENT')) {
+          const d = parseCalendarDirectiveFromPrompt(prompt);
+          terminalLogs.push(`[Response Guard]: Model responded conversationally for calendar intent (${d.action}). Appending verified calendar execution block.`);
+          if (d.action === 'create') {
+            aiReply += `\n\n[TOOL:SCHEDULE_EVENT action="create" title="${d.title}" start="${d.start}" end="${d.end}" category="${d.category}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Scheduled ${d.title} on ${d.date} (${d.start.slice(11, 16)}–${d.end.slice(11, 16)})"][/TOOL:TASK_COMPLETE]`;
+          } else if (d.action === 'edit') {
+            aiReply += `\n\n[TOOL:SCHEDULE_EVENT action="edit" query="${d.title}" start="${d.start}" end="${d.end}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Rescheduled event '${d.title}'."][/TOOL:TASK_COMPLETE]`;
+          } else if (d.action === 'delete') {
+            aiReply += `\n\n[TOOL:SCHEDULE_EVENT action="delete" query="${d.title}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Removed event '${d.title}'."][/TOOL:TASK_COMPLETE]`;
+          } else if (d.action === 'auto_plan') {
+            aiReply += `\n\n[TOOL:SCHEDULE_EVENT action="auto_plan" date="${d.date}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Synthesized day schedule with blackouts."][/TOOL:TASK_COMPLETE]`;
+          } else if (d.action === 'view') {
+            aiReply += `\n\n[TOOL:SCHEDULE_EVENT action="view"${d.range ? ` range="${d.range}" daysAhead="7"` : ` date="${d.date}"`}][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Calendar events retrieved."][/TOOL:TASK_COMPLETE]`;
+          }
         }
       }
 

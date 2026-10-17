@@ -1275,6 +1275,22 @@ Always keep the workspace clean, maintain pristine architecture, and conclude wi
                   if (clientJev.route === 'SCHEDULE_CALENDAR' || clientJev.route === 'DRAW_WHITEBOARD') {
                     candidate = await window.generateSimulatedAutonomousReply(latestUserMsg, 1, window.vfs);
                   }
+                } else if (window.classifyJevIntentClient && window.parseCalendarDirectiveFromPrompt) {
+                  const clientJev = window.classifyJevIntentClient(latestUserMsg, window.vfs);
+                  if (clientJev.route === 'SCHEDULE_CALENDAR' && !candidate.includes('[TOOL:SCHEDULE_EVENT')) {
+                    const d = window.parseCalendarDirectiveFromPrompt(latestUserMsg);
+                    if (d.action === 'create') {
+                      candidate += `\n\n[TOOL:SCHEDULE_EVENT action="create" title="${d.title}" start="${d.start}" end="${d.end}" category="${d.category}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Scheduled ${d.title} on ${d.date} (${d.start.slice(11, 16)}–${d.end.slice(11, 16)})"][/TOOL:TASK_COMPLETE]`;
+                    } else if (d.action === 'edit') {
+                      candidate += `\n\n[TOOL:SCHEDULE_EVENT action="edit" query="${d.title}" start="${d.start}" end="${d.end}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Rescheduled event '${d.title}'."][/TOOL:TASK_COMPLETE]`;
+                    } else if (d.action === 'delete') {
+                      candidate += `\n\n[TOOL:SCHEDULE_EVENT action="delete" query="${d.title}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Removed event '${d.title}'."][/TOOL:TASK_COMPLETE]`;
+                    } else if (d.action === 'auto_plan') {
+                      candidate += `\n\n[TOOL:SCHEDULE_EVENT action="auto_plan" date="${d.date}"][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Synthesized day schedule with blackouts."][/TOOL:TASK_COMPLETE]`;
+                    } else if (d.action === 'view') {
+                      candidate += `\n\n[TOOL:SCHEDULE_EVENT action="view"${d.range ? ` range="${d.range}" daysAhead="7"` : ` date="${d.date}"`}][/TOOL:SCHEDULE_EVENT]\n\n[TOOL:TASK_COMPLETE summary="Calendar events retrieved."][/TOOL:TASK_COMPLETE]`;
+                    }
+                  }
                 }
 
                 reply = candidate;
