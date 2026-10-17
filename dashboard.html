@@ -1071,32 +1071,6 @@
             <!-- Mini Month Calendar -->
             <div id="calMiniMonthContainer"></div>
 
-            <!-- AI Real-Life Scheduler Controls -->
-            <div class="p-3 bg-surface-950/70 rounded-xl border border-cyan-500/20 space-y-2">
-              <div class="flex items-center justify-between text-xs font-mono font-bold text-cyan-300">
-                <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5"></i> AI Life Scheduler</span>
-                <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Auto</span>
-              </div>
-              
-              <div class="space-y-1.5 text-[11px] font-mono text-zinc-300">
-                <label class="flex items-center justify-between cursor-pointer py-0.5">
-                  <span>Exclude Weekends</span>
-                  <input type="checkbox" id="calCheckExcludeWeekends" checked onchange="LuminaCalendar.setSettings({ excludeWeekends: this.checked })" class="w-3.5 h-3.5 accent-cyan-400 rounded" />
-                </label>
-                <label class="flex items-center justify-between cursor-pointer py-0.5">
-                  <span>Human Jitter (±5m)</span>
-                  <input type="checkbox" id="calCheckJitter" checked onchange="LuminaCalendar.setSettings({ enableHumanJitter: this.checked })" class="w-3.5 h-3.5 accent-cyan-400 rounded" />
-                </label>
-                <div class="flex items-center justify-between text-[10px] text-zinc-500 pt-1 border-t border-white/5">
-                  <span>Sleep Blackout</span>
-                  <span class="text-zinc-400">23:00 – 07:00</span>
-                </div>
-                <div class="flex items-center justify-between text-[10px] text-zinc-500">
-                  <span>Meal Protection</span>
-                  <span class="text-zinc-400">12:30 & 19:30</span>
-                </div>
-              </div>
-            </div>
 
             <!-- My Calendars Categories -->
             <div class="p-2.5 bg-surface-950/50 rounded-xl border border-white/5 space-y-1">
