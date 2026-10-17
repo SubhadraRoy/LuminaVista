@@ -37,20 +37,37 @@ console.log('  ✓ PASS: Zero .env files found anywhere on disk in project tree'
 
 // 2. Audit Git Tracking (Index)
 console.log('\n[SECTION 2: Git Index Tracking Audit]');
-const trackedFiles = execSync('git ls-files', { cwd: rootDir, encoding: 'utf8' }).split('\n');
-const trackedEnv = trackedFiles.filter(f => f === '.env' || f.startsWith('.env.') || f.endsWith('.env') || f.includes('/.env'));
-assert.strictEqual(trackedEnv.length, 0, `Found tracked .env files in git index: ${trackedEnv.join(', ')}`);
-console.log('  ✓ PASS: Zero .env files tracked in current git index');
+let trackedEnv = [];
+try {
+  const trackedFiles = execSync('git ls-files', { cwd: rootDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).split('\n');
+  trackedEnv = trackedFiles.filter(f => f === '.env' || f.startsWith('.env.') || f.endsWith('.env') || f.includes('/.env'));
+  assert.strictEqual(trackedEnv.length, 0, `Found tracked .env files in git index: ${trackedEnv.join(', ')}`);
+  console.log('  ✓ PASS: Zero .env files tracked in current git index');
+} catch (err) {
+  if (err.message && err.message.includes('not a git repository')) {
+    console.log('  ⚠ SKIP: Not a git repository (standalone deployment image)');
+  } else {
+    throw err;
+  }
+}
 
 // 3. Audit Entire Git Commit History
 console.log('\n[SECTION 3: Full Git Commit History Audit]');
-const historyFiles = execSync('git log --all --full-history --pretty=format: --name-only', { cwd: rootDir, encoding: 'utf8' })
-  .split('\n')
-  .map(f => f.trim())
-  .filter(Boolean);
-const historicalEnv = Array.from(new Set(historyFiles.filter(f => f === '.env' || f.startsWith('.env.') || f.endsWith('.env') || f.includes('/.env'))));
-assert.strictEqual(historicalEnv.length, 0, `Found historical .env files in git commits: ${historicalEnv.join(', ')}`);
-console.log('  ✓ PASS: Zero .env files found across all historical commits and branches');
+try {
+  const historyFiles = execSync('git log --all --full-history --pretty=format: --name-only', { cwd: rootDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] })
+    .split('\n')
+    .map(f => f.trim())
+    .filter(Boolean);
+  const historicalEnv = Array.from(new Set(historyFiles.filter(f => f === '.env' || f.startsWith('.env.') || f.endsWith('.env') || f.includes('/.env'))));
+  assert.strictEqual(historicalEnv.length, 0, `Found historical .env files in git commits: ${historicalEnv.join(', ')}`);
+  console.log('  ✓ PASS: Zero .env files found across all historical commits and branches');
+} catch (err) {
+  if (err.message && err.message.includes('not a git repository')) {
+    console.log('  ⚠ SKIP: Not a git repository (standalone deployment image)');
+  } else {
+    throw err;
+  }
+}
 
 // 4. Audit Ignore Rules
 console.log('\n[SECTION 4: Ignore Rules Hardening Audit]');
