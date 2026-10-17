@@ -63,6 +63,12 @@
       if (window.LuminaCloudSync?.queueSync) window.LuminaCloudSync.queueSync();
     } catch (e) {}
     
+    if (id === "tab-overview") {
+      if (window.LuminaOverview && window.LuminaOverview.refresh) {
+        window.LuminaOverview.refresh();
+      }
+    }
+
     if (id === "tab-whiteboard") {
       setTimeout(() => {
         if (window.resizeWhiteboard) window.resizeWhiteboard();

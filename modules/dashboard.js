@@ -65,11 +65,14 @@
     if (window.startAutonomousSyncPoller) window.startAutonomousSyncPoller();
     if (window.initAmbientParticles) window.initAmbientParticles();
     if (window.initIdleTimer) window.initIdleTimer();
+    if (window.LuminaOverview && window.LuminaOverview.init) window.LuminaOverview.init();
 
-    // Reopen exact same tab where user left off
+    // Reopen exact same tab where user left off or default to Overview
     const savedActiveTab = localStorage.getItem("lumina_active_tab_id");
-    if (savedActiveTab && savedActiveTab !== "tab-ai-studio" && window.switchTab) {
+    if (savedActiveTab && window.switchTab) {
       window.switchTab(savedActiveTab);
+    } else if (window.switchTab) {
+      window.switchTab('tab-overview');
     }
   }
 
