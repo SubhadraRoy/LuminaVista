@@ -321,6 +321,9 @@
       <button onclick="switchTab('tab-controls')" id="btn-tab-controls" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Settings & Theme" aria-label="Settings & Theme">
         <i data-lucide="settings" class="w-4 h-4 shrink-0"></i><span class="sidebar-label">Settings</span>
       </button>
+      <button onclick="switchTab('tab-adblock')" id="btn-tab-adblock" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="ESP32 DNS Ad-Blocker" aria-label="ESP32 DNS Ad-Blocker">
+        <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-cyan-400"></i><span class="sidebar-label">ESP32 AdBlocker</span>
+      </button>
       <button onclick="switchTab('tab-smartlock')" id="btn-tab-smartlock" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Smart Door Lock & Logs" aria-label="Smart Door Lock & Logs">
         <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-emerald-400"></i><span class="sidebar-label">Smart Door Lock</span>
       </button>
@@ -1183,6 +1186,7 @@
         <!-- Admin Access Pane -->
         <div id="settingsAdminPane" class="hidden space-y-4"></div>
       </section>
+      <section id="tab-adblock" class="tab-pane hidden h-full flex flex-col gap-3 sm:gap-4 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 pb-6"></section>
       <section id="tab-smartlock" class="tab-pane hidden h-full flex flex-col gap-3 sm:gap-4 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 pb-6"></section>
     </main>
   </div>
@@ -1907,6 +1911,7 @@
   <script src="./modules/notes.js?v=14.1.0"></script>
   <script src="./modules/projects.js?v=14.1.0"></script>
   <script src="./modules/telemetry-theme.js?v=14.1.0"></script>
+  <script src="./modules/adblock.js?v=14.1.0"></script>
   <script src="./modules/smart-lock.js?v=14.1.0"></script>
   <script src="./modules/system.js?v=14.1.0"></script>
   <script src="./modules/admin-access.js?v=14.1.0"></script>

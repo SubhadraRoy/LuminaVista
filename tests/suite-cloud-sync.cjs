@@ -202,4 +202,8 @@ module.exports = async function runCloudSyncSuite({ assert, window, document, ro
   // Suite 29: ESP32 Smart Door Lock & Ultra-Secure Cloud Log Gateway
   const runSmartLockSuite = require('./suite-smart-lock.cjs');
   await runSmartLockSuite({ assert, window, document, rootDir });
+
+  // Suite 30: ESP32 DNS Ad-Blocker & Zero-Trust Cloud Gateway Integration
+  const runAdblockSuite = require('./suite-adblock.cjs');
+  await runAdblockSuite({ assert, window, document, rootDir });
 };

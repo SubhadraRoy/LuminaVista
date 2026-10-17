@@ -129,7 +129,7 @@ const moduleFiles = [
   'modules/telemetry-theme.js',
   'modules/system.js',
   'modules/dashboard.js',
-  'modules/cloud-sync.js', 'modules/smart-lock.js', 'modules/admin-access.js'
+  'modules/cloud-sync.js', 'modules/smart-lock.js', 'modules/adblock.js', 'modules/admin-access.js'
 ];
 
 moduleFiles.forEach(file => {

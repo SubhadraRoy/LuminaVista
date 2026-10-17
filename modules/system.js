@@ -91,6 +91,10 @@
       }
     }
 
+    if (id === "tab-adblock" && window.LuminaAdBlock?.onTabActivated) {
+      window.LuminaAdBlock.onTabActivated();
+    }
+
     if (id === "tab-smartlock" && window.LuminaSmartLock?.onTabActivated) {
       window.LuminaSmartLock.onTabActivated();
     }
@@ -135,6 +139,7 @@
       { label: "Jump to Telemetry", act: () => switchTab('tab-analytics') },
       { label: "Jump to Notes Markdown", act: () => switchTab('tab-scratchpad') },
       { label: "Jump to Calendar", act: () => switchTab('tab-calendar') },
+      { label: "Jump to ESP32 DNS Ad-Blocker", act: () => switchTab('tab-adblock') },
       { label: "Jump to Smart Door Lock & Cloud Log Viewer", act: () => switchTab('tab-smartlock') },
       { label: "AI Real-Life Daily Auto-Schedule", act: () => { switchTab('tab-calendar'); if (window.LuminaCalendar) window.LuminaCalendar.aiAutoPlanDay(); } },
       { label: "Sync Google Calendar", act: () => { if (window.LuminaCalendar) window.LuminaCalendar.openSyncModal(); } },
