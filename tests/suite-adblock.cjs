@@ -122,6 +122,8 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
     applyPendingCommandsToState,
     normalizeStatus,
     sanitizeDomain,
+    isValidIpv4,
+    sanitizeClientAlias,
     getDeviceSecret,
     KEY_STATE,
     KEY_CLIENTS,
@@ -351,6 +353,103 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
   }, iotRes);
   assert(iotRes.statusCode === 200, "Unified /api/iot?service=adblock routes correctly to AdBlock gateway");
   assert(iotDispatchedData && iotDispatchedData.ok === true, "AdBlock time payload received via unified IoT router");
+
+  // 3.11 Shannon Pentest Hardening Probes (IPv4 Sanitization, Parameter Injection & Role Enforcement)
+  console.log("\n[SECTION 3.11: Shannon Pentest Hardening & Adversarial Probes]");
+
+  // A. Unit tests on isValidIpv4 and sanitizeClientAlias
+  assert(isValidIpv4('192.168.1.1') === true, "isValidIpv4 accepts valid standard IPv4");
+  assert(isValidIpv4('10.0.0.1') === true, "isValidIpv4 accepts valid 10.x.x.x IPv4");
+  assert(isValidIpv4('255.255.255.255') === true, "isValidIpv4 accepts 255.255.255.255");
+  assert(isValidIpv4('999.999.999.999') === false, "isValidIpv4 rejects octets > 255");
+  assert(isValidIpv4('192.168.1') === false, "isValidIpv4 rejects incomplete IPv4");
+  assert(isValidIpv4('192.168.1.1.1') === false, "isValidIpv4 rejects 5 octets");
+  assert(isValidIpv4('192.168.01.1') === false, "isValidIpv4 rejects octal-like leading zeros");
+  assert(isValidIpv4('192.168.1.1<script>') === false, "isValidIpv4 rejects XSS payload");
+  assert(isValidIpv4('') === false, "isValidIpv4 rejects empty string");
+  assert(isValidIpv4(null) === false, "isValidIpv4 rejects null");
+
+  assert(sanitizeClientAlias('Living Room TV') === 'Living Room TV', "sanitizeClientAlias preserves clean alias");
+  assert(sanitizeClientAlias('Device<script>alert(1)</script>') === 'Devicescriptalert1script', "sanitizeClientAlias strips HTML tags");
+  assert(sanitizeClientAlias('Device|injection|wan') === 'Deviceinjectionwan', "sanitizeClientAlias strips pipes");
+  assert(sanitizeClientAlias('A'.repeat(50)).length === 31, "sanitizeClientAlias clamps length to 31 chars");
+
+  // B. Parameter Fuzzing on ban_client
+  let badIpResp = null;
+  const badIpRes = {
+    status(s) { this.statusCode = s; return this; },
+    json(d) { badIpResp = d; return this; },
+    setHeader() { return this; }
+  };
+  await defaultHandler({
+    method: 'POST',
+    query: { action: 'command' },
+    headers: { 'x-session-id': 'mock_adblock_admin_test_session' },
+    body: { cmd: 'ban_client', param: '999.999.999.999' }
+  }, badIpRes);
+  assert(badIpRes.statusCode === 400, "ban_client with invalid IP returns HTTP 400");
+
+  let xssIpResp = null;
+  const xssIpRes = {
+    status(s) { this.statusCode = s; return this; },
+    json(d) { xssIpResp = d; return this; },
+    setHeader() { return this; }
+  };
+  await defaultHandler({
+    method: 'POST',
+    query: { action: 'command' },
+    headers: { 'x-session-id': 'mock_adblock_admin_test_session' },
+    body: { cmd: 'ban_client', param: '192.168.1.1<script>alert(1)</script>' }
+  }, xssIpRes);
+  assert(xssIpRes.statusCode === 400, "ban_client with XSS payload returns HTTP 400");
+
+  // C. Master Role Authorization on set_name
+  const guestSid = 'session_temp_guest_adblock';
+  await storage.set(`session:${guestSid}`, JSON.stringify({
+    sessionId: guestSid,
+    role: 'temporary',
+    expiresAt: Date.now() + 3600000
+  }));
+  let guestSetNameResp = null;
+  const guestSetNameRes = {
+    status(s) { this.statusCode = s; return this; },
+    json(d) { guestSetNameResp = d; return this; },
+    setHeader() { return this; }
+  };
+  await defaultHandler({
+    method: 'POST',
+    query: { action: 'command' },
+    headers: { 'x-session-id': guestSid },
+    body: { cmd: 'set_name', param: '192.168.0.50|GuestPhone|lan' }
+  }, guestSetNameRes);
+  assert(guestSetNameRes.statusCode === 403, "set_name from temporary guest session is rejected with HTTP 403");
+
+  // D. Valid set_name with Master session
+  let adminSetNameResp = null;
+  const adminSetNameRes = {
+    status(s) { this.statusCode = s; return this; },
+    json(d) { adminSetNameResp = d; return this; },
+    setHeader() { return this; }
+  };
+  await defaultHandler({
+    method: 'POST',
+    query: { action: 'command' },
+    headers: { 'x-session-id': 'mock_adblock_admin_test_session' },
+    body: { cmd: 'set_name', param: '192.168.0.50|AdminOffice|lan' }
+  }, adminSetNameRes);
+  assert(adminSetNameRes.statusCode === 200, "set_name from master session returns HTTP 200");
+
+  // E. Optimistic state projection security against malformed queue entries
+  const malformedQueue = [
+    { cmd: 'ban_client', param: 'MALFORMED_IP<svg/onload=alert(1)>' },
+    { cmd: 'set_name', param: 'BAD_IP|Alias|lan' },
+    { cmd: 'set_name', param: '192.168.0.75|<img src=x>|lan' }
+  ];
+  const { clients: testedClients } = applyPendingCommandsToState({}, [], malformedQueue);
+  assert(!testedClients.some(c => c.ip === 'MALFORMED_IP<svg/onload=alert(1)>'), "applyPendingCommandsToState ignores malformed ban_client IP");
+  assert(!testedClients.some(c => c.ip === 'BAD_IP'), "applyPendingCommandsToState ignores malformed set_name IP");
+  const sanitizedEntry = testedClients.find(c => c.ip === '192.168.0.75');
+  assert(sanitizedEntry && !sanitizedEntry.name.includes('<') && !sanitizedEntry.name.includes('>'), "applyPendingCommandsToState sanitizes alias names");
 
   console.log("\n=================================================================");
   console.log("🎉 ALL ESP32 ADBLOCKER INTEGRATION TESTS PASSED WITH ZERO ERRORS!");

@@ -169,6 +169,25 @@ export async function verifyDeviceRequest(req, rawBodyStr, storage) {
   return { valid: true, deviceId, ts, seq: parseInt(seqStr, 10) || 0 };
 }
 
+export function isValidIpv4(ip) {
+  if (typeof ip !== 'string') return false;
+  const trimmed = ip.trim();
+  const parts = trimmed.split('.');
+  if (parts.length !== 4) return false;
+  for (const part of parts) {
+    if (!/^\d{1,3}$/.test(part)) return false;
+    const n = parseInt(part, 10);
+    if (n < 0 || n > 255) return false;
+    if (part.length > 1 && part.startsWith('0')) return false;
+  }
+  return true;
+}
+
+export function sanitizeClientAlias(alias) {
+  if (typeof alias !== 'string') return '';
+  return alias.trim().replace(/[^\w\s\.-]/g, '').slice(0, 31);
+}
+
 export function sanitizeDomain(raw) {
   if (!raw || typeof raw !== 'string') return '';
   const clean = raw.trim().toLowerCase();
@@ -183,24 +202,27 @@ export function applyPendingCommandsToState(state, clients, cmdQueue) {
   if (!Array.isArray(cmdQueue) || cmdQueue.length === 0) return { state, clients };
   const updatedClients = Array.isArray(clients) ? [...clients] : [];
   for (const c of cmdQueue) {
-    if (c.cmd === 'ban_client' && c.param) {
-      const idx = updatedClients.findIndex(cl => cl.ip === c.param);
+    if (!c || typeof c !== 'object') continue;
+    if (c.cmd === 'ban_client' && isValidIpv4(c.param)) {
+      const ip = c.param.trim();
+      const idx = updatedClients.findIndex(cl => cl.ip === ip);
       if (idx !== -1) {
         updatedClients[idx] = { ...updatedClients[idx], banned: true };
       } else {
-        updatedClients.push({ ip: c.param, name: c.param, banned: true, queries: 0, blocked: 0, iface: 'lan' });
+        updatedClients.push({ ip, name: ip, banned: true, queries: 0, blocked: 0, iface: 'lan' });
       }
-    } else if (c.cmd === 'unban_client' && c.param) {
-      const idx = updatedClients.findIndex(cl => cl.ip === c.param);
+    } else if (c.cmd === 'unban_client' && isValidIpv4(c.param)) {
+      const ip = c.param.trim();
+      const idx = updatedClients.findIndex(cl => cl.ip === ip);
       if (idx !== -1) {
         updatedClients[idx] = { ...updatedClients[idx], banned: false };
       }
-    } else if (c.cmd === 'set_name' && c.param) {
+    } else if (c.cmd === 'set_name' && typeof c.param === 'string') {
       const parts = c.param.split('|');
-      const ip = parts[0];
-      const alias = parts[1];
-      const iface = parts[2] || 'lan';
-      if (ip && alias) {
+      const ip = parts[0]?.trim();
+      const alias = sanitizeClientAlias(parts[1]);
+      const iface = parts[2]?.trim().toLowerCase() === 'wan' ? 'wan' : 'lan';
+      if (isValidIpv4(ip) && alias) {
         const idx = updatedClients.findIndex(cl => cl.ip === ip);
         if (idx !== -1) {
           updatedClients[idx] = { ...updatedClients[idx], name: alias, iface };
@@ -412,17 +434,36 @@ export default async function handler(req, res) {
       return sendSecureJson(res, 400, { error: `Invalid command '${cmd}'. Allowed: ${Array.from(ALLOWED_COMMANDS).join(', ')}` }, req);
     }
 
-    // Role Enforcement for Destructive Actions
-    if ((cmd === 'ban_client' || cmd === 'unban_client' || cmd === 'reboot' || cmd === 'fetch_now') && session.role !== 'master') {
-      return sendSecureJson(res, 403, { error: 'Master role authorization required for destructive operations' }, req);
+    // Role Enforcement for Destructive & Administrative Actions (CWE-285)
+    const MASTER_COMMANDS = new Set(['ban_client', 'unban_client', 'set_name', 'reboot', 'fetch_now']);
+    if (MASTER_COMMANDS.has(cmd) && session.role !== 'master') {
+      auditLog('ADBLOCK_FORBIDDEN', req, `Temporary session attempted ${cmd} (role=${session.role})`);
+      return sendSecureJson(res, 403, { error: 'Master role authorization required for administrative operations' }, req);
     }
 
-    // Sanitize domain parameter for block commands
+    // Input Validation & Parameter Canonicalization (CWE-20)
+    let sanitizedParam = '';
     if (cmd === 'add_block' || cmd === 'remove_block') {
-      const cleanDom = sanitizeDomain(param);
-      if (!cleanDom) {
+      sanitizedParam = sanitizeDomain(param);
+      if (!sanitizedParam) {
         return sendSecureJson(res, 400, { error: 'Invalid hostname format for block command' }, req);
       }
+    } else if (cmd === 'ban_client' || cmd === 'unban_client') {
+      if (!isValidIpv4(param)) {
+        return sendSecureJson(res, 400, { error: 'Invalid IPv4 address format for client ban/unban' }, req);
+      }
+      sanitizedParam = param.trim();
+    } else if (cmd === 'set_name') {
+      const parts = param.split('|');
+      const ip = parts[0]?.trim();
+      const alias = sanitizeClientAlias(parts[1]);
+      const iface = parts[2]?.trim().toLowerCase() === 'wan' ? 'wan' : 'lan';
+      if (!isValidIpv4(ip) || !alias) {
+        return sendSecureJson(res, 400, { error: 'Invalid set_name parameter: expected valid IPv4 and non-empty alias (max 31 characters)' }, req);
+      }
+      sanitizedParam = `${ip}|${alias}|${iface}`;
+    } else if (cmd === 'reboot' || cmd === 'fetch_now') {
+      sanitizedParam = '';
     }
 
     const secret = await ensureDeviceSecretLoaded(storage);
@@ -434,7 +475,7 @@ export default async function handler(req, res) {
     const cmdObj = {
       cmdId: `cmd_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
       cmd,
-      param,
+      param: sanitizedParam,
       issuedAt: nowSec,
       expiresAt: nowSec + 60
     };
