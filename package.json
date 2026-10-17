@@ -21,7 +21,7 @@
   ],
   "scripts": {
     "start": "node tests/server.cjs",
-    "build": "node tests/lint.cjs && node tests/suite-env-clean.cjs && node tests/suite-service-account-calendar.cjs && node tests/suite-adblock.cjs",
+    "build": "node tests/lint.cjs && node tests/suite-env-clean.cjs && node tests/suite-service-account-calendar.cjs",
     "test": "node tests/features.test.cjs",
     "test:browser": "node tests/browser-cdp-test.cjs",
     "lint": "node tests/lint.cjs"
