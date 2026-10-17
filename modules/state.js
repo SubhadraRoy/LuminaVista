@@ -28,7 +28,7 @@
         if (isGhPages) {
           url = vercelApiOrigin + url;
         }
-        if (sid) {
+        if (sid && !url.includes('/api/calendar')) {
           if (typeof Headers !== 'undefined' && headers instanceof Headers) {
             if (!headers.has('x-session-id')) headers.set('x-session-id', sid);
           } else if (Array.isArray(headers)) {

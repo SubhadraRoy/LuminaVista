@@ -283,11 +283,8 @@
   async function calendarApiFetch(endpoint, options = {}) {
     const origin = getApiOrigin();
     const url = endpoint.startsWith('http') ? endpoint : (origin + endpoint);
-    const sessionId = getSessionId();
-
     const headers = Object.assign({
-      'Content-Type': 'application/json',
-      'x-session-id': sessionId
+      'Content-Type': 'application/json'
     }, options.headers || {});
 
     if (options.cacheBypass) {
