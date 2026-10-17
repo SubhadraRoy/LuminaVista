@@ -290,10 +290,16 @@
       'x-session-id': sessionId
     }, options.headers || {});
 
+    if (options.cacheBypass) {
+      headers['Cache-Control'] = 'no-cache';
+      headers['Pragma'] = 'no-cache';
+    }
+
     const fetchOpts = Object.assign({}, options, {
       headers,
       credentials: 'include'
     });
+    delete fetchOpts.cacheBypass;
 
     return fetch(url, fetchOpts);
   }
@@ -307,12 +313,16 @@
         const email = data.email || getSettings().googleAccountEmail || '';
         setSettings({
           googleCalendarConnected: isConnected,
-          googleAccountEmail: email
+          googleAccountEmail: email,
+          ...(isConnected ? { lastSyncError: null } : {})
         });
         updateSyncStatusBadge();
         if (isConnected) {
           await syncGoogleCalendar();
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.warn('[Google Calendar Sync]: Backend status check HTTP', res.status, errData);
       }
     } catch (e) {
       console.warn('Backend connection status check failed:', e);
@@ -405,7 +415,9 @@
     isSyncInProgress = true;
     updateSyncStatusBadge(true);
     try {
-      const res = await calendarApiFetch('/api/calendar/sync');
+      const res = await calendarApiFetch('/api/calendar/sync', {
+        cacheBypass: isManual
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.items && Array.isArray(data.items)) {
@@ -490,7 +502,8 @@
           setSettings({
             googleCalendarConnected: true,
             googleAccountEmail: data.email || getSettings().googleAccountEmail || 'roysubhadra40@gmail.com',
-            lastSyncedAt: new Date().toISOString()
+            lastSyncedAt: new Date().toISOString(),
+            lastSyncError: null
           });
 
           // 3. Two-Way Push: Push unpushed sovereign local events to Google Calendar
@@ -508,16 +521,30 @@
         }
       } else {
         const errData = await res.json().catch(() => ({}));
-        if (res.status === 401 || errData.connected === false || errData.needsReauth) {
-          setSettings({ googleCalendarConnected: false });
-          updateSyncStatusBadge();
-          if (isManual && window.showToast) {
+        const statusMsg = errData.error || errData.details || `Google sync failed (HTTP ${res.status})`;
+        console.error(`[Google Calendar Sync]: Failed with status ${res.status}:`, errData);
+        setSettings({
+          googleCalendarConnected: false,
+          lastSyncError: statusMsg
+        });
+        updateSyncStatusBadge();
+        if (isManual && window.showToast) {
+          if (res.status === 401 || errData.needsReauth) {
             window.showToast("Google Calendar Login Needed", "Google session expired. Please click 'Sign in with Google' to reconnect.");
+          } else {
+            window.showToast("Google Calendar Sync Error", statusMsg);
           }
         }
       }
     } catch (e) {
-      console.warn('Sync Google Calendar error:', e);
+      console.error('[Google Calendar Sync]: Network or client exception during sync:', e);
+      setSettings({
+        lastSyncError: e.message || String(e)
+      });
+      updateSyncStatusBadge();
+      if (isManual && window.showToast) {
+        window.showToast("Sync Error", e.message || "Failed to reach serverless calendar controller.");
+      }
     } finally {
       isSyncInProgress = false;
       updateSyncStatusBadge(false);
@@ -602,15 +629,17 @@
     }
 
     const settings = getSettings();
-    const calendarEvents = getEvents();
-    const hasGoogleEvents = Array.isArray(calendarEvents) && calendarEvents.some(e => e && e.googleEventId);
 
-    if (settings.googleCalendarConnected || hasGoogleEvents) {
-      const email = settings.googleAccountEmail || 'roysubhadra40@gmail.com';
+    if (settings.googleCalendarConnected) {
+      const email = settings.googleAccountEmail || '';
       const emailSuffix = email ? ` (${email})` : '';
       badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span> <span class="inline sm:hidden text-[10px]">Google Synced</span><span class="hidden sm:inline text-[10px]">Google Synced${emailSuffix}</span>`;
       badge.className = 'flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/20 cursor-pointer';
       badge.title = `Google Calendar Connected${emailSuffix} - Click to configure`;
+    } else if (settings.lastSyncError) {
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span> <span class="text-[10px]">Sync Error</span>`;
+      badge.className = 'flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 cursor-pointer';
+      badge.title = `Sync Error: ${settings.lastSyncError} - Click to reconnect`;
     } else {
       const label = settings.googleAccountEmail ? 'Sign in with Google' : 'Local Sovereign';
       badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span> <span class="text-[10px]">${label}</span>`;
@@ -649,7 +678,8 @@
           const emailDisplay = data.email || getSettings().googleAccountEmail || '';
           setSettings({
             googleCalendarConnected: true,
-            googleAccountEmail: emailDisplay
+            googleAccountEmail: emailDisplay,
+            lastSyncError: null
           });
           if (statusBadge) {
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-mono';
@@ -669,7 +699,8 @@
           if (statusText) {
             const targetEmail = data.email || getSettings().googleAccountEmail || '';
             const emailHint = targetEmail ? ` for <b class="text-white">${escapeHtml(targetEmail)}</b>` : '';
-            statusText.innerHTML = `<span class="text-amber-300 font-sans">Google authentication required${emailHint}. Click <b>Sign in with Google</b> below to connect your real Google schedule.</span>`;
+            const errBanner = getSettings().lastSyncError ? `<div class="mt-2 text-[11px] text-rose-400 font-mono bg-rose-500/10 p-2 rounded border border-rose-500/20">Error: ${escapeHtml(getSettings().lastSyncError)}</div>` : '';
+            statusText.innerHTML = `<span class="text-amber-300 font-sans">Google authentication required${emailHint}. Click <b>Sign in with Google</b> below to connect your real Google schedule.</span>${errBanner}`;
           }
         } else {
           setSettings({ googleCalendarConnected: false });
@@ -685,7 +716,7 @@
       }
     } catch (e) {
       if (statusText) {
-        statusText.innerHTML = `<span class="text-zinc-400 font-mono">Backend status check unavailable.</span>`;
+        statusText.innerHTML = `<span class="text-rose-400 font-mono">Backend status check failed: ${escapeHtml(e.message || String(e))}</span>`;
       }
     }
 

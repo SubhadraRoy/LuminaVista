@@ -133,6 +133,16 @@ export function serializeGcalCookie(tokenData, proto, maxAgeSeconds = 30 * 24 * 
   });
 }
 
+// Standardized Google OAuth Credentials resolver supporting GOOGLE_* and GCAL_* aliases
+export function getGoogleOAuthCredentials() {
+  const clientId = (process.env.GOOGLE_CLIENT_ID || process.env.GCAL_CLIENT_ID || '').trim();
+  const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || process.env.GCAL_CLIENT_SECRET || '').trim();
+  const redirectUriOverride = (process.env.GOOGLE_REDIRECT_URI || process.env.GCAL_REDIRECT_URI || '').trim();
+  const rawOauthSecret = process.env.ADMIN_PASSWORD || clientSecret;
+  const oauthSecret = rawOauthSecret ? rawOauthSecret.trim().replace(/^["']|["']$/g, '').trim() : '';
+  return { clientId, clientSecret, redirectUriOverride, oauthSecret };
+}
+
 // Redirect URI resolver prioritizing production Vercel for GitHub Pages and preview environments
 export function resolveRedirectUri(req, redirectUriFromState = null) {
   // 1. Highest priority: verified state parameter redirect_uri during OAuth callback code exchange
@@ -141,8 +151,9 @@ export function resolveRedirectUri(req, redirectUriFromState = null) {
   }
 
   // 2. Explicit server environment variable override
-  if (process.env.GOOGLE_REDIRECT_URI) {
-    return process.env.GOOGLE_REDIRECT_URI;
+  const { redirectUriOverride } = getGoogleOAuthCredentials();
+  if (redirectUriOverride) {
+    return redirectUriOverride;
   }
 
   // 3. Client query parameter
@@ -257,7 +268,7 @@ async function handleAuth(req, res) {
   setCorsHeaders(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const { clientId, oauthSecret } = getGoogleOAuthCredentials();
   if (!clientId) {
     return sendSecureJson(res, 200, {
       configured: false,
@@ -270,8 +281,6 @@ async function handleAuth(req, res) {
   // Encode anti-CSRF random nonce, timestamp, and HMAC signature into state
   const nonce = crypto.randomBytes(16).toString('hex');
   const ts = Date.now();
-  const rawOauthSecret = process.env.ADMIN_PASSWORD || process.env.GOOGLE_CLIENT_SECRET || process.env.GCAL_CLIENT_SECRET;
-  const oauthSecret = rawOauthSecret ? rawOauthSecret.trim().replace(/^["']|["']$/g, '').trim() : '';
   if (!oauthSecret) {
     return sendSecureJson(res, 500, {
       configured: false,
@@ -345,8 +354,7 @@ async function handleCallback(req, res) {
     `);
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const { clientId, clientSecret, oauthSecret } = getGoogleOAuthCredentials();
 
   if (!clientId || !clientSecret) {
     return res.status(500).send('Server missing Google OAuth configuration in Vercel environment variables.');
@@ -387,8 +395,6 @@ async function handleCallback(req, res) {
       return res.status(400).send('<!DOCTYPE html><html><body><h1>400 Bad Request</h1><p>Invalid, expired, or tampered OAuth state parameter.</p></body></html>');
     }
 
-    const rawOauthSecret = process.env.ADMIN_PASSWORD || process.env.GOOGLE_CLIENT_SECRET || process.env.GCAL_CLIENT_SECRET;
-    const oauthSecret = rawOauthSecret ? rawOauthSecret.trim().replace(/^["']|["']$/g, '').trim() : '';
     if (!oauthSecret) {
       return res.status(500).send('<!DOCTYPE html><html><body><h1>500 Internal Server Error</h1><p>OAuth secret is not configured in server environment.</p></body></html>');
     }
@@ -563,7 +569,8 @@ async function handleStatus(req, res) {
   setCorsHeaders(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  const configured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const { clientId, clientSecret } = getGoogleOAuthCredentials();
+  const configured = !!(clientId && clientSecret);
   // Verify token is genuinely valid and refreshable across all devices & incognito tabs
   const accessToken = await getValidAccessToken(req, res);
   const storage = getSafeStorage();
@@ -612,8 +619,8 @@ async function handleStatus(req, res) {
     connected,
     needsReauth: !connected && !!email,
     email: email || '',
-    hasClientId: !!process.env.GOOGLE_CLIENT_ID,
-    hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    hasClientId: !!clientId,
+    hasClientSecret: !!clientSecret,
     redirectUri
   });
 }
@@ -676,9 +683,8 @@ async function getValidAccessToken(req, res, forceRefresh = false) {
   }
 
   // E. Token is expired or forced refresh requested: Refresh using refresh_token
+  const { clientId, clientSecret } = getGoogleOAuthCredentials();
   const refreshToken = tokenData.refresh_token || process.env.GOOGLE_REFRESH_TOKEN || null;
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.GCAL_CLIENT_SECRET;
 
   if (refreshToken && clientId && clientSecret) {
     // Stampeding herd protection: coalesce concurrent token refreshes
@@ -782,6 +788,121 @@ async function getValidAccessToken(req, res, forceRefresh = false) {
   return null;
 }
 
+// Centralized Google Calendar REST API v3 Wrapper with 401 Auto-Refresh & 410 SyncToken Recovery
+export async function executeGoogleCalendarApi(endpointOrUrl, options = {}, req = null, res = null, retryCount = 0) {
+  const accessToken = options.accessToken || (await getValidAccessToken(req, res));
+  if (!accessToken) {
+    return {
+      ok: false,
+      status: 401,
+      error: 'Not authenticated with Google Calendar. Please connect your Google account.',
+      needsReauth: true
+    };
+  }
+
+  const baseEndpoint = endpointOrUrl.startsWith('http')
+    ? endpointOrUrl
+    : `https://www.googleapis.com/calendar/v3${endpointOrUrl.startsWith('/') ? '' : '/'}${endpointOrUrl}`;
+
+  let url = baseEndpoint;
+  if (options.syncToken) {
+    try {
+      const urlObj = new URL(url);
+      urlObj.searchParams.set('syncToken', options.syncToken);
+      url = urlObj.toString();
+    } catch (_) {}
+  }
+
+  const headers = Object.assign({
+    'Authorization': `Bearer ${accessToken}`,
+    'Accept': 'application/json'
+  }, options.headers || {});
+
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const fetchOpts = {
+    method: options.method || 'GET',
+    headers
+  };
+  if (options.body) {
+    fetchOpts.body = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+  }
+
+  let response;
+  try {
+    response = await fetch(url, fetchOpts);
+  } catch (netErr) {
+    console.error('[Google Calendar API]: Network request failed:', netErr);
+    return {
+      ok: false,
+      status: 502,
+      error: 'Failed to contact Google Calendar servers',
+      details: sanitizeError(netErr.message || String(netErr)),
+      needsReauth: false
+    };
+  }
+
+  // 1. Automatic 401 Unauthorized -> Refresh Token -> Retry Request
+  if (response.status === 401 && retryCount < 1) {
+    console.warn('[Google Calendar API]: 401 Unauthorized received. Triggering automatic token refresh...');
+    const refreshedToken = await getValidAccessToken(req, res, true);
+    if (refreshedToken) {
+      console.info('[Google Calendar API]: Token refresh succeeded. Retrying Google Calendar request...');
+      return await executeGoogleCalendarApi(endpointOrUrl, Object.assign({}, options, { accessToken: refreshedToken }), req, res, retryCount + 1);
+    } else {
+      console.error('[Google Calendar API]: Automatic token refresh failed or credentials revoked.');
+    }
+  }
+
+  // 2. Automatic 410 Gone -> Clear syncToken -> Full Resync Recovery (RFC 6578)
+  if (response.status === 410 && options.syncToken) {
+    console.warn('[Google Calendar API]: 410 Gone received (syncToken invalid). Resetting syncToken and performing full sync...');
+    const fullSyncOpts = Object.assign({}, options);
+    delete fullSyncOpts.syncToken;
+    fullSyncOpts.fullSync = true;
+    return await executeGoogleCalendarApi(endpointOrUrl, fullSyncOpts, req, res, retryCount);
+  }
+
+  if (!response.ok) {
+    let errPayload = null;
+    try {
+      errPayload = await response.json();
+    } catch (_) {
+      try {
+        errPayload = { message: await response.text() };
+      } catch (__) {
+        errPayload = { message: `HTTP ${response.status}` };
+      }
+    }
+    const errMsg = errPayload?.error?.message || errPayload?.message || `Google Calendar API error (HTTP ${response.status})`;
+    console.error(`[Google Calendar API]: Error HTTP ${response.status} on ${options.method || 'GET'} ${url}:`, errMsg);
+    return {
+      ok: false,
+      status: response.status,
+      error: errMsg,
+      googleError: errPayload?.error || errPayload,
+      needsReauth: response.status === 401
+    };
+  }
+
+  let data = null;
+  if (response.status !== 204) {
+    try {
+      data = await response.json();
+    } catch (parseErr) {
+      data = null;
+    }
+  }
+
+  return {
+    ok: true,
+    status: response.status,
+    data
+  };
+}
+
 // 5. Two-Way Sync (Pull, Push, and Delete)
 async function handleSync(req, res) {
   setCorsHeaders(req, res);
@@ -821,13 +942,26 @@ async function handleSync(req, res) {
     }, req);
   }
 
+  const isBypassCache = Boolean(
+    req.headers?.['cache-control']?.includes('no-cache') ||
+    req.headers?.pragma?.includes('no-cache') ||
+    req.query?.bypass_cache === 'true' ||
+    req.query?.no_cache === 'true'
+  );
+
   const accessToken = await getValidAccessToken(req, res);
 
   // GET: Pull events from Google Calendar
   if (req.method === 'GET') {
     if (!accessToken) {
+      if (isBypassCache) {
+        return sendSecureJson(res, 401, {
+          connected: false,
+          needsReauth: true,
+          error: 'Not connected to Google Calendar. Please authenticate.'
+        });
+      }
       // Fallback: Return cached sovereign Google Calendar events from Redis so unlogged devices still see all schedules
-      const storage = getSafeStorage();
       if (storage) {
         try {
           const rawWb = await storage.get('master_workspace_state');
@@ -848,66 +982,60 @@ async function handleSync(req, res) {
               });
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[Google Calendar Sync]: Failed to read cached workspace state:', e);
+        }
       }
       return sendSecureJson(res, 401, {
         connected: false,
         error: 'Not connected to Google Calendar. Please authenticate.'
       });
     }
+
     try {
       const now = new Date();
       const timeMin = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString();
       const timeMax = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString();
 
-      const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=250`;
-
-      let gcalRes = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-
-      if (!gcalRes.ok && gcalRes.status === 401) {
-        // Token rejected by Google: force refresh and retry once
-        const refreshedToken = await getValidAccessToken(req, res, true);
-        if (refreshedToken) {
-          gcalRes = await fetch(url, {
-            headers: { Authorization: `Bearer ${refreshedToken}` }
-          });
-        }
+      const syncTokenParam = req.query?.syncToken || null;
+      let primaryUrl = `/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250`;
+      if (!syncTokenParam) {
+        primaryUrl += `&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`;
       }
 
-      if (!gcalRes.ok) {
-        const errText = await gcalRes.text();
-        return sendSecureJson(res, gcalRes.status, {
+      const primaryResult = await executeGoogleCalendarApi(primaryUrl, {
+        method: 'GET',
+        syncToken: syncTokenParam
+      }, req, res);
+
+      if (!primaryResult.ok) {
+        return sendSecureJson(res, primaryResult.status, {
           connected: false,
-          needsReauth: gcalRes.status === 401,
-          error: 'Failed to fetch from Google Calendar',
-          details: sanitizeError(errText)
+          needsReauth: primaryResult.needsReauth,
+          error: primaryResult.error,
+          details: primaryResult.googleError
         });
       }
 
-      const data = await gcalRes.json();
+      const data = primaryResult.data || {};
       let items = data.items || [];
+      const nextSyncToken = data.nextSyncToken || null;
 
-      // Query secondary and subscribed calendars (e.g. Physics Wallah, AITS, Classroom, Exam batches)
+      // Query secondary and subscribed calendars with executeGoogleCalendarApi
       try {
-        const calListRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=reader', {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-        if (calListRes.ok) {
-          const calListData = await calListRes.json();
-          const secondaryCals = (calListData.items || []).filter(c => c && c.id && c.id !== 'primary' && !c.deleted && c.selected !== false);
+        const calListResult = await executeGoogleCalendarApi('/users/me/calendarList?minAccessRole=reader', { method: 'GET' }, req, res);
+        if (calListResult.ok && calListResult.data) {
+          const secondaryCals = (calListResult.data.items || []).filter(c => c && c.id && c.id !== 'primary' && !c.deleted && c.selected !== false);
           if (secondaryCals.length > 0) {
             const secPromises = secondaryCals.slice(0, 5).map(async (secCal) => {
-              try {
-                const secUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(secCal.id)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=250`;
-                const r = await fetch(secUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
-                if (r.ok) {
-                  const d = await r.json();
-                  return d.items || [];
-                }
-              } catch (e) {}
-              return [];
+              const secUrl = `/calendars/${encodeURIComponent(secCal.id)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=250`;
+              const secRes = await executeGoogleCalendarApi(secUrl, { method: 'GET' }, req, res);
+              if (secRes.ok && secRes.data) {
+                return secRes.data.items || [];
+              } else {
+                console.warn(`[Google Calendar Sync]: Secondary calendar ${secCal.id} pull warning:`, secRes.error);
+                return [];
+              }
             });
             const secResults = await Promise.allSettled(secPromises);
             for (const resItem of secResults) {
@@ -917,7 +1045,9 @@ async function handleSync(req, res) {
             }
           }
         }
-      } catch (e) {}
+      } catch (secErr) {
+        console.warn('[Google Calendar Sync]: Secondary calendar enumeration non-fatal error:', secErr);
+      }
 
       // Deduplicate items by id
       const seenIds = new Set();
@@ -931,7 +1061,6 @@ async function handleSync(req, res) {
       items = uniqueItems;
 
       // Seamlessly cache Google Calendar events in master workspace state in Redis for multi-device sync
-      const storage = getSafeStorage();
       if (storage && Array.isArray(items)) {
         try {
           const rawWb = await storage.get('master_workspace_state');
@@ -970,16 +1099,22 @@ async function handleSync(req, res) {
               await storage.set('master_workspace_state', JSON.stringify(wb));
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[Google Calendar Sync]: Failed to cache events in master workspace state:', e);
+        }
       }
 
       return sendSecureJson(res, 200, {
         success: true,
-        items
+        items,
+        nextSyncToken: nextSyncToken || undefined
       });
     } catch (err) {
       console.error('Google Calendar Sync GET error:', err);
-      return sendSecureJson(res, 500, { error: 'Failed to pull Google Calendar events' });
+      return sendSecureJson(res, 500, {
+        error: 'Failed to pull Google Calendar events',
+        details: sanitizeError(err.message || String(err))
+      });
     }
   }
 
@@ -995,7 +1130,7 @@ async function handleSync(req, res) {
       const body = req.body || {};
       const rawTargetId = body.googleEventId || body.eventId;
       const targetEventId = rawTargetId ? String(rawTargetId).replace(/^gcal_/, '') : null;
-      
+
       const payload = {
         summary: body.summary || body.title || 'Scheduled Task',
         description: body.description || '',
@@ -1013,72 +1148,47 @@ async function handleSync(req, res) {
         payload.start = { date: startDateStr };
         payload.end = { date: endDateStr };
       } else {
-        payload.start = body.start || { dateTime: new Date().toISOString() };
-        payload.end = body.end || { dateTime: new Date(Date.now() + 3600000).toISOString() };
+        const sTime = body.start?.dateTime || (typeof body.start === 'string' ? body.start : new Date().toISOString());
+        const eTime = body.end?.dateTime || (typeof body.end === 'string' ? body.end : new Date(Date.now() + 3600000).toISOString());
+        payload.start = { dateTime: sTime };
+        payload.end = { dateTime: eTime };
       }
 
-      let gcalRes;
+      let pushResult;
       if (targetEventId) {
-        // Update existing event
-        gcalRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(targetEventId)}`, {
+        pushResult = await executeGoogleCalendarApi(`/calendars/primary/events/${encodeURIComponent(targetEventId)}`, {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
+          body: payload
+        }, req, res);
       } else {
-        // Create new event with deterministic idempotency ID if provided
         if ((body.id || body.localId) && !payload.id) {
           payload.id = crypto.createHash('sha256').update(String(body.id || body.localId)).digest('hex').slice(0, 32).toLowerCase().replace(/[^a-v0-9]/g, 'a');
         }
-        gcalRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        pushResult = await executeGoogleCalendarApi('/calendars/primary/events', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
+          body: payload
+        }, req, res);
       }
 
-      if (!gcalRes.ok && gcalRes.status === 401) {
-        const refreshedToken = await getValidAccessToken(req, res, true);
-        if (refreshedToken) {
-          const retryMethod = targetEventId ? 'PATCH' : 'POST';
-          const retryUrl = targetEventId 
-            ? `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(targetEventId)}`
-            : 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-          gcalRes = await fetch(retryUrl, {
-            method: retryMethod,
-            headers: {
-              Authorization: `Bearer ${refreshedToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-        }
-      }
-
-      if (!gcalRes.ok) {
-        const errText = await gcalRes.text();
-        return sendSecureJson(res, gcalRes.status, {
+      if (!pushResult.ok) {
+        return sendSecureJson(res, pushResult.status, {
           connected: false,
-          needsReauth: gcalRes.status === 401,
-          error: 'Failed to push to Google Calendar',
-          details: sanitizeError(errText)
+          needsReauth: pushResult.needsReauth,
+          error: pushResult.error,
+          details: pushResult.googleError
         });
       }
 
-      const createdItem = await gcalRes.json();
       return sendSecureJson(res, 200, {
         success: true,
-        item: createdItem
+        item: pushResult.data
       });
     } catch (err) {
       console.error('Google Calendar Sync POST error:', err);
-      return sendSecureJson(res, 500, { error: 'Failed to push Google Calendar event' });
+      return sendSecureJson(res, 500, {
+        error: 'Failed to push Google Calendar event',
+        details: sanitizeError(err.message || String(err))
+      });
     }
   }
 
@@ -1097,35 +1207,26 @@ async function handleSync(req, res) {
       }
       const eventId = String(rawEventId).replace(/^gcal_/, '');
 
-      let gcalRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const deleteResult = await executeGoogleCalendarApi(`/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+        method: 'DELETE'
+      }, req, res);
 
-      if (!gcalRes.ok && gcalRes.status === 401) {
-        const refreshedToken = await getValidAccessToken(req, res, true);
-        if (refreshedToken) {
-          gcalRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${refreshedToken}` }
-          });
-        }
-      }
-
-      if (!gcalRes.ok && gcalRes.status !== 404 && gcalRes.status !== 410) {
-        const errText = await gcalRes.text();
-        return sendSecureJson(res, gcalRes.status, {
+      if (!deleteResult.ok && deleteResult.status !== 404 && deleteResult.status !== 410) {
+        return sendSecureJson(res, deleteResult.status, {
           connected: false,
-          needsReauth: gcalRes.status === 401,
-          error: 'Failed to delete Google Calendar event',
-          details: sanitizeError(errText)
+          needsReauth: deleteResult.needsReauth,
+          error: deleteResult.error,
+          details: deleteResult.googleError
         });
       }
 
       return sendSecureJson(res, 200, { success: true, deletedEventId: eventId });
     } catch (err) {
       console.error('Google Calendar Sync DELETE error:', err);
-      return sendSecureJson(res, 500, { error: 'Failed to delete event from Google Calendar' });
+      return sendSecureJson(res, 500, {
+        error: 'Failed to delete event from Google Calendar',
+        details: sanitizeError(err.message || String(err))
+      });
     }
   }
 
