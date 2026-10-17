@@ -1,6 +1,6 @@
-// api/adblock.js - Ultra-Secure & Ultra-Fast Zero-Trust IoT Gateway (ESP32 DNS Ad-Blocker <-> LuminaVista Cloud OS)
+// api/_lib/adblock-gateway.js - Ultra-Secure & Ultra-Fast Zero-Trust IoT Gateway (ESP32 DNS Ad-Blocker <-> LuminaVista Cloud OS)
 import crypto from 'crypto';
-import { getSafeStorage } from './_lib/redis.js';
+import { getSafeStorage } from './redis.js';
 import {
   validateSession,
   checkRateLimit,
@@ -10,7 +10,7 @@ import {
   getClientIp,
   auditLog,
   sanitizeError
-} from './_lib/auth-guard.js';
+} from './auth-guard.js';
 
 export const DEFAULT_DEVICE_ID = process.env.ADBLOCK_DEVICE_ID || 'esp32-adblock-01';
 export const KEY_SECRET = 'adblock:system:hmac_key';
@@ -218,7 +218,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   const storage = await getSafeStorage();
-  const action = req.query?.action || (req.body && req.body.action) || 'status';
+  const urlObj = new URL(req.url || '/api/adblock', 'http://localhost');
+  const action = req.query?.action || urlObj.searchParams.get('action') || (req.body && req.body.action) || 'status';
 
   // Public Time Synchronization Action
   if (action === 'time') {

@@ -34,6 +34,16 @@
     return { 'x-session-id': sid, ...extra };
   }
 
+  async function adblockFetch(endpoint, options = {}) {
+    try {
+      const res = await window.fetch(endpoint, options);
+      if (res && res.status !== 404) return res;
+    } catch (e) {}
+    const sep = endpoint.includes('?') ? '&' : '?';
+    const fallback = endpoint.replace('/api/adblock', `/api/iot${sep}service=adblock`).replace('??', '?').replace('&&', '&');
+    return window.fetch(fallback, options);
+  }
+
   const state = {
     online: false,
     lastSeenMs: 0,
@@ -275,7 +285,7 @@
     if (syncBtn) syncBtn.textContent = '⏳ Syncing...';
 
     try {
-      const res = await window.fetch('/api/adblock?action=dashboard', {
+      const res = await adblockFetch('/api/adblock?action=dashboard', {
         method: 'GET',
         credentials: 'include',
         headers: getAuthHeaders()
@@ -324,7 +334,7 @@
     renderAll();
 
     try {
-      const res = await window.fetch('/api/adblock?action=command', {
+      const res = await adblockFetch('/api/adblock?action=command', {
         method: 'POST',
         credentials: 'include',
         headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
@@ -925,8 +935,18 @@
     }
   };
 
-  // Visibility and resize event listeners
+  // Auto-mount and visibility listeners
   if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (!isMounted) init();
+      });
+    } else {
+      setTimeout(() => {
+        if (!isMounted) init();
+      }, 0);
+    }
+
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         if (rafId) {

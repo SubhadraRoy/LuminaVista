@@ -126,7 +126,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (pathname === '/api/iot') {
+  if (pathname === '/api/iot' || pathname === '/api/adblock') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
@@ -136,6 +136,10 @@ const server = http.createServer((req, res) => {
           try { req.body = JSON.parse(body); } catch { req.body = body; }
         } else {
           req.body = {};
+        }
+        req.query = Object.fromEntries(urlObj.searchParams.entries());
+        if (pathname === '/api/adblock') {
+          req.query.service = 'adblock';
         }
         const iotMod = await import('../api/iot.js');
         let statusCode = 200;

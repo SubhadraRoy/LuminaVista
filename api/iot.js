@@ -11,6 +11,38 @@ import {
   auditLog,
   sanitizeError
 } from './_lib/auth-guard.js';
+import adblockHandler, {
+  computeDeviceSignature as computeAdblockDeviceSignature,
+  signDeviceCommand as signAdblockDeviceCommand,
+  verifyDeviceRequest as verifyAdblockDeviceRequest,
+  applyPendingCommandsToState as applyPendingAdblockCommands,
+  normalizeStatus as normalizeAdblockStatus,
+  sanitizeDomain as sanitizeAdblockDomain,
+  getDeviceSecret as getAdblockDeviceSecret,
+  DEFAULT_DEVICE_ID as DEFAULT_ADBLOCK_DEVICE_ID,
+  KEY_STATE as KEY_ADBLOCK_STATE,
+  KEY_CLIENTS as KEY_ADBLOCK_CLIENTS,
+  KEY_LOGS as KEY_ADBLOCK_LOGS,
+  KEY_CMDS as KEY_ADBLOCK_CMDS,
+  KEY_META as KEY_ADBLOCK_META
+} from './_lib/adblock-gateway.js';
+
+export {
+  adblockHandler,
+  computeAdblockDeviceSignature,
+  signAdblockDeviceCommand,
+  verifyAdblockDeviceRequest,
+  applyPendingAdblockCommands,
+  normalizeAdblockStatus,
+  sanitizeAdblockDomain,
+  getAdblockDeviceSecret,
+  DEFAULT_ADBLOCK_DEVICE_ID,
+  KEY_ADBLOCK_STATE,
+  KEY_ADBLOCK_CLIENTS,
+  KEY_ADBLOCK_LOGS,
+  KEY_ADBLOCK_CMDS,
+  KEY_ADBLOCK_META
+};
 
 export const DEFAULT_DEVICE_ID = process.env.IOT_DEVICE_ID || 'esp32-main-door-01';
 export const KEY_SECRET = 'iot:system:hmac_key';
@@ -404,6 +436,19 @@ export default async function handler(req, res) {
     const storage = getSafeStorage();
     const urlObj = new URL(req.url || '/api/iot', 'http://localhost');
     const action = urlObj.searchParams.get('action') || (req.query && req.query.action) || '';
+
+    // Dynamic Routing: ESP32 DNS Ad-Blocker hardware & UI service dispatch
+    const service = (req.query && req.query.service) || urlObj.searchParams.get('service') || '';
+    const deviceId = (req.headers && req.headers['x-lumina-device-id']) || '';
+
+    if (
+      service === 'adblock' ||
+      deviceId.includes('adblock') ||
+      urlObj.pathname.includes('/adblock') ||
+      urlObj.searchParams.has('adblock')
+    ) {
+      return adblockHandler(req, res);
+    }
 
   // =========================================================================
   // 1. GET /api/iot?action=time (Signed Time-Sync Bootstrap for ESP32)

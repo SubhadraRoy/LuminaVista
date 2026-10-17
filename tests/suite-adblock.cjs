@@ -112,7 +112,7 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
   // SECTION 3: Cryptographic IoT Gateway Security Suite (api/adblock.js)
   console.log("\n[SECTION 3: Zero-Trust Cryptographic Cloud Gateway Suite]");
 
-  const adblockModuleUrl = pathToFileURL(path.join(rootDir, 'api', 'adblock.js')).href;
+  const adblockModuleUrl = pathToFileURL(path.join(rootDir, 'api', '_lib', 'adblock-gateway.js')).href;
   const adblockMod = await import(adblockModuleUrl);
 
   const {
@@ -333,6 +333,24 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
   assert(sanitizeDomain('../../etc/passwd') === '', "sanitizeDomain blocks directory traversal path");
   assert(sanitizeDomain('invalid_domain!@#.com') === '', "sanitizeDomain blocks illegal characters");
   assert(sanitizeDomain('safe-cdn.sub.example.com') === 'safe-cdn.sub.example.com', "sanitizeDomain allows valid subdomains");
+
+  // 3.10 Unified IoT Gateway Dispatch Verification (Vercel Serverless Function Limit Compliance)
+  const iotMod = await import(pathToFileURL(path.join(rootDir, 'api', 'iot.js')).href);
+  const iotHandler = iotMod.default;
+  let iotDispatchedData = null;
+  const iotRes = {
+    status(s) { this.statusCode = s; return this; },
+    json(d) { iotDispatchedData = d; return this; },
+    setHeader() { return this; }
+  };
+  await iotHandler({
+    method: 'GET',
+    url: '/api/iot?service=adblock&action=time',
+    query: { service: 'adblock', action: 'time' },
+    headers: {}
+  }, iotRes);
+  assert(iotRes.statusCode === 200, "Unified /api/iot?service=adblock routes correctly to AdBlock gateway");
+  assert(iotDispatchedData && iotDispatchedData.ok === true, "AdBlock time payload received via unified IoT router");
 
   console.log("\n=================================================================");
   console.log("🎉 ALL ESP32 ADBLOCKER INTEGRATION TESTS PASSED WITH ZERO ERRORS!");
