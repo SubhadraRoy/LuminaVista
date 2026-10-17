@@ -22,6 +22,8 @@ export {
   createServiceAccountJwt
 };
 
+export const config = { runtime: 'nodejs' };
+
 export function getTargetCalendarId(req = null) {
   const envCalId = (process.env.GOOGLE_CALENDAR_ID || '').trim();
   if (envCalId) return envCalId;
