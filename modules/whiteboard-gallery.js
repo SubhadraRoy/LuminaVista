@@ -737,6 +737,7 @@
     container.innerHTML = boards.map(b => {
       const isActive = b.id === activeId;
       const dateStr = b.updatedAt ? new Date(b.updatedAt).toLocaleDateString() : 'Recent';
+      const safeBoardId = String(b.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
       return `
         <div class="glass-card p-4 rounded-xl border ${isActive ? 'border-cyan-400 bg-cyan-500/5' : 'border-white/10'} hover:border-cyan-500/40 transition-all flex flex-col justify-between">
           <div>
@@ -749,10 +750,10 @@
           </div>
           <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
             <div class="flex items-center gap-1">
-              <button onclick="LuminaWhiteboardGallery.promptRenameBoard('${b.id}')" class="p-1.5 rounded bg-surface-900 hover:bg-surface-850 text-zinc-400 hover:text-white cursor-pointer" title="Rename"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-              ${boards.length > 1 ? `<button onclick="LuminaWhiteboardGallery.deleteBoard('${b.id}')" class="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 cursor-pointer" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+              <button onclick="LuminaWhiteboardGallery.promptRenameBoard('${safeBoardId}')" class="p-1.5 rounded bg-surface-900 hover:bg-surface-850 text-zinc-400 hover:text-white cursor-pointer" title="Rename"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+              ${boards.length > 1 ? `<button onclick="LuminaWhiteboardGallery.deleteBoard('${safeBoardId}')" class="p-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 cursor-pointer" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
             </div>
-            ${isActive ? `<span class="text-xs font-mono text-cyan-400 font-semibold">Loaded</span>` : `<button onclick="LuminaWhiteboardGallery.switchBoard('${b.id}'); LuminaWhiteboardGallery.closeGalleryModal();" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold text-xs cursor-pointer shadow-md">Open Board</button>`}
+            ${isActive ? `<span class="text-xs font-mono text-cyan-400 font-semibold">Loaded</span>` : `<button onclick="LuminaWhiteboardGallery.switchBoard('${safeBoardId}'); LuminaWhiteboardGallery.closeGalleryModal();" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-black font-bold text-xs cursor-pointer shadow-md">Open Board</button>`}
           </div>
         </div>
       `;

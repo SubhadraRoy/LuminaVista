@@ -769,7 +769,7 @@
   if (typeof window !== 'undefined') {
     window.addEventListener('message', async (e) => {
       const isAllowedOrigin = (
-        (window.location && e.origin === window.location.origin) ||
+        (window.location && window.location.origin && window.location.origin !== 'null' && e.origin === window.location.origin) ||
         e.origin === 'https://lumina-vista-sigma.vercel.app' ||
         e.origin === 'https://subhadraroy.github.io'
       );

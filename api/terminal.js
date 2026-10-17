@@ -1,4 +1,3 @@
-import path from 'path';
 import { Sandbox } from '@e2b/code-interpreter';
 import { getRedisClient } from './_lib/redis.js';
 import {
@@ -9,24 +8,12 @@ import {
   auditLog,
   sendSecureJson,
   setSecurityHeaders,
-  scrubSecrets
+  scrubSecrets,
+  sanitizeFilePath
 } from './_lib/auth-guard.js';
 import { inspectJevCommandSafety } from './_lib/jev-engine.js';
 
 export const maxDuration = 60;
-
-function sanitizeFilePath(userPath) {
-  if (!userPath || typeof userPath !== 'string') return '';
-  const clean = userPath
-    .replace(/\0/g, '')
-    .replace(/\\/g, '/')
-    .trim();
-  const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
-  if (normalized === '..' || normalized.startsWith('../') || normalized.includes('/../')) {
-    return '';
-  }
-  return normalized;
-}
 
 export default async function handler(req, res) {
   try {

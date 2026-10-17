@@ -8,6 +8,16 @@
     return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
+  function isValidVfsKey(k) {
+    if (typeof k !== 'string') return false;
+    const s = k.trim();
+    if (!s || s === '__proto__' || s === 'constructor' || s === 'prototype') return false;
+    if (s.includes('__proto__') || s.includes('constructor') || s.includes('prototype')) return false;
+    if (s.includes('..') || s.includes('\\') || s.startsWith('/') || s.includes('?') || s.includes('#')) return false;
+    if (/[\x00-\x1f\x7f]/.test(s)) return false;
+    return true;
+  }
+
   function handleTerminalKeyDown(e) {
     const history = window.termHistory || [];
     if (e.key === "ArrowUp") {
@@ -150,7 +160,11 @@
         if (!res.textContent.trim()) res.textContent = "[Command completed with exit status 0]";
 
         if (Array.isArray(d.workspaceFiles)) {
-          d.workspaceFiles.forEach(f => { vfs[f.name] = f.content; });
+          d.workspaceFiles.forEach(f => {
+            if (f && isValidVfsKey(f.name)) {
+              vfs[f.name] = f.content;
+            }
+          });
           localStorage.setItem("lumina_codespace_vfs", JSON.stringify(vfs));
           if (window.renderCodespaceFileTree) window.renderCodespaceFileTree();
           if (window.renderCodespaceFileTabs) window.renderCodespaceFileTabs();

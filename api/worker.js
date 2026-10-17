@@ -11,6 +11,7 @@ import { jevGenerateBespokeResponse, inspectJevCommandSafety } from './_lib/jev-
 import { sanitizeProviderMessages } from './chat.js';
 
 export const maxDuration = 60;
+const VALID_JOB_ID = /^[a-zA-Z0-9_\-]{1,128}$/;
 
 export default async function handler(req, res) {
   res._req = req;
@@ -46,8 +47,11 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { jobId, action, userSession } = req.query || {};
 
-      // Specific job lookup
-      if (jobId) {
+      // Specific job lookup or status/output action
+      if (jobId || action === 'status' || action === 'output') {
+        if (!jobId || typeof jobId !== 'string' || !VALID_JOB_ID.test(jobId)) {
+          return sendSecureJson(res, 400, { error: 'Invalid or missing jobId format' }, req);
+        }
         try {
           const raw = await storage.get(`job_state:${jobId}`);
           if (!raw) return sendSecureJson(res, 404, { error: 'Job not found' });
@@ -58,6 +62,10 @@ export default async function handler(req, res) {
           if (!isOwner) {
             auditLog('WORKER_BOLA_BLOCKED', req, `Session ${auth.sessionId} attempted access to Job ${jobId}`);
             return sendSecureJson(res, 403, { error: 'Forbidden: Access to this job is restricted to the job creator.' });
+          }
+
+          if (action === 'output') {
+            return sendSecureJson(res, 200, { success: true, jobId, output: job.reply || job.logs || '', job });
           }
 
           return sendSecureJson(res, 200, { success: true, job });
@@ -101,7 +109,8 @@ export default async function handler(req, res) {
           if (!task.enabled) continue;
           if (now >= (task.nextRunTime || 0)) {
             // Task is due! Run it autonomously in the cloud
-            const autoJobId = `sched_${task.id}_${now}`;
+            const cleanTaskId = String(task.id || 'task').replace(/[^a-zA-Z0-9_\-]/g, '');
+            const autoJobId = `sched_${cleanTaskId}_${now}`;
             task.lastRun = now;
             task.nextRunTime = now + (task.intervalSeconds || 3600) * 1000;
             task.executionCount = (task.executionCount || 0) + 1;
@@ -154,9 +163,35 @@ export default async function handler(req, res) {
     }
   }
 
+  // Action: Query status or output via POST
+  if (action === 'status' || action === 'output') {
+    if (!jobId || typeof jobId !== 'string' || !VALID_JOB_ID.test(jobId)) {
+      return sendSecureJson(res, 400, { error: 'Invalid or missing jobId format' }, req);
+    }
+    try {
+      const raw = await storage.get(`job_state:${jobId}`);
+      if (!raw) return sendSecureJson(res, 404, { error: 'Job not found' });
+      const job = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+      const isOwner = auth.role === 'master' || (Boolean(job.ownerSessionId) && job.ownerSessionId === auth.sessionId);
+      if (!isOwner) {
+        auditLog('WORKER_BOLA_BLOCKED', req, `Session ${auth.sessionId} attempted access to Job ${jobId}`);
+        return sendSecureJson(res, 403, { error: 'Forbidden: Access to this job is restricted to the job creator.' });
+      }
+
+      if (action === 'output') {
+        return sendSecureJson(res, 200, { success: true, jobId, output: job.reply || job.logs || '', job });
+      }
+
+      return sendSecureJson(res, 200, { success: true, job });
+    } catch (err) {
+      return sendSecureJson(res, 500, { error: 'Failed to retrieve job state' });
+    }
+  }
+
   // Dispatch background job
-  if (!jobId) {
-    return sendSecureJson(res, 400, { error: 'Missing required worker parameters' });
+  if (!jobId || typeof jobId !== 'string' || !VALID_JOB_ID.test(jobId)) {
+    return sendSecureJson(res, 400, { error: 'Invalid or missing jobId format' }, req);
   }
 
   const effectiveSession = auth.sessionId || userSession || 'sovereign_session';
@@ -222,6 +257,9 @@ export default async function handler(req, res) {
  * Continues running on the cloud server even if client shuts down.
  */
 async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs, requestedModel, provider = 'hybrid_pool', storage, req = null, ownerSessionId = '', ownerRole = '' }) {
+  if (!jobId || typeof jobId !== 'string' || !VALID_JOB_ID.test(jobId)) {
+    throw new Error('Invalid or missing jobId format');
+  }
   // Mark job as processing
   await storage.set(`job_state:${jobId}`, JSON.stringify({
     status: 'processing',

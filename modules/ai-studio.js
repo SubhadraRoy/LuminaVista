@@ -39,7 +39,8 @@
     if (!k) return false;
     if (k === '__proto__' || k === 'constructor' || k === 'prototype') return false;
     if (k.includes('__proto__') || k.includes('constructor') || k.includes('prototype')) return false;
-    if (k.includes('..')) return false;
+    if (k.includes('..') || k.includes('\\') || k.startsWith('/') || k.includes('?') || k.includes('#')) return false;
+    if (/[\x00-\x1f\x7f]/.test(k)) return false;
     return true;
   }
 

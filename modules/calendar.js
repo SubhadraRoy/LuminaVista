@@ -441,11 +441,12 @@
           <div class="flex-1 space-y-1 overflow-hidden pointer-events-none">
             ${dayEvents.slice(0, 3).map(evt => {
               const timeStr = evt.allDay ? '' : formatShortTime(evt.start);
+              const safeEvtId = String(evt.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
               return `
                 <div class="truncate text-[11px] px-2 py-0.5 rounded-md font-sans font-medium flex items-center gap-1.5 shadow-sm transition-all pointer-events-auto hover:brightness-125 border border-black/20"
                      style="background-color: ${evt.color || '#039be5'}; color: #ffffff;"
-                     onclick="event.stopPropagation(); LuminaCalendar.openEventModal('${evt.id}')"
-                     title="${evt.title}${timeStr ? ` (${timeStr})` : ''}">
+                     onclick="event.stopPropagation(); LuminaCalendar.openEventModal('${safeEvtId}')"
+                     title="${escapeHtml(evt.title)}${timeStr ? ` (${timeStr})` : ''}">
                   ${timeStr ? `<span class="text-[9px] font-mono opacity-85 shrink-0 font-semibold">${timeStr}</span>` : ''}
                   <span class="truncate font-medium">${escapeHtml(evt.title)}</span>
                 </div>
@@ -691,9 +692,11 @@
                   <span class="text-[10px] text-zinc-500 font-mono">• ${group.relativeDay}</span>
                 </div>
                 <div class="space-y-2">
-                  ${group.events.map(evt => `
+                  ${group.events.map(evt => {
+                    const safeEvtId = String(evt.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
+                    return `
                     <div class="p-3.5 rounded-xl border border-white/5 hover:border-cyan-500/30 bg-surface-900/60 hover:bg-surface-850/80 transition-all flex items-start justify-between group cursor-pointer shadow-sm hover:shadow-cyan-500/5"
-                         onclick="LuminaCalendar.openEventModal('${evt.id}')">
+                         onclick="LuminaCalendar.openEventModal('${safeEvtId}')">
                       <div class="flex items-start gap-3">
                         <span class="w-3 h-3 rounded-full mt-1 shrink-0 ring-2 ring-black/40" style="background-color: ${evt.color || '#039be5'};"></span>
                         <div>
@@ -707,12 +710,13 @@
                       </div>
                       <div class="flex items-center gap-2">
                         ${evt.isAutonomous ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">AI Scheduled</span>` : ''}
-                        <button onclick="event.stopPropagation(); LuminaCalendar.deleteEvent('${evt.id}')" class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-500/20 text-rose-400 transition-opacity" title="Delete Event">
+                        <button onclick="event.stopPropagation(); LuminaCalendar.deleteEvent('${safeEvtId}')" class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-rose-500/20 text-rose-400 transition-opacity" title="Delete Event">
                           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         </button>
                       </div>
                     </div>
-                  `).join('')}
+                  `;
+                  }).join('')}
                 </div>
               </div>
             `).join('')}
@@ -860,12 +864,13 @@
   function renderTimeGridEvent(evt) {
     const { top, height } = computeEventPosition(evt.start, evt.end);
     const timeLabel = `${formatShortTime(evt.start)} - ${formatShortTime(evt.end)}`;
+    const safeEvtId = String(evt.id || '').replace(/[^a-zA-Z0-9_\-]/g, '');
 
     return `
       <div class="absolute left-1 right-1 z-10 rounded-lg p-1.5 shadow-md border border-black/30 overflow-hidden cursor-pointer transition-all hover:brightness-110 hover:z-20 hover:scale-[1.01] group backdrop-blur-sm"
            style="top: ${top}px; height: ${Math.max(height, 24)}px; background-color: ${evt.color || '#039be5'}; color: #ffffff;"
-           onclick="event.stopPropagation(); LuminaCalendar.openEventModal('${evt.id}')"
-           title="${evt.title} (${timeLabel})">
+           onclick="event.stopPropagation(); LuminaCalendar.openEventModal('${safeEvtId}')"
+           title="${escapeHtml(evt.title)} (${timeLabel})">
         <div class="flex items-start justify-between gap-1 leading-tight">
           <div class="truncate font-sans font-semibold text-[11px] drop-shadow-sm">${escapeHtml(evt.title)}</div>
           ${evt.isAutonomous ? `<span class="shrink-0 text-[8px] font-mono px-1 rounded bg-black/40 border border-white/20">AI</span>` : ''}

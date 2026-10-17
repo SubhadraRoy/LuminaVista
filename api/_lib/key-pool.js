@@ -357,8 +357,8 @@ export function normalizeOllamaEndpoint(endpoint) {
   let ep = (endpoint || '').trim().replace(/^["']|["']$/g, '').trim();
   if (!ep) return 'https://ollama.com/v1/chat/completions';
 
-  // If running in Vercel or cloud and pointing to SSRF-restricted IP/host, fallback to Ollama Cloud
-  if (process.env.VERCEL && isBlockedSsrfTarget(ep)) {
+  // SSRF-restricted IP/host fallbacks unconditionally to Ollama Cloud in all environments
+  if (isBlockedSsrfTarget(ep)) {
     return 'https://ollama.com/v1/chat/completions';
   }
   // Cloud metadata is strictly forbidden in all environments
