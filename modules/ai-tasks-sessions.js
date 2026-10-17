@@ -273,13 +273,13 @@
           </div>
         </div>
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onclick="renameChatSession('${s.id}', event)" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white" title="Rename Session">
+          <button data-id="${escapeHtml(s.id)}" onclick="renameChatSession(this.getAttribute('data-id'), event)" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white" title="Rename Session">
             <i data-lucide="edit-2" class="w-3 h-3"></i>
           </button>
-          <button onclick="exportChatSession('${s.id}', event)" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white" title="Export Markdown">
+          <button data-id="${escapeHtml(s.id)}" onclick="exportChatSession(this.getAttribute('data-id'), event)" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white" title="Export Markdown">
             <i data-lucide="download" class="w-3 h-3"></i>
           </button>
-          <button onclick="deleteChatSession('${s.id}', event)" class="p-1 rounded hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400" title="Delete Session">
+          <button data-id="${escapeHtml(s.id)}" onclick="deleteChatSession(this.getAttribute('data-id'), event)" class="p-1 rounded hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400" title="Delete Session">
             <i data-lucide="trash" class="w-3 h-3"></i>
           </button>
         </div>
@@ -519,13 +519,13 @@
           </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          <button onclick="runScheduledTaskNow('${t.id}')" class="px-2 py-1 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[10px] font-bold border border-purple-500/30 cursor-pointer" title="Trigger Run Now">
+          <button data-id="${escapeHtml(t.id)}" onclick="runScheduledTaskNow(this.getAttribute('data-id'))" class="px-2 py-1 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[10px] font-bold border border-purple-500/30 cursor-pointer" title="Trigger Run Now">
             Run Now
           </button>
-          <button onclick="toggleScheduledTask('${t.id}')" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer" title="${t.enabled ? 'Pause' : 'Resume'}">
+          <button data-id="${escapeHtml(t.id)}" onclick="toggleScheduledTask(this.getAttribute('data-id'))" class="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white cursor-pointer" title="${t.enabled ? 'Pause' : 'Resume'}">
             <i data-lucide="${t.enabled ? 'pause' : 'play'}" class="w-3.5 h-3.5"></i>
           </button>
-          <button onclick="deleteScheduledTask('${t.id}')" class="p-1 rounded hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 cursor-pointer" title="Delete Task">
+          <button data-id="${escapeHtml(t.id)}" onclick="deleteScheduledTask(this.getAttribute('data-id'))" class="p-1 rounded hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 cursor-pointer" title="Delete Task">
             <i data-lucide="trash" class="w-3.5 h-3.5"></i>
           </button>
         </div>

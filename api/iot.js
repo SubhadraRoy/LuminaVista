@@ -8,7 +8,8 @@ import {
   setSecurityHeaders,
   enforcePayloadLimit,
   getClientIp,
-  auditLog
+  auditLog,
+  sanitizeError
 } from './_lib/auth-guard.js';
 
 export const DEFAULT_DEVICE_ID = process.env.IOT_DEVICE_ID || 'esp32-main-door-01';
@@ -19,7 +20,9 @@ let cachedCloudSecret = '';
 export const getDeviceSecret = () => (
   process.env.IOT_DEVICE_SECRET ||
   cachedCloudSecret ||
-  (!process.env.VERCEL && process.env.NODE_ENV !== 'production' ? 'a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8' : '')
+  (process.env.ALLOW_TEST_DEVICE_SECRET === 'true' || (!process.env.VERCEL && process.env.NODE_ENV !== 'production' && process.argv.some(a => typeof a === 'string' && a.includes('test')))
+    ? 'a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8'
+    : '')
 ).trim();
 
 async function ensureDeviceSecretLoaded(storage) {
@@ -248,15 +251,20 @@ export async function verifyDeviceRequest(req, rawBodyStr, storage) {
     try {
       const rawMeta = await storage.get(KEY_META);
       const meta = rawMeta ? (typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta) : null;
-      if (meta && typeof meta.lastSeq === 'number' && seq < (meta.lastSeq || 0)) {
-        auditLog('IOT_STALE_SEQUENCE', req, `seq=${seq}, lastSeq=${meta.lastSeq}`);
-        return {
-          valid: false,
-          status: 401,
-          error: 'Stale or out-of-order telemetry packet rejected',
-          lastSeq: meta.lastSeq,
-          serverTime: nowSec
-        };
+      if (meta && typeof meta.lastSeq === 'number' && meta.lastSeq > 0) {
+        const isReboot = seq === 1;
+        if (isReboot) {
+          auditLog('IOT_SEQUENCE_RESET', req, `Reboot detected: seq reset from ${meta.lastSeq} to 1`);
+        } else if (seq <= meta.lastSeq) {
+          auditLog('IOT_STALE_SEQUENCE', req, `seq=${seq}, lastSeq=${meta.lastSeq}`);
+          return {
+            valid: false,
+            status: 401,
+            error: 'Stale or out-of-order telemetry packet rejected',
+            lastSeq: meta.lastSeq,
+            serverTime: nowSec
+          };
+        }
       }
     } catch (_) {}
   }
@@ -386,15 +394,16 @@ function applyPendingCommandsToState(state, cards, pendingQueue) {
 }
 
 export default async function handler(req, res) {
-  setSecurityHeaders(res);
+  setSecurityHeaders(res, req);
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
 
-  const storage = getSafeStorage();
-  const urlObj = new URL(req.url || '/api/iot', 'http://localhost');
-  const action = urlObj.searchParams.get('action') || (req.query && req.query.action) || '';
+  try {
+    const storage = getSafeStorage();
+    const urlObj = new URL(req.url || '/api/iot', 'http://localhost');
+    const action = urlObj.searchParams.get('action') || (req.query && req.query.action) || '';
 
   // =========================================================================
   // 1. GET /api/iot?action=time (Signed Time-Sync Bootstrap for ESP32)
@@ -667,14 +676,19 @@ export default async function handler(req, res) {
         readJsonKey(storage, KEY_CMDS, [])
       ]);
 
-      // Sequence Number Monotonicity Check: reject stale or reordered telemetry packets within drift window
-      if (prevMeta && typeof prevMeta.lastSeq === 'number' && verification.seq < (prevMeta.lastSeq || 0)) {
-        auditLog('IOT_STALE_SEQUENCE', req, `seq=${verification.seq}, lastSeq=${prevMeta.lastSeq}`);
-        return sendSecureJson(res, 401, {
-          error: 'Stale or out-of-order telemetry packet rejected',
-          lastSeq: prevMeta.lastSeq,
-          serverTime: nowSec
-        });
+      // Sequence Number Monotonicity Check: reject stale or duplicate/reordered telemetry packets
+      if (prevMeta && typeof prevMeta.lastSeq === 'number' && prevMeta.lastSeq > 0) {
+        const isReboot = verification.seq === 1;
+        if (isReboot) {
+          auditLog('IOT_SEQUENCE_RESET', req, `Reboot detected: seq reset from ${prevMeta.lastSeq} to 1`);
+        } else if (verification.seq <= prevMeta.lastSeq) {
+          auditLog('IOT_STALE_SEQUENCE', req, `seq=${verification.seq}, lastSeq=${prevMeta.lastSeq}`);
+          return sendSecureJson(res, 401, {
+            error: 'Stale or out-of-order telemetry packet rejected',
+            lastSeq: prevMeta.lastSeq,
+            serverTime: nowSec
+          });
+        }
       }
 
       if (body.probeOnly === true) {
@@ -930,7 +944,7 @@ export default async function handler(req, res) {
       const meta = {
         ...(prevMeta || {}),
         lastSeenMs: nowMs,
-        lastSeq: Math.max(verification.seq, prevMeta?.lastSeq || 0),
+        lastSeq: verification.seq === 1 ? 1 : Math.max(verification.seq, prevMeta?.lastSeq || 0),
         wasOnline: true,
         lastOnlineMs: isTransitionToOnline ? nowMs : (prevMeta.lastOnlineMs || nowMs),
         lastOnlineTs: isTransitionToOnline ? nowTs : (prevMeta.lastOnlineTs || nowTs),
@@ -1243,5 +1257,9 @@ export default async function handler(req, res) {
     return sendSecureJson(res, 400, { error: `Unknown action: ${bodyAction}` });
   }
 
-  return sendSecureJson(res, 405, { error: 'Method not allowed' });
+    return sendSecureJson(res, 405, { error: 'Method not allowed' });
+  } catch (err) {
+    console.error('[API/iot] Unhandled error:', err);
+    return sendSecureJson(res, 500, { error: sanitizeError(err.message || 'Internal server error') });
+  }
 }

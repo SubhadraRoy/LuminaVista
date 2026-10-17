@@ -244,12 +244,16 @@ export function isBlockedSsrfTarget(targetUrl) {
   let parsed;
   try {
     const raw = targetUrl.trim().replace(/^["']|["']$/g, '').trim();
-    parsed = new URL(raw.startsWith('http://') || raw.startsWith('https://') ? raw : `http://${raw}`);
+    parsed = new URL(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(raw) ? raw : `http://${raw}`);
   } catch (_) {
     return true; // Malformed URLs should be blocked
   }
 
-  let hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return true; // Block non-HTTP protocols (file:, ftp:, gopher:, etc.)
+  }
+
+  let hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.+$/, '');
 
   // Normalize IPv6-mapped & IPv4-compatible IPv6 addresses (e.g. ::ffff:127.0.0.1, ::7f00:1, ::a9fe:a9fe) to standard IPv4
   const isIpv4Mapped = hostname.startsWith('::ffff:') || hostname.startsWith('0:0:0:0:0:ffff:');
@@ -358,7 +362,7 @@ export function normalizeOllamaEndpoint(endpoint) {
     return 'https://ollama.com/v1/chat/completions';
   }
   // Cloud metadata is strictly forbidden in all environments
-  if (/169\.254\.169\.254|metadata\.google\.internal|metadata|instance-data/i.test(ep)) {
+  if (/169\.254\.169\.254|metadata\.google\.internal|metadata|instance-data/i.test(ep) || (isBlockedSsrfTarget(ep) && /169\.254|metadata|a9fe|instance-data/i.test(ep))) {
     return 'https://ollama.com/v1/chat/completions';
   }
 

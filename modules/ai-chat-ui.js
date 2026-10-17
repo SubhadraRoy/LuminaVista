@@ -256,7 +256,7 @@
             <i data-lucide="file-code" class="w-4 h-4 text-emerald-400 shrink-0"></i>
             <span><strong>Created / Updated VFS Artifact:</strong> <code class="text-white bg-black/40 px-1.5 py-0.5 rounded">${escapeHtml(f)}</code> (${c.trim().length} bytes)</span>
           </div>
-          <button onclick="window.switchAiSubTab('artifacts'); window.switchAndOpenFile('${escapeHtml(f)}');" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[11px] font-semibold border border-emerald-500/40 cursor-pointer flex items-center gap-1 transition-colors">
+          <button data-filename="${escapeHtml(f)}" onclick="window.switchAiSubTab('artifacts'); window.switchAndOpenFile(this.getAttribute('data-filename'));" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[11px] font-semibold border border-emerald-500/40 cursor-pointer flex items-center gap-1 transition-colors">
             <i data-lucide="folder-code" class="w-3.5 h-3.5"></i> Open in Artifacts Tab
           </button>
         </div>`);

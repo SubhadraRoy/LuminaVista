@@ -85,6 +85,47 @@ export function inspectJevCommandSafety(command = '') {
     };
   }
 
+  // 7. Prohibited shell interpreter piping & arbitrary dynamic execution (HIGH-19)
+  const isPipedShellExec =
+    /\|\s*(base64\s+(-d|--decode))\s*\|\s*(ba?sh|sh|zsh|dash|eval|xargs)/i.test(cLower) ||
+    /\|\s*(ba?sh|sh|zsh|dash)\b/i.test(cLower) ||
+    /\b(eval|exec)\s*\$\(/i.test(cLower) ||
+    /\b(eval|exec)\s*`.*`/i.test(cLower);
+
+  if (isPipedShellExec) {
+    return {
+      safe: false,
+      p: 0.05,
+      threatCategory: 'destructive_command',
+      reason: 'Prohibited shell piping or dynamic code execution interpreter detected (| bash, | sh, eval).'
+    };
+  }
+
+  // 8. Base64 payload decoding and recursive threat screening (HIGH-19)
+  const b64Regex = /(?:[A-Za-z0-9+/]{4}){4,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?/g;
+  let b64Match;
+  while ((b64Match = b64Regex.exec(cmd)) !== null) {
+    const candidate = b64Match[0];
+    if (candidate.length >= 16) {
+      try {
+        const decoded = (typeof Buffer !== 'undefined')
+          ? Buffer.from(candidate, 'base64').toString('utf-8')
+          : (typeof atob === 'function' ? atob(candidate) : '');
+        if (decoded && /^[\x20-\x7E\r\n\t]+$/.test(decoded) && decoded.length >= 6) {
+          const innerCheck = inspectJevCommandSafety(decoded);
+          if (!innerCheck.safe) {
+            return {
+              safe: false,
+              p: innerCheck.p,
+              threatCategory: innerCheck.threatCategory,
+              reason: `Prohibited command found inside encoded Base64 payload: ${innerCheck.reason}`
+            };
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
   return {
     safe: true,
     p: 0.98,

@@ -17,43 +17,43 @@ export default async function handler(req, res) {
 
   // CORS Preflight
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  const redis = getSafeStorage();
-  if (!redis) {
-    auditLog('SYNC_CONFIG_FAULT', req, 'Redis unconfigured');
-    return sendSecureJson(res, 500, { error: 'Database service unavailable.' }, req);
-  }
-
-  // 1. Zero-Trust Session Verification (godx_session cookie, x-session-id header, or authorization token)
-  const auth = await validateSession(req, redis);
-  if (!auth.valid) {
-    auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/sync');
-    return sendSecureJson(res.status(401), 401, { error: auth.error }, req);
-  }
-
-  // Enforce authenticated role requirement for workspace state synchronization
-  if (auth.role !== 'master' && auth.role !== 'temporary') {
-    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/sync');
-    return sendSecureJson(res, 403, { error: 'Forbidden: Workspace sync requires authenticated session' }, req);
-  }
-
-  // 2. Sliding IP Rate Limiting (180 requests / 5 minutes)
-  const rate = await checkRateLimit(req, redis, 'sync', 180, 300);
-  if (!rate.allowed) {
-    auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/sync');
-    return sendSecureJson(res, rate.status, { error: rate.error }, req);
-  }
-
-  const sessionKey = "master_workspace_state";
-
-  function sanitizeWorkspaceState(st) {
-    if (!st || typeof st !== 'object') return st;
-    return sanitizeDeep(st);
+    return res.status(204).end();
   }
 
   try {
+    const redis = getSafeStorage();
+    if (!redis) {
+      auditLog('SYNC_CONFIG_FAULT', req, 'Redis unconfigured');
+      return sendSecureJson(res, 500, { error: 'Database service unavailable.' }, req);
+    }
+
+    // 1. Zero-Trust Session Verification (godx_session cookie, x-session-id header, or authorization token)
+    const auth = await validateSession(req, redis);
+    if (!auth.valid) {
+      auditLog('UNAUTHORIZED_ACCESS_ATTEMPT', req, 'Endpoint: /api/sync');
+      return sendSecureJson(res.status(401), 401, { error: auth.error }, req);
+    }
+
+    // Enforce authenticated role requirement for workspace state synchronization
+    if (auth.role !== 'master' && auth.role !== 'temporary') {
+      auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/sync');
+      return sendSecureJson(res, 403, { error: 'Forbidden: Workspace sync requires authenticated session' }, req);
+    }
+
+    // 2. Sliding IP Rate Limiting (180 requests / 5 minutes)
+    const rate = await checkRateLimit(req, redis, 'sync', 180, 300);
+    if (!rate.allowed) {
+      auditLog('RATE_LIMIT_EXCEEDED', req, 'Endpoint: /api/sync');
+      return sendSecureJson(res, rate.status, { error: rate.error }, req);
+    }
+
+    const sessionKey = "master_workspace_state";
+
+    function sanitizeWorkspaceState(st) {
+      if (!st || typeof st !== 'object') return st;
+      return sanitizeDeep(st);
+    }
+
     // GET: Retrieve the complete master personal workspace state
     if (req.method === 'GET') {
       const rawState = await redis.get(sessionKey);
@@ -73,6 +73,7 @@ export default async function handler(req, res) {
       return sendSecureJson(res, 200, {
         success: true,
         state: safeState || null,
+        revision: state?.revision || 1,
         empty: !state,
         // Backwards compatibility fields for legacy callers
         vfs: state?.vfs || null,
@@ -86,6 +87,12 @@ export default async function handler(req, res) {
 
     // POST: Atomically update master personal workspace state across all devices
     if (req.method === 'POST') {
+      // HIGH-03: State mutation restricted strictly to master role
+      if (auth.role !== 'master') {
+        auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/sync POST requires master role');
+        return sendSecureJson(res, 403, { error: 'Forbidden: Workspace mutations require master role' }, req);
+      }
+
       if (!enforcePayloadLimit(req, 5000000)) {
         return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded (Max 5MB)' });
       }
@@ -98,6 +105,20 @@ export default async function handler(req, res) {
 
       const rawBody = req.body || {};
       const b = rawBody.data ? rawBody.data : rawBody;
+
+      // HIGH-13: Optimistic concurrency / revision check
+      const baseRevision = b.baseRevision ?? b.expectedRevision;
+      if (baseRevision !== undefined && currentState.revision !== undefined) {
+        if (Number(baseRevision) < Number(currentState.revision)) {
+          return sendSecureJson(res, 409, {
+            error: 'Conflict: Workspace revision mismatch',
+            currentRevision: currentState.revision
+          }, req);
+        }
+      }
+
+      const nextRevision = (Number(currentState.revision) || 0) + 1;
+
       const newState = sanitizeWorkspaceState({
         calendar: Array.isArray(b.calendar) ? b.calendar : currentState.calendar,
         calendarSettings: b.calendarSettings !== undefined ? b.calendarSettings : currentState.calendarSettings,
@@ -123,11 +144,12 @@ export default async function handler(req, res) {
         // Invariant: admin credentials in master_workspace_state cannot be overwritten by client sync payloads.
         // Admin credentials must be managed strictly and sovereignly via api/admin.js.
         admin_passwords: currentState.admin_passwords || [],
+        revision: nextRevision,
         updatedAt: Date.now()
       });
 
       await redis.set(sessionKey, JSON.stringify(newState));
-      return sendSecureJson(res, 200, { success: true, updatedAt: newState.updatedAt }, req);
+      return sendSecureJson(res, 200, { success: true, updatedAt: newState.updatedAt, revision: nextRevision }, req);
     }
 
     return sendSecureJson(res, 405, { error: 'Method Not Allowed' }, req);

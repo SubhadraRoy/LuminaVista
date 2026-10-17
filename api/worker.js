@@ -16,53 +16,55 @@ export default async function handler(req, res) {
   res._req = req;
   setSecurityHeaders(res, req);
   if (req.method === 'OPTIONS') return res.status(204).end();
-  const storage = getSafeStorage();
 
-  // 1. Rate limiting & payload limit
-  const rateLimit = await checkRateLimit(req, storage, 'worker', 60, 60);
-  if (rateLimit && !rateLimit.allowed) {
-    return sendSecureJson(res, 429, { error: rateLimit.error || 'Rate limit exceeded' }, req);
-  }
+  try {
+    const storage = getSafeStorage();
 
-  if (!enforcePayloadLimit(req, 250000)) {
-    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded' }, req);
-  }
-
-  const auth = await validateSession(req, storage);
-  if (!auth.valid) {
-    auditLog('WORKER_UNAUTHORIZED', req, 'Endpoint: /api/worker');
-    return sendSecureJson(res, auth.status || 401, { error: auth.error });
-  }
-
-  // Enforce authenticated role requirement for background worker execution
-  if (auth.role !== 'master' && auth.role !== 'temporary') {
-    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/worker');
-    return sendSecureJson(res, 403, { error: 'Forbidden: Background worker execution requires authenticated session' });
-  }
-
-  // 1. GET Requests: Query job status, check completed jobs, or trigger due schedules
-  if (req.method === 'GET') {
-    const { jobId, action, userSession } = req.query || {};
-
-    // Specific job lookup
-    if (jobId) {
-      try {
-        const raw = await storage.get(`job_state:${jobId}`);
-        if (!raw) return sendSecureJson(res, 404, { error: 'Job not found' });
-        const job = typeof raw === 'string' ? JSON.parse(raw) : raw;
-
-        // Enforce session ownership (BOLA prevention)
-        const isOwner = !job.ownerSessionId || job.ownerSessionId === auth.sessionId || (auth.role === 'master' && job.ownerRole === 'master');
-        if (!isOwner) {
-          auditLog('WORKER_BOLA_BLOCKED', req, `Session ${auth.sessionId} attempted access to Job ${jobId}`);
-          return sendSecureJson(res, 403, { error: 'Forbidden: Access to this job is restricted to the job creator.' });
-        }
-
-        return sendSecureJson(res, 200, { success: true, job });
-      } catch (err) {
-        return sendSecureJson(res, 500, { error: 'Failed to retrieve job state' });
-      }
+    // 1. Rate limiting & payload limit
+    const rateLimit = await checkRateLimit(req, storage, 'worker', 60, 60);
+    if (rateLimit && !rateLimit.allowed) {
+      return sendSecureJson(res, 429, { error: rateLimit.error || 'Rate limit exceeded' }, req);
     }
+
+    if (!enforcePayloadLimit(req, 250000)) {
+      return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded' }, req);
+    }
+
+    const auth = await validateSession(req, storage);
+    if (!auth.valid) {
+      auditLog('WORKER_UNAUTHORIZED', req, 'Endpoint: /api/worker');
+      return sendSecureJson(res, auth.status || 401, { error: auth.error });
+    }
+
+    // Enforce authenticated role requirement for background worker execution
+    if (auth.role !== 'master' && auth.role !== 'temporary') {
+      auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/worker');
+      return sendSecureJson(res, 403, { error: 'Forbidden: Background worker execution requires authenticated session' });
+    }
+
+    // 1. GET Requests: Query job status, check completed jobs, or trigger due schedules
+    if (req.method === 'GET') {
+      const { jobId, action, userSession } = req.query || {};
+
+      // Specific job lookup
+      if (jobId) {
+        try {
+          const raw = await storage.get(`job_state:${jobId}`);
+          if (!raw) return sendSecureJson(res, 404, { error: 'Job not found' });
+          const job = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+          // Enforce session ownership (BOLA prevention - HIGH-01)
+          const isOwner = auth.role === 'master' || (Boolean(job.ownerSessionId) && job.ownerSessionId === auth.sessionId);
+          if (!isOwner) {
+            auditLog('WORKER_BOLA_BLOCKED', req, `Session ${auth.sessionId} attempted access to Job ${jobId}`);
+            return sendSecureJson(res, 403, { error: 'Forbidden: Access to this job is restricted to the job creator.' });
+          }
+
+          return sendSecureJson(res, 200, { success: true, job });
+        } catch (err) {
+          return sendSecureJson(res, 500, { error: 'Failed to retrieve job state' });
+        }
+      }
 
     // Check completed jobs for this user session
     if (action === 'check_completed' || action === 'pending') {
@@ -111,7 +113,9 @@ export default async function handler(req, res) {
               messages: [{ role: 'user', content: `[SCHEDULED AUTONOMOUS TASK: ${task.name}]\n${task.prompt}` }],
               currentVfs: task.vfs || {},
               requestedModel: task.model || 'gpt-oss:20b',
-              storage
+              storage,
+              ownerRole: 'master',
+              ownerSessionId: 'system_master_scheduler'
             });
             ranTasks.push(task.name);
           }
@@ -132,8 +136,12 @@ export default async function handler(req, res) {
 
   const { action, jobId, userSession, prompt, requestedModel, provider, messages, currentVfs, schedules } = req.body || {};
 
-  // Action: Sync user's scheduled tasks to cloud
+  // Action: Sync user's scheduled tasks to cloud (HIGH-07)
   if (action === 'sync_schedules') {
+    if (auth.role !== 'master') {
+      auditLog('INSUFFICIENT_PRIVILEGES', req, 'Action: sync_schedules requires master role');
+      return sendSecureJson(res, 403, { error: 'Forbidden: Schedule management requires master role' });
+    }
     if (!Array.isArray(schedules)) return sendSecureJson(res, 400, { error: 'Invalid schedules payload' });
     try {
       await storage.set('cloud_scheduled_tasks', JSON.stringify(schedules), { ex: 86400 * 30 });
@@ -202,6 +210,10 @@ export default async function handler(req, res) {
       error: safeError
     }), { ex: 3600 });
     return sendSecureJson(res, 500, { error: safeError });
+  }
+  } catch (err) {
+    auditLog('WORKER_UNHANDLED_EXCEPTION', req, err.message);
+    return sendSecureJson(res, 500, { error: sanitizeError(err.message || 'Internal server error') });
   }
 }
 
@@ -376,7 +388,7 @@ async function executeAutonomousCloudTask({ jobId, prompt, messages, currentVfs,
         }
       } catch (ignore) {}
     } catch (sbxErr) {
-      terminalLogs.push(`[MicroVM Notice]: ${sbxErr.message}`);
+      terminalLogs.push(`[MicroVM Notice]: ${sanitizeError(sbxErr.message)}`);
     } finally {
       if (sbx) await sbx.kill().catch(() => {});
     }

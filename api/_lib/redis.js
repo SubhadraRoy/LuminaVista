@@ -3,8 +3,8 @@ import { Redis } from '@upstash/redis';
 import { scrubSecrets } from './auth-guard.js';
 
 export function createRawRedisClient() {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || process.env.REDIS_URL || process.env.KV_URL || process.env.STORAGE_REDIS_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || process.env.REDIS_TOKEN || process.env.KV_TOKEN;
   
   if (!url || !token || !url.startsWith('http')) {
     return null;

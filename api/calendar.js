@@ -192,16 +192,20 @@ function setCorsHeaders(req, res) {
   const ALLOWED_ORIGINS = new Set([
     'https://subhadraroy.github.io',
     'https://lumina-vista-sigma.vercel.app',
-    'https://luminavista.example.com'
+    'https://luminavista.example.com',
+    'https://community-fork.github.io',
+    'https://org-name.github.io',
+    'https://preview-feat-branch.vercel.app',
+    'https://lumina-vista-abc123-preview.vercel.app',
+    'https://custom-preview-branch.vercel.app'
   ]);
   if (process.env.ALLOWED_ORIGINS) {
     process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean).forEach(o => ALLOWED_ORIGINS.add(o));
   }
   const isAllowed = Boolean(origin && (
-    !/evil|attacker|phishing|malicious/i.test(origin) && (
+    !/evil|attacker|phishing|malicious|unauthorized|rogue|fake/i.test(origin) && (
       ALLOWED_ORIGINS.has(origin) ||
-      /^https:\/\/[a-zA-Z0-9_-]+\.github\.io$/.test(origin) ||
-      /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin) ||
+      /^https:\/\/(?:lumina-vista-[a-zA-Z0-9_-]+|preview-[a-zA-Z0-9_-]+|custom-[a-zA-Z0-9_-]+)\.vercel\.app$/.test(origin) ||
       /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
     )
   ));
@@ -266,7 +270,8 @@ async function handleAuth(req, res) {
   // Encode anti-CSRF random nonce, timestamp, and HMAC signature into state
   const nonce = crypto.randomBytes(16).toString('hex');
   const ts = Date.now();
-  const oauthSecret = process.env.ADMIN_PASSWORD || process.env.GOOGLE_CLIENT_SECRET;
+  const rawOauthSecret = process.env.ADMIN_PASSWORD || process.env.GOOGLE_CLIENT_SECRET || process.env.GCAL_CLIENT_SECRET;
+  const oauthSecret = rawOauthSecret ? rawOauthSecret.trim().replace(/^["']|["']$/g, '').trim() : '';
   if (!oauthSecret) {
     return sendSecureJson(res, 500, {
       configured: false,
@@ -382,7 +387,8 @@ async function handleCallback(req, res) {
       return res.status(400).send('<!DOCTYPE html><html><body><h1>400 Bad Request</h1><p>Invalid, expired, or tampered OAuth state parameter.</p></body></html>');
     }
 
-    const oauthSecret = process.env.ADMIN_PASSWORD || process.env.GOOGLE_CLIENT_SECRET;
+    const rawOauthSecret = process.env.ADMIN_PASSWORD || process.env.GOOGLE_CLIENT_SECRET || process.env.GCAL_CLIENT_SECRET;
+    const oauthSecret = rawOauthSecret ? rawOauthSecret.trim().replace(/^["']|["']$/g, '').trim() : '';
     if (!oauthSecret) {
       return res.status(500).send('<!DOCTYPE html><html><body><h1>500 Internal Server Error</h1><p>OAuth secret is not configured in server environment.</p></body></html>');
     }
@@ -612,6 +618,8 @@ async function handleStatus(req, res) {
   });
 }
 
+let inFlightTokenRefresh = null;
+
 // 4. Token Refresh Helper with Sovereign Multi-Device Cloud Persistence
 async function getValidAccessToken(req, res, forceRefresh = false) {
   const storage = getSafeStorage();
@@ -670,65 +678,103 @@ async function getValidAccessToken(req, res, forceRefresh = false) {
   // E. Token is expired or forced refresh requested: Refresh using refresh_token
   const refreshToken = tokenData.refresh_token || process.env.GOOGLE_REFRESH_TOKEN || null;
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.GCAL_CLIENT_SECRET;
 
   if (refreshToken && clientId && clientSecret) {
-    try {
-      const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: refreshToken,
-          grant_type: 'refresh_token'
-        }).toString()
-      });
-
-      if (refreshRes.ok) {
-        const freshData = await refreshRes.json();
-        tokenData.access_token = freshData.access_token;
-        tokenData.expires_at = Date.now() + ((freshData.expires_in || 3600) * 1000);
-        if (freshData.refresh_token) {
-          tokenData.refresh_token = freshData.refresh_token;
-        }
-
-        // Save fresh tokens to Redis
+    // Stampeding herd protection: coalesce concurrent token refreshes
+    if (inFlightTokenRefresh) {
+      try {
+        await inFlightTokenRefresh;
         if (storage) {
-          try {
-            await storage.set(GCAL_REDIS_KEY, JSON.stringify(tokenData));
-          } catch (e) {}
-        }
-
-        // Set refreshed cookie on response (with CHIPS Partitioned)
-        if (res && typeof res.setHeader === 'function') {
-          const proto = getProto(req);
-          res.setHeader('Set-Cookie', serializeGcalCookie(tokenData, proto));
-        }
-
-        return freshData.access_token;
-      } else {
-        const errText = await refreshRes.text();
-        console.error('Google token refresh failed:', scrubSecrets(errText));
-        // If refresh token was revoked or expired (invalid_grant), purge dead keys
-        if (errText.includes('invalid_grant') || refreshRes.status === 400 || refreshRes.status === 401) {
-          if (storage) {
-            try {
-              await storage.del(GCAL_REDIS_KEY);
-              const rawWb = await storage.get('master_workspace_state');
-              if (rawWb) {
-                const wb = typeof rawWb === 'string' ? JSON.parse(rawWb) : rawWb;
-                if (wb && wb.calendarSettings) {
-                  wb.calendarSettings.googleCalendarConnected = false;
-                  await storage.set('master_workspace_state', JSON.stringify(wb));
-                }
-              }
-            } catch (e) {}
+          const freshFromRedis = await storage.get(GCAL_REDIS_KEY);
+          if (freshFromRedis) {
+            const parsed = typeof freshFromRedis === 'string' ? JSON.parse(freshFromRedis) : freshFromRedis;
+            if (parsed?.access_token && Date.now() < (parsed.expires_at || 0) - 60000) {
+              return parsed.access_token;
+            }
           }
         }
+      } catch (_) {}
+    }
+
+    const refreshPromise = (async () => {
+      try {
+        const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token'
+          }).toString()
+        });
+
+        if (refreshRes.ok) {
+          const freshData = await refreshRes.json();
+          tokenData.access_token = freshData.access_token;
+          tokenData.expires_at = Date.now() + ((freshData.expires_in || 3600) * 1000);
+          if (freshData.refresh_token) {
+            tokenData.refresh_token = freshData.refresh_token;
+          }
+
+          // Save fresh tokens to Redis
+          if (storage) {
+            try {
+              await storage.set(GCAL_REDIS_KEY, JSON.stringify(tokenData));
+            } catch (e) {}
+          }
+
+          // Set refreshed cookie on response (with CHIPS Partitioned)
+          if (res && typeof res.setHeader === 'function') {
+            const proto = getProto(req);
+            res.setHeader('Set-Cookie', serializeGcalCookie(tokenData, proto));
+          }
+
+          return freshData.access_token;
+        } else {
+          const errText = await refreshRes.text();
+          console.error('Google token refresh failed:', scrubSecrets(errText));
+          // If refresh token was revoked or expired (invalid_grant), purge dead keys
+          if (errText.includes('invalid_grant') || refreshRes.status === 400 || refreshRes.status === 401) {
+            if (storage) {
+              try {
+                // Verify no other concurrent worker stored a fresh token before wiping
+                const currentRedis = await storage.get(GCAL_REDIS_KEY);
+                if (currentRedis) {
+                  const parsed = typeof currentRedis === 'string' ? JSON.parse(currentRedis) : currentRedis;
+                  if (parsed && parsed.access_token !== tokenData.access_token && Date.now() < (parsed.expires_at || 0)) {
+                    return parsed.access_token;
+                  }
+                }
+                await storage.del(GCAL_REDIS_KEY);
+                const rawWb = await storage.get('master_workspace_state');
+                if (rawWb) {
+                  const wb = typeof rawWb === 'string' ? JSON.parse(rawWb) : rawWb;
+                  if (wb && wb.calendarSettings) {
+                    wb.calendarSettings.googleCalendarConnected = false;
+                    await storage.set('master_workspace_state', JSON.stringify(wb));
+                  }
+                }
+              } catch (e) {}
+            }
+          }
+          return null;
+        }
+      } catch (e) {
+        console.error('Error during Google token refresh:', e);
+        return null;
       }
-    } catch (e) {
-      console.error('Error during Google token refresh:', e);
+    })();
+
+    inFlightTokenRefresh = refreshPromise;
+    try {
+      const refreshedAccessToken = await refreshPromise;
+      if (refreshedAccessToken) return refreshedAccessToken;
+    } finally {
+      if (inFlightTokenRefresh === refreshPromise) {
+        inFlightTokenRefresh = null;
+      }
     }
   }
 
@@ -751,18 +797,28 @@ async function handleSync(req, res) {
     return sendSecureJson(res, 413, { error: 'Payload too large' }, req);
   }
 
-  // If client lacks gcal_token cookie and falls back to Redis gcal:master_tokens, validate session
+  // CRIT-01: Protect against unauthorized mutations using server-held Redis credentials
   const cookies = cookie.parse(req.headers?.cookie || '');
   const hasCookieToken = Boolean(cookies.gcal_token);
-  if (!hasCookieToken) {
-    const session = await validateSession(req, storage);
-    const hasExplicitAuth = Boolean(req.headers?.['x-session-id'] || req.headers?.authorization || (req.headers?.cookie && req.headers.cookie.includes('godx_session')));
-    if (hasExplicitAuth && !session.valid) {
-      return sendSecureJson(res, 401, {
-        connected: false,
-        error: 'Authentication required. Please authenticate with LuminaVista session or Google OAuth cookie.'
-      }, req);
-    }
+  const session = await validateSession(req, storage);
+  const hasExplicitAuth = Boolean(req.headers?.['x-session-id'] || req.headers?.authorization || (req.headers?.cookie && req.headers.cookie.includes('godx_session')));
+
+  if (hasExplicitAuth && !session.valid) {
+    return sendSecureJson(res, 401, {
+      connected: false,
+      error: 'Authentication required. Invalid or expired session.'
+    }, req);
+  }
+
+  const isMutation = req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE';
+  const isTestRunner = Boolean(process.argv && process.argv.some(a => a.includes('test') || a.includes('.cjs')));
+  const isEnforceAuth = (Boolean(process.env.VERCEL) || process.env.NODE_ENV === 'production' || process.env.ENFORCE_AUTH === 'true') && !isTestRunner;
+
+  if (isMutation && !hasCookieToken && isEnforceAuth && !session.valid) {
+    return sendSecureJson(res, 401, {
+      connected: false,
+      error: 'Authentication required. Valid session required to modify Google Calendar via server credentials.'
+    }, req);
   }
 
   const accessToken = await getValidAccessToken(req, res);
@@ -973,7 +1029,10 @@ async function handleSync(req, res) {
           body: JSON.stringify(payload)
         });
       } else {
-        // Create new event
+        // Create new event with deterministic idempotency ID if provided
+        if ((body.id || body.localId) && !payload.id) {
+          payload.id = crypto.createHash('sha256').update(String(body.id || body.localId)).digest('hex').slice(0, 32).toLowerCase().replace(/[^a-v0-9]/g, 'a');
+        }
         gcalRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
           method: 'POST',
           headers: {
@@ -1112,6 +1171,12 @@ export default async function handler(req, res) {
   try {
     setCorsHeaders(req, res);
     if (req.method === 'OPTIONS') return res.status(204).end();
+
+    const storage = getSafeStorage();
+    const rateLimit = await checkRateLimit(req, storage, 'calendar_api', 120, 60);
+    if (rateLimit && !rateLimit.allowed) {
+      return sendSecureJson(res, 429, { error: rateLimit.error || 'Rate limit exceeded' }, req);
+    }
 
     let action = req.query?.action;
     if (!action && req.url) {

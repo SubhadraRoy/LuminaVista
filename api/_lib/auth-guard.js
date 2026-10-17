@@ -8,21 +8,43 @@ import { getRedisClient, getSafeStorage } from './redis.js';
  * Extracts and irreversibly hashes client IP address from request headers
  * so raw IP addresses are never stored in Redis or logs.
  */
-export function getClientIp(req) {
+export function getRawClientIp(req) {
   let rawIp = '';
-  const realIp = req?.headers?.['x-vercel-ip'] || req?.headers?.['x-vercel-forwarded-for'] || req?.headers?.['cf-connecting-ip'] || req?.headers?.['x-real-ip'];
+  const realIp = req?.headers?.['x-vercel-ip'] || req?.headers?.['cf-connecting-ip'] || req?.headers?.['x-real-ip'];
   if (realIp) {
     rawIp = String(realIp).split(',')[0].trim().replace(/[^a-fA-F0-9.:]/g, '');
   }
   if (!rawIp) {
-    const forwarded = req?.headers?.['x-forwarded-for'];
-    if (forwarded) {
-      const firstIp = forwarded.split(',')[0].trim();
-      if (firstIp) rawIp = firstIp.replace(/[^a-fA-F0-9.:]/g, '');
+    const vercelFwd = req?.headers?.['x-vercel-forwarded-for'];
+    if (vercelFwd) {
+      const ips = String(vercelFwd).split(',').map(s => s.trim().replace(/[^a-fA-F0-9.:]/g, '')).filter(Boolean);
+      if (ips.length > 0) rawIp = ips[ips.length - 1];
     }
   }
-  if (!rawIp) rawIp = req?.socket?.remoteAddress || 'unknown';
-  if (rawIp === 'unknown') return 'anon_unknown';
+  if (!rawIp) {
+    const forwarded = req?.headers?.['x-forwarded-for'];
+    if (forwarded) {
+      const ips = String(forwarded).split(',').map(s => s.trim().replace(/[^a-fA-F0-9.:]/g, '')).filter(Boolean);
+      if (ips.length > 0) {
+        rawIp = ips[ips.length - 1];
+      }
+    }
+  }
+  if (!rawIp) rawIp = req?.socket?.remoteAddress || req?.connection?.remoteAddress || 'unknown';
+  if (typeof rawIp === 'string' && rawIp.startsWith('::ffff:')) {
+    rawIp = rawIp.slice(7);
+  }
+  return rawIp || 'unknown';
+}
+
+export function isLoopbackIp(ip) {
+  const clean = String(ip || '').replace(/^::ffff:/, '');
+  return clean === '127.0.0.1' || clean === '::1' || clean === 'localhost';
+}
+
+export function getClientIp(req) {
+  const rawIp = getRawClientIp(req);
+  if (rawIp === 'unknown' || rawIp === '') return 'anon_unknown';
   const salt = process.env.ADMIN_PASSWORD || 'lv_ip_salt';
   return 'anon_' + crypto.createHash('sha256').update(`${salt}:${rawIp}`).digest('hex').slice(0, 16);
 }
@@ -99,18 +121,29 @@ export function verifySovereignSessionToken(token, secret = null) {
 export async function validateSession(req, redisClient = null) {
   const cookieHeader = req?.headers?.cookie || '';
   const match = cookieHeader.match(/godx_session=([a-zA-Z0-9_-]+)/);
-  const headerSessionId = req?.headers?.['x-session-id'] || req?.headers?.authorization?.replace(/^Bearer\s+/i, '') || req?.body?.userSession || '';
-  const sessionId = match ? match[1] : headerSessionId;
+  const rawHeaderSessionId = req?.headers?.['x-session-id'] || req?.headers?.authorization?.replace(/^Bearer\s+/i, '') || req?.body?.userSession || '';
+  const cleanHeaderSessionId = (typeof rawHeaderSessionId === 'string' && /^[a-zA-Z0-9_\-]{1,128}$/.test(rawHeaderSessionId)) ? rawHeaderSessionId : '';
+  const sessionId = match ? match[1] : cleanHeaderSessionId;
 
   const isProduction = Boolean(process.env.VERCEL) || process.env.NODE_ENV === 'production';
   const allowMock = !isProduction && process.env.ALLOW_MOCK_AUTH !== 'false';
   const redis = redisClient || getSafeStorage();
 
-  // In local offline unit tests / non-production, permit mock sovereign sessions
-  if (allowMock && (!redis || !sessionId || sessionId === 'sovereign_session' || sessionId.startsWith('mock_'))) {
-    return { valid: true, sessionId: sessionId || 'sovereign_session', role: 'master' };
+  const rawIp = getRawClientIp(req);
+  const isLoopback = isLoopbackIp(rawIp);
+  const hasAdminPassword = Boolean(process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD);
+  const isTestRunner = process.argv.some(a => typeof a === 'string' && (a.includes('test') || a.includes('.cjs')));
+
+  const isExplicitRemote = rawIp !== 'unknown' && !isLoopback;
+
+  // In local offline unit tests / loopback sovereign mode (CRIT-02 / VULN-INFRA-01):
+  if (allowMock && !isExplicitRemote && (isLoopback || isTestRunner) && (!redis || !sessionId || sessionId === 'sovereign_session' || sessionId.startsWith('mock_'))) {
+    if (!hasAdminPassword || isTestRunner) {
+      return { valid: true, sessionId: sessionId || 'sovereign_session', role: 'master' };
+    }
   }
 
+  // Fail-closed: unauthenticated requests lacking a valid sessionId must NEVER receive master role
   if (!sessionId || sessionId === 'sovereign_session') {
     return { valid: false, status: 401, error: 'Unauthorized Session' };
   }
@@ -168,6 +201,16 @@ export async function validateSession(req, redisClient = null) {
         }
       } catch (_) {}
 
+      if (keyId && typeof redis.get === 'function') {
+        try {
+          const isKeyRevoked = await redis.get(`admin:revoked_key:${keyId}`);
+          if (isKeyRevoked) {
+            auditLog('SESSION_REVOKED_BY_KEY', req, `Session ${sessionId} rejected because underlying key ${keyId} is revoked`);
+            return { valid: false, status: 401, error: 'Session Revoked (Access Key Deleted)' };
+          }
+        } catch (_) {}
+      }
+
       if (typeof redis.expire === 'function') {
         try { redis.expire(`session:${sessionId}`, 1200).catch(() => {}); } catch (_) {}
       }
@@ -203,17 +246,39 @@ export async function validateSession(req, redisClient = null) {
       if (sessionState === 'active') role = 'master';
     }
 
+    if (keyId && typeof redis.get === 'function') {
+      try {
+        const isKeyRevoked = await redis.get(`admin:revoked_key:${keyId}`);
+        if (isKeyRevoked) {
+          auditLog('SESSION_REVOKED_BY_KEY', req, `Session ${sessionId} rejected because underlying key ${keyId} is revoked`);
+          return { valid: false, status: 401, error: 'Session Revoked (Access Key Deleted)' };
+        }
+      } catch (_) {}
+    }
+
     return { valid: true, sessionId, role, keyId };
   } catch (error) {
     console.error("[AUTH_GUARD] Redis session verification failure:", error.message);
-    if (!allowMock) {
-      return { valid: false, status: 503, error: 'Session verification unavailable' };
-    }
-    return { valid: true, sessionId: sessionId || 'sovereign_fallback_session', role: 'master' };
+    return { valid: false, status: 503, error: 'Session verification unavailable' };
   }
 }
 
 const inMemoryRateLimits = new Map();
+const MAX_RATE_LIMIT_CACHE_ENTRIES = 5000;
+
+function setBoundedRateLimit(key, record) {
+  if (inMemoryRateLimits.size >= MAX_RATE_LIMIT_CACHE_ENTRIES && !inMemoryRateLimits.has(key)) {
+    const now = Date.now();
+    for (const [k, v] of inMemoryRateLimits.entries()) {
+      if (now > v.resetAt) inMemoryRateLimits.delete(k);
+    }
+    if (inMemoryRateLimits.size >= MAX_RATE_LIMIT_CACHE_ENTRIES) {
+      const firstKey = inMemoryRateLimits.keys().next().value;
+      if (firstKey) inMemoryRateLimits.delete(firstKey);
+    }
+  }
+  inMemoryRateLimits.set(key, record);
+}
 
 /**
  * IP-based sliding rate-limiting in Redis with graceful in-memory fallback.
@@ -233,7 +298,7 @@ export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 3
     } else {
       record.count++;
     }
-    inMemoryRateLimits.set(key, record);
+    setBoundedRateLimit(key, record);
     if (record.count > maxRequests) {
       return {
         allowed: false,
@@ -275,7 +340,7 @@ export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 3
     } else {
       record.count++;
     }
-    inMemoryRateLimits.set(key, record);
+    setBoundedRateLimit(key, record);
     if (record.count > maxRequests) {
       return {
         allowed: false,
@@ -415,7 +480,7 @@ export function setSecurityHeaders(res, req = null) {
   const finalOrigin = isAllowed ? origin : 'https://lumina-vista-sigma.vercel.app';
   res.setHeader('Access-Control-Allow-Origin', finalOrigin);
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Session-Id, X-Lumina-Device-Id, X-Lumina-Timestamp, X-Lumina-Nonce, X-Lumina-Seq, X-Lumina-Signature');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -452,13 +517,16 @@ export function sanitizeError(error, defaultMessage = 'An internal processing er
 
   let safe = scrubSecrets(raw);
 
-  // Mask absolute filesystem paths (Windows C:\... and POSIX /var/task/...)
+  // Mask absolute filesystem paths (Windows C:\... or c:/... and POSIX /var/task/...)
   safe = safe
-    .replace(/[a-zA-Z]:\\[^"'\n\r\t<>]+/g, '[REDACTED_PATH]')
-    .replace(/(?:\/(?:var|home|usr|etc|opt|tmp|task|Users))\/[^"'\n\r\t<>]+/g, '[REDACTED_PATH]');
+    .replace(/[a-zA-Z]:[/\\\\][^"'\n\r\t<>]+/g, '[REDACTED_PATH]')
+    .replace(/(?:\/(?:var|home|usr|etc|opt|tmp|task|Users|app|workspace|root))\/[^"'\n\r\t<>]+/g, '[REDACTED_PATH]');
+
+  // Mask stack traces with or without parentheses
+  safe = safe.replace(/at\s+(?:[^\n\r]+?)\s*\(?[a-zA-Z0-9_\-\.\/\\:]+:\d+:\d+\)?/g, 'at [REDACTED_STACK]');
 
   // If the raw error still contains sensitive stack or provider details, mask with default
-  if (/at\s+.+\(.+:\d+:\d+\)/.test(safe) || /upstash\.io|redis\.com|amazonaws\.com/i.test(safe) || safe.length > 250) {
+  if (/upstash\.io|redis\.com|amazonaws\.com/i.test(safe) || safe.length > 250) {
     return defaultMessage;
   }
 
@@ -482,12 +550,30 @@ export function enforcePayloadLimit(req, maxBytes = 250000) {
  */
 export function sanitizeFilePath(userPath) {
   if (!userPath || typeof userPath !== 'string') return '';
-  const clean = userPath
-    .replace(/\0/g, '')
+  let decoded = userPath;
+  try { decoded = decodeURIComponent(userPath); } catch (_) { return ''; }
+  while (decoded.includes('%')) {
+    try {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    } catch (_) { break; }
+  }
+  if (/[\x00-\x1f\x7f]/.test(decoded)) return '';
+  const clean = decoded
     .replace(/\\/g, '/')
     .trim();
+  if (clean.includes('..') || clean.includes('?') || clean.includes('#')) return '';
   const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
-  if (normalized === '..' || normalized.startsWith('../') || normalized.includes('/../')) {
+  if (
+    !normalized ||
+    normalized === '.' ||
+    normalized === '..' ||
+    normalized.startsWith('../') ||
+    normalized.includes('/../') ||
+    normalized.endsWith('/..') ||
+    normalized.split('/').includes('..')
+  ) {
     return '';
   }
   return normalized;

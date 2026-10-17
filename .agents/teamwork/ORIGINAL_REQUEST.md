@@ -328,3 +328,74 @@ For every discovered security defect or defense-in-depth gap:
 - [ ] 25 / 25 adversarial tests pass in `tests/suite-calendar-adversarial.cjs`
 - [ ] 100% of files across the repository strictly contain < 2,000 lines
 - [ ] Git repository is clean and synchronized with `origin/main`
+
+## Follow-up — 2026-10-17T05:33:54Z
+
+Execute a comprehensive, multi-stage defensive security audit and automated remediation workflow across LuminaVista OS under /goal mode. Specialized sub-agents will audit authentication & access control, input & injection security, infrastructure/secrets/dependencies, and business logic & concurrency, triage and implement minimal, surgical production-safe fixes with automated tests, and iterate through an adversarial verification loop until an independent panel of Principal Application Security Reviewer sub-agents reaches unanimous consensus that zero Critical, High, or Medium vulnerabilities remain and all tests pass with zero regressions.
+
+Working directory: c:/Users/roysu/LuminaVista
+Integrity mode: development
+
+## Verification Resources
+The codebase provides fully automated test suites that must be executed to validate system integrity before and after any remediation iteration:
+- Unit Test Suite: `node tests/features.test.cjs` (1,102 assertions)
+- Browser CDP Test Suite: `node tests/browser-cdp-test.cjs` (122 Google Chrome CDP tests)
+- Comprehensive 5-Point Recheck Audit: `node tests/recheck-all-tasks.cjs` (42 assertions)
+- Syntax Linter: `node tests/lint.cjs` (40 JS modules)
+- Challenger Calendar Empirical Harness: `node tests/challenger-calendar-empirical.cjs` (63 assertions)
+- Adversarial Penetration Challenge (R4): `node tests/challenger-r4-empirical.cjs` (141 assertions)
+- Adversarial Calendar Controller Harness: `node tests/adversarial-calendar.test.cjs` (109 probes)
+- Adversarial Calendar Probe: `node tests/suite-calendar-adversarial.cjs` (25 tests)
+
+## Requirements
+
+### R1. Parallel Audit Phase (Specialist Sub-Agents)
+Deploy 4 specialized exploratory sub-agents across the entire repository:
+1. Agent 1 (Auth & Access Control): Audit authentication flows, sovereign session management, zero-trust RBAC/ABAC, BOLA/IDOR in edge routes, credential revocation tombstones, and privilege escalation vectors.
+2. Agent 2 (Input & Injection Security): Audit all data ingestion points for SQLi, XSS, SSRF (including IPv6 and cloud metadata bypasses), CLI/command injection, prototype pollution, insecure deserialization, and path traversal in VFS artifacts.
+3. Agent 3 (Infrastructure, Secrets & Dependencies): Scan for hardcoded API keys or master passwords, insecure environment fallbacks, CORS origin reflection boundaries, strict CSP meta tags, Subresource Integrity (SRI) on CDN assets, and vulnerable dependencies.
+4. Agent 4 (Business Logic & Concurrency): Audit race conditions in session locks, rate-limiting bypasses, monotonic sequence counters on the IoT Smart Lock gateway, unhandled Promise rejections, and error states that leak internal stack traces or paths.
+
+### R2. Triage & Surgical Remediation Phase (Remediation Engineers)
+- Consolidate all audit findings into a prioritized vulnerability ledger (Critical, High, Medium, Low).
+- Implement minimal, surgical, production-safe defensive fixes for every Critical, High, and Medium issue directly in the target codebase files.
+- Enforce strict input validation, type guards, constant-time cryptographic comparisons (`crypto.timingSafeEqual`), and fail-closed edge authorization semantics.
+- Write automated regression tests for each patched vulnerability to guarantee continuous regression protection.
+- Do NOT generate offensive exploit scripts, weaponized payloads, or malicious proof-of-concept exploits in the repository.
+
+### R3. Adversarial Verification Loop & Principal AppSec Panel Consensus
+- Re-audit all modified files and run the full automated verification test suite to ensure no regressions or secondary vulnerabilities were introduced.
+- Convene an independent review panel of Principal Application Security Reviewer sub-agents to evaluate the codebase against:
+  1. Complete resolution of all Critical, High, and Medium vulnerabilities.
+  2. 100% automated test coverage for all security patches.
+  3. Clean builds and zero functional regressions across all client and serverless features.
+- Require unanimous panel consensus and an independent Victory Auditor confirmation before concluding.
+
+### R4. Preservation of Invariants & Budget Constraints
+- File Length Ceiling: Every file in the repository must strictly contain fewer than 2,000 lines.
+- Hardware Boundary: Physical ESP32 firmware files (`firmware/**`) must remain 100% untouched.
+- Test Integrity: Existing verification suites (`tests/**`) must remain active with zero regressions.
+- Clean Repository: Final working tree must be committed and pushed to `origin/main`.
+
+## Acceptance Criteria
+
+### Security Fortification & Coverage
+- [ ] 100% of Critical, High, and Medium vulnerabilities across all 4 audit domains are fully resolved with surgical production fixes.
+- [ ] All patched vulnerabilities are backed by automated tests confirming defense effectiveness.
+- [ ] Constant-time comparisons (`crypto.timingSafeEqual`) and fail-closed authorization semantics active across all edge APIs.
+- [ ] Zero SSRF vulnerabilities to private, loopback, or cloud metadata endpoints (`169.254.169.254`, `[::ffff:127.0.0.1]`).
+- [ ] Strict CORS origin reflection prevention enforced with zero reflection of hostile origins.
+
+### Review Panel & Independent Victory Certification
+- [ ] Unanimous consensus approval from the panel of Principal Application Security Reviewer sub-agents.
+- [ ] Official `VICTORY CONFIRMED` verdict issued by the independent Victory Auditor.
+- [ ] 1,102 / 1,102 unit assertions pass in `tests/features.test.cjs` with 0 failures.
+- [ ] 122 / 122 Google Chrome CDP tests pass in `tests/browser-cdp-test.cjs` with 0 failures.
+- [ ] 42 / 42 audit assertions pass in `tests/recheck-all-tasks.cjs` with 0 failures.
+- [ ] 40 / 40 JavaScript modules pass syntax linting in `tests/lint.cjs`.
+- [ ] 63 / 63 empirical assertions pass in `tests/challenger-calendar-empirical.cjs`.
+- [ ] 141 / 141 empirical assertions pass in `tests/challenger-r4-empirical.cjs`.
+- [ ] 109 / 109 adversarial probes pass in `tests/adversarial-calendar.test.cjs`.
+- [ ] 25 / 25 adversarial tests pass in `tests/suite-calendar-adversarial.cjs`.
+- [ ] 100% of files across the repository strictly contain < 2,000 lines.
+- [ ] Git repository is clean and synchronized with `origin/main`.

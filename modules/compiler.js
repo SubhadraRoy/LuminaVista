@@ -131,6 +131,17 @@
     let filename = ext === 'java' ? 'Main.java' : `sbx.${ext}`;
     const fullCmd = `echo "${safeCode}" | base64 -d > /tmp/${filename} && ${cmd}`;
 
+    // Verify command safety with Jev guardrail before dispatch
+    const cmdSafety = window.LuminaJev ? window.LuminaJev.screenCommand(fullCmd) : { safe: true };
+    if (!cmdSafety.safe) {
+      if (out) {
+        out.classList.remove("hidden");
+        out.textContent = `🛡️ [Jev System-1 Guardrail]: Command Execution Blocked!\nThreat: ${cmdSafety.threatCategory}\nReason: ${cmdSafety.reason}\n`;
+      }
+      if (window.showToast) window.showToast("Execution Blocked", cmdSafety.reason || "Dangerous shell command blocked.");
+      return;
+    }
+
     try {
       const res = await fetch("/api/terminal", {
         method: "POST",

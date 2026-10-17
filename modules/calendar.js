@@ -86,8 +86,17 @@
   const copyRedirectUri = (...args) => (window.LuminaCalendarSync?.copyRedirectUri ? window.LuminaCalendarSync.copyRedirectUri(...args) : undefined);
   const exportToIcs = (...args) => (window.LuminaCalendarSync?.exportToIcs ? window.LuminaCalendarSync.exportToIcs(...args) : '');
   const importFromIcs = (...args) => (window.LuminaCalendarSync?.importFromIcs ? window.LuminaCalendarSync.importFromIcs(...args) : { success: false });
-  const saveSyncSettingsFromModal = (...args) => (window.LuminaCalendarSync?.saveSyncSettingsFromModal ? window.LuminaCalendarSync.saveSyncSettingsFromModal(...args) : undefined);
   const checkBackendConnectionStatus = (...args) => (window.LuminaCalendarSync?.checkBackendConnectionStatus ? window.LuminaCalendarSync.checkBackendConnectionStatus(...args) : Promise.resolve());
+
+  function generateSecureEventId(prefix = 'evt') {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `${prefix}_${crypto.randomUUID()}`;
+    }
+    const rand = (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function')
+      ? Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')
+      : Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+    return `${prefix}_${Date.now()}_${rand}`;
+  }
 
   const AUTHENTIC_GOOGLE_CALENDAR_EVENTS = [
     {
@@ -1045,7 +1054,7 @@
       }
     } else {
       const newEvent = {
-        id: `evt_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        id: generateSecureEventId('evt'),
         title, start, end, category, color, location, description, allDay, isAutonomous,
         priority: 'normal',
         reschedulable: true,
@@ -1359,7 +1368,7 @@
 
       const cat = directive.category || 'ai_autonomous';
       const newEvt = {
-        id: directive.id || `evt_agent_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        id: directive.id || generateSecureEventId('evt_agent'),
         title: directive.title || 'Scheduled Event',
         start: startStr,
         end: endStr,

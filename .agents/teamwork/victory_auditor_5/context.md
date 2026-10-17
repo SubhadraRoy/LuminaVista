@@ -1,0 +1,7 @@
+# Victory Auditor R5 Context
+
+Working directory: `c:\Users\roysu\LuminaVista\.agents\teamwork\victory_auditor_5`
+Original request: `c:\Users\roysu\LuminaVista\.agents\teamwork\ORIGINAL_REQUEST.md`
+Sentinel briefing: `c:\Users\roysu\LuminaVista\.agents\teamwork\BRIEFING.md`
+Orchestrator handoff: `c:\Users\roysu\LuminaVista\.agents\teamwork\orchestrator_r5\handoff.md`
+Project root: `c:\Users\roysu\LuminaVista`

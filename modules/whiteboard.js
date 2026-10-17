@@ -677,7 +677,8 @@
     if (!container) return;
 
     const el = document.createElement("div");
-    el.id = sticky.id;
+    const safeId = String(sticky.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    el.id = safeId;
     el.className = "pointer-events-auto absolute w-48 rounded-xl shadow-2xl p-3 flex flex-col gap-2 border border-black/10 select-none transition-shadow hover:shadow-[0_10px_25px_rgba(0,0,0,0.5)]";
     el.style.left = sticky.x + "px";
     el.style.top = sticky.y + "px";
@@ -687,22 +688,25 @@
     el.innerHTML = `
       <div class="sticky-handle flex items-center justify-between cursor-move pb-1 border-b border-black/10">
         <div class="flex items-center gap-1">
-          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-black/20 cursor-pointer" onclick="changeStickyColor('${sticky.id}', '#fef08a')"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-cyan-300 border border-black/20 cursor-pointer" onclick="changeStickyColor('${sticky.id}', '#a5f3fc')"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-300 border border-black/20 cursor-pointer" onclick="changeStickyColor('${sticky.id}', '#a7f3d0')"></span>
-          <span class="w-2.5 h-2.5 rounded-full bg-rose-300 border border-black/20 cursor-pointer" onclick="changeStickyColor('${sticky.id}', '#fecdd3')"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-black/20 cursor-pointer" data-id="${safeId}" onclick="changeStickyColor(this.getAttribute('data-id'), '#fef08a')"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-300 border border-black/20 cursor-pointer" data-id="${safeId}" onclick="changeStickyColor(this.getAttribute('data-id'), '#a5f3fc')"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-300 border border-black/20 cursor-pointer" data-id="${safeId}" onclick="changeStickyColor(this.getAttribute('data-id'), '#a7f3d0')"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-300 border border-black/20 cursor-pointer" data-id="${safeId}" onclick="changeStickyColor(this.getAttribute('data-id'), '#fecdd3')"></span>
         </div>
-        <button onclick="removeStickyNote('${sticky.id}')" class="text-black/50 hover:text-black text-xs font-bold p-0.5 cursor-pointer">✕</button>
+        <button data-id="${safeId}" onclick="removeStickyNote(this.getAttribute('data-id'))" class="text-black/50 hover:text-black text-xs font-bold p-0.5 cursor-pointer">✕</button>
       </div>
-      <textarea class="w-full bg-transparent border-0 outline-none resize-none text-xs font-sans text-slate-800 leading-snug custom-scrollbar placeholder:text-slate-500" rows="4" placeholder="Type sticky note...">${sticky.text || ''}</textarea>
+      <textarea class="w-full bg-transparent border-0 outline-none resize-none text-xs font-sans text-slate-800 leading-snug custom-scrollbar placeholder:text-slate-500" rows="4" placeholder="Type sticky note..."></textarea>
     `;
 
-    // Input listener
+    // Input listener & safe text value initialization (prevents stored DOM XSS)
     const ta = el.querySelector("textarea");
-    ta.addEventListener("input", () => {
-      sticky.text = ta.value;
-      saveStickies();
-    });
+    if (ta) {
+      ta.value = sticky.text || '';
+      ta.addEventListener("input", () => {
+        sticky.text = ta.value;
+        saveStickies();
+      });
+    }
 
     // Dragging listener (Hardware Touchscreen & Mouse supported)
     const handle = el.querySelector(".sticky-handle");

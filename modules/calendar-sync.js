@@ -169,8 +169,11 @@
     for (let line of lines) {
       line = line.trim();
       if (line === 'BEGIN:VEVENT') {
+        const uid = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+          ? crypto.randomUUID()
+          : `${Date.now()}_${Math.random().toString(36).substring(7)}`;
         cur = {
-          id: `evt_ics_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+          id: `evt_ics_${uid}`,
           title: 'Imported Event',
           allDay: false,
           category: 'work',
@@ -428,8 +431,17 @@
           // 2. Two-Way Update & Add from Google Calendar
           activeItems.forEach(item => {
             const startStr = (item.start && (item.start.dateTime || item.start.date)) || new Date().toISOString();
-            const endStr = (item.end && (item.end.dateTime || item.end.date)) || new Date(Date.now() + 3600000).toISOString();
+            let endStr = (item.end && (item.end.dateTime || item.end.date)) || new Date(Date.now() + 3600000).toISOString();
             const allDay = !item.start?.dateTime;
+            if (allDay && item.end?.date && item.start?.date) {
+              const sDate = new Date(item.start.date + 'T00:00:00Z');
+              const eDate = new Date(item.end.date + 'T00:00:00Z');
+              // RFC 5545 exclusive end date: subtract 1 day for inclusive local representation
+              if (eDate.getTime() > sDate.getTime()) {
+                const inclusiveEnd = new Date(eDate.getTime() - 86400000);
+                endStr = inclusiveEnd.toISOString().slice(0, 10);
+              }
+            }
             const isAiTask = (item.summary || '').includes('[AI Task]') || (item.description || '').includes('[AI Task]');
 
             const titleUpper = (item.summary || '').toUpperCase();

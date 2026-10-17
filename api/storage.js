@@ -1,5 +1,5 @@
 import path from 'path';
-import { getRedisClient } from './_lib/redis.js';
+import { getSafeStorage } from './_lib/redis.js';
 import {
   validateSession,
   checkRateLimit,
@@ -30,12 +30,12 @@ function sanitizeFilePath(userPath) {
       break;
     }
   }
-  // Normalize, remove null bytes, and strictly block directory traversal escapes
+  // Normalize, remove control bytes, and strictly block directory traversal escapes and query/fragment separators
   const clean = decoded
-    .replace(/\0/g, '')
+    .replace(/[\x00-\x1f\x7f]/g, '')
     .replace(/\\/g, '/')
     .trim();
-  if (clean.includes('..')) return '';
+  if (clean.includes('..') || clean.includes('?') || clean.includes('#')) return '';
   const normalized = path.posix.normalize(clean).replace(/^\/+/, '');
   if (
     normalized === '..' ||
@@ -43,7 +43,9 @@ function sanitizeFilePath(userPath) {
     normalized.includes('/../') ||
     normalized.endsWith('/..') ||
     normalized.split('/').includes('..') ||
-    normalized.includes('..')
+    normalized.includes('..') ||
+    normalized.includes('?') ||
+    normalized.includes('#')
   ) {
     return '';
   }
@@ -59,12 +61,13 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' });
 
-  // 1. Enforce payload limit (Max 250KB)
-  if (!enforcePayloadLimit(req, 250000)) {
-    return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded' });
-  }
+  try {
+    // 1. Enforce payload limit (Max 250KB)
+    if (!enforcePayloadLimit(req, 250000)) {
+      return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded' });
+    }
 
-  const redis = getRedisClient();
+  const redis = getSafeStorage();
 
   // 2. Zero-Trust Session Verification
   const auth = await validateSession(req, redis);
@@ -77,6 +80,14 @@ export default async function handler(req, res) {
   if (auth.role !== 'master' && auth.role !== 'temporary') {
     auditLog('INSUFFICIENT_PRIVILEGES', req, 'Endpoint: /api/storage');
     return sendSecureJson(res, 403, { error: 'Forbidden: Cloud storage access requires authenticated session' });
+  }
+
+  const { action, path: rawPath, content } = req.body || {};
+
+  // HIGH-02: Deletion in global storage restricted strictly to master role
+  if (action === 'delete' && auth.role !== 'master') {
+    auditLog('INSUFFICIENT_PRIVILEGES', req, 'Action: delete requires master role');
+    return sendSecureJson(res, 403, { error: 'Forbidden: Deleting storage files requires master role' });
   }
 
   // 3. Sliding IP Rate Limiting (30 operations / 5 minutes)
@@ -93,7 +104,6 @@ export default async function handler(req, res) {
     return sendSecureJson(res, 500, { error: 'Storage repository credentials unconfigured.' });
   }
 
-  const { action, path: rawPath, content } = req.body || {};
   const cleanPath = sanitizeFilePath(rawPath);
 
   if (action !== 'list' && !cleanPath) {
@@ -135,38 +145,41 @@ export default async function handler(req, res) {
     'User-Agent': 'LuminaVista-OS-Hardened'
   };
 
-  try {
-    if (action === 'read') {
-      const gitRes = await fetch(baseUrl, { headers: ghHeaders });
-      if (!gitRes.ok) return sendSecureJson(res, gitRes.status, { error: 'File not found in storage.' });
-      const data = await gitRes.json();
-      const decodedContent = Buffer.from(data.content, 'base64').toString('utf-8');
-      return sendSecureJson(res, 200, { content: decodedContent });
+  if (action === 'read') {
+    const gitRes = await fetch(baseUrl, { headers: ghHeaders });
+    if (!gitRes.ok) return sendSecureJson(res, gitRes.status, { error: 'File not found in storage.' });
+    const data = await gitRes.json();
+    const decodedContent = Buffer.from(data.content, 'base64').toString('utf-8');
+    return sendSecureJson(res, 200, { content: decodedContent });
+  }
+
+  if (action === 'write') {
+    let currentSha = undefined;
+    const checkRes = await fetch(baseUrl, { headers: ghHeaders });
+    if (checkRes.ok) {
+      currentSha = (await checkRes.json()).sha;
     }
 
-    if (action === 'write') {
-      let currentSha = undefined;
-      const checkRes = await fetch(baseUrl, { headers: ghHeaders });
-      if (checkRes.ok) {
-        currentSha = (await checkRes.json()).sha;
-      }
+    const putRes = await fetch(baseUrl, {
+      method: 'PUT',
+      headers: ghHeaders,
+      body: JSON.stringify({
+        message: `LuminaVista Commit: ${targetPath}`,
+        content: Buffer.from(content || '').toString('base64'),
+        sha: currentSha
+      })
+    });
+    const putData = await putRes.json();
+    if (!putRes.ok) return sendSecureJson(res, putRes.status, { error: sanitizeError(putData.message, 'Write failed.') });
+    return sendSecureJson(res, 200, { success: true, sha: putData.content?.sha });
+  }
 
-      const putRes = await fetch(baseUrl, {
-        method: 'PUT',
-        headers: ghHeaders,
-        body: JSON.stringify({
-          message: `LuminaVista Commit: ${targetPath}`,
-          content: Buffer.from(content || '').toString('base64'),
-          sha: currentSha
-        })
-      });
-      const putData = await putRes.json();
-      if (!putRes.ok) return sendSecureJson(res, putRes.status, { error: sanitizeError(putData.message, 'Write failed.') });
-      return sendSecureJson(res, 200, { success: true, sha: putData.content?.sha });
+  if (action === 'delete') {
+    if (auth.role !== 'master') {
+      auditLog('INSUFFICIENT_PRIVILEGES', req, 'Action: delete requires master role');
+      return sendSecureJson(res, 403, { error: 'Forbidden: Deleting storage files requires master role' });
     }
-
-    if (action === 'delete') {
-      const checkRes = await fetch(baseUrl, { headers: ghHeaders });
+    const checkRes = await fetch(baseUrl, { headers: ghHeaders });
       if (!checkRes.ok) return sendSecureJson(res, 404, { error: 'File not found in storage.' });
       const currentSha = (await checkRes.json()).sha;
 

@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return sendSecureJson(res, 405, { error: 'Method Not Allowed' }, req);
   if (JSON.stringify(req.body || {}).length > 2000) return sendSecureJson(res, 413, { error: 'Payload Limit Exceeded' }, req);
 
-  const rawExpectedPassword = process.env.ADMIN_PASSWORD;
+  const rawExpectedPassword = process.env.ADMIN_PASSWORD || process.env.ADMIN_MASTER_PASSWORD;
 
   if (!rawExpectedPassword) {
     auditLog('AUTH_MISCONFIG', req, 'Database credentials or admin password missing');
@@ -76,11 +76,13 @@ export default async function handler(req, res) {
     const verification = await verifyCredentials(password, rawExpectedPassword, storage, clientKeys);
 
     if (verification.authenticated) {
-      // Clear failed attempts counter on success
-      try {
-        const clientIp = getClientIp(req);
-        await storage.del(`rate_limit:auth:${clientIp}`);
-      } catch (_) {}
+      // Clear failed attempts counter on success ONLY for authentic master logins
+      if (verification.type === 'master') {
+        try {
+          const clientIp = getClientIp(req);
+          await storage.del(`rate_limit:auth:${clientIp}`);
+        } catch (_) {}
+      }
 
       // Issue Sovereign Cryptographic Session Token (Immune to 3rd-party DB limits)
       const sessionId = generateSovereignSessionToken(verification.type, verification.keyId, cleanExpected);
@@ -208,6 +210,15 @@ export async function verifyCredentials(password, expectedPassword, storage = nu
         });
 
         if (matchedKey) {
+          if (storage && typeof storage.get === 'function') {
+            try {
+              const isRevoked = await storage.get(`admin:revoked_key:${matchedKey.id}`);
+              if (isRevoked) {
+                auditLog('REVOKED_KEY_REJECTED', null, `Rejected revoked temp key ${matchedKey.id}`);
+                return { authenticated: false };
+              }
+            } catch (_) {}
+          }
           matchedKey.lastUsed = Date.now();
           if (typeof storage.set === 'function') {
             try { await storage.set('admin:temp_passwords', JSON.stringify(tempKeys)); } catch (_) {}
