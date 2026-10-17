@@ -3,9 +3,14 @@ node_modules/
 
 # Environment configurations & secrets
 .env
+.env.*
 .env*.local
-.env.development
-.env.production
+.env.development*
+.env.test*
+.env.production*
+*.env
+*.env.*
+**/.env*
 
 # Vercel & build artifacts
 .vercel/

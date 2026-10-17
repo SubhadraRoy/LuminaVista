@@ -1,4 +1,10 @@
 # Vercel deployment ignore rules
+.env
+.env.*
+.env*.local
+*.env
+*.env.*
+**/.env*
 tests/
 docs/
 *.md
