@@ -66,6 +66,7 @@
     if (window.initAmbientParticles) window.initAmbientParticles();
     if (window.initIdleTimer) window.initIdleTimer();
     if (window.LuminaOverview && window.LuminaOverview.init) window.LuminaOverview.init();
+    if (window.LuminaCloudComputer && window.LuminaCloudComputer.init) window.LuminaCloudComputer.init();
 
     // Reopen exact same tab where user left off or default to Overview
     const savedActiveTab = localStorage.getItem("lumina_active_tab_id");

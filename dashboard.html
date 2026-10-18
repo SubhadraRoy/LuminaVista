@@ -288,6 +288,9 @@
       <button onclick="switchTab('tab-overview')" id="btn-tab-overview" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold border-transparent transition-all nav-tab-active cursor-pointer" title="Mission Control" aria-label="Mission Control">
         <i data-lucide="layout-dashboard" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">Overview</span>
       </button>
+      <button onclick="switchTab('tab-cloud-computer')" id="btn-tab-cloud-computer" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="Cloud Computer" aria-label="Cloud Computer">
+        <i data-lucide="cpu" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">Cloud Computer</span>
+      </button>
       <button onclick="switchTab('tab-ai-studio')" id="btn-tab-ai-studio" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 border-transparent transition-all cursor-pointer" title="AI-Studio" aria-label="AI-Studio">
         <i data-lucide="bot" class="w-4 h-4 text-cyan-400 shrink-0"></i><span class="sidebar-label">AI-Studio</span>
       </button>
@@ -374,6 +377,11 @@
       <!-- TAB 0: EXECUTIVE MISSION CONTROL OVERVIEW                             -->
       <!-- ===================================================================== -->
       <section id="tab-overview" class="tab-pane h-full flex flex-col gap-4 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6"></section>
+
+      <!-- ===================================================================== -->
+      <!-- TAB 0.5: AUTONOMOUS CLOUD COMPUTER WORKSTATION                        -->
+      <!-- ===================================================================== -->
+      <section id="tab-cloud-computer" class="tab-pane hidden h-full flex flex-col gap-3 sm:gap-4 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar pr-1 pb-6"></section>
 
       <!-- ===================================================================== -->
       <!-- TAB 1: ai-llm STUDIO (Chat, Artifacts & Files)                        -->
@@ -1887,6 +1895,7 @@
   <script src="./modules/system.js?v=14.1.0"></script>
   <script src="./modules/admin-access.js?v=14.1.0"></script>
   <script src="./modules/overview.js?v=14.2.0"></script>
+  <script src="./modules/cloud-computer.js?v=14.3.0"></script>
   <script src="./modules/dashboard.js?v=14.1.0"></script>
   <script src="./modules/cloud-sync.js?v=14.1.0"></script>
 </body>

@@ -69,6 +69,12 @@
       }
     }
 
+    if (id === "tab-cloud-computer") {
+      if (window.LuminaCloudComputer && window.LuminaCloudComputer.onTabActivated) {
+        window.LuminaCloudComputer.onTabActivated();
+      }
+    }
+
     if (id === "tab-whiteboard") {
       setTimeout(() => {
         if (window.resizeWhiteboard) window.resizeWhiteboard();

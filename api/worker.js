@@ -9,6 +9,15 @@ import { sanitizeError, auditLog, validateSession, sendSecureJson, scrubSecrets,
 import { executeWithFailover, getKeyPool, normalizeOllamaEndpoint, extractCompletionContent } from './_lib/key-pool.js';
 import { jevGenerateBespokeResponse, inspectJevCommandSafety } from './_lib/jev-engine.js';
 import { sanitizeProviderMessages } from './chat.js';
+import {
+  getAutonomousDaemons,
+  toggleDaemonState,
+  executeDaemonCycle,
+  getVirtualComputeMetrics,
+  dispatchAutonomousMission,
+  getMissionStatus,
+  advanceMissionDag
+} from './_lib/autonomous-orchestrator.js';
 
 export const maxDuration = 60;
 const VALID_JOB_ID = /^[a-zA-Z0-9_\-]{1,128}$/;
@@ -137,6 +146,43 @@ export default async function handler(req, res) {
       }
     }
 
+    // Action: autonomous_status (Compute metrics, active daemons, active missions)
+    if (action === 'autonomous_status') {
+      try {
+        const metrics = await getVirtualComputeMetrics(storage);
+        const daemons = await getAutonomousDaemons(storage);
+        let activeMissions = [];
+        try {
+          const rawMissions = await storage.get('autonomous:active_missions');
+          activeMissions = rawMissions ? (typeof rawMissions === 'string' ? JSON.parse(rawMissions) : rawMissions) : [];
+        } catch (e) {}
+        return sendSecureJson(res, 200, { success: true, metrics, daemons, activeMissions });
+      } catch (err) {
+        return sendSecureJson(res, 500, { error: 'Failed to retrieve autonomous compute status' });
+      }
+    }
+
+    // Action: mission_status
+    if (action === 'mission_status' || action === 'get_mission') {
+      const { missionId } = req.query || {};
+      if (!missionId || typeof missionId !== 'string') {
+        return sendSecureJson(res, 400, { error: 'Missing or invalid missionId' });
+      }
+      try {
+        let mission = await getMissionStatus(storage, missionId);
+        if (!mission) return sendSecureJson(res, 404, { error: 'Mission not found' });
+        if (auth.role !== 'master' && mission.ownerSessionId && mission.ownerSessionId !== auth.sessionId) {
+          return sendSecureJson(res, 403, { error: 'Forbidden: Access to this mission is restricted to creator' });
+        }
+        if (mission.status === 'running') {
+          mission = await advanceMissionDag(storage, missionId);
+        }
+        return sendSecureJson(res, 200, { success: true, mission });
+      } catch (err) {
+        return sendSecureJson(res, 500, { error: 'Failed to retrieve mission status' });
+      }
+    }
+
     return sendSecureJson(res, 400, { error: 'Missing jobId or action parameter' });
   }
 
@@ -186,6 +232,58 @@ export default async function handler(req, res) {
       return sendSecureJson(res, 200, { success: true, job });
     } catch (err) {
       return sendSecureJson(res, 500, { error: 'Failed to retrieve job state' });
+    }
+  }
+
+  // Action: dispatch_mission
+  if (action === 'dispatch_mission') {
+    const { goal, preset } = req.body || {};
+    if (!goal || typeof goal !== 'string' || goal.trim().length === 0) {
+      return sendSecureJson(res, 400, { error: 'Goal string is required' });
+    }
+    try {
+      const resDispatch = await dispatchAutonomousMission(storage, {
+        goal,
+        preset,
+        sessionId: auth.sessionId,
+        role: auth.role
+      });
+      if (!resDispatch.success) {
+        return sendSecureJson(res, 400, { error: resDispatch.error });
+      }
+      return sendSecureJson(res, 200, { success: true, mission: resDispatch.mission });
+    } catch (err) {
+      return sendSecureJson(res, 500, { error: 'Failed to dispatch autonomous mission' });
+    }
+  }
+
+  // Action: toggle_daemon
+  if (action === 'toggle_daemon') {
+    if (auth.role !== 'master') {
+      return sendSecureJson(res, 403, { error: 'Forbidden: Daemon management requires master role' });
+    }
+    const { daemonId, enabled } = req.body || {};
+    if (!daemonId || typeof daemonId !== 'string') return sendSecureJson(res, 400, { error: 'Missing daemonId' });
+    try {
+      const resToggle = await toggleDaemonState(storage, daemonId, enabled);
+      return sendSecureJson(res, resToggle.success ? 200 : 400, resToggle);
+    } catch (err) {
+      return sendSecureJson(res, 500, { error: 'Failed to toggle daemon' });
+    }
+  }
+
+  // Action: run_daemon_now
+  if (action === 'run_daemon_now') {
+    if (auth.role !== 'master') {
+      return sendSecureJson(res, 403, { error: 'Forbidden: Daemon execution requires master role' });
+    }
+    const { daemonId } = req.body || {};
+    if (!daemonId || typeof daemonId !== 'string') return sendSecureJson(res, 400, { error: 'Missing daemonId' });
+    try {
+      const resCycle = await executeDaemonCycle(storage, daemonId);
+      return sendSecureJson(res, resCycle.success ? 200 : 400, resCycle);
+    } catch (err) {
+      return sendSecureJson(res, 500, { error: 'Failed to execute daemon cycle' });
     }
   }
 
