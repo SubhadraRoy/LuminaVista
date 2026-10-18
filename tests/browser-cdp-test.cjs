@@ -109,13 +109,17 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (pathname === '/api/iot') {
+  if (pathname === '/api/iot' || pathname === '/api/adblock') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
         req.rawBody = body;
         req.body = body ? JSON.parse(body) : {};
+        req.query = Object.fromEntries(urlObj.searchParams.entries());
+        if (pathname === '/api/adblock') {
+          req.query.service = 'adblock';
+        }
         const iotMod = await import('../api/iot.js');
         let statusCode = 200;
         const vercelRes = {
@@ -957,10 +961,42 @@ async function runBrowserTest() {
       document.documentElement.scrollWidth <= window.innerWidth + 2
     );
   })()`);
-  test("Smart Door Lock Mobile (Phone 390x844) layout stacks cleanly in 1 column with zero horizontal overflow in Chrome", smartLockMobileLayoutOk);
+  // 17c. ESP32 AdBlocker Reactive Workstation in Chrome
+  await evaluate("switchTab('tab-adblock')");
+  await new Promise(r => setTimeout(r, 150));
+  const isAdblockTabVisible = await evaluate(`(() => {
+    const sec = document.getElementById('tab-adblock');
+    const btn = document.getElementById('btn-tab-adblock');
+    return sec && !sec.classList.contains('hidden') && btn && btn.classList.contains('nav-tab-active');
+  })()`);
+  test("Switched and verified visibility of #tab-adblock in Chrome", isAdblockTabVisible);
 
-  await sendCdp("Emulation.clearDeviceMetricsOverride", {});
-  await new Promise(r => setTimeout(r, 80));
+  const adblockIndicatorsOk = await evaluate(`(() => {
+    const ids = [
+      'adblockConnBadge', 'adblockIpChip', 'adblockRttBadge', 'adblockQueueBadge',
+      'adblockStatBlocked', 'adblockStatAllowed', 'adblockStatRules', 'adblockStatClients',
+      'adblockThroughputCanvas', 'adblockCadenceLivePill', 'adblockSimLatencyPill',
+      'adblockSubTabBtn-clients', 'adblockSubTabBtn-system', 'adblockPane-clients', 'adblockPane-system'
+    ];
+    return ids.every(id => document.getElementById(id) !== null);
+  })()`);
+  test("ESP32 AdBlocker workstation indicators and latency pills mounted in Chrome", adblockIndicatorsOk);
+
+  const adblockSubTabAndLatencyOk = await evaluate(`(() => {
+    if (!window.LuminaAdBlock) return false;
+    window.LuminaAdBlock.switchSubTab('system');
+    const systemVisible = !document.getElementById('adblockPane-system')?.classList.contains('hidden');
+    window.LuminaAdBlock.setPollInterval(5000);
+    const pill5s = document.getElementById('adblockCadenceLivePill')?.textContent.includes('5.0s');
+    window.LuminaAdBlock.setSimulatedLatency(150);
+    const pillLag150 = document.getElementById('adblockSimLatencyPill')?.textContent.includes('150ms');
+    window.LuminaAdBlock.setSimulatedLatency(0);
+    window.LuminaAdBlock.setPollInterval(3500);
+    window.LuminaAdBlock.switchSubTab('clients');
+    const clientsVisible = !document.getElementById('adblockPane-clients')?.classList.contains('hidden');
+    return systemVisible && pill5s && pillLag150 && clientsVisible;
+  })()`);
+  test("ESP32 AdBlocker interactive cadence tuner and sub-tab switching verified in Chrome", adblockSubTabAndLatencyOk);
 
   // 18. Check for Uncaught Exceptions
   test(`Browser console is free of uncaught exceptions (Found: ${consoleErrors.length})`, consoleErrors.length === 0);

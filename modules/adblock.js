@@ -68,8 +68,12 @@
       const res = await window.fetch(endpoint, fetchOpts);
       if (res && res.status !== 404) return res;
     } catch (e) {}
-    const sep = endpoint.includes('?') ? '&' : '?';
-    const fallback = endpoint.replace('/api/adblock', `/api/iot${sep}service=adblock`).replace('??', '?').replace('&&', '&');
+    let fallback = endpoint;
+    if (fallback.includes('/api/adblock?')) {
+      fallback = fallback.replace('/api/adblock?', '/api/iot?service=adblock&');
+    } else if (fallback.includes('/api/adblock')) {
+      fallback = fallback.replace('/api/adblock', '/api/iot?service=adblock');
+    }
     return window.fetch(fallback, fetchOpts);
   }
 
