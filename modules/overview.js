@@ -137,7 +137,7 @@
     const dateFormatted = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
 
     return `
-      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-surface-900/90 via-surface-950/95 to-cyan-950/30 border border-cyan-500/20 shadow-2xl p-5 sm:p-7 backdrop-blur-2xl">
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-surface-900/90 via-surface-950/95 to-cyan-950/30 border border-cyan-500/20 shadow-2xl p-5 sm:p-7 backdrop-blur-2xl shrink-0">
         <div class="absolute -right-16 -top-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -191,7 +191,7 @@
    */
   function renderQuickActionsHtml() {
     return `
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 shrink-0">
         <button onclick="window.switchTab('tab-ai-studio')" class="group p-3 rounded-2xl bg-surface-900/80 hover:bg-surface-850 border border-white/10 hover:border-cyan-500/40 text-left transition-all duration-200 cursor-pointer shadow-sm hover:shadow-cyan-500/10">
           <div class="w-8 h-8 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
             <i data-lucide="bot" class="w-4 h-4"></i>
@@ -253,7 +253,7 @@
     const ai = getAiStats();
 
     return `
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 shrink-0">
         
         <!-- CARD 1: AI STUDIO & JEV ENGINE (2 Cols on XL) -->
         <div class="xl:col-span-2 glass-panel p-5 rounded-2xl border border-white/10 hover:border-cyan-500/30 transition-all flex flex-col justify-between group">
@@ -582,7 +582,7 @@
     `).join('');
 
     return `
-      <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-4">
+      <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-4 shrink-0">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
