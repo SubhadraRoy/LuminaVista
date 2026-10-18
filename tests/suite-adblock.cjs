@@ -94,7 +94,8 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
     'adblockPane-clients', 'adblockPane-rules', 'adblockPane-logs', 'adblockPane-system', 'adblockPane-webview',
     'adblockClientSearchInput', 'adblockClientsTableBody',
     'adblockCustomDomainInput', 'adblockCustomRulesList',
-    'adblockLogSearchInput', 'adblockLogsTableBody'
+    'adblockLogSearchInput', 'adblockLogsTableBody',
+    'adblockTargetPortalUrl', 'adblockHttpsNotice', 'adblockMirrorHeap', 'adblockMirrorStatusBadge', 'adblockDeviceIframe'
   ];
 
   for (const id of requiredIndicators) {
@@ -105,6 +106,23 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
   window.LuminaAdBlock.switchSubTab('rules');
   assert(!document.getElementById('adblockPane-rules').classList.contains('hidden'), "Switching to 'rules' reveals #adblockPane-rules");
   assert(document.getElementById('adblockPane-clients').classList.contains('hidden'), "Switching to 'rules' hides #adblockPane-clients");
+
+  window.LuminaAdBlock.switchSubTab('webview');
+  assert(!document.getElementById('adblockPane-webview').classList.contains('hidden'), "Switching to 'webview' reveals #adblockPane-webview");
+
+  assert(typeof window.LuminaAdBlock.openDevicePortal === 'function', "openDevicePortal is exported");
+  assert(typeof window.LuminaAdBlock.setTargetPortalUrl === 'function', "setTargetPortalUrl is exported");
+  assert(typeof window.LuminaAdBlock.copyPortalUrl === 'function', "copyPortalUrl is exported");
+  assert(typeof window.LuminaAdBlock.toggleIframeView === 'function', "toggleIframeView is exported");
+  assert(typeof window.LuminaAdBlock.flushDnsCache === 'function', "flushDnsCache is exported");
+
+  window.LuminaAdBlock.setTargetPortalUrl('http://192.168.0.115/');
+  assert(document.getElementById('adblockTargetPortalUrl').value === 'http://192.168.0.115/', "setTargetPortalUrl updates URL input");
+
+  window.LuminaAdBlock.toggleIframeView();
+  assert(!document.getElementById('adblockIframeWrapper').classList.contains('hidden'), "toggleIframeView reveals iframe wrapper");
+  window.LuminaAdBlock.toggleIframeView();
+  assert(document.getElementById('adblockIframeWrapper').classList.contains('hidden'), "toggleIframeView hides iframe wrapper");
 
   window.LuminaAdBlock.switchSubTab('clients');
   assert(!document.getElementById('adblockPane-clients').classList.contains('hidden'), "Switching back to 'clients' reveals #adblockPane-clients");

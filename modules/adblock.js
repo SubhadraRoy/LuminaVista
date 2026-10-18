@@ -516,7 +516,7 @@
             ⚙️ System & Updates
           </button>
           <button onclick="window.LuminaAdBlock.switchSubTab('webview')" id="adblockSubTabBtn-webview" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer whitespace-nowrap ml-auto">
-            🌐 Live Device Frame
+            🌐 Live Device Portal
           </button>
         </div>
 
@@ -631,14 +631,158 @@
             </div>
           </div>
 
-          <!-- 5. Live Device Frame Sub-Pane -->
-          <div id="adblockPane-webview" class="space-y-3 hidden h-full flex flex-col">
-            <div class="flex items-center justify-between text-xs text-zinc-400 bg-surface-900/60 p-2.5 rounded-xl border border-white/5">
-              <span>Direct LAN View: <b class="text-cyan-300">http://esp32adblock.local</b> (or IP: 192.168.0.115)</span>
-              <button onclick="window.LuminaAdBlock.reloadIframe()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white">Reload Frame</button>
+          <!-- 5. Live Device Portal & Direct LAN Gateway Sub-Pane -->
+          <div id="adblockPane-webview" class="space-y-4 hidden h-full flex flex-col">
+            <!-- Gateway Control Bar -->
+            <div class="glass-panel p-3.5 sm:p-4 rounded-xl border border-white/5 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></div>
+                  <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">Direct LAN Hardware Gateway</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">Port 80 HTTP</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="window.LuminaAdBlock.openDevicePortal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-black font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all cursor-pointer flex items-center gap-2 active:scale-95">
+                    <span>🚀 Launch Live Portal in New Tab</span>
+                    <span class="text-[10px]">↗</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Address Configuration & Quick Presets -->
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <div class="relative flex-1">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 font-mono">URL:</span>
+                  <input type="text" id="adblockTargetPortalUrl" value="http://esp32adblock.local/" class="w-full bg-surface-900/90 border border-white/10 rounded-xl pl-12 pr-20 py-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500/50">
+                  <button onclick="window.LuminaAdBlock.copyPortalUrl()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-mono text-zinc-300 cursor-pointer">
+                    Copy
+                  </button>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0 overflow-x-auto custom-scrollbar">
+                  <span class="text-[10px] font-mono text-zinc-500 mr-1">Presets:</span>
+                  <button onclick="window.LuminaAdBlock.setTargetPortalUrl('http://esp32adblock.local/')" class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 transition-all cursor-pointer">mDNS (.local)</button>
+                  <button onclick="window.LuminaAdBlock.setTargetPortalUrl('http://192.168.0.115/')" class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5 transition-all cursor-pointer">Direct IP</button>
+                </div>
+              </div>
             </div>
-            <div class="flex-1 min-h-[450px] rounded-xl border border-white/5 overflow-hidden bg-black">
-              <iframe id="adblockDeviceIframe" src="http://esp32adblock.local/" class="w-full h-full border-0" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
+
+            <!-- Security Notice & Browser Policy Explanation Card -->
+            <div id="adblockHttpsNotice" class="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-zinc-300 flex items-start gap-3">
+              <span class="text-base text-amber-400 shrink-0 mt-0.5">🔒</span>
+              <div class="space-y-1 flex-1">
+                <div class="flex items-center gap-2">
+                  <b class="text-amber-300 text-xs font-mono uppercase tracking-wide">Browser Security Policy Notice (Mixed Content & PNA)</b>
+                </div>
+                <p class="text-[11px] text-zinc-400 leading-relaxed">
+                  Modern browsers protect users by blocking unencrypted local HTTP (<code class="text-cyan-300">http://esp32adblock.local</code>) from being embedded directly inside HTTPS cloud applications (<code class="text-zinc-300">https://lumina-vista-sigma.vercel.app</code>).
+                  Click <b class="text-cyan-300">"Launch Live Portal in New Tab"</b> to interact directly with your physical ESP32 web server on your local LAN, or use the live telemetry console below.
+                </p>
+              </div>
+            </div>
+
+            <!-- Live Silicon & Telemetry Twin (Interactive Mirror) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <!-- Column 1: Hardware Specs -->
+              <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">Silicon & Firmware</span>
+                  <span class="text-[10px] font-mono text-cyan-400">ESP-IDF v5.2</span>
+                </div>
+                <div class="space-y-2 text-xs font-mono">
+                  <div class="flex justify-between py-1 border-b border-white/5">
+                    <span class="text-zinc-500">SoC Architecture:</span>
+                    <span class="text-zinc-200">ESP32-D0WD-V3 (240MHz)</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-white/5">
+                    <span class="text-zinc-500">Dual-Core Allocation:</span>
+                    <span class="text-zinc-200">Core 0: Cloud | Core 1: DNS</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-white/5">
+                    <span class="text-zinc-500">Filter Engine:</span>
+                    <span class="text-cyan-300">SeqLock Prefix Trie</span>
+                  </div>
+                  <div class="flex justify-between py-1">
+                    <span class="text-zinc-500">Cloud Link Security:</span>
+                    <span class="text-emerald-400">ISRG Root X1 TLS 1.3</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Column 2: Live Real-Time Telemetry Mirror -->
+              <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">Live Telemetry Mirror</span>
+                  <span id="adblockMirrorStatusBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">LIVE SHADOW</span>
+                </div>
+                <div class="space-y-2 text-xs font-mono">
+                  <div class="flex justify-between py-1 border-b border-white/5">
+                    <span class="text-zinc-500">Internal Free Heap:</span>
+                    <span id="adblockMirrorHeap" class="text-purple-400">106 KB (Core 0 DRAM)</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-white/5">
+                    <span class="text-zinc-500">Sinkholed Ratio:</span>
+                    <span id="adblockMirrorBlockRatio" class="text-rose-400">0.0% (0 blocked)</span>
+                  </div>
+                  <div class="flex justify-between py-1 border-b border-white/5">
+                    <span class="text-zinc-500">Active Rules:</span>
+                    <span id="adblockMirrorRules" class="text-cyan-400">245,000 domains</span>
+                  </div>
+                  <div class="flex justify-between py-1">
+                    <span class="text-zinc-500">Wi-Fi RSSI Signal:</span>
+                    <span id="adblockMirrorRssi" class="text-emerald-400">-52 dBm (Excellent)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Column 3: Remote Hardware Actions -->
+              <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-3">
+                <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">Hardware Command Hub</span>
+                <div class="grid grid-cols-1 gap-2 pt-1">
+                  <button onclick="window.LuminaAdBlock.flushDnsCache()" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer">
+                    <span>⚡ Flush Local DNS Cache</span>
+                    <span class="text-[10px] text-zinc-500">flush_cache</span>
+                  </button>
+                  <button onclick="window.LuminaAdBlock.triggerOtaFetch()" class="px-3 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer">
+                    <span>📥 Force Blocklist OTA Swap</span>
+                    <span class="text-[10px] text-cyan-400">fetch_now</span>
+                  </button>
+                  <button onclick="window.LuminaAdBlock.rebootDevice()" class="px-3 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center justify-between transition-all cursor-pointer">
+                    <span>🔄 Graceful ESP32 Reboot</span>
+                    <span class="text-[10px] text-rose-500">reboot</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional / Experimental Embedded Frame Container -->
+            <div id="adblockEmbeddedFrameSection" class="glass-panel rounded-xl border border-white/5 p-3 space-y-2">
+              <div class="flex items-center justify-between text-xs text-zinc-400">
+                <div class="flex items-center gap-2">
+                  <span>In-Page Frame Container</span>
+                  <span id="adblockFrameStatus" class="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">Standby</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="window.LuminaAdBlock.toggleIframeView()" id="adblockBtnToggleFrame" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white cursor-pointer">
+                    Show In-Page Frame
+                  </button>
+                  <button onclick="window.LuminaAdBlock.reloadIframe()" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white cursor-pointer">
+                    Reload Frame
+                  </button>
+                </div>
+              </div>
+              <div id="adblockIframeWrapper" class="hidden min-h-[420px] rounded-xl border border-white/5 overflow-hidden bg-black relative">
+                <div id="adblockIframeFallback" class="absolute inset-0 bg-surface-950 flex flex-col items-center justify-center p-6 text-center space-y-3 z-10 hidden">
+                  <div class="w-12 h-12 rounded-full bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-xl text-rose-400">⚠️</div>
+                  <h4 class="text-sm font-bold text-white font-heading">Frame Cannot Be Displayed In-Page</h4>
+                  <p class="text-xs text-zinc-400 max-w-md leading-relaxed">
+                    The local ESP32 web server was blocked by browser security (Mixed Content or Private Network Access) or is currently unreachable on this subnet.
+                  </p>
+                  <button onclick="window.LuminaAdBlock.openDevicePortal()" class="px-4 py-2 rounded-xl bg-cyan-500 text-black font-bold text-xs shadow-lg shadow-cyan-500/20 cursor-pointer">
+                    Open in New Tab (Direct LAN) ↗
+                  </button>
+                </div>
+                <iframe id="adblockDeviceIframe" src="about:blank" class="w-full h-[420px] border-0" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
+              </div>
             </div>
           </div>
         </div>
@@ -670,6 +814,7 @@
     renderClientsTable();
     renderRulesList();
     renderLogsTable();
+    renderWebviewPane();
   }
 
   function renderHeader() {
@@ -847,6 +992,36 @@
     }).join('');
   }
 
+  function renderWebviewPane() {
+    const mirrorHeap = document.getElementById('adblockMirrorHeap');
+    const mirrorRatio = document.getElementById('adblockMirrorBlockRatio');
+    const mirrorRules = document.getElementById('adblockMirrorRules');
+    const mirrorRssi = document.getElementById('adblockMirrorRssi');
+    const mirrorBadge = document.getElementById('adblockMirrorStatusBadge');
+
+    if (mirrorHeap) mirrorHeap.textContent = `${formatBytes(state.status.freeHeap)} (Core 0 DRAM)`;
+    if (mirrorRatio) {
+      const blocked = state.status.totalBlocked || 0;
+      const total = blocked + (state.status.totalAllowed || 0);
+      const pct = total > 0 ? ((blocked / total) * 100).toFixed(1) : '0.0';
+      mirrorRatio.textContent = `${pct}% (${blocked.toLocaleString()} blocked)`;
+    }
+    if (mirrorRules) mirrorRules.textContent = `${(state.status.rulesCount || 245000).toLocaleString()} domains`;
+    if (mirrorRssi) mirrorRssi.textContent = `${state.status.rssi || -52} dBm (Excellent)`;
+
+    if (mirrorBadge) {
+      const now = Date.now();
+      const isOnline = state.online && (now - state.lastSeenMs < 45000);
+      if (isOnline) {
+        mirrorBadge.textContent = 'LIVE SHADOW • ONLINE';
+        mirrorBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      } else {
+        mirrorBadge.textContent = 'CLOUD SHADOW • STANDBY';
+        mirrorBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      }
+    }
+  }
+
   function switchSubTab(tabId) {
     state.activeSubTab = tabId;
     const tabs = ['clients', 'rules', 'logs', 'system', 'webview'];
@@ -925,9 +1100,78 @@
       }
       window.LuminaAdBlock.closeRenameModal();
     },
+    openDevicePortal: () => {
+      const input = document.getElementById('adblockTargetPortalUrl');
+      const url = (input?.value || 'http://esp32adblock.local/').trim();
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    },
+    setTargetPortalUrl: (url) => {
+      const input = document.getElementById('adblockTargetPortalUrl');
+      if (input) input.value = url;
+      const iframe = document.getElementById('adblockDeviceIframe');
+      if (iframe && iframe.src !== 'about:blank' && iframe.src !== '') {
+        iframe.src = url;
+      }
+    },
+    copyPortalUrl: () => {
+      const input = document.getElementById('adblockTargetPortalUrl');
+      const url = (input?.value || 'http://esp32adblock.local/').trim();
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          if (typeof window.showToast === 'function') window.showToast('Copied LAN portal URL to clipboard!', 'success');
+        }).catch(() => {});
+      }
+    },
+    toggleIframeView: () => {
+      const wrapper = document.getElementById('adblockIframeWrapper');
+      const btn = document.getElementById('adblockBtnToggleFrame');
+      const iframe = document.getElementById('adblockDeviceIframe');
+      const fallback = document.getElementById('adblockIframeFallback');
+      const status = document.getElementById('adblockFrameStatus');
+      if (!wrapper) return;
+
+      const isHidden = wrapper.classList.contains('hidden');
+      if (isHidden) {
+        wrapper.classList.remove('hidden');
+        if (btn) btn.textContent = 'Hide In-Page Frame';
+        const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+        if (isHttps) {
+          if (fallback) fallback.classList.remove('hidden');
+          if (status) {
+            status.textContent = 'Blocked by HTTPS';
+            status.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20';
+          }
+        } else {
+          const input = document.getElementById('adblockTargetPortalUrl');
+          const url = (input?.value || 'http://esp32adblock.local/').trim();
+          if (iframe) {
+            iframe.src = url;
+            if (status) {
+              status.textContent = 'Loading...';
+              status.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20';
+            }
+          }
+        }
+      } else {
+        wrapper.classList.add('hidden');
+        if (btn) btn.textContent = 'Show In-Page Frame';
+        if (status) {
+          status.textContent = 'Standby';
+          status.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400';
+        }
+      }
+    },
+    flushDnsCache: () => {
+      sendCommand('flush_cache', '');
+      if (typeof window.showToast === 'function') window.showToast('Flushed local DNS cache command sent to ESP32', 'info');
+    },
     reloadIframe: () => {
       const iframe = document.getElementById('adblockDeviceIframe');
-      if (iframe) iframe.src = iframe.src;
+      const input = document.getElementById('adblockTargetPortalUrl');
+      const url = (input?.value || 'http://esp32adblock.local/').trim();
+      if (iframe) iframe.src = url;
     },
     exportClientsCSV: () => {
       const clients = state.clients || [];
