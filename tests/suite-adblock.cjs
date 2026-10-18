@@ -95,7 +95,8 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
     'adblockClientSearchInput', 'adblockClientsTableBody',
     'adblockCustomDomainInput', 'adblockCustomRulesList',
     'adblockLogSearchInput', 'adblockLogsTableBody',
-    'adblockTargetPortalUrl', 'adblockHttpsNotice', 'adblockMirrorHeap', 'adblockMirrorStatusBadge', 'adblockDeviceIframe'
+    'adblockTargetPortalUrl', 'adblockHttpsNotice', 'adblockMirrorHeap', 'adblockMirrorStatusBadge', 'adblockDeviceIframe',
+    'adblockCadenceLivePill', 'adblockSimLatencyPill'
   ];
 
   for (const id of requiredIndicators) {
@@ -115,6 +116,34 @@ async function runAdblockSuite({ assert, window, document, rootDir }) {
   assert(typeof window.LuminaAdBlock.copyPortalUrl === 'function', "copyPortalUrl is exported");
   assert(typeof window.LuminaAdBlock.toggleIframeView === 'function', "toggleIframeView is exported");
   assert(typeof window.LuminaAdBlock.flushDnsCache === 'function', "flushDnsCache is exported");
+
+  // Latency & Telemetry Cadence Engine assertions
+  assert(typeof window.LuminaAdBlock.setPollInterval === 'function', "setPollInterval is exported");
+  assert(typeof window.LuminaAdBlock.setSimulatedLatency === 'function', "setSimulatedLatency is exported");
+  assert(typeof window.LuminaAdBlock.cycleLatencyCadence === 'function', "cycleLatencyCadence is exported");
+  assert(typeof window.LuminaAdBlock.getLatencyStats === 'function', "getLatencyStats is exported");
+
+  const initialStats = window.LuminaAdBlock.getLatencyStats();
+  assert(Number.isFinite(initialStats.activePollIntervalMs), "getLatencyStats returns numeric activePollIntervalMs");
+  assert(Number.isFinite(initialStats.simulatedLatencyMs), "getLatencyStats returns numeric simulatedLatencyMs");
+
+  // Test setting custom poll interval
+  const updatedInterval = window.LuminaAdBlock.setPollInterval(5000);
+  assert(updatedInterval === 5000, "setPollInterval(5000) updates to 5,000ms");
+  assert(window.LuminaAdBlock.getLatencyStats().activePollIntervalMs === 5000, "activePollIntervalMs verified in latency stats");
+  assert(document.getElementById('adblockCadenceLivePill').textContent.includes('5.0s'), "Live cadence pill displays 5.0s");
+
+  // Test setting simulated latency delay
+  const updatedLag = window.LuminaAdBlock.setSimulatedLatency(150);
+  assert(updatedLag === 150, "setSimulatedLatency(150) updates to 150ms");
+  assert(window.LuminaAdBlock.getLatencyStats().simulatedLatencyMs === 150, "simulatedLatencyMs verified in latency stats");
+  assert(document.getElementById('adblockSimLatencyPill').textContent.includes('150ms'), "Live sim lag pill displays +150ms");
+
+  // Reset simulated latency & cadence back to 3500ms / 0ms
+  window.LuminaAdBlock.setSimulatedLatency(0);
+  window.LuminaAdBlock.setPollInterval(3500);
+  assert(window.LuminaAdBlock.getLatencyStats().simulatedLatencyMs === 0, "simulatedLatencyMs reset to 0ms");
+  assert(window.LuminaAdBlock.getLatencyStats().activePollIntervalMs === 3500, "activePollIntervalMs reset to 3500ms");
 
   window.LuminaAdBlock.setTargetPortalUrl('http://192.168.0.115/');
   assert(document.getElementById('adblockTargetPortalUrl').value === 'http://192.168.0.115/', "setTargetPortalUrl updates URL input");

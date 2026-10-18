@@ -2,7 +2,19 @@
 (function (window) {
   'use strict';
 
-  const POLL_INTERVAL_MS = 1500; // 1.5s active live telemetry stream
+  // Default to 3,500ms (Hardware-matched to ESP32 heartbeat cadence) to conserve battery, Wi-Fi airtime and avoid DNS contention
+  let activePollIntervalMs = 3500;
+  try {
+    const saved = typeof window.localStorage !== 'undefined' && window.localStorage.getItem('lumina_adblock_poll_interval');
+    if (saved) activePollIntervalMs = Math.max(1000, parseInt(saved, 10) || 3500);
+  } catch (e) {}
+
+  let simulatedLatencyMs = 0;
+  try {
+    const savedSim = typeof window.localStorage !== 'undefined' && window.localStorage.getItem('lumina_adblock_sim_latency');
+    if (savedSim) simulatedLatencyMs = Math.max(0, parseInt(savedSim, 10) || 0);
+  } catch (e) {}
+
   const BG_POLL_MS = 15000;      // 15s background standby heartbeat
   const RING_BUFFER_SIZE = 60;
 
@@ -41,19 +53,32 @@
   }
 
   async function adblockFetch(endpoint, options = {}) {
+    const fetchOpts = {
+      // Modern Web Guidance (deprioritize-background-fetches): Mark background telemetry fetches as low priority
+      priority: options.priority || 'low',
+      ...options
+    };
+
+    // Simulated latency injection for network degradation / stress verification
+    if (simulatedLatencyMs > 0) {
+      await new Promise(r => setTimeout(r, simulatedLatencyMs));
+    }
+
     try {
-      const res = await window.fetch(endpoint, options);
+      const res = await window.fetch(endpoint, fetchOpts);
       if (res && res.status !== 404) return res;
     } catch (e) {}
     const sep = endpoint.includes('?') ? '&' : '?';
     const fallback = endpoint.replace('/api/adblock', `/api/iot${sep}service=adblock`).replace('??', '?').replace('&&', '&');
-    return window.fetch(fallback, options);
+    return window.fetch(fallback, fetchOpts);
   }
 
   const state = {
     online: false,
     lastSeenMs: 0,
     lastRttMs: 14,
+    pollIntervalMs: activePollIntervalMs,
+    simulatedLatencyMs: simulatedLatencyMs,
     activeSubTab: 'clients',
     clientSearch: '',
     logSearch: '',
@@ -272,12 +297,12 @@
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(() => {
       const now = Date.now();
-      const targetInterval = isTabActive() ? POLL_INTERVAL_MS : BG_POLL_MS;
+      const targetInterval = isTabActive() ? activePollIntervalMs : BG_POLL_MS;
       if (now - lastPollTimeMs >= targetInterval) {
         lastPollTimeMs = now;
         fetchDashboard();
       }
-    }, 500);
+    }, 250);
   }
 
   async function fetchDashboard(manual = false) {
@@ -610,6 +635,63 @@
 
           <!-- 4. System & Maintenance Sub-Pane -->
           <div id="adblockPane-system" class="space-y-4 hidden">
+            <!-- Latency & Telemetry Cadence Engine Card -->
+            <div class="glass-panel p-4 rounded-xl border border-cyan-500/20 bg-gradient-to-b from-cyan-950/20 to-surface-900/60 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-base">⏱️</span>
+                  <div>
+                    <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">Telemetry Cadence & Latency Tuner</span>
+                    <span class="block text-[10px] text-zinc-400">Modern Web Guidance (<code class="text-cyan-300">priority: 'low'</code>) &amp; Silicon Core 0 Offloading</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="adblockCadenceLivePill" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                    Cadence: 3.5s
+                  </span>
+                  <span id="adblockSimLatencyPill" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    Simulated Lag: 0ms
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <!-- Control 1: Active Polling Interval -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-mono font-semibold text-zinc-200">Browser Cloud Polling Cadence</span>
+                    <span class="text-[10px] font-mono text-zinc-500">Controls fetch frequency</span>
+                  </div>
+                  <p class="text-[11px] text-zinc-400 leading-relaxed">
+                    Higher intervals conserve browser battery and prevent redundant cloud requests when the ESP32 pushes heartbeats every 3.5s–5.0s.
+                  </p>
+                  <div class="flex flex-wrap items-center gap-1.5" id="adblockPollCadenceButtons">
+                    <button onclick="window.LuminaAdBlock.setPollInterval(1500)" id="cadenceBtn-1500" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer">1.5s (Turbo)</button>
+                    <button onclick="window.LuminaAdBlock.setPollInterval(3500)" id="cadenceBtn-3500" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold cursor-pointer">3.5s (Balanced)</button>
+                    <button onclick="window.LuminaAdBlock.setPollInterval(5000)" id="cadenceBtn-5000" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer">5.0s (Eco Saver)</button>
+                    <button onclick="window.LuminaAdBlock.setPollInterval(10000)" id="cadenceBtn-10000" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer">10.0s (Low-Bandwidth)</button>
+                  </div>
+                </div>
+
+                <!-- Control 2: Artificial Network Latency Injector -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-mono font-semibold text-zinc-200">Artificial Network Latency Injector</span>
+                    <span class="text-[10px] font-mono text-zinc-500">Stress &amp; chaos testing</span>
+                  </div>
+                  <p class="text-[11px] text-zinc-400 leading-relaxed">
+                    Inject simulated RTT propagation delays to verify optimistic UI updates, out-of-order response dropping, and degraded WAN resilience.
+                  </p>
+                  <div class="flex flex-wrap items-center gap-1.5" id="adblockSimLagButtons">
+                    <button onclick="window.LuminaAdBlock.setSimulatedLatency(0)" id="simLagBtn-0" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold cursor-pointer">0ms (Direct)</button>
+                    <button onclick="window.LuminaAdBlock.setSimulatedLatency(150)" id="simLagBtn-150" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer">+150ms (3G)</button>
+                    <button onclick="window.LuminaAdBlock.setSimulatedLatency(300)" id="simLagBtn-300" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer">+300ms (WAN)</button>
+                    <button onclick="window.LuminaAdBlock.setSimulatedLatency(500)" id="simLagBtn-500" class="px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer">+500ms (Satellite)</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Blocklist OTA Card -->
               <div class="glass-panel p-4 rounded-xl border border-white/5 space-y-3">
@@ -815,6 +897,7 @@
     renderRulesList();
     renderLogsTable();
     renderWebviewPane();
+    renderSystemPane();
   }
 
   function renderHeader() {
@@ -843,7 +926,9 @@
     }
 
     if (rttBadge) {
-      rttBadge.textContent = `⚡ RTT: ${state.lastRttMs}ms (Direct Cloud)`;
+      const simLabel = simulatedLatencyMs > 0 ? ` (+${simulatedLatencyMs}ms lag)` : '';
+      const cadLabel = `Cadence: ${(activePollIntervalMs / 1000).toFixed(1)}s`;
+      rttBadge.textContent = `⚡ RTT: ${state.lastRttMs}ms | ${cadLabel}${simLabel}`;
     }
 
     if (queueBadge) {
@@ -1018,6 +1103,44 @@
       } else {
         mirrorBadge.textContent = 'CLOUD SHADOW • STANDBY';
         mirrorBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      }
+    }
+  }
+
+  function renderSystemPane() {
+    const livePill = document.getElementById('adblockCadenceLivePill');
+    if (livePill) {
+      livePill.textContent = `Cadence: ${(activePollIntervalMs / 1000).toFixed(1)}s`;
+    }
+    const lagPill = document.getElementById('adblockSimLatencyPill');
+    if (lagPill) {
+      lagPill.textContent = simulatedLatencyMs > 0 ? `Simulated Lag: +${simulatedLatencyMs}ms` : 'Simulated Lag: 0ms';
+      lagPill.className = simulatedLatencyMs > 0
+        ? 'px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30'
+        : 'px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+    }
+
+    const cadences = [1500, 3500, 5000, 10000];
+    for (const c of cadences) {
+      const btn = document.getElementById(`cadenceBtn-${c}`);
+      if (btn) {
+        if (activePollIntervalMs === c) {
+          btn.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold cursor-pointer';
+        } else {
+          btn.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer';
+        }
+      }
+    }
+
+    const lags = [0, 150, 300, 500];
+    for (const l of lags) {
+      const btn = document.getElementById(`simLagBtn-${l}`);
+      if (btn) {
+        if (simulatedLatencyMs === l) {
+          btn.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold cursor-pointer';
+        } else {
+          btn.className = 'px-2.5 py-1.5 rounded-lg text-xs font-mono border border-white/10 bg-surface-850 hover:bg-white/10 text-zinc-300 cursor-pointer';
+        }
       }
     }
   }
@@ -1200,6 +1323,54 @@
       a.download = `esp32_adblock_logs_${Date.now()}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+    },
+    setPollInterval: (ms) => {
+      const val = Math.max(500, parseInt(ms, 10) || 3500);
+      activePollIntervalMs = val;
+      state.pollIntervalMs = val;
+      try {
+        if (typeof window.localStorage !== 'undefined') {
+          window.localStorage.setItem('lumina_adblock_poll_interval', String(val));
+        }
+      } catch (e) {}
+      startPollingLoop();
+      renderHeader();
+      renderSystemPane();
+      if (typeof window.showToast === 'function') {
+        window.showToast('Polling Cadence Updated', `Telemetry fetch interval set to ${(val / 1000).toFixed(1)}s.`);
+      }
+      return activePollIntervalMs;
+    },
+    setSimulatedLatency: (ms) => {
+      const val = Math.max(0, parseInt(ms, 10) || 0);
+      simulatedLatencyMs = val;
+      state.simulatedLatencyMs = val;
+      try {
+        if (typeof window.localStorage !== 'undefined') {
+          window.localStorage.setItem('lumina_adblock_sim_latency', String(val));
+        }
+      } catch (e) {}
+      renderHeader();
+      renderSystemPane();
+      if (typeof window.showToast === 'function') {
+        window.showToast('Simulated Latency', val > 0 ? `Artificial network delay set to +${val}ms.` : 'Artificial network delay disabled (0ms).');
+      }
+      return simulatedLatencyMs;
+    },
+    cycleLatencyCadence: () => {
+      const cadences = [1500, 3500, 5000, 10000];
+      const currIdx = cadences.indexOf(activePollIntervalMs);
+      const nextCadence = cadences[(currIdx + 1) % cadences.length];
+      return window.LuminaAdBlock.setPollInterval(nextCadence);
+    },
+    getLatencyStats: () => {
+      return {
+        activePollIntervalMs,
+        simulatedLatencyMs,
+        lastRttMs: state.lastRttMs,
+        isTabActive: isTabActive(),
+        bgPollMs: BG_POLL_MS
+      };
     }
   };
 
