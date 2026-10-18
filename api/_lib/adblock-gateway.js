@@ -171,8 +171,8 @@ export async function verifyDeviceRequest(req, rawBodyStr, storage) {
 
 export function isValidIpv4(ip) {
   if (typeof ip !== 'string') return false;
-  const trimmed = ip.trim();
-  const parts = trimmed.split('.');
+  if (/^\s|\s$/.test(ip)) return false;
+  const parts = ip.split('.');
   if (parts.length !== 4) return false;
   for (const part of parts) {
     if (!/^\d{1,3}$/.test(part)) return false;
@@ -190,7 +190,11 @@ export function sanitizeClientAlias(alias) {
 
 export function sanitizeDomain(raw) {
   if (!raw || typeof raw !== 'string') return '';
-  const clean = raw.trim().toLowerCase();
+  let clean = raw.trim().toLowerCase();
+  clean = clean.replace(/^[a-z]+:\/\//i, '');
+  clean = clean.split('/')[0].split('?')[0].split('#')[0];
+  clean = clean.replace(/:\d+$/, '');
+  clean = clean.trim();
   if (clean.length > 253) return '';
   if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(clean)) {
     return '';

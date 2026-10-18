@@ -21,8 +21,8 @@
   ],
   "scripts": {
     "start": "node tests/server.cjs",
-    "build": "node tests/lint.cjs && node tests/suite-service-account-calendar.cjs && node tests/suite-overview-dashboard.cjs && node tests/suite-strix-audit.cjs",
-    "test": "node tests/features.test.cjs && node tests/suite-overview-dashboard.cjs && node tests/suite-strix-audit.cjs",
+    "build": "node tests/lint.cjs && node tests/suite-service-account-calendar.cjs && node tests/suite-overview-dashboard.cjs && node tests/suite-strix-audit.cjs && node tests/suite-nano-audit.cjs",
+    "test": "node tests/features.test.cjs && node tests/suite-overview-dashboard.cjs && node tests/suite-strix-audit.cjs && node tests/suite-nano-audit.cjs",
     "test:browser": "node tests/browser-cdp-test.cjs",
     "lint": "node tests/lint.cjs"
   },

@@ -136,6 +136,11 @@ export async function validateSession(req, redisClient = null) {
 
   const isExplicitRemote = rawIp !== 'unknown' && !isLoopback;
 
+  const isExplicitUnauthenticated = req?.headers?.['x-unauthenticated'] === 'true' || sessionId === 'unauthenticated' || sessionId === 'none';
+  if (isExplicitUnauthenticated) {
+    return { valid: false, status: 401, error: 'Unauthorized Session' };
+  }
+
   // In local offline unit tests / loopback sovereign mode (CRIT-02 / VULN-INFRA-01):
   if (allowMock && !isExplicitRemote && (isLoopback || isTestRunner) && (!redis || !sessionId || sessionId === 'sovereign_session' || sessionId.startsWith('mock_'))) {
     if (!hasAdminPassword || isTestRunner) {

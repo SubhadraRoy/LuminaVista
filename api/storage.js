@@ -50,6 +50,14 @@ function sanitizeFilePath(userPath) {
   ) {
     return '';
   }
+
+  // Strictly reject Windows reserved device names (CWE-22 / CON, PRN, AUX, NUL, COM1-9, LPT1-9)
+  const segments = normalized.split('/').filter(Boolean);
+  const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
+  for (const seg of segments) {
+    if (WINDOWS_RESERVED.test(seg)) return '';
+  }
+
   return normalized;
 }
 
