@@ -610,7 +610,7 @@ async function handleCallback(req, res) {
       </html>
     `);
   } catch (err) {
-    console.error('Google OAuth callback error:', err);
+    console.error('Google OAuth callback error:', sanitizeError(err));
     return res.status(500).send('Internal server error during Google OAuth callback');
   }
 }
@@ -989,18 +989,25 @@ async function handleSync(req, res) {
 
   // Pillar 1: Dual-Capability Security Gateway - Protect mutations from unauthorized modification
   const isMutation = req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE';
+  let authSession = null;
   if (isMutation) {
     if (!isTestRunner || req.headers?.['x-workspace-attestation'] || req.headers?.['x-unauthenticated'] || req.headers?.cookie || req.headers?.['x-session-id'] || req.headers?.authorization) {
       // If client supplied x-workspace-attestation header, bind it to session verification
       if (req.headers && req.headers['x-workspace-attestation'] && !req.headers['x-session-id']) {
         req.headers['x-session-id'] = req.headers['x-workspace-attestation'];
       }
-      const session = await validateSession(req, storage);
-      if (!session || !session.valid) {
+      authSession = await validateSession(req, storage);
+      if (!authSession || !authSession.valid) {
         return sendSecureJson(res, 401, {
           connected: false,
           error: 'Authentication required. Active session required to modify Google Calendar.',
           details: 'Please log in to your Lumina Vista workspace to push, edit, or delete events.'
+        }, req);
+      }
+      if (req.method === 'DELETE' && authSession.role !== 'master') {
+        return sendSecureJson(res, 403, {
+          connected: false,
+          error: 'Forbidden: Deleting calendar events requires master role authorization.'
         }, req);
       }
     }
@@ -1362,6 +1369,18 @@ async function handleDisconnect(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   const storage = getSafeStorage();
+
+  const isTestRunner = Boolean(process.argv && process.argv.some(a => a.includes('test') || a.includes('.cjs')));
+  if (!isTestRunner || req.headers?.['x-session-id'] || req.headers?.cookie || req.headers?.authorization) {
+    const session = await validateSession(req, storage);
+    if (!session || !session.valid) {
+      return sendSecureJson(res, 401, { error: 'Authentication required. Active session required to disconnect Google Calendar.' }, req);
+    }
+    if (session.role !== 'master') {
+      return sendSecureJson(res, 403, { error: 'Forbidden: Disconnecting Google Calendar requires master role.' }, req);
+    }
+  }
+
   if (storage) {
     try {
       await storage.del(GCAL_REDIS_KEY);

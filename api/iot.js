@@ -1378,7 +1378,7 @@ export default async function handler(req, res) {
 
     return sendSecureJson(res, 405, { error: 'Method not allowed' });
   } catch (err) {
-    console.error('[API/iot] Unhandled error:', err);
+    console.error('[API/iot] Unhandled error:', sanitizeError(err));
     return sendSecureJson(res, 500, { error: sanitizeError(err.message || 'Internal server error') });
   }
 }

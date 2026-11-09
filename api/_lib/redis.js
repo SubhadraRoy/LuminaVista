@@ -20,6 +20,7 @@ export function getRedisClient() {
 }
 
 const fallbackStore = new Map();
+const MAX_FALLBACK_STORE_ENTRIES = 10000;
 
 export class ResilientFallbackStorage {
   async get(key) {
@@ -35,6 +36,17 @@ export class ResilientFallbackStorage {
     if (opts.nx) {
       const existing = await this.get(key);
       if (existing !== null) return null;
+    }
+    // Bounded capacity & expired keys eviction to prevent memory leaks / OOM
+    if (fallbackStore.size >= MAX_FALLBACK_STORE_ENTRIES && !fallbackStore.has(key)) {
+      const now = Date.now();
+      for (const [k, v] of fallbackStore.entries()) {
+        if (v.expires && now > v.expires) fallbackStore.delete(k);
+      }
+      if (fallbackStore.size >= MAX_FALLBACK_STORE_ENTRIES) {
+        const oldestKey = fallbackStore.keys().next().value;
+        if (oldestKey) fallbackStore.delete(oldestKey);
+      }
     }
     const expires = opts.ex ? Date.now() + (opts.ex * 1000) : null;
     fallbackStore.set(key, { value, expires });

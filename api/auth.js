@@ -232,7 +232,7 @@ export async function verifyCredentials(password, expectedPassword, storage = nu
         }
       }
     } catch (e) {
-      console.error('Error verifying temporary password in storage:', e);
+      console.error('Error verifying temporary password in storage:', sanitizeError(e));
     }
   }
 

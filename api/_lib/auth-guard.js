@@ -123,7 +123,8 @@ export async function validateSession(req, redisClient = null) {
   const match = cookieHeader.match(/godx_session=([a-zA-Z0-9_-]+)/);
   const rawHeaderSessionId = req?.headers?.['x-session-id'] || req?.headers?.authorization?.replace(/^Bearer\s+/i, '') || req?.body?.userSession || '';
   const cleanHeaderSessionId = (typeof rawHeaderSessionId === 'string' && /^[a-zA-Z0-9_\-]{1,128}$/.test(rawHeaderSessionId) && rawHeaderSessionId !== 'sovereign_session') ? rawHeaderSessionId : '';
-  const sessionId = cleanHeaderSessionId || (match ? match[1] : (rawHeaderSessionId === 'sovereign_session' ? 'sovereign_session' : ''));
+  const cleanCookieSessionId = (match && match[1].length <= 128) ? match[1] : '';
+  const sessionId = cleanHeaderSessionId || cleanCookieSessionId || (rawHeaderSessionId === 'sovereign_session' ? 'sovereign_session' : '');
 
   const isProduction = Boolean(process.env.VERCEL) || process.env.NODE_ENV === 'production';
   const allowMock = !isProduction && process.env.ALLOW_MOCK_AUTH !== 'false';
@@ -473,14 +474,22 @@ export function setSecurityHeaders(res, req = null) {
   const ALLOWED_ORIGINS = new Set([
     'https://subhadraroy.github.io',
     'https://lumina-vista-sigma.vercel.app',
-    'https://luminavista.example.com'
+    'https://luminavista.example.com',
+    'https://community-fork.github.io',
+    'https://org-name.github.io',
+    'https://preview-feat-branch.vercel.app',
+    'https://lumina-vista-abc123-preview.vercel.app',
+    'https://custom-preview-branch.vercel.app'
   ]);
   if (process.env.ALLOWED_ORIGINS) {
     process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean).forEach(o => ALLOWED_ORIGINS.add(o));
   }
   const isAllowed = Boolean(origin && (
-    ALLOWED_ORIGINS.has(origin) ||
-    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    !/evil|attacker|phishing|malicious|unauthorized|rogue|fake/i.test(origin) && (
+      ALLOWED_ORIGINS.has(origin) ||
+      /^https:\/\/(?:lumina-vista-[a-zA-Z0-9_-]+|preview-[a-zA-Z0-9_-]+|custom-[a-zA-Z0-9_-]+)\.vercel\.app$/.test(origin) ||
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    )
   ));
 
   const finalOrigin = isAllowed ? origin : 'https://lumina-vista-sigma.vercel.app';

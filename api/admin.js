@@ -43,11 +43,8 @@ export default async function handler(req, res) {
 
     // Enforce master role on admin credential management (HIGH-10: zero token-string bypasses)
     if (session.role !== 'master') {
-      const isTestRunner = !process.env.VERCEL && process.env.NODE_ENV !== 'production' && process.argv.some(a => typeof a === 'string' && (a.includes('test') || a.includes('.cjs')));
-      if (!isTestRunner) {
-        auditLog('ADMIN_FORBIDDEN', req, `Session ${session.sessionId || ''} attempted admin management with role ${session.role}`);
-        return sendSecureJson(res, 403, { error: 'Forbidden: Administrator credentials management requires master role.' }, req);
-      }
+      auditLog('ADMIN_FORBIDDEN', req, `Session ${session.sessionId || ''} attempted admin management with role ${session.role}`);
+      return sendSecureJson(res, 403, { error: 'Forbidden: Administrator credentials management requires master role.' }, req);
     }
 
     // Rate limiting protects the endpoint from brute-force key provisioning
@@ -233,7 +230,7 @@ export default async function handler(req, res) {
 
     return sendSecureJson(res, 405, { error: 'Method Not Allowed' }, req);
   } catch (err) {
-    console.error('[ADMIN_API_ERROR]', err);
+    console.error('[ADMIN_API_ERROR]', sanitizeError(err));
     return sendSecureJson(res, 500, { error: 'Internal admin server error.' }, req);
   }
 }

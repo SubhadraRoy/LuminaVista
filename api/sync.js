@@ -119,6 +119,17 @@ export default async function handler(req, res) {
 
       const nextRevision = (Number(currentState.revision) || 0) + 1;
 
+      const rawVfs = (b.vfs && typeof b.vfs === 'object' && !Array.isArray(b.vfs)) ? b.vfs : currentState.vfs;
+      let safeVfs = currentState.vfs || {};
+      if (rawVfs && typeof rawVfs === 'object') {
+        safeVfs = Object.create(null);
+        for (const [k, v] of Object.entries(rawVfs)) {
+          if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+            safeVfs[k] = typeof v === 'string' ? scrubSecrets(v) : v;
+          }
+        }
+      }
+
       const newState = sanitizeWorkspaceState({
         calendar: Array.isArray(b.calendar) ? b.calendar : currentState.calendar,
         calendarSettings: b.calendarSettings !== undefined ? b.calendarSettings : currentState.calendarSettings,
@@ -132,7 +143,7 @@ export default async function handler(req, res) {
         whiteboardStickies: b.whiteboardStickies !== undefined ? b.whiteboardStickies : currentState.whiteboardStickies,
         whiteboardTheme: b.whiteboardTheme !== undefined ? b.whiteboardTheme : currentState.whiteboardTheme,
         whiteboardBg: b.whiteboardBg !== undefined ? b.whiteboardBg : currentState.whiteboardBg,
-        vfs: (b.vfs && typeof b.vfs === 'object' && !Array.isArray(b.vfs)) ? b.vfs : currentState.vfs,
+        vfs: safeVfs,
         notes: Array.isArray(b.notes) ? b.notes : currentState.notes,
         activeNoteId: b.activeNoteId !== undefined ? b.activeNoteId : currentState.activeNoteId,
         noteViewMode: b.noteViewMode !== undefined ? b.noteViewMode : currentState.noteViewMode,
