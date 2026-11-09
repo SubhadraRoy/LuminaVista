@@ -738,7 +738,7 @@ export default async function handler(req, res) {
           ? req.rawBody.toString('utf8')
           : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
 
-      const rate = await checkRateLimit(req, storage, 'iot_hardware', 60, 60);
+      const rate = await checkRateLimit(req, storage, 'iot_hardware', 300, 60);
       if (!rate.allowed) {
         return sendSecureJson(res, 429, { error: rate.error });
       }
@@ -1184,8 +1184,9 @@ export default async function handler(req, res) {
 
       // Restrict administrative/destructive commands to Administrator (CRIT-04)
       const MASTER_ONLY_COMMANDS = new Set([
-        'lock_mode', 'cards_clear', 'restart', 'enroll', 'card_remove', 'card_toggle',
-        'card_rename', 'card_color', 'relay3_schedule', 'relay4_schedule', 'logs_clear'
+        'lock_mode', 'alarm_clear', 'restart', 'relay3', 'relay3_schedule',
+        'relay4', 'relay4_schedule', 'enroll', 'cards_clear', 'card_remove', 'card_toggle',
+        'card_rename', 'card_color', 'logs_clear'
       ]);
       if (MASTER_ONLY_COMMANDS.has(cmd) && session.role !== 'master') {
         auditLog('IOT_FORBIDDEN', req, `Temporary session attempted restricted command ${cmd} (role=${session.role})`);

@@ -316,15 +316,16 @@ export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 3
 
   try {
     let current;
-    if (typeof redis.pipeline === 'function') {
-      const p = redis.pipeline();
-      p.incr(key);
-      p.expire(key, windowSeconds);
-      const res = await p.exec();
-      current = Number(Array.isArray(res) ? res[0] : res);
-    } else {
-      current = await redis.incr(key);
+    current = await redis.incr(key);
+    // Fixed sliding-window lockout: Only set TTL when key is first initialized (current === 1)
+    // or when the key has no TTL (-1), preventing continuous heartbeats from resetting the expiry window indefinitely.
+    if (current === 1) {
       await redis.expire(key, windowSeconds);
+    } else {
+      const ttl = typeof redis.ttl === 'function' ? await redis.ttl(key) : -1;
+      if (ttl < 0) {
+        await redis.expire(key, windowSeconds);
+      }
     }
 
     if (current > maxRequests) {
