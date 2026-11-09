@@ -75,90 +75,95 @@ export function sanitizeProviderMessages(rawMessages, fallbackPrompt = '') {
 export const maxDuration = 60; // Max execution time for Vercel
 
 async function searchDuckDuckGo(query) {
-  const cleanQ = String(query || '').trim();
+  const cleanQ = String(query || '').trim().substring(0, 150);
   if (!cleanQ) return "";
 
-  // 1. DuckDuckGo HTML Live Web Search (Universal: works for ANY topic, query, metric, event, or entity in the world)
+  const searchQ = cleanQ.replace(/^(today'?s?|latest|current)\s+/i, '').trim() || cleanQ;
+  const isGenericHeadlines = /^(news|headlines|top\s+news|world\s+news|breaking\s+news)$/i.test(cleanQ);
+  const gathered = [];
+
+  // 1. DuckDuckGo HTML Live Web Search (Tag-agnostic snippet extractor)
   try {
     const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(cleanQ)}`;
     const ddgRes = await fetch(ddgUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
       }
     });
     if (ddgRes.ok) {
       const html = await ddgRes.text();
       const snippetRegex = /<[^>]+class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/(?:a|td|div|span|p)>/gi;
       let m;
-      const items = [];
-      while ((m = snippetRegex.exec(html)) !== null && items.length < 5) {
+      const ddgItems = [];
+      while ((m = snippetRegex.exec(html)) !== null && ddgItems.length < 4) {
         const text = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
-        if (text && text.length > 20 && !items.includes(text)) {
-          items.push(`• ${text}`);
+        if (text && text.length > 20 && !ddgItems.includes(text)) {
+          ddgItems.push(`• ${text}`);
         }
       }
-      if (items.length > 0) {
-        return items.join('\n\n');
+      if (ddgItems.length > 0) {
+        gathered.push('Web Snippets:\n' + ddgItems.join('\n\n'));
       }
     }
   } catch (ignore) {}
 
-  const isNews = /\b(news|headlines|today'?s?|updates?|happened|events?)\b/i.test(cleanQ);
-
-  // 2. Live Google News RSS Feed for breaking news and headlines
-  if (isNews) {
-    try {
-      const isTopic = cleanQ && !/^(today|latest|news|headlines|world|current)/i.test(cleanQ);
-      const url = isTopic 
-        ? `https://news.google.com/rss/search?q=${encodeURIComponent(cleanQ)}&hl=en-US&gl=US&ceid=US:en`
-        : "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en";
-      const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } });
-      if (res.ok) {
-        const xml = await res.text();
-        const items = [];
-        const regex = /<item>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<source[^>]*>([\s\S]*?)<\/source>/g;
-        let m;
-        while ((m = regex.exec(xml)) !== null && items.length < 6) {
-          let t = m[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").replace(/ - [^-]+$/, "").trim();
-          let s = m[2].trim();
-          items.push(`• **${t}** (${s})`);
-        }
-        if (items.length > 0) {
-          return `Top Breaking News & Headlines:\n` + items.join('\n');
-        }
-      }
-    } catch (ignore) {}
-  }
-
-  // 3. Wikipedia Search API for knowledge, entities, and technical documentation
+  // 2. Google News RSS Feed (Universal real-time reports & breaking headlines)
   try {
-    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQ)}&format=json&utf8=1`);
+    const url = isGenericHeadlines
+      ? "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
+      : `https://news.google.com/rss/search?q=${encodeURIComponent(searchQ)}&hl=en-US&gl=US&ceid=US:en`;
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } });
+    if (res.ok) {
+      const xml = await res.text();
+      const items = [];
+      const regex = /<item>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<source[^>]*>([\s\S]*?)<\/source>/g;
+      let m;
+      while ((m = regex.exec(xml)) !== null && items.length < 4) {
+        let t = m[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").replace(/ - [^-]+$/, "").trim();
+        let s = m[2].trim();
+        items.push(`• **${t}** (${s})`);
+      }
+      if (items.length > 0) {
+        gathered.push('Top Live Reports & News:\n' + items.join('\n'));
+      }
+    }
+  } catch (ignore) {}
+
+  // 3. Wikipedia Search API for knowledge, entities, and definitions
+  try {
+    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQ)}&format=json&utf8=1`);
     if (wikiRes.ok) {
       const data = await wikiRes.json();
-      const results = (data.query?.search || []).slice(0, 3).map(s => {
-        return `• **${s.title}**: ${s.snippet.replace(/<[^>]+>/g, '').trim()}...`;
+      const results = (data.query?.search || []).slice(0, 2).map(s => {
+        return `• **${s.title}**: ${s.snippet.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim()}...`;
       });
-      if (results.length > 0) return results.join('\n\n');
+      if (results.length > 0) {
+        gathered.push('Background Knowledge & Definitions:\n' + results.join('\n\n'));
+      }
     }
   } catch (ignore) {}
 
   // 4. DuckDuckGo Instant Answer API fallback
-  try {
-    const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQ)}&format=json&no_html=1&skip_disambig=1`);
-    if (res.ok) {
-      const data = await res.json();
-      let snippets = [];
-      if (data.AbstractText) snippets.push(data.AbstractText);
-      if (Array.isArray(data.RelatedTopics)) {
-        data.RelatedTopics.slice(0, 4).forEach(t => {
-          if (t.Text) snippets.push(t.Text);
-        });
+  if (gathered.length === 0) {
+    try {
+      const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQ)}&format=json&no_html=1&skip_disambig=1`);
+      if (res.ok) {
+        const data = await res.json();
+        let snippets = [];
+        if (data.AbstractText) snippets.push(`• ${data.AbstractText}`);
+        if (Array.isArray(data.RelatedTopics)) {
+          data.RelatedTopics.slice(0, 3).forEach(t => {
+            if (t.Text) snippets.push(`• ${t.Text}`);
+          });
+        }
+        if (snippets.length > 0) gathered.push(snippets.join('\n\n'));
       }
-      if (snippets.length > 0) return snippets.join('\n\n');
-    }
-  } catch (ignore) {}
+    } catch (ignore) {}
+  }
 
-  return "";
+  return gathered.join('\n\n');
 }
 
 export default async function handler(req, res) {
