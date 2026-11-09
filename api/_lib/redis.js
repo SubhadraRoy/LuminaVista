@@ -52,6 +52,13 @@ export class ResilientFallbackStorage {
     }
     return 0;
   }
+  async ttl(key) {
+    const item = fallbackStore.get(key);
+    if (!item) return -2;
+    if (!item.expires) return -1;
+    const remaining = Math.ceil((item.expires - Date.now()) / 1000);
+    return remaining > 0 ? remaining : -2;
+  }
   async incr(key) {
     const item = fallbackStore.get(key);
     let val = 1;
@@ -176,6 +183,17 @@ export class SafeStorageProxy {
       }
     }
     return this.fallback.expire(key, seconds);
+  }
+
+  async ttl(key) {
+    if (this.isAvailable()) {
+      try {
+        return await this.rawRedis.ttl(key);
+      } catch (err) {
+        this.handleError(err, 'ttl');
+      }
+    }
+    return this.fallback.ttl(key);
   }
 
   async incr(key) {

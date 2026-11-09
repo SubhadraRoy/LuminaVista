@@ -638,11 +638,26 @@ export default async function handler(req, res) {
       readJsonKey(storage, KEY_META, null),
       readJsonKey(storage, KEY_CONN_HISTORY, [])
     ]);
-    if (!session.valid) {
-      return sendSecureJson(res, session.status || 401, { error: session.error });
-    }
-
     const nowMs = Date.now();
+    const lastSeenMs = meta && meta.lastSeenMs ? Number(meta.lastSeenMs) : 0;
+    const online = Boolean(lastSeenMs && (nowMs - lastSeenMs) < 12000);
+
+    if (!session.valid) {
+      // Unauthenticated public view: return safe read-only status so web UI accurately displays online state
+      const safeStatus = normalizeStatus(rawState || {});
+      return sendSecureJson(res, 200, {
+        ok: true,
+        authenticated: false,
+        online,
+        lastSeenMs,
+        lastSeq: meta?.lastSeq || 0,
+        status: safeStatus,
+        cards: [],
+        logs: [],
+        connHistory: [],
+        pendingCommands: []
+      });
+    }
     const nowSec = Math.floor(nowMs / 1000);
     const activeCommands = Array.isArray(rawQueue)
       ? rawQueue.filter(c => c && Number(c.expiresAt) >= nowSec)
@@ -738,7 +753,7 @@ export default async function handler(req, res) {
           ? req.rawBody.toString('utf8')
           : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
 
-      const rate = await checkRateLimit(req, storage, 'iot_hardware', 300, 60);
+      const rate = await checkRateLimit(req, storage, 'iot_hardware', 600, 60);
       if (!rate.allowed) {
         return sendSecureJson(res, 429, { error: rate.error });
       }

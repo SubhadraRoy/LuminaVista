@@ -321,9 +321,9 @@ export async function checkRateLimit(req, redisClient, routeKey, maxRequests = 3
     // or when the key has no TTL (-1), preventing continuous heartbeats from resetting the expiry window indefinitely.
     if (current === 1) {
       await redis.expire(key, windowSeconds);
-    } else {
-      const ttl = typeof redis.ttl === 'function' ? await redis.ttl(key) : -1;
-      if (ttl < 0) {
+    } else if (typeof redis.ttl === 'function') {
+      const ttl = await redis.ttl(key);
+      if (ttl === -1) {
         await redis.expire(key, windowSeconds);
       }
     }

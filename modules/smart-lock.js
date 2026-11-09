@@ -961,7 +961,20 @@
         credentials: 'include',
         headers: getAuthHeaders()
       });
-      if (!res || !res.ok) return false;
+      if (!res || !res.ok) {
+        try {
+          const wRes = await window.fetch('/api/iot?action=watchdog&deviceId=esp32-main-door-01');
+          if (wRes && wRes.ok) {
+            const wData = await wRes.json();
+            if (wData && wData.ok) {
+              state.online = Boolean(wData.online);
+              state.lastSeenMs = wData.lastSeenMs || 0;
+              renderAll();
+            }
+          }
+        } catch (_) {}
+        return false;
+      }
       const data = await res.json();
       state.lastRttMs = Math.max(1, Date.now() - t0);
 
