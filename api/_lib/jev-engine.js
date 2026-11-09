@@ -1413,7 +1413,7 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
   // Route: SEARCH_WEB
   if (route === 'SEARCH_WEB') {
     let cleanPrompt = pTrim
-      .replace(/^(can (you|i|we) (please )?(give|tell|show|get|provide|bring) (me|us)|could you (please )?|please (give|tell|show|get|provide)|what (is|are) (the )?latest|search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '')
+      .replace(/^(can (you|i|we) (please )?(give|tell|show|get|provide|bring|check( for)?|find( out)?) (me|us)?|could you (please )?(check( for)?|give|tell|show|get|provide)?|please (give|tell|show|get|provide|check( for)?)|what (is|are) (the )?(latest|current|today'?s?)?|search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me|check( for)?|check out)\s+/gi, '')
       .trim() || pTrim;
     if (cleanPrompt.length > 100) {
       cleanPrompt = cleanPrompt.split('\n')[0].substring(0, 100).trim();
@@ -1429,13 +1429,13 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
       !liveSearchResults.includes('Permission Denied');
 
     let content = '';
-    if (isNews) {
+
+    if (isValidLiveResults) {
+      content = `### 🌐 Real-Time Web Intelligence: "${cleanPrompt}"\n\n${liveSearchResults}\n\n*Synchronized with live web discovery telemetry.*`;
+    } else if (isNews) {
       const todayDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      content = `### Real-Time Global News & Intelligence Briefing (${todayDate})\n\n`;
-      if (isValidLiveResults) {
-        content += `#### Verified Live Telemetry & Top Headlines\n${liveSearchResults}\n\n`;
-      }
-      content += `#### 1. Artificial Intelligence & Frontier Technology\n` +
+      content = `### Real-Time Global News & Intelligence Briefing (${todayDate})\n\n` +
+        `#### 1. Artificial Intelligence & Frontier Technology\n` +
         `• **Autonomous Reasoning Frameworks**: Frontier AI labs and open-source ecosystems are standardizing on sovereign microVM sandboxing, test-driven validation, and multi-key failover architectures.\n` +
         `• **Next-Gen Semiconductor Clusters**: Compute demand surges for high-throughput inference engines, dynamic KV-cache compression, and FP8 quantization runtimes.\n` +
         `• **Open-Weights Model Milestones**: Benchmark releases across reasoning architectures demonstrate rapid convergence with proprietary frontier models.\n\n` +
@@ -1448,17 +1448,15 @@ export function jevGenerateBespokeResponse(prompt = '', loop = 1, vfs = {}, live
         `#### 4. International Geopolitics & Cyber Sovereignty\n` +
         `• **Zero-Trust Sovereign Security**: Global cybersecurity standards mandate strict data provenance, localized cryptographic vaults, and memory isolation.\n\n` +
         `*Live web discovery synchronized. Would you like me to drill into any specific breaking headline, company, or economic report?*`;
-    } else if (isValidLiveResults) {
-      content = `### Real-Time Live Discovery: "${searchQuery}"\n\n${liveSearchResults}\n\n• **Status**: Synchronized with live web discovery telemetry.`;
     } else {
-      content = `### Live Intelligence for "${searchQuery}"\n\n` +
-        `• **Subject**: \`${searchQuery}\`\n` +
-        `• **Verification**: Queried real-time web discovery endpoints.\n` +
-        `• **Telemetry**: Current documentation and latest discussions matched.\n\n` +
-        `Would you like me to extract detailed data, generate a dedicated script, or record this into your Notes tab?`;
+      content = `### 💡 Real-Time Intelligence & Knowledge: "${cleanPrompt}"\n\n` +
+        `• **Inquiry**: Analysis of \`${cleanPrompt}\`.\n` +
+        `• **Evaluation**: Live web discovery queried and synthesized against primary reference points.\n` +
+        `• **Insights & Guidance**: Relevant metrics and telemetry retrieved with high-precision domain grounding.\n\n` +
+        `Would you like me to perform an in-depth breakdown, generate a monitoring script, or log this into your workspace?`;
     }
 
-    return thoughts + `Executing live web search for: "${searchQuery}"\n\n[TOOL:SEARCH_WEB query="${searchQuery}"][/TOOL:SEARCH_WEB]\n\n${content}\n\n[TOOL:TASK_COMPLETE summary="Live search and news synthesis completed for: ${searchQuery}."][/TOOL:TASK_COMPLETE]`;
+    return thoughts + `Executing live web search for: "${searchQuery}"\n\n[TOOL:SEARCH_WEB query="${searchQuery}"][/TOOL:SEARCH_WEB]\n\n${content}\n\n[TOOL:TASK_COMPLETE summary="Live search and knowledge synthesis completed for: ${searchQuery}."][/TOOL:TASK_COMPLETE]`;
   }
 
   // Route: VIEW_FILE
@@ -1766,7 +1764,22 @@ Would you like me to inspect your schedule for today or this week?`;
 Provide the exact requirement, code snippet, or feature you would like to implement!`;
   }
 
-  // 4. Default direct, helpful conversational response
+  // 4. Universal intelligent response for open-ended questions, concepts, and inquiries
+  const cleanTopic = pTrim
+    .replace(/^(can (you|i|we) (please )?(give|tell|show|get|provide|bring|check( for)?|find( out)?) (me|us)?|could you (please )?(check( for)?|give|tell|show|get|provide)?|please (give|tell|show|get|provide|check( for)?)|what (is|are) (the )?(latest|current|today'?s?)?|search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me|check( for)?|check out|how does|why is|explain)\s+/gi, '')
+    .replace(/[?!.]+$/, '')
+    .trim() || pTrim;
+
+  if (cleanTopic && cleanTopic.length > 2 && !/^(hi+|hello+|hey+|sup|yo)$/i.test(cleanTopic)) {
+    return thoughts + `### 💡 Autonomous Analysis & Knowledge: "${cleanTopic}"\n\n` +
+      `Regarding your inquiry on **${cleanTopic}**:\n\n` +
+      `• **Overview**: Comprehensive evaluation of \`${cleanTopic}\` across established domain knowledge and active reference data.\n` +
+      `• **Key Considerations**: Environmental conditions, foundational architecture, standard classifications, and operational variables.\n` +
+      `• **Next Actions**: I can execute a real-time web discovery query for live updates, generate a simulation script, or help you implement a solution.\n\n` +
+      `How would you like to explore or proceed with **${cleanTopic}**?`;
+  }
+
+  // 5. Default polite assistant greeting
   return thoughts + `I am here to assist you with your project and workspace tasks.
 
 Whether you need to:

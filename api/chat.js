@@ -75,14 +75,42 @@ export function sanitizeProviderMessages(rawMessages, fallbackPrompt = '') {
 export const maxDuration = 60; // Max execution time for Vercel
 
 async function searchDuckDuckGo(query) {
-  const isNews = /\b(news|headlines|today'?s?|updates?|happened|events?)\b/i.test(query);
+  const cleanQ = String(query || '').trim();
+  if (!cleanQ) return "";
 
-  // 1. Live Google News RSS Feed for breaking news and headlines
+  // 1. DuckDuckGo HTML Live Web Search (Universal: works for ANY topic, query, metric, event, or entity in the world)
+  try {
+    const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(cleanQ)}`;
+    const ddgRes = await fetch(ddgUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (ddgRes.ok) {
+      const html = await ddgRes.text();
+      const snippetRegex = /<[^>]+class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/(?:a|td|div|span|p)>/gi;
+      let m;
+      const items = [];
+      while ((m = snippetRegex.exec(html)) !== null && items.length < 5) {
+        const text = m[1].replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
+        if (text && text.length > 20 && !items.includes(text)) {
+          items.push(`• ${text}`);
+        }
+      }
+      if (items.length > 0) {
+        return items.join('\n\n');
+      }
+    }
+  } catch (ignore) {}
+
+  const isNews = /\b(news|headlines|today'?s?|updates?|happened|events?)\b/i.test(cleanQ);
+
+  // 2. Live Google News RSS Feed for breaking news and headlines
   if (isNews) {
     try {
-      const isTopic = query && !/^(today|latest|news|headlines|world|current)/i.test(query.trim());
+      const isTopic = cleanQ && !/^(today|latest|news|headlines|world|current)/i.test(cleanQ);
       const url = isTopic 
-        ? `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`
+        ? `https://news.google.com/rss/search?q=${encodeURIComponent(cleanQ)}&hl=en-US&gl=US&ceid=US:en`
         : "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en";
       const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" } });
       if (res.ok) {
@@ -102,9 +130,9 @@ async function searchDuckDuckGo(query) {
     } catch (ignore) {}
   }
 
-  // 2. Wikipedia Search API for knowledge, entities, and technical documentation
+  // 3. Wikipedia Search API for knowledge, entities, and technical documentation
   try {
-    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&utf8=1`);
+    const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQ)}&format=json&utf8=1`);
     if (wikiRes.ok) {
       const data = await wikiRes.json();
       const results = (data.query?.search || []).slice(0, 3).map(s => {
@@ -114,9 +142,9 @@ async function searchDuckDuckGo(query) {
     }
   } catch (ignore) {}
 
-  // 3. DuckDuckGo Instant Answer API fallback
+  // 4. DuckDuckGo Instant Answer API fallback
   try {
-    const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+    const res = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQ)}&format=json&no_html=1&skip_disambig=1`);
     if (res.ok) {
       const data = await res.json();
       let snippets = [];
@@ -266,7 +294,7 @@ export default async function handler(req, res) {
     // 0. Initial Web Search Context Injection if permitted and requested
     let liveSearchResultsText = '';
     if (allowInternet && prompt && loopCount === 0 && jevTelemetry.route === 'SEARCH_WEB') {
-      let q = prompt.replace(/^(can (you|i|we) (please )?(give|tell|show|get|provide|bring) (me|us)|could you (please )?|please (give|tell|show|get|provide)|what (is|are) (the )?latest|search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me)\s+/gi, '').trim() || prompt;
+      let q = prompt.replace(/^(can (you|i|we) (please )?(give|tell|show|get|provide|bring|check( for)?|find( out)?) (me|us)?|could you (please )?(check( for)?|give|tell|show|get|provide)?|please (give|tell|show|get|provide|check( for)?)|what (is|are) (the )?(latest|current|today'?s?)?|search( for)?|look up|find out|what is the latest on|get me|tell me|give me|show me|check( for)?|check out)\s+/gi, '').trim() || prompt;
       if (q.length > 120) q = q.split('\n')[0].substring(0, 120).trim();
       liveSearchResultsText = await searchDuckDuckGo(q);
       if (liveSearchResultsText && liveSearchResultsText.trim().length > 10) {

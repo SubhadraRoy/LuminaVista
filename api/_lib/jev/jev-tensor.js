@@ -82,7 +82,8 @@ export function scoreJevTensor(prompt = '', { entities = {}, targetFile = '', ta
 
   if (!isAutonomousTask && !isSoftwareEvent) {
     const isCalendarDirect = /\b(schedule|calendar|calander|calender|calndr|calndar|clendar|scheule|scheduale|sched|skedule|sked|sechdule|routine|meeting|meetings|appointment|appointments|event|events|remind\s*me|plan\s*my\s*day|auto_?plan|book\s*a\s*slot|set\s*schedule|blackout\s*hours|agenda|timetable|itinerary)\b/i.test(p);
-    const isCalendarQuery = /\b(check|show|view|see|inspect|what\s*(?:'s|\s*(?:is|are|do\s+i\s+have))?\s*(?:on|in|my)?)\b.*\b(calander|calendar|calender|calndr|scheule|scheduale|sched|skedule|agenda|timetable|itinerary|meetings?|events?|appointments?|routine|week|day)\b/i.test(p);
+    const isCalendarQuery = /\b(check|show|view|see|inspect|what\s*(?:'s|\s*(?:is|are|do\s+i\s+have))?\s*(?:on|in|my)?)\b.*\b(schedule|calander|calendar|calender|calndr|scheule|scheduale|sched|skedule|agenda|timetable|itinerary|meetings?|events?|appointments?|routine)\b/i.test(p) ||
+      /\b(what\s*(?:'s|\s*(?:is|are|do\s+i\s+have))\s*(?:on|in|my)\s*(?:week|day))\b/i.test(p);
     const isCalendarRange = /\b(next\s+week'?s?|this\s+week'?s?|upcoming)\s+(scheule|schedule|sched|agenda|calendar|calander|calender|plan|events?|meetings?)\b/i.test(p);
     const isCalendarMutation = /\b(reschedule|cancel|book|postpone|clear\s+calendar|move\s+meeting|add\s+meeting)\b/i.test(p);
 
@@ -173,12 +174,17 @@ export function scoreJevTensor(prompt = '', { entities = {}, targetFile = '', ta
   }
 
   // =========================================================================
-  // 8. SEARCH_WEB Ontology Scoring
+  // 8. SEARCH_WEB Ontology Scoring (Universal Web Intelligence & Inquiry)
   // =========================================================================
-  const isWebTopic = /\b(news|headlines|weather|stock|crypto|price\s*of|who\s*is|who\s*was|what\s*happened|when\s*did|where\s*is|latest\s*on|updates?\s*on|today'?s?\s*news)\b/i.test(p);
-  const isWebVerb = /\b(browse|web\s*search|google|search|look\s*up|find\s*out)\b/i.test(p) || p.startsWith('search') || p.startsWith('find') || p.startsWith('browse');
-  if (isWebTopic) scores.SEARCH_WEB += 60;
-  if (isWebVerb) scores.SEARCH_WEB += 50;
+  const isSearchAction = /\b(browse|web\s*search|google|search|look\s*up|find\s*out|check\s*(?:for|on|out|the)?|lookup|fetch|retrieve|investigate|research|verify)\b/i.test(p) ||
+    p.startsWith('search') || p.startsWith('find') || p.startsWith('check') || p.startsWith('lookup') ||
+    /\b(?:can\s+(?:you|i|we)\s+)?(?:check|find|look\s*up|search|tell\s+me|get)\b/i.test(p);
+
+  const isRealTimeOrFactualQuery = /\b(today'?s?|tonight|latest|current|recent|live|real-?time|right\s*now)\b/i.test(p) ||
+    /\b(who\s*(?:is|was|won|leads)|where\s*(?:is|are|was)|when\s*(?:did|is|was)|what\s*happened|how\s*(?:much|many)|population\s*of|capital\s*of|price\s*of|rate\s*of|score\s*of|news\s*on|status\s*of|index\s*of)\b/i.test(p);
+
+  if (isSearchAction) scores.SEARCH_WEB += 60;
+  if (isRealTimeOrFactualQuery) scores.SEARCH_WEB += 55;
   if (/\[tool:search_web/i.test(p)) scores.SEARCH_WEB += 90;
   if (/\b(in\s*(?:the\s*)?(?:files|code|codebase|workspace|vfs|project|repo))\b/i.test(p) || targetExists || /\b(defined\s*in|function|class)\b/i.test(p)) {
     scores.SEARCH_WEB = Math.max(0, scores.SEARCH_WEB - 70);
@@ -197,7 +203,9 @@ export function scoreJevTensor(prompt = '', { entities = {}, targetFile = '', ta
   if (hasQuestionPattern && scores.SCHEDULE_CALENDAR < 50 && scores.VIEW_FILE < 50 && scores.SEARCH_WEB < 50) {
     scores.CONVERSATION += 45;
   }
-  if (/\b(explain|teach|guide|clarify|what\s*is|difference\s*between|why\s*does)\b/i.test(p)) scores.CONVERSATION += 50;
+  if (/\b(explain|teach|guide|clarify|what\s*is|difference\s*between|why\s*does)\b/i.test(p) && scores.SCHEDULE_CALENDAR < 50 && scores.SEARCH_WEB < 50 && scores.VIEW_FILE < 50) {
+    scores.CONVERSATION += 50;
+  }
   if (/\b(thanks|thank\s*you|great\s*job|awesome)\b/i.test(p)) scores.CONVERSATION += 50;
 
   // =========================================================================
