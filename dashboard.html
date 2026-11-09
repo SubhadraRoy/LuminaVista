@@ -418,7 +418,7 @@
             <!-- Left Slide-out Sessions Drawer -->
             <div id="aiSessionsDrawer" class="hidden w-72 max-w-[85vw] glass-panel rounded-2xl flex flex-col overflow-hidden absolute md:relative z-30 inset-y-0 left-0 border border-white/10 shadow-2xl h-full transition-all duration-300 shrink-0 bg-surface-950/95 md:bg-transparent backdrop-blur-2xl md:backdrop-blur-none">
               <div class="p-3.5 border-b border-white/10 bg-surface-900/90 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i>
                   <span class="font-heading font-bold text-xs text-white">Chat Sessions</span>
                 </div>
@@ -529,11 +529,11 @@
           <div id="aiCodespaceColumn" class="hidden w-full h-full glass-panel rounded-2xl flex flex-col overflow-hidden relative border border-cyan-500/30 shadow-2xl transition-all duration-300">
             <!-- IDE Top Header -->
             <div class="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/10 bg-surface-900/90 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shrink-0">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <i data-lucide="folder-code" class="w-4 h-4 text-emerald-400"></i>
                 <span class="font-heading font-bold text-xs text-white truncate max-w-[130px] xs:max-w-xs sm:max-w-none">Artifacts Codespace</span>
               </div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <div class="flex bg-surface-950 p-0.5 rounded-lg border border-white/10 text-[10px] font-mono">
                   <button onclick="setCodespaceView('preview')" id="btnCsViewPreview" class="px-2 sm:px-2.5 py-1 rounded text-zinc-400 hover:text-white cursor-pointer">Preview</button>
                   <button onclick="setCodespaceView('editor')" id="btnCsViewEditor" class="px-2 sm:px-2.5 py-1 rounded bg-cyan-500 text-black font-bold cursor-pointer">Code</button>
@@ -586,7 +586,7 @@
               <div class="w-36 sm:w-48 border-r border-white/5 bg-surface-900/30 flex flex-col shrink-0 text-xs font-mono">
                 <div class="p-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-500 font-bold flex justify-between items-center">
                   <span>Explorer</span>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <label class="hover:text-emerald-400 cursor-pointer text-zinc-400" title="Upload Files">
                       <i data-lucide="upload-cloud" class="w-3 h-3"></i>
                       <input type="file" multiple class="hidden" onchange="uploadVfsFiles(this.files)" />
@@ -1014,7 +1014,7 @@
       <!-- ===================================================================== -->
       <!-- TAB 11: GOOGLE CALENDAR REPLICA & AI REAL-LIFE SCHEDULER               -->
       <!-- ===================================================================== -->
-      <section id="tab-calendar" class="tab-pane hidden flex flex-col h-[calc(100vh-105px)] space-y-3">
+      <section id="tab-calendar" class="tab-pane hidden flex flex-col h-[calc(100vh-105px)] space-y-3 overflow-x-hidden max-w-full">
         <!-- Top Calendar Header Toolbar -->
         <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-surface-900/80 rounded-2xl border border-white/10 shrink-0 shadow-lg">
           <!-- Left: Drawer Toggle, Today, Steppers, Month/Year Title -->
@@ -1043,7 +1043,7 @@
           </div>
 
           <!-- Right: AI Plan, Sync Status, View Selector, + Create Button -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <button onclick="LuminaCalendar.aiAutoPlanDay()" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all hover:scale-102" title="AI Real-Life Daily Auto-Schedule">
               <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i> <span class="hidden sm:inline">AI Smart Plan</span>
             </button>
@@ -1083,7 +1083,7 @@
         <!-- Main Body: Collapsible Left Drawer + Active Calendar View Container -->
         <div class="flex-1 flex gap-3 min-h-0 overflow-hidden">
           <!-- Left Collapsible Mini Drawer -->
-          <div id="calMiniSidebar" class="w-64 shrink-0 flex flex-col gap-3 overflow-y-auto custom-scrollbar p-3 bg-surface-900/60 rounded-2xl border border-white/5 transition-all">
+          <div id="calMiniSidebar" class="hidden md:flex w-64 shrink-0 flex-col gap-3 overflow-y-auto custom-scrollbar p-3 bg-surface-900/60 rounded-2xl border border-white/5 transition-all">
             <!-- Mini Month Calendar -->
             <div id="calMiniMonthContainer"></div>
 
@@ -1125,7 +1125,7 @@
       <section id="tab-controls" class="tab-pane space-y-4 hidden">
         <!-- Settings Sub-Tabs Navigation -->
         <div class="flex items-center justify-between border-b border-white/10 pb-3">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <button id="btnSettingsGeneral" onclick="switchSettingsSubTab('general')" class="settings-subtab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 cursor-pointer">
               <i data-lucide="sliders" class="w-3.5 h-3.5"></i> System Preferences
             </button>

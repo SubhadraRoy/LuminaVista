@@ -414,8 +414,8 @@
       const dayEvents = getEventsForDate(cellDate);
 
       const todayBoxClass = isToday 
-        ? 'group relative p-2 flex flex-col min-h-[95px] transition-all cursor-pointer bg-cyan-950/25 ring-1 ring-inset ring-cyan-400/80 shadow-[inset_0_0_12px_rgba(0,242,254,0.12)]' 
-        : 'group relative p-2 flex flex-col min-h-[95px] transition-all hover:bg-white/[0.03] cursor-pointer';
+        ? 'group relative p-2 flex flex-col min-h-[90px] transition-all cursor-pointer bg-cyan-950/25 ring-2 ring-inset ring-cyan-400 shadow-[inset_0_0_12px_rgba(0,242,254,0.12)]' 
+        : 'group relative p-2 flex flex-col min-h-[90px] transition-all hover:bg-white/[0.03] cursor-pointer';
 
       html += `
         <div class="${todayBoxClass}"
@@ -1678,10 +1678,10 @@
   }
 
   function toggleMiniSidebar() {
-    isMiniSidebarOpen = !isMiniSidebarOpen;
     const drawer = document.getElementById('calMiniSidebar');
     if (drawer) {
-      drawer.classList.toggle('hidden', !isMiniSidebarOpen);
+      drawer.classList.toggle('hidden');
+      isMiniSidebarOpen = !drawer.classList.contains('hidden');
     }
   }
 

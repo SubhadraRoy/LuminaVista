@@ -245,7 +245,14 @@ async function runMegaAudit() {
 
   console.log("[CDP] Navigating to dashboard.html...");
   await sendCdp('Page.navigate', { url: `http://127.0.0.1:${PORT}/dashboard.html` });
-  await new Promise(r => setTimeout(r, 1500));
+
+  // Wait until document.readyState === 'complete' and main elements are fully mounted
+  for (let i = 0; i < 40; i++) {
+    const isReady = await evaluate("document.readyState === 'complete' && !!document.body && !!document.getElementById('mainSidebar') && !!document.getElementById('tab-ai-studio')");
+    if (isReady) break;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  await new Promise(r => setTimeout(r, 500));
 
   // Initialize SmartLock mock state
   await evaluate(`(() => {
@@ -299,13 +306,16 @@ async function runMegaAudit() {
       maxTouchPoints: isMobile ? 5 : 0
     });
     await new Promise(r => setTimeout(r, 120));
+    if (isMobile) {
+      await evaluate("window.closeMobileSidebar && window.closeMobileSidebar()");
+    }
 
     for (const tab of ALL_14_TABS) {
       totalSessions++;
       await evaluate(`switchTab('${tab.id}')`);
       await new Promise(r => setTimeout(r, 75));
 
-      const tabResult = await evaluate(`(() => {
+      const tabResult = (await evaluate(`(() => {
         let targetId = '${tab.id}';
         if (targetId === 'tab-artifacts') {
           targetId = 'tab-ai-studio';
@@ -316,9 +326,11 @@ async function runMegaAudit() {
         const style = window.getComputedStyle(tabEl);
         if (style.display === 'none') return { ok: false, error: 'Tab is display: none: ' + targetId };
 
-        const docW = document.documentElement.scrollWidth;
+        const doc = document.documentElement;
+        const body = document.body;
+        const docW = doc ? doc.scrollWidth : window.innerWidth;
         const winW = window.innerWidth;
-        const bodyW = document.body.scrollWidth;
+        const bodyW = body ? body.scrollWidth : window.innerWidth;
         const hasDocOverflow = docW > winW + 2 || bodyW > winW + 2;
 
         const tabScrollW = tabEl.scrollWidth;
@@ -384,7 +396,7 @@ async function runMegaAudit() {
           componentCheck,
           compError
         };
-      })()`);
+      })()`)) || { ok: false, error: 'CDP Evaluation returned undefined' };
 
       if (tabResult.ok) {
         passedSessions++;

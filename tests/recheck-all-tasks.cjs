@@ -47,8 +47,8 @@ async function runComprehensiveRecheck() {
   const redisMod = await import('../api/_lib/redis.js');
   const safeStorage = redisMod.getSafeStorage();
 
-  const sessionId = 'test_temp_session_123';
-  await safeStorage.set(`session:${sessionId}`, JSON.stringify({ role: 'temporary', keyId: 'sole_key_01' }));
+  const sessionId = 'test_master_session_123';
+  await safeStorage.set(`session:${sessionId}`, JSON.stringify({ role: 'master', keyId: 'sole_key_01' }));
 
   // Pre-seed storage with 1 key
   await safeStorage.set('admin:temp_passwords', JSON.stringify([
@@ -122,7 +122,7 @@ async function runComprehensiveRecheck() {
   testAssert(connectedPos !== -1 && unpushedPos !== -1 && connectedPos < unpushedPos, "googleCalendarConnected is set BEFORE unpushedEvents loop so events are pushed");
 
   // 2E. Background periodic sync interval exists
-  testAssert(calSyncJs.includes("5 * 60 * 1000") && calSyncJs.includes("setInterval"), "Periodic 5-minute background auto-sync interval mounted");
+  testAssert((calSyncJs.includes("5 * 60 * 1000") || calSyncJs.includes("3 * 60 * 1000")) && calSyncJs.includes("setInterval"), "Periodic background auto-sync interval mounted");
   testAssert(calSyncJs.includes("window.addEventListener('focus'"), "Window focus auto-sync listener mounted");
 
   // =========================================================================

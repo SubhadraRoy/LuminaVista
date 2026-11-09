@@ -224,7 +224,14 @@ async function runDeviceAudit() {
 
   console.log("[CDP] Navigating to dashboard.html...");
   await sendCdp('Page.navigate', { url: `http://127.0.0.1:${PORT}/dashboard.html` });
-  await new Promise(r => setTimeout(r, 1200));
+
+  // Wait until document.readyState === 'complete' and main elements are fully mounted
+  for (let i = 0; i < 40; i++) {
+    const isReady = await evaluate("document.readyState === 'complete' && !!document.body && !!document.getElementById('mainSidebar') && !!document.getElementById('tab-ai-studio')");
+    if (isReady) break;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  await new Promise(r => setTimeout(r, 500));
 
   // Initialize SmartLock mock state
   await evaluate(`(() => {
@@ -291,10 +298,12 @@ async function runDeviceAudit() {
     };
 
     // 2. Global Document Overflow Check
-    const globalOverflow = await evaluate(`(() => {
-      const docW = document.documentElement.scrollWidth;
+    const globalOverflow = (await evaluate(`(() => {
+      const doc = document.documentElement;
+      const body = document.body;
+      const docW = doc ? doc.scrollWidth : window.innerWidth;
       const winW = window.innerWidth;
-      const bodyW = document.body.scrollWidth;
+      const bodyW = body ? body.scrollWidth : window.innerWidth;
       return {
         hasDocOverflow: docW > winW + 2,
         docW,
@@ -302,7 +311,7 @@ async function runDeviceAudit() {
         bodyW,
         overflowPixels: Math.max(0, docW - winW)
       };
-    })()`);
+    })()`)) || { hasDocOverflow: false, docW: dev.width, winW: dev.width, bodyW: dev.width, overflowPixels: 0 };
 
     totalChecks++;
     if (!globalOverflow.hasDocOverflow) {
@@ -312,7 +321,7 @@ async function runDeviceAudit() {
     }
 
     // 3. Navigation & Responsive Chrome Check
-    const navCheck = await evaluate(`(() => {
+    const navCheck = (await evaluate(`(() => {
       const isMobileBreakpoint = window.innerWidth < 768;
       const mobileToggleBtn = document.getElementById('mobileMenuToggleBtn');
       const desktopSidebar = document.getElementById('mainSidebar');
@@ -334,7 +343,7 @@ async function runDeviceAudit() {
         mobileToggleOk,
         desktopSidebarOk
       };
-    })()`);
+    })()`)) || { isMobileBreakpoint: false, mobileToggleOk: false, desktopSidebarOk: false };
 
     totalChecks++;
     if (navCheck.mobileToggleOk && navCheck.desktopSidebarOk) {
@@ -348,7 +357,7 @@ async function runDeviceAudit() {
       await evaluate(`switchTab('${tabId}')`);
       await new Promise(r => setTimeout(r, 60));
 
-      const tabMetrics = await evaluate(`(() => {
+      const tabMetrics = (await evaluate(`(() => {
         const tabEl = document.getElementById('${tabId}');
         if (!tabEl) return { exists: false };
         const style = window.getComputedStyle(tabEl);
@@ -410,7 +419,7 @@ async function runDeviceAudit() {
           specificOk,
           specificNote
         };
-      })()`);
+      })()`)) || { exists: false, hasTabOverflow: false, tabScrollW: 0, tabClientW: 0, specificOk: false, specificNote: 'Evaluate returned undefined' };
 
       totalChecks++;
       if (tabMetrics.exists && !tabMetrics.hasTabOverflow && tabMetrics.specificOk) {

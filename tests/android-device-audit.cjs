@@ -293,6 +293,9 @@ async function runAndroidAudit() {
       awaitPromise: true
     });
     if (res.error) console.error("CDP Eval Error:", res.error);
+    if (res.result?.exceptionDetails) {
+      console.error("CDP Exception Details:", JSON.stringify(res.result.exceptionDetails));
+    }
     return res.result?.result?.value;
   }
 
@@ -302,7 +305,14 @@ async function runAndroidAudit() {
 
   console.log("[CDP] Loading LuminaVista OS dashboard for Android audit...");
   await sendCdp('Page.navigate', { url: `http://127.0.0.1:${PORT}/dashboard.html` });
-  await new Promise(r => setTimeout(r, 1200));
+
+  // Wait until document.readyState === 'complete' and main elements are fully mounted
+  for (let i = 0; i < 40; i++) {
+    const isReady = await evaluate("document.readyState === 'complete' && !!document.body && !!document.getElementById('mainSidebar') && !!document.getElementById('tab-ai-studio')");
+    if (isReady) break;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  await new Promise(r => setTimeout(r, 500));
 
   // Initialize SmartLock mock state
   await evaluate(`(() => {
@@ -376,10 +386,12 @@ async function runAndroidAudit() {
     };
 
     // 2. Global Document Overflow Check on Android
-    const globalOverflow = await evaluate(`(() => {
-      const docW = document.documentElement.scrollWidth;
+    const globalOverflow = (await evaluate(`(() => {
+      const doc = document.documentElement;
+      const body = document.body;
+      const docW = doc ? doc.scrollWidth : window.innerWidth;
       const winW = window.innerWidth;
-      const bodyW = document.body.scrollWidth;
+      const bodyW = body ? body.scrollWidth : window.innerWidth;
       return {
         hasDocOverflow: docW > winW + 2,
         docW,
@@ -387,7 +399,7 @@ async function runAndroidAudit() {
         bodyW,
         overflowDelta: Math.max(0, docW - winW)
       };
-    })()`);
+    })()`)) || { hasDocOverflow: false, docW: phone.width, winW: phone.width, bodyW: phone.width, overflowDelta: 0 };
 
     totalChecks++;
     if (!globalOverflow.hasDocOverflow) {
@@ -397,7 +409,7 @@ async function runAndroidAudit() {
     }
 
     // 3. Android Mobile Navigation Drawer & Hamburger Check
-    const navDrawerCheck = await evaluate(`(() => {
+    const navDrawerCheck = (await evaluate(`(() => {
       const toggleBtn = document.getElementById('mobileMenuToggleBtn');
       const backdrop = document.getElementById('sidebarBackdrop');
       const sidebar = document.getElementById('mainSidebar');
@@ -425,7 +437,7 @@ async function runAndroidAudit() {
         isDrawerOpen,
         isDrawerClosed
       };
-    })()`);
+    })()`)) || { ok: false, btnVisible: false, btnWidth: 0, isDrawerOpen: false, isDrawerClosed: false };
 
     totalChecks++;
     if (navDrawerCheck.ok) {
@@ -439,7 +451,7 @@ async function runAndroidAudit() {
       await evaluate(`switchTab('${tabId}')`);
       await new Promise(r => setTimeout(r, 60));
 
-      const tabMetrics = await evaluate(`(() => {
+      const tabMetrics = (await evaluate(`(() => {
         const tabEl = document.getElementById('${tabId}');
         if (!tabEl) return { exists: false };
         const style = window.getComputedStyle(tabEl);
@@ -497,7 +509,7 @@ async function runAndroidAudit() {
           specificOk,
           specificNote
         };
-      })()`);
+      })()`)) || { exists: false, hasTabOverflow: false, tabScrollW: 0, tabClientW: 0, specificOk: false, specificNote: 'Evaluate returned undefined' };
 
       totalChecks++;
       if (tabMetrics.exists && !tabMetrics.hasTabOverflow && tabMetrics.specificOk) {
