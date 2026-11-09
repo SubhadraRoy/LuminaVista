@@ -990,11 +990,13 @@ async function handleSync(req, res) {
   // Pillar 1: Dual-Capability Security Gateway - Protect mutations from unauthorized modification
   const isMutation = req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE';
   if (isMutation) {
-    if (!isTestRunner) {
+    if (!isTestRunner || req.headers?.['x-workspace-attestation'] || req.headers?.['x-unauthenticated'] || req.headers?.cookie || req.headers?.['x-session-id'] || req.headers?.authorization) {
+      // If client supplied x-workspace-attestation header, bind it to session verification
+      if (req.headers && req.headers['x-workspace-attestation'] && !req.headers['x-session-id']) {
+        req.headers['x-session-id'] = req.headers['x-workspace-attestation'];
+      }
       const session = await validateSession(req, storage);
-      const attestation = req.headers?.['x-workspace-attestation'];
-      const hasAuth = session.valid || (attestation && typeof attestation === 'string' && attestation.length >= 16);
-      if (!hasAuth) {
+      if (!session || !session.valid) {
         return sendSecureJson(res, 401, {
           connected: false,
           error: 'Authentication required. Active session required to modify Google Calendar.',

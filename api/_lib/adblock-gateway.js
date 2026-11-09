@@ -249,16 +249,28 @@ export default async function handler(req, res) {
 
   // Public Time Synchronization Action
   if (action === 'time') {
+    const rate = await checkRateLimit(req, storage, 'adblock_time', 60, 60);
+    if (!rate.allowed) {
+      auditLog('ADBLOCK_RATE_LIMITED', req, 'Action: time');
+      return sendSecureJson(res, rate.status || 429, { error: rate.error || 'Rate limit exceeded' }, req);
+    }
+
     const nowMs = Date.now();
     const nowSec = Math.floor(nowMs / 1000);
+    const challenge = String(urlObj.searchParams.get('challenge') || (req.query && req.query.challenge) || (req.body && req.body.challenge) || '').slice(0, 64);
     const secret = await ensureDeviceSecretLoaded(storage);
-    const sig = secret ? crypto.createHmac('sha256', secret).update(String(nowSec)).digest('hex') : '';
+    const sig = (secret && challenge)
+      ? crypto.createHmac('sha256', secret).update(`time.${nowSec}.${challenge}`, 'utf8').digest('hex').toLowerCase()
+      : '';
     return sendSecureJson(res, 200, {
       ok: true,
       time: nowSec,
+      serverTime: nowSec,
       timeMs: nowMs,
       iso: new Date(nowMs).toISOString(),
-      sig
+      challenge,
+      sig,
+      signature: sig
     }, req);
   }
 
@@ -306,6 +318,11 @@ export default async function handler(req, res) {
     const isColdReboot = (auth.seq === 1) || (payload.uptime && payload.uptime < 120);
     if (auth.seq < lastSeq && !isColdReboot) {
       auditLog('ADBLOCK_REGRESSIVE_SEQ', req, `seq=${auth.seq}, lastSeq=${lastSeq}`);
+      return sendSecureJson(res, 401, {
+        error: 'Stale or out-of-order telemetry packet rejected',
+        lastSeq,
+        serverTime: nowSec
+      }, req);
     }
     const nextSeq = Math.max(lastSeq, auth.seq);
 

@@ -12,6 +12,24 @@ export const config = {
   ],
 };
 
+function constantTimeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const enc = new TextEncoder();
+  const aBuf = enc.encode(a);
+  const bBuf = enc.encode(b);
+  if (aBuf.byteLength !== bBuf.byteLength) return false;
+  if (typeof crypto !== 'undefined' && typeof crypto.timingSafeEqual === 'function') {
+    try {
+      return crypto.timingSafeEqual(aBuf, bBuf);
+    } catch (_) {}
+  }
+  let mismatch = 0;
+  for (let i = 0; i < aBuf.byteLength; i++) {
+    mismatch |= aBuf[i] ^ bBuf[i];
+  }
+  return mismatch === 0;
+}
+
 async function verifySovereignTokenEdge(token, secret) {
   if (!token || typeof token !== 'string' || !token.startsWith('lv_')) return false;
   const parts = token.split('_');
@@ -35,7 +53,7 @@ async function verifySovereignTokenEdge(token, secret) {
     );
     const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
     const expectedSig = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    return signature === expectedSig;
+    return constantTimeEqual(signature, expectedSig);
   } catch (err) {
     console.error('[EDGE_AUTH] HMAC verification error:', err);
     return false;
