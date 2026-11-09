@@ -69,9 +69,11 @@ window.vfs = {
 };
 window.csActiveFile = 'main.py';
 
+const todayStr = new Date().toISOString().slice(0, 10);
+const futureStr = new Date(Date.now() + 86400000 * 5).toISOString().slice(0, 10);
 window.luminaEvents = [
-  { id: '1', title: 'Systems Architecture Sync', start: new Date().toISOString().slice(0, 10) + 'T10:00:00', end: new Date().toISOString().slice(0, 10) + 'T11:00:00', category: 'work' },
-  { id: '2', title: 'Future Milestone Review', start: '2026-11-01T15:00:00', end: '2026-11-01T16:00:00', category: 'focus' }
+  { id: '1', title: 'Systems Architecture Sync', start: todayStr + 'T10:00:00', end: todayStr + 'T11:00:00', category: 'work' },
+  { id: '2', title: 'Future Milestone Review', start: futureStr + 'T15:00:00', end: futureStr + 'T16:00:00', category: 'focus' }
 ];
 
 localStorage.setItem('lumina_ai_model', 'llama-3.3-70b-versatile');

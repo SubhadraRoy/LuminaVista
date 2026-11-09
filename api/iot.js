@@ -674,8 +674,6 @@ export default async function handler(req, res) {
       applyPendingCommandsToState(status, null, activeCommands);
     }
 
-    const lastSeenMs = meta && meta.lastSeenMs ? Number(meta.lastSeenMs) : 0;
-    const online = Boolean(lastSeenMs && (nowMs - lastSeenMs) < 12000);
     const connHistory = Array.isArray(rawConnHistory) ? [...rawConnHistory] : [];
 
     // 24/7 Cloud Watchdog: Record exact OFFLINE transition if ESP32 stopped sending heartbeats
