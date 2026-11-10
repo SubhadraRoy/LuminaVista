@@ -338,9 +338,9 @@ export async function verifyDeviceRequest(req, rawBodyStr, storage) {
       const rawMeta = await storage.get(KEY_META);
       const meta = rawMeta ? (typeof rawMeta === 'string' ? JSON.parse(rawMeta) : rawMeta) : null;
       if (meta && typeof meta.lastSeq === 'number' && meta.lastSeq > 0) {
-        const isReboot = seq === 1;
+        const isReboot = seq === 1 || (meta.lastSeq > 50 && seq <= 20) || (meta.lastSeq - seq > 500);
         if (isReboot) {
-          auditLog('IOT_SEQUENCE_RESET', req, `Reboot detected: seq reset from ${meta.lastSeq} to 1`);
+          auditLog('IOT_SEQUENCE_RESET', req, `Reboot detected: seq reset from ${meta.lastSeq} to ${seq}`);
         } else if (seq <= meta.lastSeq) {
           auditLog('IOT_STALE_SEQUENCE', req, `seq=${seq}, lastSeq=${meta.lastSeq}`);
           return {
@@ -758,9 +758,16 @@ export default async function handler(req, res) {
 
       const verification = await verifyDeviceRequest(req, rawBodyStr, storage);
       if (!verification.valid) {
+        if (verification.lastSeq !== undefined) {
+          res.setHeader('X-Lumina-Last-Seq', String(verification.lastSeq));
+        }
+        if (verification.serverTime) {
+          res.setHeader('X-Lumina-Server-Time', String(verification.serverTime));
+        }
         return sendSecureJson(res, verification.status || 401, {
           error: verification.error,
-          ...(verification.serverTime ? { serverTime: verification.serverTime } : {})
+          ...(verification.serverTime ? { serverTime: verification.serverTime } : {}),
+          ...(verification.lastSeq !== undefined ? { lastSeq: verification.lastSeq } : {})
         });
       }
 
@@ -793,11 +800,13 @@ export default async function handler(req, res) {
 
       // Sequence Number Monotonicity Check: reject stale or duplicate/reordered telemetry packets
       if (prevMeta && typeof prevMeta.lastSeq === 'number' && prevMeta.lastSeq > 0) {
-        const isReboot = verification.seq === 1;
+        const isReboot = verification.seq === 1 || (prevMeta.lastSeq > 50 && verification.seq <= 20) || (prevMeta.lastSeq - verification.seq > 500);
         if (isReboot) {
-          auditLog('IOT_SEQUENCE_RESET', req, `Reboot detected: seq reset from ${prevMeta.lastSeq} to 1`);
+          auditLog('IOT_SEQUENCE_RESET', req, `Reboot detected: seq reset from ${prevMeta.lastSeq} to ${verification.seq}`);
         } else if (verification.seq <= prevMeta.lastSeq) {
           auditLog('IOT_STALE_SEQUENCE', req, `seq=${verification.seq}, lastSeq=${prevMeta.lastSeq}`);
+          res.setHeader('X-Lumina-Last-Seq', String(prevMeta.lastSeq));
+          res.setHeader('X-Lumina-Server-Time', String(nowSec));
           return sendSecureJson(res, 401, {
             error: 'Stale or out-of-order telemetry packet rejected',
             lastSeq: prevMeta.lastSeq,
@@ -1062,7 +1071,7 @@ export default async function handler(req, res) {
       const meta = {
         ...(prevMeta || {}),
         lastSeenMs: nowMs,
-        lastSeq: verification.seq === 1 ? 1 : Math.max(verification.seq, prevMeta?.lastSeq || 0),
+        lastSeq: (verification.seq === 1 || (prevMeta?.lastSeq > 50 && verification.seq <= 20) || (prevMeta?.lastSeq - verification.seq > 500)) ? verification.seq : Math.max(verification.seq, prevMeta?.lastSeq || 0),
         wasOnline: true,
         lastOnlineMs: isTransitionToOnline ? nowMs : (prevMeta.lastOnlineMs || nowMs),
         lastOnlineTs: isTransitionToOnline ? nowTs : (prevMeta.lastOnlineTs || nowTs),
@@ -1096,9 +1105,12 @@ export default async function handler(req, res) {
       }
       await p.exec();
 
+      res.setHeader('X-Lumina-Last-Seq', String(meta.lastSeq));
+      res.setHeader('X-Lumina-Server-Time', String(nowSec));
       return sendSecureJson(res, 200, {
         ok: true,
         serverTime: nowSec,
+        lastSeq: meta.lastSeq,
         ackedLogSeq,
         ackedConnSeq,
         pendingCommands: remainingQueue
