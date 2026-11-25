@@ -1,4 +1,4 @@
-﻿{
+{
   "outputDirectory": ".",
   "cleanUrls": true,
   "headers": [
@@ -19,7 +19,10 @@
     }
   ],
   "rewrites": [
+    { "source": "/exhibition", "destination": "/exhibition.html" },
+    { "source": "/science-exhibition", "destination": "/exhibition.html" },
+    { "source": "/scripts", "destination": "/exhibition.html" },
     { "source": "/", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!exhibition|science-exhibition|scripts|index\\.html).*)", "destination": "/index.html" }
   ]
 }

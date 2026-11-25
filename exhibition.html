@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Science Exhibition Scripts — LuminaVista</title>
+  <meta name="description" content="Student narration scripts and hardware overview for Automatic Fertilizer Setup and Smart Solar Weather Monitoring System.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' fill='%23ffffff'>L</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @media (prefers-reduced-motion: no-preference) {
+      @view-transition {
+        navigation: auto;
+      }
+    }
+
+    :root {
+      --bg-void: #060607;
+      --bg-surface: #0e0e11;
+      --bg-elevated: #16161b;
+      --text-primary: #f5f5f7;
+      --text-secondary: #b4b4be;
+      --text-dim: #8c8c98;
+      --border-hairline: rgba(255, 255, 255, 0.11);
+      --border-strong: rgba(255, 255, 255, 0.28);
+      --accent: #ffffff;
+      --focus-ring: #ffffff;
+      --font-display: 'Cinzel', Georgia, serif;
+      --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+      --prose-size: 1.0625rem;
+      --prose-leading: 1.75;
+    }
+
+    [data-stage-scale="large"] {
+      --prose-size: 1.25rem;
+      --prose-leading: 1.8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      color-scheme: dark;
+      scroll-behavior: smooth;
+      scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+      scrollbar-width: thin;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--bg-void);
+      background-image:
+        radial-gradient(1200px 600px at 50% -10%, rgba(255, 255, 255, 0.045), transparent 70%);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::selection {
+      background: #ffffff;
+      color: #060607;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.36);
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+
+    a {
+      color: inherit;
+      text-underline-offset: 0.22em;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+
+    /* Sticky Top Navigation */
+    .site-bar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(6, 6, 7, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .site-bar-inner {
+      max-width: 1180px;
+      margin-inline: auto;
+      padding: 0.875rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.45rem 0.9rem;
+      min-block-size: 36px;
+      border: 1px solid var(--border-hairline);
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .back-link:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-strong);
+    }
+
+    .brand-mark {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.95rem;
+      min-block-size: 36px;
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+    }
+
+    .action-btn[aria-pressed="true"] {
+      background: #ffffff;
+      color: #060607;
+      border-color: #ffffff;
+    }
+
+    /* Main Shell */
+    .page-shell {
+      max-width: 1180px;
+      margin-inline: auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    .page-head {
+      padding-bottom: 2rem;
+    }
+
+    .page-head h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4.6vw, 3.6rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.015em;
+      color: var(--text-primary);
+      text-wrap: balance;
+    }
+
+    .page-summary {
+      margin-top: 0.9rem;
+      max-width: 65ch;
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      text-wrap: pretty;
+    }
+
+    /* Accessible Single-Row Tablist */
+    .project-tablist {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 1.75rem;
+      border-bottom: 1px solid var(--border-hairline);
+      scrollbar-width: none;
+      scroll-snap-type: inline proximity;
+    }
+
+    .project-tablist::-webkit-scrollbar {
+      display: none;
+    }
+
+    .project-tab {
+      position: relative;
+      flex: none;
+      scroll-snap-align: start;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.65rem;
+      padding: 0.9rem 0.15rem 1rem;
+      min-block-size: 44px;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+    }
+
+    .project-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .project-tab[aria-selected="true"] {
+      color: var(--accent);
+    }
+
+    /* Shape-based selected indicator for WCAG 1.4.1 & Forced Colors Mode */
+    .project-tab[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      border-block-end: 3px solid var(--accent);
+    }
+
+    .tab-duration {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-dim);
+    }
+
+    .project-tab[aria-selected="true"] .tab-duration {
+      color: var(--text-secondary);
+    }
+
+    /* Tab Panels Grid — keeps hidden=until-found panels overlapped without gap artifacts */
+    .panels-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      margin-top: 2.25rem;
+    }
+
+    .panels-stage.linear-fallback {
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+    }
+
+    .project-panel {
+      grid-area: 1 / 1;
+    }
+
+    .project-panel[hidden] {
+      /* Preserve native hidden / hidden="until-found" behavior without putting boxes on the panel itself */
+      margin: 0;
+      padding: 0;
+    }
+
+    .panel-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+    }
+
+    /* Exhibition Project Header */
+    .exhibit-banner {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .exhibit-header-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1.25rem;
+    }
+
+    .exhibit-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      text-wrap: balance;
+    }
+
+    .exhibit-tagline {
+      margin-top: 0.65rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      max-width: 60ch;
+      text-wrap: balance;
+    }
+
+    .exhibit-meta {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+    }
+
+    .meta-sep {
+      color: var(--text-dim);
+      user-select: none;
+    }
+
+    /* Controls Strip: Speaker Highlight + Stage Font + Copy */
+    .script-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-top: 0.25rem;
+    }
+
+    .speaker-filter {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .filter-label {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-inline-end: 0.35rem;
+    }
+
+    .filter-pill {
+      padding: 0.35rem 0.75rem;
+      min-block-size: 32px;
+      border: 1px solid var(--border-hairline);
+      border-radius: 999px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .filter-pill:hover {
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .filter-pill[aria-pressed="true"] {
+      background: #ffffff;
+      color: #060607;
+      border-color: #ffffff;
+    }
+
+    .utility-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    /* Accessible Copy Control */
+    .copy-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .copy-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-inline-size: 24px;
+      min-block-size: 36px;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .copy-button:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+    }
+
+    .copy-button .icon-check {
+      display: none;
+    }
+
+    .copy-button[data-copied] .icon-copy {
+      display: none;
+    }
+
+    .copy-button[data-copied] .icon-check {
+      display: inline-block;
+    }
+
+    .copy-button[data-copied] {
+      border-color: #6ee7b7;
+      color: #6ee7b7;
+    }
+
+    .copy-button[data-failed] {
+      border-color: #fca5a5;
+      color: #fca5a5;
+    }
+
+    .copy-tip {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      min-inline-size: 4.5rem;
+    }
+
+    .copy-button[data-copied] + .copy-tip,
+    .copy-button[data-failed] + .copy-tip {
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .copy-tip {
+        transition: opacity 0.01ms;
+      }
+    }
+
+    /* Editorial Two-Column Workspace */
+    .exhibit-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    @media (min-width: 920px) {
+      .exhibit-grid {
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 3.5rem;
+      }
+    }
+
+    /* Left Sticky Hardware & Section Rail */
+    .spec-rail {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    @media (min-width: 920px) {
+      .spec-rail {
+        position: sticky;
+        top: 5.25rem;
+      }
+    }
+
+    .rail-block h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .beat-nav {
+      margin-top: 0.75rem;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .beat-nav a {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.35rem 0.25rem;
+      text-decoration: none;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      border-radius: 4px;
+      transition: color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .beat-nav a:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .beat-nav-speaker {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .hardware-list {
+      margin-top: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .hardware-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .hardware-item dt {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .hardware-item dd {
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    /* Main Narration Script Column */
+    .script-flow {
+      max-width: 68ch;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .script-beat {
+      padding-block: 1.75rem;
+      border-bottom: 1px solid var(--border-hairline);
+      transition: opacity 0.2s ease;
+      scroll-margin-top: 5.5rem;
+    }
+
+    .script-beat:first-child {
+      padding-top: 0;
+    }
+
+    .script-beat:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .script-beat.is-dimmed {
+      opacity: 0.36;
+    }
+
+    .beat-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .beat-head h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-wrap: balance;
+    }
+
+    .speaker-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.22rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .speaker-s1 {
+      color: #f5f5f7;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .speaker-s2 {
+      color: #93c5fd;
+      background: rgba(147, 197, 253, 0.1);
+      border-color: rgba(147, 197, 253, 0.28);
+    }
+
+    .speaker-s23 {
+      color: #6ee7b7;
+      background: rgba(110, 231, 183, 0.1);
+      border-color: rgba(110, 231, 183, 0.28);
+    }
+
+    .speaker-s3 {
+      color: #fcd34d;
+      background: rgba(252, 211, 77, 0.1);
+      border-color: rgba(252, 211, 77, 0.28);
+    }
+
+    .speaker-s4 {
+      color: #c4b5fd;
+      background: rgba(196, 181, 253, 0.1);
+      border-color: rgba(196, 181, 253, 0.28);
+    }
+
+    .speaker-all {
+      color: #060607;
+      background: #f5f5f7;
+      border-color: #f5f5f7;
+    }
+
+    .script-beat p {
+      font-size: var(--prose-size);
+      line-height: var(--prose-leading);
+      color: var(--text-primary);
+      text-wrap: pretty;
+    }
+
+    .script-beat p + p {
+      margin-top: 0.9rem;
+    }
+
+    .component-list {
+      margin-top: 0.95rem;
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .component-list li {
+      font-size: var(--prose-size);
+      line-height: var(--prose-leading);
+      color: var(--text-primary);
+      text-wrap: pretty;
+    }
+
+    .component-list strong {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .closing-banner {
+      margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: #ffffff;
+      text-wrap: balance;
+    }
+
+    /* Footer */
+    .page-footer {
+      max-width: 1180px;
+      margin-inline: auto;
+      padding: 2rem 1.5rem 3rem;
+      border-top: 1px solid var(--border-hairline);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Print Cue-Sheet Stylesheet */
+    @media print {
+      :root {
+        --bg-void: #ffffff;
+        --bg-surface: #f7f7f7;
+        --text-primary: #111111;
+        --text-secondary: #444444;
+        --text-dim: #555555;
+        --border-hairline: #cccccc;
+        --border-strong: #333333;
+      }
+
+      body {
+        background-image: none;
+      }
+
+      .site-bar,
+      .project-tablist,
+      .script-controls,
+      .spec-rail,
+      .page-footer {
+        display: none !important;
+      }
+
+      .panels-stage {
+        display: block;
+        margin-top: 0;
+      }
+
+      .project-panel[hidden] {
+        display: block !important;
+        visibility: visible !important;
+        content-visibility: visible !important;
+        page-break-before: always;
+      }
+
+      .exhibit-title,
+      .exhibit-tagline,
+      .beat-head h3,
+      .script-beat p,
+      .component-list li,
+      .component-list strong,
+      .closing-banner {
+        color: #111111 !important;
+      }
+
+      .exhibit-meta {
+        color: #444444 !important;
+      }
+
+      .exhibit-banner,
+      .script-beat {
+        border-color: #cccccc !important;
+      }
+
+      .script-beat.is-dimmed {
+        opacity: 1 !important;
+      }
+
+      .speaker-tag {
+        color: #111111 !important;
+        background: #f2f2f2 !important;
+        border-color: #888888 !important;
+      }
+
+      .closing-banner {
+        background: #f7f7f7 !important;
+        border-color: #333333 !important;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .site-bar-inner {
+        padding: 0.75rem 1rem;
+      }
+
+      .brand-mark {
+        display: none;
+      }
+
+      .page-shell {
+        padding: 2rem 1rem 4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-bar">
+    <div class="site-bar-inner">
+      <a href="index.html" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+        <span>Back to LuminaVista</span>
+      </a>
+      <span class="brand-mark">LuminaVista</span>
+      <div class="bar-actions">
+        <button type="button" id="printCueBtn" class="action-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          <span>Print Cue Sheet</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div class="page-head">
+      <h1>Science Exhibition Scripts</h1>
+      <p class="page-summary">
+        Two complete 2-minute student narration scripts prepared for live demonstration, speaker cue rehearsal, and printable booth reference.
+      </p>
+    </div>
+
+    <div class="tabs-root" id="exhibitionTabs">
+      <div class="project-tablist" role="tablist" aria-label="Science Exhibition Projects">
+        <button
+          type="button"
+          class="project-tab"
+          role="tab"
+          id="tab-fertilizer"
+          aria-selected="true"
+          tabindex="0"
+          data-panel="panel-fertilizer"
+          data-hash="fertilizer"
+        >
+          <span>Automatic Fertilizer Setup</span>
+          <span class="tab-duration">~2 min</span>
+        </button>
+        <button
+          type="button"
+          class="project-tab"
+          role="tab"
+          id="tab-weather"
+          aria-selected="false"
+          tabindex="-1"
+          data-panel="panel-weather"
+          data-hash="weather"
+        >
+          <span>Smart Solar Weather Monitoring System</span>
+          <span class="tab-duration">~2 min</span>
+        </button>
+      </div>
+
+      <div class="panels-stage" id="panelsStage">
+        <!-- =============================================================== -->
+        <!-- PROJECT 1: AUTOMATIC FERTILIZER SETUP                           -->
+        <!-- =============================================================== -->
+        <section
+          class="project-panel"
+          id="panel-fertilizer"
+          role="tabpanel"
+          aria-labelledby="tab-fertilizer"
+          tabindex="0"
+        >
+          <div class="panel-inner">
+            <div class="exhibit-banner">
+              <div class="exhibit-header-row">
+                <div>
+                  <h2 class="exhibit-title">Automatic Fertilizer Setup</h2>
+                  <p class="exhibit-tagline">“Feed the Crop, Not the Waste – Smart Farming for a Greener Future.”</p>
+                  <div class="exhibit-meta">
+                    <span>Student Narration Script</span>
+                    <span class="meta-sep" aria-hidden="true">|</span>
+                    <span>Science Exhibition</span>
+                    <span class="meta-sep" aria-hidden="true">|</span>
+                    <span>Approx. 2 minutes</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="script-controls">
+                <div class="speaker-filter" role="group" aria-label="Highlight speaker lines for Automatic Fertilizer Setup">
+                  <span class="filter-label">Speaker focus:</span>
+                  <button type="button" class="filter-pill" data-scope="panel-fertilizer" data-speaker="all" aria-pressed="true">All</button>
+                  <button type="button" class="filter-pill" data-scope="panel-fertilizer" data-speaker="1" aria-pressed="false">Student 1</button>
+                  <button type="button" class="filter-pill" data-scope="panel-fertilizer" data-speaker="2" aria-pressed="false">Student 2</button>
+                  <button type="button" class="filter-pill" data-scope="panel-fertilizer" data-speaker="3" aria-pressed="false">Student 3</button>
+                  <button type="button" class="filter-pill" data-scope="panel-fertilizer" data-speaker="4" aria-pressed="false">Student 4</button>
+                </div>
+
+                <div class="utility-actions">
+                  <button type="button" class="action-btn stage-toggle" aria-pressed="false">Stage Text</button>
+                  <span class="copy-wrap">
+                    <button
+                      type="button"
+                      class="copy-button"
+                      command="--copy"
+                      commandfor="fertilizer-script-body"
+                      aria-label="Copy Automatic Fertilizer Setup narration script"
+                    >
+                      <svg class="icon-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      <svg class="icon-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Copy Script</span>
+                    </button>
+                    <span class="copy-tip" role="status"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="exhibit-grid">
+              <aside class="spec-rail" aria-label="Automatic Fertilizer Setup guide and hardware">
+                <div class="rail-block">
+                  <h3>Script Sections</h3>
+                  <ul class="beat-nav">
+                    <li><a href="#fert-opening"><span>Opening</span><span class="beat-nav-speaker">Student 1</span></a></li>
+                    <li><a href="#fert-problem"><span>The Problem</span><span class="beat-nav-speaker">Student 1</span></a></li>
+                    <li><a href="#fert-solution"><span>Our Solution</span><span class="beat-nav-speaker">Student 2</span></a></li>
+                    <li><a href="#fert-how"><span>How Does It Work?</span><span class="beat-nav-speaker">S2 &amp; S3</span></a></li>
+                    <li><a href="#fert-power"><span>Rechargeable &amp; Reusable</span><span class="beat-nav-speaker">Student 3</span></a></li>
+                    <li><a href="#fert-impact"><span>Why It Matters</span><span class="beat-nav-speaker">Student 4</span></a></li>
+                    <li><a href="#fert-closing"><span>Closing</span><span class="beat-nav-speaker">All</span></a></li>
+                  </ul>
+                </div>
+
+                <div class="rail-block">
+                  <h3>Hardware Architecture</h3>
+                  <dl class="hardware-list">
+                    <div class="hardware-item">
+                      <dt>ESP32</dt>
+                      <dd>Central microcontroller coordinating drive, nozzle aiming, and spraying.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>4× BO Motors + 2× TB6612FNG</dt>
+                      <dd>Drive system wheels across custom-built chassis.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>Water Pump + L293D</dt>
+                      <dd>Measured liquid fertilizer spraying assembly.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>Metal-Gear Servo</dt>
+                      <dd>Precision arm aiming nozzle toward crops.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>18650 + TP4056 + LM2596</dt>
+                      <dd>Rechargeable battery pack, safe charging, and voltage regulation.</dd>
+                    </div>
+                  </dl>
+                </div>
+              </aside>
+
+              <article class="script-flow" id="fertilizer-script-body">
+                <section class="script-beat" id="fert-opening" data-speakers="1">
+                  <div class="beat-head">
+                    <h3>Opening</h3>
+                    <span class="speaker-tag speaker-s1">[Student 1]</span>
+                  </div>
+                  <p>Good morning, everyone! Did you know that the food on our plate begins with the health of our soil? And what if a little robot could look after that soil – carefully, safely, and without wasting a single drop?</p>
+                </section>
+
+                <section class="script-beat" id="fert-problem" data-speakers="1">
+                  <div class="beat-head">
+                    <h3>The Problem</h3>
+                    <span class="speaker-tag speaker-s1">[Student 1]</span>
+                  </div>
+                  <p>Today, fertilizer is mostly spread by hand. It is slow and tiring, and farmers are exposed to harmful chemicals. Worse, too much fertilizer is often applied – wasting money, damaging the soil and washing into rivers and ponds, where it pollutes our water.</p>
+                </section>
+
+                <section class="script-beat" id="fert-solution" data-speakers="2">
+                  <div class="beat-head">
+                    <h3>Our Solution</h3>
+                    <span class="speaker-tag speaker-s2">[Student 2]</span>
+                  </div>
+                  <p>Introducing our Automatic Fertilizer Setup – a smart robotic vehicle controlled by an ESP32 microcontroller. It moves along the crop field and delivers liquid fertilizer in a measured, controlled way, exactly where it is needed.</p>
+                </section>
+
+                <section class="script-beat" id="fert-how" data-speakers="2 3">
+                  <div class="beat-head">
+                    <h3>How Does It Work?</h3>
+                    <span class="speaker-tag speaker-s23">[Student 2 and Student 3]</span>
+                  </div>
+                  <p>Every part has a purpose:</p>
+                  <ul class="component-list">
+                    <li><strong>The Drive System</strong> – four BO motors with wheels, controlled by two TB6612FNG motor drivers, move the vehicle smoothly over a custom-built chassis.</li>
+                    <li><strong>The Spraying System</strong> – a small water pump, run through an L293D motor driver, sprays the liquid fertilizer.</li>
+                    <li><strong>The Precision Arm</strong> – a metal-gear servo motor positions the nozzle accurately towards the plants.</li>
+                    <li><strong>The Brain</strong> – the ESP32 coordinates the movement, the aiming and the spraying.</li>
+                  </ul>
+                </section>
+
+                <section class="script-beat" id="fert-power" data-speakers="3">
+                  <div class="beat-head">
+                    <h3>Rechargeable and Reusable</h3>
+                    <span class="speaker-tag speaker-s3">[Student 3]</span>
+                  </div>
+                  <p>Our vehicle runs on rechargeable 18650 batteries, charged safely through TP4056 modules, with LM2596 step-down modules supplying the right voltage to each part. No disposable batteries, no waste – just clean, reusable energy.</p>
+                </section>
+
+                <section class="script-beat" id="fert-impact" data-speakers="4">
+                  <div class="beat-head">
+                    <h3>Why It Matters</h3>
+                    <span class="speaker-tag speaker-s4">[Student 4]</span>
+                  </div>
+                  <p>Controlled spraying means less fertilizer wasted, lower costs for farmers, and healthier soil. Cleaner rivers and groundwater. Less chemical contact for the farmer. And more time to focus on what truly matters. A system like this can help even small farmers move toward modern, sustainable agriculture – and support food security for all.</p>
+                </section>
+
+                <section class="script-beat" id="fert-closing" data-speakers="1 2 3 4">
+                  <div class="beat-head">
+                    <h3>Closing</h3>
+                    <span class="speaker-tag speaker-all">[All Students]</span>
+                  </div>
+                  <p>Our country grows because our farmers grow. With this project, we wish to bring technology to the field and care to the earth. Thank you – because when we take care of the soil, the soil takes care of us!</p>
+                  <p class="closing-banner">Less Waste. Healthier Soil. Happier Farmers!</p>
+                </section>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- PROJECT 2: SMART SOLAR WEATHER MONITORING SYSTEM                -->
+        <!-- =============================================================== -->
+        <section
+          class="project-panel"
+          id="panel-weather"
+          role="tabpanel"
+          aria-labelledby="tab-weather"
+          hidden="until-found"
+        >
+          <div class="panel-inner">
+            <div class="exhibit-banner">
+              <div class="exhibit-header-row">
+                <div>
+                  <h2 class="exhibit-title">Smart Solar Weather Monitoring System</h2>
+                  <p class="exhibit-tagline">“Powered by the Sun. Guided by Data. Built for Tomorrow.”</p>
+                  <div class="exhibit-meta">
+                    <span>Student Narration Script</span>
+                    <span class="meta-sep" aria-hidden="true">|</span>
+                    <span>Science Exhibition</span>
+                    <span class="meta-sep" aria-hidden="true">|</span>
+                    <span>Approx. 2 minutes</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="script-controls">
+                <div class="speaker-filter" role="group" aria-label="Highlight speaker lines for Smart Solar Weather Monitoring System">
+                  <span class="filter-label">Speaker focus:</span>
+                  <button type="button" class="filter-pill" data-scope="panel-weather" data-speaker="all" aria-pressed="true">All</button>
+                  <button type="button" class="filter-pill" data-scope="panel-weather" data-speaker="1" aria-pressed="false">Student 1</button>
+                  <button type="button" class="filter-pill" data-scope="panel-weather" data-speaker="2" aria-pressed="false">Student 2</button>
+                  <button type="button" class="filter-pill" data-scope="panel-weather" data-speaker="3" aria-pressed="false">Student 3</button>
+                  <button type="button" class="filter-pill" data-scope="panel-weather" data-speaker="4" aria-pressed="false">Student 4</button>
+                </div>
+
+                <div class="utility-actions">
+                  <button type="button" class="action-btn stage-toggle" aria-pressed="false">Stage Text</button>
+                  <span class="copy-wrap">
+                    <button
+                      type="button"
+                      class="copy-button"
+                      command="--copy"
+                      commandfor="weather-script-body"
+                      aria-label="Copy Smart Solar Weather Monitoring System narration script"
+                    >
+                      <svg class="icon-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      <svg class="icon-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Copy Script</span>
+                    </button>
+                    <span class="copy-tip" role="status"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="exhibit-grid">
+              <aside class="spec-rail" aria-label="Smart Solar Weather Monitoring System guide and sensors">
+                <div class="rail-block">
+                  <h3>Script Sections</h3>
+                  <ul class="beat-nav">
+                    <li><a href="#weather-opening"><span>Opening</span><span class="beat-nav-speaker">Student 1</span></a></li>
+                    <li><a href="#weather-problem"><span>The Problem</span><span class="beat-nav-speaker">Student 1</span></a></li>
+                    <li><a href="#weather-solution"><span>Our Solution</span><span class="beat-nav-speaker">Student 2</span></a></li>
+                    <li><a href="#weather-measure"><span>What Does It Measure?</span><span class="beat-nav-speaker">S2 &amp; S3</span></a></li>
+                    <li><a href="#weather-solar"><span>Powered by the Sun</span><span class="beat-nav-speaker">Student 3</span></a></li>
+                    <li><a href="#weather-impact"><span>Why It Matters</span><span class="beat-nav-speaker">Student 4</span></a></li>
+                    <li><a href="#weather-closing"><span>Closing</span><span class="beat-nav-speaker">All</span></a></li>
+                  </ul>
+                </div>
+
+                <div class="rail-block">
+                  <h3>Sensors &amp; Power</h3>
+                  <dl class="hardware-list">
+                    <div class="hardware-item">
+                      <dt>ESP32 + Wi-Fi</dt>
+                      <dd>Low-cost node reading sensors and sharing live readings over Wi-Fi.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>DHT11 &amp; BMP180</dt>
+                      <dd>Temperature, humidity, and barometric air pressure forecasting.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>MQ135 + Rain Sensor + LDR</dt>
+                      <dd>Air quality alerts, rain detection, and sunlight intensity.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>Hall Effect + Neodymium</dt>
+                      <dd>Rotation-counting wind speed measurement.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>16×2 LCD Display</dt>
+                      <dd>Live local on-station readings readout.</dd>
+                    </div>
+                    <div class="hardware-item">
+                      <dt>Solar + 2× 18650 + LM2596</dt>
+                      <dd>Day/night off-grid operation with regulated voltage.</dd>
+                    </div>
+                  </dl>
+                </div>
+              </aside>
+
+              <article class="script-flow" id="weather-script-body">
+                <section class="script-beat" id="weather-opening" data-speakers="1">
+                  <div class="beat-head">
+                    <h3>Opening</h3>
+                    <span class="speaker-tag speaker-s1">[Student 1]</span>
+                  </div>
+                  <p>Good morning, everyone! Imagine a farmer looking at the sky, wondering: “Will it rain today? Is it safe to harvest?” Today, we bring him an answer – from a small station that runs entirely on sunlight!</p>
+                </section>
+
+                <section class="script-beat" id="weather-problem" data-speakers="1">
+                  <div class="beat-head">
+                    <h3>The Problem</h3>
+                    <span class="speaker-tag speaker-s1">[Student 1]</span>
+                  </div>
+                  <p>Our weather is changing faster than ever. Sudden storms, scorching heat and unpredictable rain affect farmers, schools, villages and cities alike. But big weather stations are costly and far away – so local, accurate information is often missing exactly where it is needed most.</p>
+                </section>
+
+                <section class="script-beat" id="weather-solution" data-speakers="2">
+                  <div class="beat-head">
+                    <h3>Our Solution</h3>
+                    <span class="speaker-tag speaker-s2">[Student 2]</span>
+                  </div>
+                  <p>Meet our Smart Solar Weather Monitoring System – a low-cost, self-powered weather node built around the ESP32 microcontroller. It senses the environment around it, displays the readings live, and shares them over Wi-Fi.</p>
+                </section>
+
+                <section class="script-beat" id="weather-measure" data-speakers="2 3">
+                  <div class="beat-head">
+                    <h3>What Does It Measure?</h3>
+                    <span class="speaker-tag speaker-s23">[Student 2 and Student 3]</span>
+                  </div>
+                  <p>Our node is a complete mini weather laboratory:</p>
+                  <ul class="component-list">
+                    <li><strong>Temperature and humidity</strong> – using the DHT11 sensor.</li>
+                    <li><strong>Air pressure</strong> – using the BMP180, the key to forecasting weather changes.</li>
+                    <li><strong>Air quality</strong> – using the MQ135 gas sensor, to warn us about pollution.</li>
+                    <li><strong>Rain</strong> – detected instantly by the rain sensor.</li>
+                    <li><strong>Sunlight intensity</strong> – measured by the LDR.</li>
+                    <li><strong>Wind speed</strong> – Hall effect sensors detect neodymium magnets on a rotating part, and every rotation is counted to calculate speed.</li>
+                  </ul>
+                  <p>All readings appear on a 16×2 LCD screen, right in front of you.</p>
+                </section>
+
+                <section class="script-beat" id="weather-solar" data-speakers="3">
+                  <div class="beat-head">
+                    <h3>Powered by the Sun</h3>
+                    <span class="speaker-tag speaker-s3">[Student 3]</span>
+                  </div>
+                  <p>The best part? It never needs a power socket! A solar panel charges two 18650 batteries during the day, and an LM2596 module delivers steady, safe power to the electronics. So our station keeps working – day and night, with zero electricity bills and zero emissions.</p>
+                </section>
+
+                <section class="script-beat" id="weather-impact" data-speakers="4">
+                  <div class="beat-head">
+                    <h3>Why It Matters</h3>
+                    <span class="speaker-tag speaker-s4">[Student 4]</span>
+                  </div>
+                  <p>This node is just one unit – place many of them across fields, villages and schools, and they become a powerful local weather network. Farmers can plan sowing and harvesting. Communities can get early warnings before storms. Students can learn from real data. And everyone can become aware of the air they breathe.</p>
+                </section>
+
+                <section class="script-beat" id="weather-closing" data-speakers="1 2 3 4">
+                  <div class="beat-head">
+                    <h3>Closing</h3>
+                    <span class="speaker-tag speaker-all">[All Students]</span>
+                  </div>
+                  <p>We believe the future belongs to technology that is clean, affordable and useful to everyone. Our weather station is a small step toward climate awareness and sustainable living. Thank you – and remember: when we understand our weather, we can protect our world!</p>
+                  <p class="closing-banner">Small Station. Big Impact. A Smarter, Greener Tomorrow!</p>
+                </section>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    <span>LuminaVista // Science Exhibition Archive</span>
+    <a href="index.html">Return to Core ↑</a>
+  </footer>
+
+  <script>
+    (function () {
+      const tabsRoot = document.getElementById('exhibitionTabs');
+      const tablist = tabsRoot.querySelector('[role="tablist"]');
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+      const panelsStage = document.getElementById('panelsStage');
+      const panels = Array.from(panelsStage.querySelectorAll('[role="tabpanel"]'));
+
+      // Fallback for browsers without hidden="until-found" (e.g. Safari): display panels linearly
+      const supportsUntilFound = 'onbeforematch' in HTMLElement.prototype;
+      if (!supportsUntilFound) {
+        panelsStage.classList.add('linear-fallback');
+        panels.forEach((panel) => {
+          panel.removeAttribute('hidden');
+          panel.setAttribute('tabindex', '0');
+        });
+      }
+
+      function activateTab(selectedTab, options = {}) {
+        const { focusTab = false, updateHash = true } = options;
+
+        if (!supportsUntilFound) {
+          tabs.forEach((tab) => {
+            const isSelected = tab === selectedTab;
+            tab.setAttribute('aria-selected', String(isSelected));
+            tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+          });
+          const targetPanel = document.getElementById(selectedTab.dataset.panel);
+          if (targetPanel) {
+            targetPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          if (focusTab) selectedTab.focus();
+          return;
+        }
+
+        tabs.forEach((tab) => {
+          const isSelected = tab === selectedTab;
+          tab.setAttribute('aria-selected', String(isSelected));
+          tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+          const panel = document.getElementById(tab.dataset.panel);
+          if (panel) {
+            if (isSelected) {
+              panel.removeAttribute('hidden');
+              panel.setAttribute('tabindex', '0');
+            } else {
+              panel.setAttribute('hidden', 'until-found');
+              panel.removeAttribute('tabindex');
+            }
+          }
+        });
+
+        selectedTab.scrollIntoView({
+          block: 'nearest',
+          inline: 'nearest',
+          container: 'nearest'
+        });
+
+        if (updateHash && selectedTab.dataset.hash) {
+          history.replaceState(null, '', '#' + selectedTab.dataset.hash);
+        }
+
+        if (focusTab) {
+          selectedTab.focus();
+        }
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activateTab(tab));
+
+        tab.addEventListener('keydown', (event) => {
+          let nextIndex = null;
+          if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+          else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+          else if (event.key === 'Home') nextIndex = 0;
+          else if (event.key === 'End') nextIndex = tabs.length - 1;
+
+          if (nextIndex !== null) {
+            event.preventDefault();
+            activateTab(tabs[nextIndex], { focusTab: true });
+          }
+        });
+      });
+
+      // Keep tabs and find-in-page / deep-link anchor fragments in sync
+      if (supportsUntilFound) {
+        panelsStage.addEventListener('beforematch', (event) => {
+          const matchedPanel = event.target.closest('[role="tabpanel"]');
+          if (!matchedPanel) return;
+          const owningTab = tabs.find((t) => t.dataset.panel === matchedPanel.id);
+          if (owningTab) activateTab(owningTab, { updateHash: false });
+        });
+      }
+
+      function syncFromHash() {
+        const hash = window.location.hash.replace(/^#/, '');
+        if (!hash) return;
+        const matchedTab = tabs.find(
+          (tab) => tab.dataset.hash === hash || tab.dataset.panel === hash
+        );
+        if (matchedTab) {
+          activateTab(matchedTab, { updateHash: false });
+          return;
+        }
+        const anchorTarget = document.getElementById(hash);
+        const ownerPanel = anchorTarget?.closest('[role="tabpanel"]');
+        if (ownerPanel) {
+          const owningTab = tabs.find((t) => t.dataset.panel === ownerPanel.id);
+          if (owningTab) {
+            activateTab(owningTab, { updateHash: false });
+            anchorTarget.scrollIntoView({ block: 'start' });
+          }
+        }
+      }
+
+      window.addEventListener('hashchange', syncFromHash);
+      syncFromHash();
+
+      // Speaker Focus Filtering per Project
+      document.querySelectorAll('.filter-pill').forEach((pill) => {
+        pill.addEventListener('click', () => {
+          const scopeId = pill.dataset.scope;
+          const targetSpeaker = pill.dataset.speaker;
+          const panel = document.getElementById(scopeId);
+          if (!panel) return;
+
+          panel.querySelectorAll('.filter-pill').forEach((btn) => {
+            btn.setAttribute('aria-pressed', String(btn === pill));
+          });
+
+          panel.querySelectorAll('.script-beat').forEach((beat) => {
+            if (targetSpeaker === 'all') {
+              beat.classList.remove('is-dimmed');
+              return;
+            }
+            const speakers = (beat.dataset.speakers || '').split(/\s+/);
+            beat.classList.toggle('is-dimmed', !speakers.includes(targetSpeaker));
+          });
+        });
+      });
+
+      // Stage Reading Size Toggle (synchronized across panels)
+      const stageToggles = Array.from(document.querySelectorAll('.stage-toggle'));
+      stageToggles.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const isLarge = document.documentElement.getAttribute('data-stage-scale') === 'large';
+          if (isLarge) {
+            document.documentElement.removeAttribute('data-stage-scale');
+          } else {
+            document.documentElement.setAttribute('data-stage-scale', 'large');
+          }
+          stageToggles.forEach((toggle) => {
+            toggle.setAttribute('aria-pressed', String(!isLarge));
+          });
+        });
+      });
+
+      // Print Cue Sheet
+      document.getElementById('printCueBtn').addEventListener('click', () => {
+        window.print();
+      });
+
+      // Accessible Copy Button with Invoker Commands + legacyCopy fallback
+      const timers = new WeakMap();
+      let lastMessage = '';
+
+      function legacyCopy(text) {
+        const previousFocus = document.activeElement;
+        const field = Object.assign(document.createElement('textarea'), { value: text });
+        field.setAttribute('readonly', '');
+        field.style.cssText = 'position:fixed;inset-block-start:0;opacity:0';
+        document.body.append(field);
+        field.select();
+        try {
+          return document.execCommand('copy');
+        } finally {
+          field.remove();
+          previousFocus?.focus({ preventScroll: true });
+        }
+      }
+
+      function report(button, ok) {
+        const tip = button.nextElementSibling;
+        clearTimeout(timers.get(button));
+        button.removeAttribute('data-copied');
+        button.removeAttribute('data-failed');
+        let message = ok ? 'Copied' : 'Copy failed';
+        if (message === lastMessage) message += '\u00A0';
+        lastMessage = message;
+        tip.textContent = '';
+        void button.offsetWidth;
+        button.setAttribute(ok ? 'data-copied' : 'data-failed', '');
+        requestAnimationFrame(() => {
+          tip.textContent = message;
+        });
+        timers.set(button, setTimeout(() => {
+          button.removeAttribute('data-copied');
+          button.removeAttribute('data-failed');
+          tip.textContent = '';
+        }, 2000));
+      }
+
+      async function copyTarget(button, target) {
+        const text = target.innerText.trim();
+        if (!text) return;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else if (!legacyCopy(text)) {
+            throw new Error('Copy failed');
+          }
+          report(button, true);
+        } catch {
+          try {
+            if (!legacyCopy(text)) throw new Error('Copy failed');
+            report(button, true);
+          } catch {
+            report(button, false);
+          }
+        }
+      }
+
+      if ('CommandEvent' in window) {
+        document.addEventListener('command', (event) => {
+          if (event.command === '--copy' && event.source && event.target) {
+            copyTarget(event.source, event.target);
+          }
+        }, true);
+      } else {
+        document.addEventListener('click', (event) => {
+          if (event.defaultPrevented) return;
+          const button = event.target.closest('button[command="--copy"]');
+          if (!button) return;
+          const target = document.getElementById(button.getAttribute('commandfor'));
+          if (target) copyTarget(button, target);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

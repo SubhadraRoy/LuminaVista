@@ -11,6 +11,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800;900&family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   
   <style>
+    @media (prefers-reduced-motion: no-preference) {
+      @view-transition {
+        navigation: auto;
+      }
+    }
+
     :root {
       --bg-black: #050505;
       --bg-void: #000000;
@@ -181,6 +187,36 @@
       50% { opacity: 1; transform: scale(1.2); }
     }
 
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .hud-link {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 0.4rem 0.9rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-radius: 9999px;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .hud-link:hover {
+      border-color: var(--border-active);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     .audio-btn {
       background: none;
       border: 1px solid var(--border-subtle);
@@ -308,6 +344,40 @@
       margin-top: 2rem;
       margin-left: 0.45em;
       opacity: 0.7;
+    }
+
+    .hero-actions {
+      margin-top: 2.25rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-cta {
+      padding: 0.8rem 1.8rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-active);
+      border-radius: 9999px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .hero-cta:hover {
+      background: #ffffff;
+      color: #000000;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.25);
     }
 
     .scroll-hint {
@@ -564,7 +634,14 @@
         <span class="hud-badge"></span>
         <span>SYS: 0xGOD // SYNCHRONIZED</span>
       </div>
-      <div class="hud-element">
+      <div class="hud-element hud-actions">
+        <a href="exhibition.html" class="hud-link">
+          <span>EXHIBITION SCRIPTS</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M7 17L17 7"></path>
+            <path d="M7 7h10v10"></path>
+          </svg>
+        </a>
         <button class="audio-btn" id="audioToggle">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -599,6 +676,15 @@
       <div class="hero-title-wrap">
         <h1 class="hero-title" id="heroTitle">GODx</h1>
         <div class="hero-sub">// MONOCHROME SINGULARITY</div>
+        <div class="hero-actions">
+          <a href="exhibition.html" class="hero-cta">
+            <span>VIEW SCIENCE EXHIBITION</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <path d="M12 5l7 7-7 7"></path>
+            </svg>
+          </a>
+        </div>
       </div>
       <div class="scroll-hint">
         <div class="scroll-arrow"></div>
@@ -633,7 +719,8 @@
         <div class="monolith-code">CORE INITIALIZED // VERIFIED</div>
         <h2 class="monolith-title">SOVEREIGN HORIZON</h2>
         <div class="monolith-action">
-          <a href="#hero" class="monolith-btn">ASCEND TO CORE</a>
+          <a href="exhibition.html" class="monolith-btn">SCIENCE EXHIBITION</a>
+          <a href="#hero" class="monolith-btn monolith-btn-ghost">ASCEND TO CORE</a>
           <a href="https://github.com/SubhadraRoy" target="_blank" rel="noopener noreferrer" class="monolith-btn monolith-btn-ghost">SOURCE // GITHUB</a>
         </div>
       </div>
